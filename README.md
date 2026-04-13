@@ -2,12 +2,12 @@
 
 > Point it at an OpenAPI spec. Get a fully functional frontend. Zero boilerplate.
 
-![UIGen Demo](https://github.com/darula-hpp/uigen/raw/main/examples/output.gif)
-
 ```bash
 npx @uigen-dev/cli serve ./openapi.yaml
 # → Your UI is live at http://localhost:4400
 ```
+
+![UIGen Demo](https://github.com/darula-hpp/uigen/raw/main/examples/output.gif)
 
 No code. No config. No boilerplate. Just a spec.
 
