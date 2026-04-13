@@ -1,0 +1,29 @@
+{
+  "name": "@uigen-dev/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "uigen": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@uigen-dev/core": "workspace:*",
+    "@uigen-dev/react": "workspace:*",
+    "commander": "^12.1.0",
+    "picocolors": "^1.1.1",
+    "vite": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "fast-check": "^4.6.0",
+    "vitest": "^2.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

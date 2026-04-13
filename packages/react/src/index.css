@@ -1,0 +1,102 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #0a0a0a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0a0a0a;
+  --color-primary: #1a1a1a;
+  --color-primary-foreground: #fafafa;
+  --color-secondary: #f5f5f5;
+  --color-secondary-foreground: #1a1a1a;
+  --color-muted: #f5f5f5;
+  --color-muted-foreground: #737373;
+  --color-accent: #f5f5f5;
+  --color-accent-foreground: #1a1a1a;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #fafafa;
+  --color-border: #e5e5e5;
+  --color-input: #e5e5e5;
+  --color-ring: #0a0a0a;
+  
+  --color-background-dark: #0a0a0a;
+  --color-foreground-dark: #fafafa;
+  --color-card-dark: #0a0a0a;
+  --color-card-foreground-dark: #fafafa;
+  --color-primary-dark: #fafafa;
+  --color-primary-foreground-dark: #1a1a1a;
+  --color-secondary-dark: #262626;
+  --color-secondary-foreground-dark: #fafafa;
+  --color-muted-dark: #262626;
+  --color-muted-foreground-dark: #a3a3a3;
+  --color-accent-dark: #262626;
+  --color-accent-foreground-dark: #fafafa;
+  --color-destructive-dark: #7f1d1d;
+  --color-destructive-foreground-dark: #fafafa;
+  --color-border-dark: #262626;
+  --color-input-dark: #262626;
+  --color-ring-dark: #d4d4d4;
+  
+  --radius: 0.5rem;
+}
+
+/* Compatibility layer for border colors */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border, currentColor);
+  }
+}
+
+:root {
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --card: var(--color-card);
+  --card-foreground: var(--color-card-foreground);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-secondary-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-accent-foreground);
+  --destructive: var(--color-destructive);
+  --destructive-foreground: var(--color-destructive-foreground);
+  --border: var(--color-border);
+  --input: var(--color-input);
+  --ring: var(--color-ring);
+}
+
+.dark {
+  --background: var(--color-background-dark);
+  --foreground: var(--color-foreground-dark);
+  --card: var(--color-card-dark);
+  --card-foreground: var(--color-card-foreground-dark);
+  --primary: var(--color-primary-dark);
+  --primary-foreground: var(--color-primary-foreground-dark);
+  --secondary: var(--color-secondary-dark);
+  --secondary-foreground: var(--color-secondary-foreground-dark);
+  --muted: var(--color-muted-dark);
+  --muted-foreground: var(--color-muted-foreground-dark);
+  --accent: var(--color-accent-dark);
+  --accent-foreground: var(--color-accent-foreground-dark);
+  --destructive: var(--color-destructive-dark);
+  --destructive-foreground: var(--color-destructive-foreground-dark);
+  --border: var(--color-border-dark);
+  --input: var(--color-input-dark);
+  --ring: var(--color-ring-dark);
+}
+
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
