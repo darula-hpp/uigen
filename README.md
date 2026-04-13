@@ -3,7 +3,7 @@
 > Point it at an OpenAPI spec. Get a fully functional frontend. Zero boilerplate.
 
 ```bash
-npx @uigen/cli serve ./openapi.yaml
+npx @uigen-dev/cli serve ./openapi.yaml
 # → Your UI is live at http://localhost:4400
 ```
 
@@ -36,19 +36,19 @@ From a single OpenAPI file, UIGen generates a complete, production-quality front
 
 ```bash
 # Run directly with npx — no install required
-npx @uigen/cli serve ./openapi.yaml
+npx @uigen-dev/cli serve ./openapi.yaml
 
 # Or with a remote spec URL
-npx @uigen/cli serve https://petstore3.swagger.io/api/v3/openapi.json
+npx @uigen-dev/cli serve https://petstore3.swagger.io/api/v3/openapi.json
 
 # Custom port
-npx @uigen/cli serve ./openapi.yaml --port 8080
+npx @uigen-dev/cli serve ./openapi.yaml --port 8080
 
 # Override the target server
-npx @uigen/cli serve ./openapi.yaml --proxy-base https://api.yourapp.com
+npx @uigen-dev/cli serve ./openapi.yaml --proxy-base https://api.yourapp.com
 
 # Choose a renderer (default: react)
-npx @uigen/cli serve ./openapi.yaml --renderer react
+npx @uigen-dev/cli serve ./openapi.yaml --renderer react
 ```
 
 Visit `http://localhost:4400` to see your generated UI.
@@ -70,7 +70,7 @@ node packages/cli/dist/index.js serve examples/twilio_messaging_v1.yaml
 
 UIGen parses your OpenAPI spec and converts it into an **Intermediate Representation (IR)** — a structured description of your resources, operations, schemas, authentication, and relationships. A pre-built React SPA reads that IR and renders the appropriate views. A Vite dev server serves the SPA and proxies your API calls to your real backend.
 
-Because the IR is framework-agnostic, the React layer is just the default. The same IR drives `@uigen/svelte` and `@uigen/vue` — same spec, different renderer, your choice of stack.
+Because the IR is framework-agnostic, the React layer is just the default. The same IR drives `@uigen-dev/svelte` and `@uigen-dev/vue` — same spec, different renderer, your choice of stack.
 
 ```
 OpenAPI Spec (YAML/JSON)
@@ -171,11 +171,11 @@ Each package is independently publishable:
 
 | Package | npm | Purpose |
 |---|---|---|
-| `@uigen/core` | soon | IR types, adapters, engine — framework agnostic. Build your own renderer on top |
-| `@uigen/react` | soon | The default React renderer. Extend or swap components via the registry |
-| `@uigen/cli` | soon | The `npx uigen` entry point |
-| `@uigen/svelte` | planned | Svelte renderer — same IR, native Svelte components |
-| `@uigen/vue` | planned | Vue 3 renderer — same IR, native Vue components |
+| `@uigen-dev/core` | ✅ published | IR types, adapters, engine — framework agnostic. Build your own renderer on top |
+| `@uigen-dev/react` | ✅ published | The default React renderer. Extend or swap components via the registry |
+| `@uigen-dev/cli` | ✅ published | The `npx uigen` entry point |
+| `@uigen-dev/svelte` | planned | Svelte renderer — same IR, native Svelte components |
+| `@uigen-dev/vue` | planned | Vue 3 renderer — same IR, native Vue components |
 
 ---
 
@@ -210,7 +210,7 @@ pnpm test:coverage
 Register your own component for any field type — without touching the rest of the tool:
 
 ```tsx
-import { registry } from '@uigen/react';
+import { registry } from '@uigen-dev/react';
 import { MyMapField } from './fields/MapField';
 
 registry.register('geo', MyMapField);
@@ -268,8 +268,8 @@ properties:
 - [ ] Virtual scrolling — TanStack Virtual for tables with 1000+ rows
 
 ### 🧩 Ecosystem
-- [ ] **`@uigen/svelte`** — Svelte renderer consuming the same IR. Same adapters, different UI layer
-- [ ] **`@uigen/vue`** — Vue 3 renderer. Drop-in alternative to `@uigen/react`
+- [ ] **`@uigen-dev/svelte`** — Svelte renderer consuming the same IR. Same adapters, different UI layer
+- [ ] **`@uigen-dev/vue`** — Vue 3 renderer. Drop-in alternative to `@uigen-dev/react`
 - [ ] **Plugin API** — register custom adapters, field types, and view strategies as npm packages
 - [ ] **`uigen ui:config`** — a visual configuration dashboard served alongside your generated UI. Point-and-click theme editing, field label overrides, resource reordering — no YAML editing required
 
@@ -284,8 +284,8 @@ properties:
 - [ ] gRPC / Protobuf adapter
 - [ ] Response transformation — JSONPath selectors to reshape API responses before rendering
 - [ ] Request / response interceptors — middleware for custom auth logic or tenant injection
-- [ ] `@uigen/plugin-charts` — auto-generate chart widgets from numeric data
-- [ ] `@uigen/plugin-mapbox` — map field renderer for geo coordinates
+- [ ] `@uigen-dev/plugin-charts` — auto-generate chart widgets from numeric data
+- [ ] `@uigen-dev/plugin-mapbox` — map field renderer for geo coordinates
 
 ---
 
@@ -303,7 +303,7 @@ properties:
 
 Issues and PRs are welcome. See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full design documentation.
 
-> **Building a renderer for another framework?** The `@uigen/core` package is the only dependency you need. The IR contract is stable.
+> **Building a renderer for another framework?** The `@uigen-dev/core` package is the only dependency you need. The IR contract is stable.
 
 ---
 

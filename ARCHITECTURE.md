@@ -15,7 +15,7 @@ npx uigen serve --spec ./openapi.yaml
 |---|---|
 | **API formats** | OpenAPI 3.x (primary), Swagger 2.0 |
 | **UI surfaces** | CRUD forms, tables, detail views, **dashboards**, **search**, **multi-step wizards**, **custom actions** |
-| **Distribution** | CLI (`npx uigen`) for zero-config use; `@uigen/core` and `@uigen/react` are independently importable for building on top |
+| **Distribution** | CLI (`npx uigen`) for zero-config use; `@uigen-dev/core` and `@uigen-dev/react` are independently importable for building on top |
 | **Renderers** | React (default), Svelte (planned), Vue 3 (planned) — all driven by the same IR |
 | **Styling** | **shadcn/ui** (Radix primitives + Tailwind CSS v4) — opinionated, end-user never touches Tailwind |
 | **API calls** | Live — generated frontend calls the spec's endpoints via built-in proxy |
@@ -306,15 +306,15 @@ Real-world specs are messy. The system must degrade gracefully:
 - [ ] Virtual scrolling for large datasets (TanStack Virtual)
 - [ ] Request / response interceptors (config-driven middleware)
 - [ ] Response transformation (JSONPath + JS functions)
-- [ ] Publish all packages to npm (`@uigen/core`, `@uigen/react`, `@uigen/cli`)
+- [ ] Publish all packages to npm (`@uigen-dev/core`, `@uigen-dev/react`, `@uigen-dev/cli`)
 
 ### Phase 4 — Renderer ecosystem
-- [ ] **`@uigen/svelte`** — Svelte renderer consuming the same IR. Native Svelte components, same adapters, same CLI
-- [ ] **`@uigen/vue`** — Vue 3 renderer. Drop-in alternative to `@uigen/react`
+- [ ] **`@uigen-dev/svelte`** — Svelte renderer consuming the same IR. Native Svelte components, same adapters, same CLI
+- [ ] **`@uigen-dev/vue`** — Vue 3 renderer. Drop-in alternative to `@uigen-dev/react`
 - [ ] **Plugin API** — register custom adapters, field types, and view strategies as npm packages
 - [ ] **`uigen ui:config`** — visual configuration dashboard served alongside the generated frontend. Point-and-click theme editing, field label overrides, resource reordering — no YAML required
-- [ ] `@uigen/plugin-charts` — chart widgets from numeric data
-- [ ] `@uigen/plugin-mapbox` — map renderer for geo coordinate fields
+- [ ] `@uigen-dev/plugin-charts` — chart widgets from numeric data
+- [ ] `@uigen-dev/plugin-mapbox` — map renderer for geo coordinate fields
 - [ ] GraphQL adapter
 - [ ] OpenAPI 3.1 support
 
@@ -331,7 +331,7 @@ Real-world specs are messy. The system must degrade gracefully:
 - Adapter parsing correctness and `$ref` round-trips (Vitest)
 - IR structure completeness and field type coverage
 - Property-based tests — 24 universal correctness properties via fast-check
-- Commands: `pnpm --filter @uigen/core test`, `pnpm --filter @uigen/react test`
+- Commands: `pnpm --filter @uigen-dev/core test`, `pnpm --filter @uigen-dev/react test`
 
 ### Manual Verification
 - `npx uigen serve --spec examples/petstore.yaml`

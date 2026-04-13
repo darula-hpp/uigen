@@ -7,3 +7,9 @@ dist
 .vscode
 coverage
 *.tsbuildinfo
+
+# Kiro IDE files
+.kiro
+AGENTS.md
+apps/docs/AGENTS.md
+apps/docs/CLAUDE.md
