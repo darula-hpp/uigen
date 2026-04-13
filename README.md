@@ -273,11 +273,6 @@ properties:
 - [ ] **Plugin API** — register custom adapters, field types, and view strategies as npm packages
 - [ ] **`uigen ui:config`** — a visual configuration dashboard served alongside your generated UI. Point-and-click theme editing, field label overrides, resource reordering — no YAML editing required
 
-### ☁️ Cloud (planned)
-- [ ] **uigen.cloud** — hosted UIGen. Point at your spec URL, get a shareable, live frontend at a custom domain — no local setup required
-- [ ] **GitHub Action** — auto-deploy your generated UI when your spec changes in CI
-- [ ] **Enterprise tier** — SSO/SAML, audit logs, RBAC, on-prem deployment
-
 ### 🔭 Further out
 - [ ] OpenAPI 3.1 support
 - [ ] GraphQL adapter
