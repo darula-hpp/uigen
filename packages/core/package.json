@@ -1,6 +1,16 @@
 {
   "name": "@uigen-dev/core",
-  "version": "0.1.7",
+  "version": "0.5.0",
+  "description": "Framework-agnostic engine for spec-driven frontends",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/darula-hpp/uigen.git"
+  },
+  "homepage": "https://github.com/darula-hpp/uigen#readme",
+  "bugs": {
+    "url": "https://github.com/darula-hpp/uigen/issues"
+  },
   "type": "module",
   "files": [
     "dist/**/*.js",

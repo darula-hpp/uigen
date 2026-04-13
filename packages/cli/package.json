@@ -1,7 +1,16 @@
 {
   "name": "@uigen-dev/cli",
-  "version": "0.1.7",
+  "version": "0.5.0",
   "description": "Auto-generate frontends from OpenAPI specs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/darula-hpp/uigen.git"
+  },
+  "homepage": "https://github.com/darula-hpp/uigen#readme",
+  "bugs": {
+    "url": "https://github.com/darula-hpp/uigen/issues"
+  },
   "type": "module",
   "bin": {
     "uigen": "./dist/index.js"
@@ -9,13 +18,14 @@
   "files": [
     "dist/**/*.js",
     "dist/**/*.d.ts",
+    "dist/renderer/**/*",
     "!dist/**/__tests__/**",
     "!dist/**/*.test.js",
     "!dist/**/*.test.d.ts",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && mkdir -p dist/renderer && cp -r ../react/dist/* dist/renderer/",
     "dev": "tsc --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit",

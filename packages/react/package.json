@@ -1,7 +1,16 @@
 {
   "name": "@uigen-dev/react",
-  "version": "0.1.7",
+  "version": "0.5.0",
   "description": "Auto-generate frontends from OpenAPI specs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/darula-hpp/uigen.git"
+  },
+  "homepage": "https://github.com/darula-hpp/uigen#readme",
+  "bugs": {
+    "url": "https://github.com/darula-hpp/uigen/issues"
+  },
   "files": [
     "dist",
     "README.md"
