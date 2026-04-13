@@ -163,7 +163,8 @@ uigen/
 │   ├── react/         # Opinionated React UI layer
 │   └── cli/           # CLI entry point (Commander.js)
 ├── examples/
-│   └── petstore.yaml  # Demo OpenAPI spec
+│   ├── twilio_messaging_v1.yaml  # Twilio Messaging API spec
+│   └── stripe.yaml               # Stripe API spec
 └── pnpm-workspace.yaml
 ```
 
