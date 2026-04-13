@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useApiCall, useApiMutation } from '../useApiCall';
-import type { Operation } from '@uigen/core';
+import type { Operation } from '@uigen-dev/core';
 import { ReactNode } from 'react';
 
 describe('useApiCall', () => {

@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { TextField } from '../fields/TextField';
 import { ListView } from '../views/ListView';
 import { DetailView } from '../views/DetailView';
-import type { Resource, SchemaNode } from '@uigen/core';
+import type { Resource, SchemaNode } from '@uigen-dev/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 

@@ -2,7 +2,18 @@
   "name": "@uigen-dev/core",
   "version": "0.1.0",
   "type": "module",
-  "main": "./dist/index.js",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "!dist/**/__tests__/**",
+    "!dist/**/*.test.js",
+    "!dist/**/*.test.d.ts",
+    "!dist/**/*.property.test.js",
+    "!dist/**/*.property.test.d.ts",
+    "!dist/test*.js",
+    "!dist/test*.d.ts",
+    "README.md"
+  ],
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -14,7 +25,9 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepack": "cp ../../README.md ./README.md",
+    "postpack": "rm -f ./README.md"
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
@@ -25,6 +38,7 @@
     "fast-check": "^4.6.0",
     "vitest": "^2.0.0"
   },
+  "keywords": ["openapi","swagger","frontend-generator","ui-generator","admin-panel","rest-api","react","cli-tool","automation","low-code","no-code","devtools","typescript"],
   "publishConfig": {
     "access": "public"
   }

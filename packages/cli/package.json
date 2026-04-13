@@ -1,15 +1,26 @@
 {
   "name": "@uigen-dev/cli",
   "version": "0.1.0",
+  "description": "Auto-generate frontends from OpenAPI specs",
   "type": "module",
   "bin": {
     "uigen": "./dist/index.js"
   },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "!dist/**/__tests__/**",
+    "!dist/**/*.test.js",
+    "!dist/**/*.test.d.ts",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepack": "cp ../../README.md ./README.md",
+    "postpack": "rm -f ./README.md"
   },
   "dependencies": {
     "@uigen-dev/core": "workspace:*",
@@ -23,6 +34,7 @@
     "fast-check": "^4.6.0",
     "vitest": "^2.0.0"
   },
+  "keywords": ["openapi","swagger","frontend-generator","ui-generator","admin-panel","rest-api","react","cli-tool","automation","low-code","no-code","devtools","typescript"],
   "publishConfig": {
     "access": "public"
   }

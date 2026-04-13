@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import type { Resource } from '@uigen/core';
+import type { Resource } from '@uigen-dev/core';
 
 interface ActionSelectionViewProps {
   resource: Resource;

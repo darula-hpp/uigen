@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { DashboardView } from '../DashboardView';
-import type { UIGenApp } from '@uigen/core';
+import type { UIGenApp } from '@uigen-dev/core';
 import { BrowserRouter } from 'react-router-dom';
 
 // Mock the useApiCall hook

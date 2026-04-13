@@ -3,7 +3,7 @@ import { useApiCall } from '@/hooks/useApiCall';
 import { Button } from '@/components/ui/button';
 import { getAuthCredentials } from '@/lib/auth';
 import { getSelectedServer } from '@/lib/server';
-import type { UIGenApp, Resource } from '@uigen/core';
+import type { UIGenApp, Resource } from '@uigen-dev/core';
 import { Database, ArrowRight, CheckCircle2, XCircle, Server } from 'lucide-react';
 
 interface DashboardViewProps {

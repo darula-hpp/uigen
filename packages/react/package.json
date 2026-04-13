@@ -1,13 +1,23 @@
 {
   "name": "@uigen-dev/react",
   "version": "0.1.0",
+  "description": "Auto-generate frontends from OpenAPI specs",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
+  "exports": {
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepack": "cp ../../README.md ./README.md",
+    "postpack": "rm -f ./README.md"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -44,6 +54,7 @@
     "vite": "^6.0.0",
     "vitest": "^2.0.0"
   },
+  "keywords": ["openapi","swagger","frontend-generator","ui-generator","admin-panel","rest-api","react","cli-tool","automation","low-code","no-code","devtools","typescript"],
   "publishConfig": {
     "access": "public"
   }

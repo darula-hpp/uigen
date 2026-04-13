@@ -4,7 +4,7 @@ import { userEvent } from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SearchView } from '../SearchView';
-import type { Resource, Operation } from '@uigen/core';
+import type { Resource, Operation } from '@uigen-dev/core';
 
 // Mock useApiCall hook
 vi.mock('@/hooks/useApiCall', () => ({

@@ -1,5 +1,5 @@
 import { Link, useLocation, useParams, useMatch } from 'react-router-dom';
-import type { UIGenApp, Resource } from '@uigen/core';
+import type { UIGenApp, Resource } from '@uigen-dev/core';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { useState } from 'react';

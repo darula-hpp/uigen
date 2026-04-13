@@ -1,4 +1,4 @@
-import type { SchemaNode } from '@uigen/core';
+import type { SchemaNode } from '@uigen-dev/core';
 import type { FieldErrors, UseFormRegister } from 'react-hook-form';
 
 export interface FieldProps {

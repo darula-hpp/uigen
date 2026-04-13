@@ -15,7 +15,7 @@ import {
   registerDefaultComponents,
 } from '../index';
 import type { FieldProps } from '../ComponentRegistry';
-import type { SchemaNode } from '@uigen/core';
+import type { SchemaNode } from '@uigen-dev/core';
 
 /**
  * Test wrapper component that provides react-hook-form context

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 import { useApiMutation } from '@/hooks/useApiCall';
 import { useToast } from '@/components/Toast';
-import type { Operation } from '@uigen/core';
+import type { Operation } from '@uigen-dev/core';
 import { DynamicForm } from '@/components/DynamicForm';
 
 interface ActionButtonProps {

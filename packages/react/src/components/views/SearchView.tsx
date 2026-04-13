@@ -4,7 +4,7 @@ import { useApiCall } from '@/hooks/useApiCall';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import type { Resource, Operation } from '@uigen/core';
+import type { Resource, Operation } from '@uigen-dev/core';
 
 interface SearchViewProps {
   resource: Resource;

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import fc from 'fast-check';
 import { componentRegistry, registerDefaultComponents } from '../index';
-import type { FieldType } from '@uigen/core';
+import type { FieldType } from '@uigen-dev/core';
 
 /**
  * Property 9: Component Mapping Completeness

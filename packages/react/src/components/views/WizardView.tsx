@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { useApiMutation, useApiCall } from '@/hooks/useApiCall';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import type { Resource, SchemaNode, ValidationRule, Operation } from '@uigen/core';
+import type { Resource, SchemaNode, ValidationRule, Operation } from '@uigen-dev/core';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMemo, useState, useEffect } from 'react';
 import { componentRegistry } from '@/components/fields';

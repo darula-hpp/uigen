@@ -2,7 +2,7 @@
   "name": "uigen",
   "version": "0.1.0",
   "private": true,
-  "description": "Auto-generate admin UIs from OpenAPI specs",
+  "description": "Auto-generate frontends from OpenAPI specs",
   "author": "",
   "license": "MIT",
   "scripts": {

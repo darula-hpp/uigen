@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fc from 'fast-check';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import { FormView } from '../FormView';
-import type { Resource, Operation, SchemaNode, ValidationRule } from '@uigen/core';
+import type { Resource, Operation, SchemaNode, ValidationRule } from '@uigen-dev/core';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 

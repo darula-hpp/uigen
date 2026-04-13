@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FormView } from '../FormView';
-import type { Resource } from '@uigen/core';
+import type { Resource } from '@uigen-dev/core';
 import { MemoryRouter, Route, Routes, BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 

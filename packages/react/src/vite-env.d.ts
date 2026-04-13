@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { UIGenApp } from '@uigen/core';
+import type { UIGenApp } from '@uigen-dev/core';
 
 declare global {
   interface Window {

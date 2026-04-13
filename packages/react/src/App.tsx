@@ -11,7 +11,7 @@ import { DashboardView } from './components/views/DashboardView';
 import { LoginView } from './components/views/LoginView';
 import { ToastProvider } from './components/Toast';
 import { isAuthenticated } from './lib/auth';
-import type { UIGenApp } from '@uigen/core';
+import type { UIGenApp } from '@uigen-dev/core';
 
 const queryClient = new QueryClient({
   defaultOptions: {

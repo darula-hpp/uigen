@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'fs';
 import { createServer } from 'vite';
-import { parseSpec } from '@uigen/core';
+import { parseSpec } from '@uigen-dev/core';
 
 // Mock dependencies
 vi.mock('fs');
 vi.mock('vite');
-vi.mock('@uigen/core');
+vi.mock('@uigen-dev/core');
 vi.mock('picocolors', () => ({
   default: {
     cyan: (s: string) => s,

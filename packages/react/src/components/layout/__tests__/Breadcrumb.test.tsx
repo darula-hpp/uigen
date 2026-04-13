@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { BrowserRouter, Routes, Route, MemoryRouter } from 'react-router-dom';
 import { Breadcrumb } from '../Breadcrumb';
-import type { UIGenApp } from '@uigen/core';
+import type { UIGenApp } from '@uigen-dev/core';
 
 const mockConfig: UIGenApp = {
   meta: { title: 'Test API', version: '1.0.0' },

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Operation } from '@uigen/core';
+import type { Operation } from '@uigen-dev/core';
 import { getAuthHeaders, clearAuthCredentials } from '@/lib/auth';
 import { getSelectedServer } from '@/lib/server';
 

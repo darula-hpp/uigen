@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { ServerConfig } from '@uigen/core';
+import type { ServerConfig } from '@uigen-dev/core';
 import { Select } from './ui/select';
 import { Label } from './ui/label';
 import { storeSelectedServer, getSelectedServer } from '@/lib/server';

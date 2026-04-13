@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ServerSelector } from '../ServerSelector';
-import type { ServerConfig } from '@uigen/core';
+import type { ServerConfig } from '@uigen-dev/core';
 import * as serverUtils from '@/lib/server';
 
 // Mock the server utilities

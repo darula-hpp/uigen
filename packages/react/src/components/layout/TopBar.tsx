@@ -1,4 +1,4 @@
-import type { UIGenApp } from '@uigen/core';
+import type { UIGenApp } from '@uigen-dev/core';
 import { Button } from '../ui/button';
 import { ServerSelector } from '../ServerSelector';
 import { ThemeToggle } from '../ThemeToggle';

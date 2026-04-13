@@ -1,6 +1,6 @@
 import { useApiCall, useApiMutation } from '@/hooks/useApiCall';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import type { Resource, SchemaNode, Operation } from '@uigen/core';
+import type { Resource, SchemaNode, Operation } from '@uigen-dev/core';
 import { Button } from '@/components/ui/button';
 import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 import { ActionButton } from '@/components/ActionButton';

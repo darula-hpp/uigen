@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fc from 'fast-check';
 import { render, fireEvent } from '@testing-library/react';
 import { ListView } from '../ListView';
-import type { Resource, Operation, SchemaNode } from '@uigen/core';
+import type { Resource, Operation, SchemaNode } from '@uigen-dev/core';
 import { BrowserRouter } from 'react-router-dom';
 
 /**

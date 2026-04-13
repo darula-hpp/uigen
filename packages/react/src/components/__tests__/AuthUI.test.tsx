@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AuthUI } from '../AuthUI';
-import type { AuthConfig } from '@uigen/core';
+import type { AuthConfig } from '@uigen-dev/core';
 
 // Use real strategies with a mocked sessionStorage
 const mockStorage: Record<string, string> = {};

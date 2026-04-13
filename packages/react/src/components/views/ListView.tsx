@@ -1,7 +1,7 @@
 import { useApiCall } from '@/hooks/useApiCall';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import type { Resource, Operation } from '@uigen/core';
+import type { Resource, Operation } from '@uigen-dev/core';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   useReactTable,

@@ -23,9 +23,12 @@ importers:
 
   packages/cli:
     dependencies:
-      '@uigen/core':
+      '@uigen-dev/core':
         specifier: workspace:*
         version: link:../core
+      '@uigen-dev/react':
+        specifier: workspace:*
+        version: link:../react
       commander:
         specifier: ^12.1.0
         version: 12.1.0
@@ -34,7 +37,7 @@ importers:
         version: 1.1.1
       vite:
         specifier: ^6.0.0
-        version: 6.4.1(@types/node@22.19.15)(jiti@1.21.7)(lightningcss@1.32.0)
+        version: 6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -94,7 +97,7 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.20.0
         version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@uigen/core':
+      '@uigen-dev/core':
         specifier: workspace:*
         version: link:../core
       class-variance-authority:
@@ -145,7 +148,7 @@ importers:
         version: 19.2.3(@types/react@19.2.14)
       '@vitejs/plugin-react':
         specifier: ^4.3.0
-        version: 4.7.0(vite@6.4.1(@types/node@22.19.15)(jiti@1.21.7)(lightningcss@1.32.0))
+        version: 4.7.0(vite@6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0))
       fast-check:
         specifier: ^4.6.0
         version: 4.6.0
@@ -157,7 +160,7 @@ importers:
         version: 4.2.2
       vite:
         specifier: ^6.0.0
-        version: 6.4.1(@types/node@22.19.15)(jiti@1.21.7)(lightningcss@1.32.0)
+        version: 6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)
       vitest:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@22.19.15)(@vitest/ui@2.1.9)(jsdom@25.0.1)(lightningcss@1.32.0)
@@ -1601,10 +1604,6 @@ packages:
 
   is-potential-custom-element-name@1.0.1:
     resolution: {integrity: sha512-bCYeRA2rVibKZd+s2625gGnGF/t7DSqDs4dP7CrLA1m7jKWz6pps0LpYLJN8Q64HtmPKJ1hrN3nzPNKFEKOUiQ==}
-
-  jiti@1.21.7:
-    resolution: {integrity: sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==}
-    hasBin: true
 
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
@@ -3085,7 +3084,7 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
-  '@vitejs/plugin-react@4.7.0(vite@6.4.1(@types/node@22.19.15)(jiti@1.21.7)(lightningcss@1.32.0))':
+  '@vitejs/plugin-react@4.7.0(vite@6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0))':
     dependencies:
       '@babel/core': 7.29.0
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.29.0)
@@ -3093,7 +3092,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.27
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 6.4.1(@types/node@22.19.15)(jiti@1.21.7)(lightningcss@1.32.0)
+      vite: 6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -3430,9 +3429,6 @@ snapshots:
   indent-string@4.0.0: {}
 
   is-potential-custom-element-name@1.0.1: {}
-
-  jiti@1.21.7:
-    optional: true
 
   jiti@2.6.1: {}
 
@@ -3811,7 +3807,7 @@ snapshots:
       fsevents: 2.3.3
       lightningcss: 1.32.0
 
-  vite@6.4.1(@types/node@22.19.15)(jiti@1.21.7)(lightningcss@1.32.0):
+  vite@6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.4)
@@ -3822,7 +3818,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 22.19.15
       fsevents: 2.3.3
-      jiti: 1.21.7
+      jiti: 2.6.1
       lightningcss: 1.32.0
 
   vitest@2.1.9(@types/node@22.19.15)(@vitest/ui@2.1.9)(jsdom@25.0.1)(lightningcss@1.32.0):

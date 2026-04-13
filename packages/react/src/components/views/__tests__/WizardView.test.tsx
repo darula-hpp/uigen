@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WizardView } from '../WizardView';
-import type { Resource } from '@uigen/core';
+import type { Resource } from '@uigen-dev/core';
 
 const mockMutateAsync = vi.fn().mockResolvedValue({});
 

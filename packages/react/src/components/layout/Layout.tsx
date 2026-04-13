@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { UIGenApp } from '@uigen/core';
+import type { UIGenApp } from '@uigen-dev/core';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { Breadcrumb } from './Breadcrumb';

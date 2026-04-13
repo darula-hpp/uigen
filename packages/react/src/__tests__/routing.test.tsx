@@ -7,7 +7,7 @@ import { ListView } from '../components/views/ListView';
 import { DetailView } from '../components/views/DetailView';
 import { FormView } from '../components/views/FormView';
 import { DashboardView } from '../components/views/DashboardView';
-import type { UIGenApp, Resource } from '@uigen/core';
+import type { UIGenApp, Resource } from '@uigen-dev/core';
 
 // Mock hooks
 vi.mock('@/hooks/useApiCall', () => ({

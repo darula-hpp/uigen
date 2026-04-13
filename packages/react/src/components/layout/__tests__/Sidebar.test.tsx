@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Sidebar } from '../Sidebar';
-import type { UIGenApp } from '@uigen/core';
+import type { UIGenApp } from '@uigen-dev/core';
 
 const mockConfig: UIGenApp = {
   meta: {

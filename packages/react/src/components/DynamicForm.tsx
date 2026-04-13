@@ -1,4 +1,4 @@
-import type { SchemaNode } from '@uigen/core';
+import type { SchemaNode } from '@uigen-dev/core';
 import { componentRegistry } from '@/components/fields';
 import { useForm } from 'react-hook-form';
 

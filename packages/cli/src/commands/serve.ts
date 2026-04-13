@@ -12,6 +12,30 @@ const __dirname = dirname(__filename);
 const SUPPORTED_RENDERERS = ['react', 'vue', 'svelte'] as const;
 type Renderer = typeof SUPPORTED_RENDERERS[number];
 
+/**
+ * Resolve the root directory of a renderer package.
+ *
+ * In the monorepo (dev) the renderer lives at ../../../<renderer> relative to
+ * this file.  When the CLI is installed from npm the renderer is a sibling
+ * package in node_modules, so we locate it via its package.json and walk up
+ * to the package root.
+ */
+function resolveRendererRoot(renderer: Renderer): string {
+  const pkgName = `@uigen-dev/${renderer}`;
+  try {
+    // Resolve the package.json of the renderer package — works both locally
+    // (workspace symlink) and when installed from npm.
+    const pkgJsonPath = fileURLToPath(
+      import.meta.resolve(`${pkgName}/package.json`)
+    );
+    return dirname(pkgJsonPath);
+  } catch {
+    // Fallback for monorepo dev where package.json exports may not expose the
+    // root — walk up from __dirname.
+    return resolve(__dirname, '../../../' + renderer);
+  }
+}
+
 interface ServeOptions {
   port?: number;
   proxyBase?: string;

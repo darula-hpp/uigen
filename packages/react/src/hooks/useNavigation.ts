@@ -1,5 +1,5 @@
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import type { Resource } from '@uigen/core';
+import type { Resource } from '@uigen-dev/core';
 
 /**
  * Navigation hook for consistent routing across the application

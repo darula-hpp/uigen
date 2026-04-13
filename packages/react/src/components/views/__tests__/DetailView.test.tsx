@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { DetailView } from '../DetailView';
-import type { Resource } from '@uigen/core';
+import type { Resource } from '@uigen-dev/core';
 import { BrowserRouter } from 'react-router-dom';
 import { ToastProvider } from '@/components/Toast';
 

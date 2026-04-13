@@ -58,7 +58,7 @@ Visit `http://localhost:4400` to see your generated UI.
 ## Live Demo
 
 ```bash
-git clone https://github.com/yourusername/uigen
+git clone https://github.com/darula-hpp/uigen
 cd uigen
 pnpm install && pnpm build
 node packages/cli/dist/index.js serve examples/twilio_messaging_v1.yaml
@@ -301,7 +301,7 @@ properties:
 
 ## Contributing
 
-Issues and PRs are welcome. See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full design documentation and [AGENTS.md](./AGENTS.md) for AI-assisted development guidelines.
+Issues and PRs are welcome. See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full design documentation.
 
 > **Building a renderer for another framework?** The `@uigen/core` package is the only dependency you need. The IR contract is stable.
 

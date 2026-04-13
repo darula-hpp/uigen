@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ListView } from '../ListView';
-import type { Resource } from '@uigen/core';
+import type { Resource } from '@uigen-dev/core';
 import { BrowserRouter } from 'react-router-dom';
 
 // Mock the useApiCall hook

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { AuthConfig, LoginEndpoint } from '@uigen/core';
+import type { AuthConfig, LoginEndpoint } from '@uigen-dev/core';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { parseSpec } from '@uigen/core';
+import { parseSpec } from '@uigen-dev/core';
 
 /**
  * Integration test for serve command

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ActionButton } from '../ActionButton';
-import type { Operation } from '@uigen/core';
+import type { Operation } from '@uigen-dev/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock the hooks
