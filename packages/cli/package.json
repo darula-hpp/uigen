@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/cli",
-  "version": "0.1.0",
+  "version": "0.1.7",
   "description": "Auto-generate frontends from OpenAPI specs",
   "type": "module",
   "bin": {

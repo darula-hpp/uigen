@@ -1,10 +1,11 @@
-import { readFileSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { readFileSync, existsSync, createReadStream } from 'fs';
+import { resolve, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
-import { createServer, type ProxyOptions } from 'vite';
+import { createServer as createViteServer, type ProxyOptions } from 'vite';
+import { createServer as createHttpServer, request as httpRequest, type IncomingMessage, type ServerResponse } from 'http';
+import { request as httpsRequest } from 'https';
 import { parseSpec } from '@uigen-dev/core';
 import pc from 'picocolors';
-import type { IncomingMessage, ServerResponse } from 'http';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -12,27 +13,59 @@ const __dirname = dirname(__filename);
 const SUPPORTED_RENDERERS = ['react', 'vue', 'svelte'] as const;
 type Renderer = typeof SUPPORTED_RENDERERS[number];
 
-/**
- * Resolve the root directory of a renderer package.
- *
- * In the monorepo (dev) the renderer lives at ../../../<renderer> relative to
- * this file.  When the CLI is installed from npm the renderer is a sibling
- * package in node_modules, so we locate it via its package.json and walk up
- * to the package root.
- */
+const MIME: Record<string, string> = {
+  '.html':  'text/html',
+  '.js':    'application/javascript',
+  '.css':   'text/css',
+  '.svg':   'image/svg+xml',
+  '.png':   'image/png',
+  '.ico':   'image/x-icon',
+  '.json':  'application/json',
+  '.woff':  'font/woff',
+  '.woff2': 'font/woff2',
+};
+
+/** Resolve the renderer package root from node_modules, works for npx, global, and local installs. */
 function resolveRendererRoot(renderer: Renderer): string {
   const pkgName = `@uigen-dev/${renderer}`;
-  try {
-    // Resolve the package.json of the renderer package — works both locally
-    // (workspace symlink) and when installed from npm.
-    const pkgJsonPath = fileURLToPath(
-      import.meta.resolve(`${pkgName}/package.json`)
-    );
-    return dirname(pkgJsonPath);
-  } catch {
-    // Fallback for monorepo dev where package.json exports may not expose the
-    // root — walk up from __dirname.
-    return resolve(__dirname, '../../../' + renderer);
+  const candidates = [
+    resolve(__dirname, '../../..', pkgName),               // npm/npx sibling
+    resolve(__dirname, '../../../../node_modules', pkgName), // monorepo hoisted
+    resolve(__dirname, '../node_modules', pkgName),          // cli-local
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(resolve(candidate, 'package.json'))) return candidate;
+  }
+  return resolve(__dirname, '../../../' + renderer); // last resort
+}
+
+/** Inject auth headers and strip uigen-specific ones. Mutates the headers object in place. */
+function injectAuthHeaders(
+  headers: Record<string, string | string[]>,
+  incoming: IncomingMessage,
+  targetUrl: URL,
+  verbose: boolean
+): void {
+  const authHeader    = incoming.headers['x-uigen-auth'];
+  const basicAuth     = incoming.headers['x-uigen-basic-auth'];
+  const apiKeyHeader  = incoming.headers['x-uigen-api-key'];
+  const apiKeyName    = incoming.headers['x-uigen-api-key-name'];
+  const apiKeyIn      = incoming.headers['x-uigen-api-key-in'];
+
+  if (authHeader)  { headers['authorization'] = `Bearer ${authHeader}`;  if (verbose) console.log(pc.gray('  [Auth] Bearer token')); }
+  if (basicAuth)   { headers['authorization'] = `Basic ${basicAuth}`;    if (verbose) console.log(pc.gray('  [Auth] Basic auth')); }
+  if (apiKeyHeader && apiKeyName) {
+    if (apiKeyIn === 'header') {
+      headers[apiKeyName as string] = apiKeyHeader as string;
+      if (verbose) console.log(pc.gray(`  [Auth] API key header: ${apiKeyName}`));
+    } else if (apiKeyIn === 'query') {
+      targetUrl.searchParams.set(apiKeyName as string, apiKeyHeader as string);
+      if (verbose) console.log(pc.gray(`  [Auth] API key query: ${apiKeyName}`));
+    }
+  }
+
+  for (const h of ['x-uigen-auth','x-uigen-api-key','x-uigen-api-key-name','x-uigen-api-key-in','x-uigen-basic-auth','x-uigen-server']) {
+    delete headers[h];
   }
 }
 
@@ -47,7 +80,6 @@ export async function serve(specPath: string, options: ServeOptions) {
   console.log(pc.cyan('🚀 UIGen starting...\n'));
 
   try {
-    // Read and parse spec
     console.log(pc.gray(`Reading spec: ${specPath}`));
     const specContent = readFileSync(resolve(process.cwd(), specPath), 'utf-8');
     const ir = await parseSpec(specContent);
@@ -55,11 +87,9 @@ export async function serve(specPath: string, options: ServeOptions) {
     console.log(pc.green(`✓ Parsed spec: ${ir.meta.title} v${ir.meta.version}`));
     console.log(pc.gray(`  Resources: ${ir.resources.map(r => r.name).join(', ')}\n`));
 
-    // Determine proxy target
     const proxyTarget = options.proxyBase || ir.servers[0]?.url || 'http://localhost:3000';
     console.log(pc.gray(`API proxy target: ${proxyTarget}\n`));
 
-    // Resolve renderer — defaults to react
     const renderer: Renderer = (SUPPORTED_RENDERERS as readonly string[]).includes(options.renderer ?? '')
       ? (options.renderer as Renderer)
       : 'react';
@@ -69,143 +99,123 @@ export async function serve(specPath: string, options: ServeOptions) {
     }
 
     const rendererRoot = resolveRendererRoot(renderer);
-    console.log(pc.gray(`Renderer: ${renderer} (${rendererRoot})\n`));
+    const isInstalled = rendererRoot.includes('node_modules');
 
-    // Create proxy configuration with authentication injection
-    const proxyConfig: ProxyOptions = {
-      target: proxyTarget,
-      changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/api/, ''),
-      configure: (proxy, _options) => {
-        proxy.on('proxyReq', (proxyReq, req: IncomingMessage, _res: ServerResponse) => {
-          const startTime = Date.now();
-          
-          // Extract authentication headers from the incoming request
-          const authHeader = req.headers['x-uigen-auth'];
-          const apiKeyHeader = req.headers['x-uigen-api-key'];
-          const apiKeyName = req.headers['x-uigen-api-key-name'];
-          const apiKeyIn = req.headers['x-uigen-api-key-in'];
-          const basicAuthHeader = req.headers['x-uigen-basic-auth'];
-          
-          // Extract selected server from request headers (Requirement 19.4)
-          const selectedServer = req.headers['x-uigen-server'];
-          if (selectedServer && typeof selectedServer === 'string') {
-            const url = new URL(proxyReq.path || '', selectedServer);
-            proxyReq.setHeader('Host', url.host);
-            if (options.verbose) {
-              console.log(pc.gray(`  [Server] Routing to: ${selectedServer}`));
+    console.log(pc.gray(`Renderer: ${renderer} (${rendererRoot})`));
+    if (options.verbose) console.log(pc.gray(`Mode: ${isInstalled ? 'static' : 'dev'}\n`));
+
+    if (!isInstalled) {
+      // --- Dev mode: Vite dev server (monorepo) ---
+      const proxyConfig: ProxyOptions = {
+        target: proxyTarget,
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req: IncomingMessage) => {
+            const startTime = Date.now();
+            const headers: Record<string, string | string[]> = {};
+            injectAuthHeaders(headers, req, new URL(proxyReq.path || '', proxyTarget), options.verbose ?? false);
+            for (const [k, v] of Object.entries(headers)) proxyReq.setHeader(k, v);
+            for (const h of ['x-uigen-auth','x-uigen-api-key','x-uigen-api-key-name','x-uigen-api-key-in','x-uigen-basic-auth','x-uigen-server']) {
+              proxyReq.removeHeader(h);
             }
-          }
-
-          // Inject Bearer token authentication
-          if (authHeader && typeof authHeader === 'string') {
-            proxyReq.setHeader('Authorization', `Bearer ${authHeader}`);
-            if (options.verbose) {
-              console.log(pc.gray(`  [Auth] Injected Bearer token`));
-            }
-          }
-
-          // Inject Basic authentication
-          if (basicAuthHeader && typeof basicAuthHeader === 'string') {
-            proxyReq.setHeader('Authorization', `Basic ${basicAuthHeader}`);
-            if (options.verbose) {
-              console.log(pc.gray(`  [Auth] Injected Basic auth`));
-            }
-          }
-
-          // Inject API key authentication
-          if (apiKeyHeader && typeof apiKeyHeader === 'string' && apiKeyName && typeof apiKeyName === 'string') {
-            if (apiKeyIn === 'header') {
-              proxyReq.setHeader(apiKeyName, apiKeyHeader);
-              if (options.verbose) {
-                console.log(pc.gray(`  [Auth] Injected API key in header: ${apiKeyName}`));
-              }
-            } else if (apiKeyIn === 'query') {
-              const url = new URL(proxyReq.path || '', proxyTarget);
-              url.searchParams.set(apiKeyName, apiKeyHeader);
-              proxyReq.path = url.pathname + url.search;
-              if (options.verbose) {
-                console.log(pc.gray(`  [Auth] Injected API key in query: ${apiKeyName}`));
-              }
-            }
-          }
-
-          // Remove UIGen-specific headers before forwarding
-          proxyReq.removeHeader('x-uigen-auth');
-          proxyReq.removeHeader('x-uigen-api-key');
-          proxyReq.removeHeader('x-uigen-api-key-name');
-          proxyReq.removeHeader('x-uigen-api-key-in');
-          proxyReq.removeHeader('x-uigen-basic-auth');
-          proxyReq.removeHeader('x-uigen-server');
-
-          // Log request
-          const method = req.method || 'UNKNOWN';
-          const path = req.url || '/';
-          console.log(pc.blue(`→ ${method} ${path}`));
-          
-          if (options.verbose && req.headers['content-type']) {
-            console.log(pc.gray(`  Content-Type: ${req.headers['content-type']}`));
-          }
-
-          (req as any).__startTime = startTime;
-        });
-
-        proxy.on('proxyRes', (proxyRes, req: IncomingMessage, _res: ServerResponse) => {
-          const duration = Date.now() - ((req as any).__startTime || Date.now());
-          const status = proxyRes.statusCode || 0;
-          const method = req.method || 'UNKNOWN';
-          const path = req.url || '/';
-          
-          const statusColor = status >= 500 ? pc.red : status >= 400 ? pc.yellow : pc.green;
-          console.log(statusColor(`← ${method} ${path} ${status} (${duration}ms)`));
-
-          if (options.verbose) {
-            console.log(pc.gray(`  Response headers: ${JSON.stringify(proxyRes.headers)}`));
-          }
-        });
-
-        proxy.on('error', (err, req: IncomingMessage, _res: ServerResponse) => {
-          const method = req.method || 'UNKNOWN';
-          const path = req.url || '/';
-          console.error(pc.red(`✗ ${method} ${path} - Proxy error: ${err.message}`));
-          console.error(pc.gray(`  Target: ${proxyTarget}`));
-        });
-      }
-    };
-
-    // Create Vite server with config injection plugin
-    const server = await createServer({
-      root: rendererRoot,
-      server: {
-        port: options.port || 4400,
-        cors: {
-          origin: '*',
-          methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-          allowedHeaders: ['Content-Type', 'Authorization', 'X-UIGen-Auth', 'X-UIGen-API-Key', 'X-UIGen-API-Key-Name', 'X-UIGen-API-Key-In', 'X-UIGen-Basic-Auth', 'X-UIGen-Server'],
-          credentials: true
-        },
-        proxy: {
-          '/api': proxyConfig
+            console.log(pc.blue(`→ ${req.method} ${req.url}`));
+            (req as any).__startTime = startTime;
+          });
+          proxy.on('proxyRes', (proxyRes, req: IncomingMessage) => {
+            const duration = Date.now() - ((req as any).__startTime || Date.now());
+            const status = proxyRes.statusCode || 0;
+            const color = status >= 500 ? pc.red : status >= 400 ? pc.yellow : pc.green;
+            console.log(color(`← ${req.method} ${req.url} ${status} (${duration}ms)`));
+          });
+          proxy.on('error', (err, req: IncomingMessage) => {
+            console.error(pc.red(`✗ ${req.method} ${req.url} - ${err.message}`));
+          });
         }
-      },
-      plugins: [
-        {
+      };
+
+      const server = await createViteServer({
+        root: rendererRoot,
+        configFile: resolve(rendererRoot, 'vite.config.ts'),
+        server: {
+          port: options.port || 4400,
+          cors: { origin: '*', credentials: true },
+          proxy: { '/api': proxyConfig }
+        },
+        plugins: [{
           name: 'uigen-config-injection',
           transformIndexHtml(html) {
-            return html.replace(
-              '</head>',
-              `<script>window.__UIGEN_CONFIG__ = ${JSON.stringify(ir)};</script></head>`
-            );
+            return html.replace('</head>', `<script>window.__UIGEN_CONFIG__ = ${JSON.stringify(ir)};</script></head>`);
           }
+        }]
+      });
+      await server.listen();
+      const port = server.config.server.port;
+      console.log(pc.green(`\n✓ Server running at ${pc.bold(`http://localhost:${port}`)}\n`));
+      console.log(pc.gray('Press Ctrl+C to stop\n'));
+    } else {
+      // --- Static mode: serve pre-built dist (npm/npx install) ---
+      const distDir = resolve(rendererRoot, 'dist');
+      const port = options.port || 4400;
+
+      const httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
+        const url = req.url || '/';
+
+        if (url.startsWith('/api')) {
+          const targetUrl = new URL(url.replace(/^\/api/, ''), proxyTarget);
+          const forwardHeaders: Record<string, string | string[]> = {};
+          for (const [k, v] of Object.entries(req.headers)) {
+            if (v !== undefined) forwardHeaders[k] = v as string | string[];
+          }
+          forwardHeaders['host'] = targetUrl.host;
+          injectAuthHeaders(forwardHeaders, req, targetUrl, options.verbose ?? false);
+
+          const startTime = Date.now();
+          console.log(pc.blue(`→ ${req.method || 'GET'} ${url}`));
+
+          const requester = targetUrl.protocol === 'https:' ? httpsRequest : httpRequest;
+          const proxyReq = requester(targetUrl, { method: req.method, headers: forwardHeaders }, (proxyRes) => {
+            const duration = Date.now() - startTime;
+            const status = proxyRes.statusCode || 0;
+            const color = status >= 500 ? pc.red : status >= 400 ? pc.yellow : pc.green;
+            console.log(color(`← ${req.method || 'GET'} ${url} ${status} (${duration}ms)`));
+            res.writeHead(status, proxyRes.headers);
+            proxyRes.pipe(res);
+          });
+          proxyReq.on('error', (err) => {
+            console.error(pc.red(`✗ Proxy error: ${err.message}`));
+            res.writeHead(502);
+            res.end('Bad Gateway');
+          });
+          req.pipe(proxyReq);
+          return;
         }
-      ]
-    });
 
-    await server.listen();
+        const ext = extname(url);
+        const filePath = ext ? resolve(distDir, url.slice(1)) : resolve(distDir, 'index.html');
 
-    const actualPort = server.config.server.port;
-    console.log(pc.green(`✓ Server running at ${pc.bold(`http://localhost:${actualPort}`)}\n`));
-    console.log(pc.gray('Press Ctrl+C to stop\n'));
+        if (!existsSync(filePath)) {
+          res.writeHead(404);
+          res.end('Not found');
+          return;
+        }
+
+        if (filePath.endsWith('index.html')) {
+          let html = readFileSync(filePath, 'utf-8');
+          html = html.replace('</head>', `<script>window.__UIGEN_CONFIG__ = ${JSON.stringify(ir)};</script></head>`);
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(html);
+        } else {
+          res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+          createReadStream(filePath).pipe(res);
+        }
+      });
+
+      httpServer.listen(port, () => {
+        console.log(pc.green(`\n✓ Server running at ${pc.bold(`http://localhost:${port}`)}\n`));
+        console.log(pc.gray('Press Ctrl+C to stop\n'));
+      });
+    }
   } catch (error) {
     console.error(pc.red('✗ Error:'), error instanceof Error ? error.message : error);
     process.exit(1);

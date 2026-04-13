@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/core",
-  "version": "0.1.0",
+  "version": "0.1.7",
   "type": "module",
   "files": [
     "dist/**/*.js",
