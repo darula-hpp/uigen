@@ -13,7 +13,7 @@ describe('AuthManager', () => {
 
   beforeEach(() => {
     // Clear sessionStorage before each test
-    sessionStorage.clear();
+    globalThis.sessionStorage.clear();
     
     authStrategy = new BearerStrategy();
     storageStrategy = new SessionStorageStrategy();

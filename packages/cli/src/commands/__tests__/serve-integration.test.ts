@@ -17,7 +17,7 @@ describe('Serve Command Integration', () => {
     
     expect(ir).toBeDefined();
     expect(ir.meta).toBeDefined();
-    expect(ir.meta.title).toBe('Petstore API');
+    expect(ir.meta.title).toBe('Swagger Petstore - OpenAPI 3.0');
     expect(ir.resources).toBeDefined();
     expect(ir.resources.length).toBeGreaterThan(0);
   });

@@ -5,6 +5,19 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as jsYaml from 'js-yaml';
 
+// Helper to find workspace root by looking for examples directory
+function findWorkspaceRoot(startDir: string): string {
+  let currentDir = startDir;
+  while (currentDir !== path.dirname(currentDir)) {
+    const examplesPath = path.join(currentDir, 'examples');
+    if (fs.existsSync(examplesPath)) {
+      return currentDir;
+    }
+    currentDir = path.dirname(currentDir);
+  }
+  throw new Error('Could not find workspace root');
+}
+
 describe('Swagger2Adapter', () => {
   describe('canHandle', () => {
     it('should detect Swagger 2.0 specs', () => {
@@ -669,7 +682,8 @@ describe('Swagger2Adapter', () => {
   describe('Integration with Swagger 2.0 example specs', () => {
     it('should parse swagger2-petstore.yaml and convert to IR', () => {
       // Requirement 2.1: Parse valid Swagger 2.0 YAML file
-      const specPath = path.join(process.cwd(), '..', '..', 'examples', 'swagger2-petstore.yaml');
+      const workspaceRoot = findWorkspaceRoot(process.cwd());
+      const specPath = path.join(workspaceRoot, 'examples', 'swagger2-petstore.yaml');
       const specContent = fs.readFileSync(specPath, 'utf-8');
       const spec = jsYaml.load(specContent);
 
@@ -689,7 +703,8 @@ describe('Swagger2Adapter', () => {
 
     it('should construct server URLs from host, basePath, and schemes', () => {
       // Requirement 2.6: Construct server URLs from host, basePath, and schemes fields
-      const specPath = path.join(process.cwd(), '..', '..', 'examples', 'swagger2-petstore.yaml');
+      const workspaceRoot = findWorkspaceRoot(process.cwd());
+      const specPath = path.join(workspaceRoot, 'examples', 'swagger2-petstore.yaml');
       const specContent = fs.readFileSync(specPath, 'utf-8');
       const spec = jsYaml.load(specContent);
 
@@ -706,7 +721,8 @@ describe('Swagger2Adapter', () => {
 
     it('should resolve all $ref references recursively with caching', () => {
       // Requirement 2.3: Resolve all $ref references recursively with caching
-      const specPath = path.join(process.cwd(), '..', '..', 'examples', 'swagger2-petstore.yaml');
+      const workspaceRoot = findWorkspaceRoot(process.cwd());
+      const specPath = path.join(workspaceRoot, 'examples', 'swagger2-petstore.yaml');
       const specContent = fs.readFileSync(specPath, 'utf-8');
       const spec = jsYaml.load(specContent);
 
@@ -745,7 +761,8 @@ describe('Swagger2Adapter', () => {
 
     it('should convert Swagger 2.0 definitions to OpenAPI 3.x schema format in IR', () => {
       // Requirement 2.4: Convert Swagger 2.0 definitions to OpenAPI 3.x schema format in IR
-      const specPath = path.join(process.cwd(), '..', '..', 'examples', 'swagger2-petstore.yaml');
+      const workspaceRoot = findWorkspaceRoot(process.cwd());
+      const specPath = path.join(workspaceRoot, 'examples', 'swagger2-petstore.yaml');
       const specContent = fs.readFileSync(specPath, 'utf-8');
       const spec = jsYaml.load(specContent);
 
@@ -781,7 +798,8 @@ describe('Swagger2Adapter', () => {
 
     it('should convert Swagger 2.0 securityDefinitions to OpenAPI 3.x securitySchemes format', () => {
       // Requirement 2.5: Convert Swagger 2.0 securityDefinitions to OpenAPI 3.x securitySchemes format in IR
-      const specPath = path.join(process.cwd(), '..', '..', 'examples', 'swagger2-petstore.yaml');
+      const workspaceRoot = findWorkspaceRoot(process.cwd());
+      const specPath = path.join(workspaceRoot, 'examples', 'swagger2-petstore.yaml');
       const specContent = fs.readFileSync(specPath, 'utf-8');
       const spec = jsYaml.load(specContent);
 
@@ -800,7 +818,8 @@ describe('Swagger2Adapter', () => {
     });
 
     it('should extract all CRUD operations correctly', () => {
-      const specPath = path.join(process.cwd(), '..', '..', 'examples', 'swagger2-petstore.yaml');
+      const workspaceRoot = findWorkspaceRoot(process.cwd());
+      const specPath = path.join(workspaceRoot, 'examples', 'swagger2-petstore.yaml');
       const specContent = fs.readFileSync(specPath, 'utf-8');
       const spec = jsYaml.load(specContent);
 
@@ -838,7 +857,8 @@ describe('Swagger2Adapter', () => {
     });
 
     it('should detect pagination from query parameters', () => {
-      const specPath = path.join(process.cwd(), '..', '..', 'examples', 'swagger2-petstore.yaml');
+      const workspaceRoot = findWorkspaceRoot(process.cwd());
+      const specPath = path.join(workspaceRoot, 'examples', 'swagger2-petstore.yaml');
       const specContent = fs.readFileSync(specPath, 'utf-8');
       const spec = jsYaml.load(specContent);
 
@@ -857,7 +877,8 @@ describe('Swagger2Adapter', () => {
     });
 
     it('should convert body parameters to requestBody', () => {
-      const specPath = path.join(process.cwd(), '..', '..', 'examples', 'swagger2-petstore.yaml');
+      const workspaceRoot = findWorkspaceRoot(process.cwd());
+      const specPath = path.join(workspaceRoot, 'examples', 'swagger2-petstore.yaml');
       const specContent = fs.readFileSync(specPath, 'utf-8');
       const spec = jsYaml.load(specContent);
 
@@ -879,7 +900,8 @@ describe('Swagger2Adapter', () => {
     });
 
     it('should handle path parameters correctly', () => {
-      const specPath = path.join(process.cwd(), '..', '..', 'examples', 'swagger2-petstore.yaml');
+      const workspaceRoot = findWorkspaceRoot(process.cwd());
+      const specPath = path.join(workspaceRoot, 'examples', 'swagger2-petstore.yaml');
       const specContent = fs.readFileSync(specPath, 'utf-8');
       const spec = jsYaml.load(specContent);
 
