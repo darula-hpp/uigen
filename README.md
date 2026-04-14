@@ -226,16 +226,6 @@ pnpm release
 
 ## Extending UIGen
 
-### Custom field components
-
-Register your own component for any field type — without touching the rest of the tool:
-
-```tsx
-import { registry } from '@uigen-dev/react';
-import { MyMapField } from './fields/MapField';
-
-registry.register('geo', MyMapField);
-```
 
 ### Spec annotations (`x-uigen-*`)
 
