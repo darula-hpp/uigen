@@ -206,6 +206,22 @@ pnpm test:watch
 pnpm test:coverage
 ```
 
+### Release Management
+
+This project uses [Changesets](https://github.com/changesets/changesets) for version management and publishing. See [RELEASING.md](./RELEASING.md) for detailed instructions.
+
+Quick reference:
+```bash
+# Create a changeset after making changes
+pnpm changeset
+
+# Update package versions
+pnpm version
+
+# Publish to npm
+pnpm release
+```
+
 ---
 
 ## Extending UIGen

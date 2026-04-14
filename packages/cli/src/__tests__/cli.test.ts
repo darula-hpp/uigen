@@ -11,7 +11,7 @@ describe('CLI', () => {
   describe('--version flag', () => {
     it('should print version number', () => {
       const output = execSync(`node ${cliPath} --version`, { encoding: 'utf-8' });
-      expect(output.trim()).toBe('0.1.0');
+      expect(output.trim()).toBe('0.1.9');
     });
 
     it('should exit with code 0', () => {
@@ -25,7 +25,7 @@ describe('CLI', () => {
 
     it('should support -V shorthand', () => {
       const output = execSync(`node ${cliPath} -V`, { encoding: 'utf-8' });
-      expect(output.trim()).toBe('0.1.0');
+      expect(output.trim()).toBe('0.1.9');
     });
   });
 

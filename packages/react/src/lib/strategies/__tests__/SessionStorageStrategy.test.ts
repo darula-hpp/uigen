@@ -70,7 +70,7 @@ describe('SessionStorageStrategy', () => {
 
     it('should log errors and continue on storage failure - Requirement 2.5', () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      const setItemSpy = vi.spyOn(sessionStorage, 'setItem').mockImplementation(() => {
         throw new Error('Storage quota exceeded');
       });
 
@@ -129,7 +129,7 @@ describe('SessionStorageStrategy', () => {
 
     it('should handle storage access errors gracefully - Requirement 2.5', () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      const getItemSpy = vi.spyOn(sessionStorage, 'getItem').mockImplementation(() => {
         throw new Error('Storage access denied');
       });
 
@@ -159,7 +159,7 @@ describe('SessionStorageStrategy', () => {
 
     it('should log errors and continue on removal failure - Requirement 2.5', () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      const removeItemSpy = vi.spyOn(sessionStorage, 'removeItem').mockImplementation(() => {
         throw new Error('Storage access denied');
       });
 
