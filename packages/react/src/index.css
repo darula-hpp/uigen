@@ -9,7 +9,7 @@
   --foreground: #0a0a0a;
   --card: #ffffff;
   --card-foreground: #0a0a0a;
-  --primary: #1a1a1a;
+  --primary: #0a0a0a;
   --primary-foreground: #fafafa;
   --secondary: #f5f5f5;
   --secondary-foreground: #1a1a1a;
@@ -30,8 +30,8 @@
   --foreground-dark: #e5e5e5;
   --card-dark: #171717;
   --card-foreground-dark: #e5e5e5;
-  --primary-dark: #fafafa;
-  --primary-foreground-dark: #1a1a1a;
+  --primary-dark: #3b82f6;
+  --primary-foreground-dark: #ffffff;
   --secondary-dark: #262626;
   --secondary-foreground-dark: #e5e5e5;
   --muted-dark: #262626;
@@ -40,13 +40,32 @@
   --accent-foreground-dark: #e5e5e5;
   --destructive-dark: #dc2626;
   --destructive-foreground-dark: #fafafa;
-  --border-dark: #333333;
-  --input-dark: #262626;
+  --border-dark: #525252;
+  --input-dark: #525252;
   --ring-dark: #d4d4d4;
   --code-background-dark: #1a1a1a;
   --code-foreground-dark: #e5e5e5;
   
   --radius: 0.5rem;
+  
+  /* Color definitions for utilities */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 }
 
 .dark {
@@ -112,4 +131,81 @@
     border-radius: 0;
     font-size: 1em;
   }
+}
+
+@layer utilities {
+  .bg-background { background-color: var(--background); }
+  .bg-foreground { background-color: var(--foreground); }
+  .bg-card { background-color: var(--card); }
+  .bg-card-foreground { background-color: var(--card-foreground); }
+  .bg-primary { background-color: var(--primary); }
+  .bg-primary-foreground { background-color: var(--primary-foreground); }
+  .bg-secondary { background-color: var(--secondary); }
+  .bg-secondary-foreground { background-color: var(--secondary-foreground); }
+  .bg-muted { background-color: var(--muted); }
+  .bg-muted-foreground { background-color: var(--muted-foreground); }
+  .bg-accent { background-color: var(--accent); }
+  .bg-accent-foreground { background-color: var(--accent-foreground); }
+  .bg-destructive { background-color: var(--destructive); }
+  .bg-destructive-foreground { background-color: var(--destructive-foreground); }
+  .bg-border { background-color: var(--border); }
+  .bg-input { background-color: var(--input); }
+  .bg-ring { background-color: var(--ring); }
+  
+  .text-background { color: var(--background); }
+  .text-foreground { color: var(--foreground); }
+  .text-card { color: var(--card); }
+  .text-card-foreground { color: var(--card-foreground); }
+  .text-primary { color: var(--primary); }
+  .text-primary-foreground { color: var(--primary-foreground); }
+  .text-secondary { color: var(--secondary); }
+  .text-secondary-foreground { color: var(--secondary-foreground); }
+  .text-muted { color: var(--muted); }
+  .text-muted-foreground { color: var(--muted-foreground); }
+  .text-accent { color: var(--accent); }
+  .text-accent-foreground { color: var(--accent-foreground); }
+  .text-destructive { color: var(--destructive); }
+  .text-destructive-foreground { color: var(--destructive-foreground); }
+  .text-border { color: var(--border); }
+  .text-input { color: var(--input); }
+  .text-ring { color: var(--ring); }
+  
+  .border-background { border-color: var(--background); }
+  .border-foreground { border-color: var(--foreground); }
+  .border-card { border-color: var(--card); }
+  .border-card-foreground { border-color: var(--card-foreground); }
+  .border-primary { border-color: var(--primary); }
+  .border-primary-foreground { border-color: var(--primary-foreground); }
+  .border-secondary { border-color: var(--secondary); }
+  .border-secondary-foreground { border-color: var(--secondary-foreground); }
+  .border-muted { border-color: var(--muted); }
+  .border-muted-foreground { border-color: var(--muted-foreground); }
+  .border-accent { border-color: var(--accent); }
+  .border-accent-foreground { border-color: var(--accent-foreground); }
+  .border-destructive { border-color: var(--destructive); }
+  .border-destructive-foreground { border-color: var(--destructive-foreground); }
+  .border-border { border-color: var(--border); }
+  .border-input { border-color: var(--input); }
+  .border-ring { border-color: var(--ring); }
+  
+  .ring-background { --tw-ring-color: var(--background); }
+  .ring-foreground { --tw-ring-color: var(--foreground); }
+  .ring-card { --tw-ring-color: var(--card); }
+  .ring-card-foreground { --tw-ring-color: var(--card-foreground); }
+  .ring-primary { --tw-ring-color: var(--primary); }
+  .ring-primary-foreground { --tw-ring-color: var(--primary-foreground); }
+  .ring-secondary { --tw-ring-color: var(--secondary); }
+  .ring-secondary-foreground { --tw-ring-color: var(--secondary-foreground); }
+  .ring-muted { --tw-ring-color: var(--muted); }
+  .ring-muted-foreground { --tw-ring-color: var(--muted-foreground); }
+  .ring-accent { --tw-ring-color: var(--accent); }
+  .ring-accent-foreground { --tw-ring-color: var(--accent-foreground); }
+  .ring-destructive { --tw-ring-color: var(--destructive); }
+  .ring-destructive-foreground { --tw-ring-color: var(--destructive-foreground); }
+  .ring-border { --tw-ring-color: var(--border); }
+  .ring-input { --tw-ring-color: var(--input); }
+  .ring-ring { --tw-ring-color: var(--ring); }
+  
+  .ring-offset-background { --tw-ring-offset-color: var(--background); }
+  .ring-offset-foreground { --tw-ring-offset-color: var(--foreground); }
 }
