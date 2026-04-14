@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.9] - 2026-04-14
+
+### Changed
+
+**React renderer (`@uigen-dev/react`)**
+- Improved dark mode support with @tailwindcss/typography plugin integration
+- Enhanced color contrast ratios for WCAG AA compliance (4.5:1 for text, 3:1 for UI elements)
+- Added prose styling support for DetailView content areas
+- Improved button border visibility in dark mode (#525252 border color)
+- Fixed primary button colors in dark mode (blue #3b82f6 background)
+- Added explicit utility classes for all theme colors (bg-*, text-*, border-*, ring-*)
+- Fixed pagination button width inconsistency (uniform 2.5rem min-width)
+- Updated CSS variable structure for better theme customization
+- Added code block styling with proper dark mode support
+
+### Fixed
+- Dark mode border visibility issues on login and form buttons
+- Primary button appearing white/invisible in dark mode
+- Pagination number buttons having inconsistent widths
+- CSS utility class generation for theme colors in Tailwind v4
+
+---
+
 ## [0.1.8] - 2026-04-14
 
 ### Initial public release
@@ -66,4 +89,5 @@ This is the first release of UIGen — point it at an OpenAPI spec, get a fully 
 
 ---
 
+[0.1.9]: https://github.com/darula-hpp/uigen/releases/tag/v0.1.9
 [0.1.8]: https://github.com/darula-hpp/uigen/releases/tag/v0.1.8

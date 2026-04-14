@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/react",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Auto-generate frontends from OpenAPI specs",
   "license": "MIT",
   "repository": {

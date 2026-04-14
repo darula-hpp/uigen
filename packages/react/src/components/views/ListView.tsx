@@ -443,6 +443,7 @@ export function ListView({ resource, operation }: ListViewProps) {
                     key={i}
                     variant={pagination.pageIndex === i ? 'default' : 'outline'}
                     size="sm"
+                    className="min-w-[2.5rem]"
                     onClick={() => setPagination(prev => ({ ...prev, pageIndex: i }))}
                   >
                     {i + 1}

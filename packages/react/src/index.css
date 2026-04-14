@@ -208,4 +208,6 @@
   
   .ring-offset-background { --tw-ring-offset-color: var(--background); }
   .ring-offset-foreground { --tw-ring-offset-color: var(--foreground); }
+  
+  .min-w-\[2\.5rem\] { min-width: 2.5rem; }
 }
