@@ -36,6 +36,7 @@
     "@radix-ui/react-select": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.0",
+    "@tailwindcss/typography": "^0.5.15",
     "@tanstack/react-query": "^5.62.0",
     "@tanstack/react-table": "^8.20.0",
     "@uigen-dev/core": "workspace:*",

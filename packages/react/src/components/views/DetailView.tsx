@@ -249,20 +249,22 @@ export function DetailView({ resource }: DetailViewProps) {
 
       {/* Field display - Requirements 8.2, 8.3 */}
       {!isLoading && !error && data && (
-        <div className="space-y-4 max-w-2xl">
-          {fields.map((field) => (
-            <div key={field.key} className="space-y-1">
-              <dt className="text-sm font-medium text-muted-foreground">
-                {field.label}
-              </dt>
-              <dd className="text-base">
-                {formatValue(data[field.key], field)}
-              </dd>
-              {field.description && (
-                <p className="text-xs text-muted-foreground">{field.description}</p>
-              )}
-            </div>
-          ))}
+        <div className="prose prose-neutral dark:prose-invert max-w-2xl">
+          <dl className="space-y-4">
+            {fields.map((field) => (
+              <div key={field.key} className="space-y-1">
+                <dt className="text-sm font-medium text-muted-foreground">
+                  {field.label}
+                </dt>
+                <dd className="text-base">
+                  {formatValue(data[field.key], field)}
+                </dd>
+                {field.description && (
+                  <p className="text-xs text-muted-foreground">{field.description}</p>
+                )}
+              </div>
+            ))}
+          </dl>
         </div>
       )}
 
