@@ -70,7 +70,9 @@ node packages/cli/dist/index.js serve examples/twilio_messaging_v1.yaml
 
 ## How it works
 
-UIGen parses your OpenAPI spec and converts it into an **Intermediate Representation (IR)** — a structured description of your resources, operations, schemas, authentication, and relationships. A pre-built React SPA reads that IR and renders the appropriate views. A Vite dev server serves the SPA and proxies your API calls to your real backend.
+UIGen parses your OpenAPI spec and converts it into an **Intermediate Representation (IR)** — a structured description of your resources, operations, schemas, authentication, and relationships. A pre-built React SPA reads that IR and renders the appropriate views.
+
+The CLI serves the SPA and proxies your API calls to your real backend. When running from the monorepo it uses a Vite dev server; when installed via npm/npx it serves the pre-built static dist with a lightweight Node.js HTTP proxy — no Vite required at runtime.
 
 Because the IR is framework-agnostic, the React layer is just the default. The same IR drives `@uigen-dev/svelte` and `@uigen-dev/vue` — same spec, different renderer, your choice of stack.
 

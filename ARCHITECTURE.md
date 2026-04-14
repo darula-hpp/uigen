@@ -43,9 +43,9 @@ CLI Command
 The CLI:
 1. Reads & parses the spec file
 2. Adapts it to the IR
-3. Bundles a pre-built React SPA with the IR injected as config
-4. Starts a dev server (Vite) that serves the SPA
-5. Proxies API calls to the real server (from the spec's `servers` field)
+3. Injects the IR as `window.__UIGEN_CONFIG__` into the React SPA's `index.html`
+4. **Dev mode** (monorepo): starts a Vite dev server that serves the SPA and proxies `/api/*` to the real backend
+5. **Static mode** (npm/npx install): serves the pre-built `dist/` with a plain Node.js HTTP server and a built-in proxy — no Vite required at runtime
 
 ---
 
@@ -173,9 +173,9 @@ Built with **Commander.js**. The `serve` command:
 
 1. Reads the spec file (YAML/JSON auto-detected)
 2. Runs it through the adapter registry → produces IR
-3. Writes IR as a JSON module into the React app's config
-4. Starts Vite dev server with the pre-built React SPA
-5. Configures Vite proxy to forward `/api/*` to the real server
+3. Injects the IR into the React SPA's `index.html` as `window.__UIGEN_CONFIG__`
+4. **Dev mode** (monorepo, no `node_modules` renderer): starts a Vite dev server, configures Vite proxy to forward `/api/*` to the real server
+5. **Static mode** (npm/npx install): serves the pre-built `dist/renderer/` with a plain Node.js HTTP server; a built-in proxy forwards `/api/*` to the real server — Vite is not required at runtime
 
 Future commands:
 - `uigen generate` — outputs static build
@@ -224,7 +224,7 @@ uigen/
 | Tool | Purpose |
 |---|---|
 | **pnpm workspaces** | Monorepo |
-| **Vite** | Dev server bundled inside the CLI |
+| **Vite** | Dev server + proxy (monorepo/dev mode); build tool for the React SPA |
 | **React 19 + TypeScript** | UI rendering |
 | **shadcn/ui + Radix** | Component library |
 | **Tailwind CSS v4** | Styling (internal to SPA) |
