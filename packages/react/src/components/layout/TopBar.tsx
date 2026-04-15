@@ -236,7 +236,7 @@ function ResourceSearchResults({ resource, query, onResultClick }: ResourceSearc
 
   // Use the API call hook - MUST be called unconditionally
   // Disable for sub-resources since they need path parameters
-  const { data, isLoading } = useApiCall({
+  const { data, isLoading, isFetching } = useApiCall({
     operation: searchOp || { path: '', method: 'GET', operationId: 'dummy', viewHint: 'list' },
     queryParams,
     enabled: !!searchOp && !isSubResource && query.length > 0
@@ -262,31 +262,39 @@ function ResourceSearchResults({ resource, query, onResultClick }: ResourceSearc
   // Early returns AFTER all hooks
   if (!searchOp) return null;
   
-  // Don't render if no results
-  if (!isLoading && items.length === 0) return null;
+  // Show loading state while fetching
+  if (isFetching) {
+    return (
+      <div className="border-b last:border-b-0">
+        <div className="px-4 py-2 bg-muted/50 font-semibold text-sm">
+          {resource.name}
+        </div>
+        <div className="px-4 py-3 text-sm text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+  
+  // Don't render if no results after loading completes
+  if (items.length === 0) return null;
 
   return (
     <div className="border-b last:border-b-0">
       <div className="px-4 py-2 bg-muted/50 font-semibold text-sm">
         {/* Requirement 54.3, 54.4: Display resource name and match count */}
-        {resource.name} {!isLoading && `(${items.length})`}
+        {resource.name} ({items.length})
       </div>
-      {isLoading ? (
-        <div className="px-4 py-3 text-sm text-muted-foreground">Loading...</div>
-      ) : (
-        <div>
-          {items.map((item: any, idx: number) => (
-            <button
-              key={item.id || idx}
-              onClick={() => onResultClick(resource.slug, item.id)}
-              className="w-full px-4 py-2 text-left hover:bg-muted/50 text-sm flex justify-between items-center"
-            >
-              <span className="truncate">{item[displayField] || item.id || 'Unnamed'}</span>
-              {item.id && <span className="text-xs text-muted-foreground ml-2">#{item.id}</span>}
-            </button>
-          ))}
-        </div>
-      )}
+      <div>
+        {items.map((item: any, idx: number) => (
+          <button
+            key={item.id || idx}
+            onClick={() => onResultClick(resource.slug, item.id)}
+            className="w-full px-4 py-2 text-left hover:bg-muted/50 text-sm flex justify-between items-center"
+          >
+            <span className="truncate">{item[displayField] || item.id || 'Unnamed'}</span>
+            {item.id && <span className="text-xs text-muted-foreground ml-2">#{item.id}</span>}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

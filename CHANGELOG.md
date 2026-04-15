@@ -29,11 +29,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
-- **React error #300 crash when dashboard loads sub-resources** — Fixed crash that occurred when the dashboard tried to fetch record counts for sub-resources (like AlphaSenders) without providing required parent IDs
-  - Added defensive checks in `useApiCall` to detect and skip operations with unresolved path parameters
-  - Updated `DashboardView` to identify and skip fetching for sub-resources
+- **React error #300 crash when searching resources** — Fixed crash that occurred when the global search feature tried to search across resources with mixed operation types (some with search operations, some without, some with path parameters)
+  - Root cause: `ResourceSearchResults` component in `TopBar.tsx` was calling hooks conditionally (early return before `useApiCall` and `useMemo` hooks)
+  - Fixed by moving all hook calls before early returns to ensure consistent hook call order across renders
+  - Added sub-resource detection to skip operations with unresolved path parameters (e.g., `/v1/Services/{ServiceSid}/AlphaSenders`)
+  - Added defensive checks in `useApiCall` to detect and disable queries with unresolved path parameters
+  - Updated all view components (`SearchView`, `ListView`, `DetailView`, `FormView`, `DashboardView`) to call hooks unconditionally
   - Added warning logs when path parameters are missing to aid debugging
-- **Conditional hook calls** — Ensured all React hooks are called unconditionally before early returns in all view components to comply with React's Rules of Hooks
+- **Conditional hook calls** — Ensured all React hooks are called unconditionally before early returns in all view components and TopBar to comply with React's Rules of Hooks
 
 **React renderer (`@uigen-dev/react`)**
 - Fixed crash when navigating to search route for resources without search operations. The `useApiCall` hook previously violated React's Rules of Hooks by calling `useQuery` conditionally (early-return when `operation` is undefined, bottom call when defined). Now always calls `useQuery` unconditionally, using `enabled: false` when no operation is provided. This ensures stable hook call order across renders and prevents "Rendered more hooks than during the previous render" errors.
@@ -45,6 +48,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - 8 React renderer tests verifying overridden labels appear in `ListView` column headers, filter placeholders, `FormView` `<Label>` elements, and `DetailView` `<dt>` elements
 - 9 property-based tests for `useApiCall` hook rules (100 runs each) verifying unconditional hook calls
 - 10 integration tests for SearchView crash scenarios (resources with/without search operations, switching between resources)
+- 12 conditional hooks detection tests verifying all view components call hooks unconditionally
+- 4 TopBar-specific conditional hooks tests verifying ResourceSearchResults handles mixed resource types correctly
 
 ---
 
