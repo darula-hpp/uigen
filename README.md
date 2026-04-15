@@ -17,19 +17,19 @@ No code. No config. No boilerplate. Just a spec.
 
 From a single OpenAPI file, UIGen generates a complete, production-quality frontend:
 
-- **Sidebar navigation** — auto-built from your API resources
-- **Fully interactive** — all API calls are live, hitting your real endpoints via a built-in proxy
-- **Table views** — data from your GET endpoints, with sorting, pagination, and filtering
-- **Create & edit forms** — fields, types, and validation derived from your schema
-- **Detail views** — read-only record display with related resource links
-- **Delete with confirmation** — one-click delete with a safety dialog
-- **Authentication** — Bearer token, API Key, HTTP Basic, and credential-based login flows — persisted across sessions
-- **Multi-step wizards** — auto-split for large forms (8+ fields)
-- **Custom action buttons** — non-CRUD endpoints like `POST /users/{id}/activate`
-- **Search views** — per-resource filtered search from query params in your spec
-- **Dashboard** — overview of all resources with record counts
-- **Environment switching** — dropdown from your spec's `servers` list
-- **Dark / light theme** — built-in toggle, persisted to local storage
+- **Sidebar navigation** - auto-built from your API resources
+- **Fully interactive** - all API calls are live, hitting your real endpoints via a built-in proxy
+- **Table views** - data from your GET endpoints, with sorting, pagination, and filtering
+- **Create & edit forms** - fields, types, and validation derived from your schema
+- **Detail views** - read-only record display with related resource links
+- **Delete with confirmation** - one-click delete with a safety dialog
+- **Authentication** - Bearer token, API Key, HTTP Basic, and credential-based login flows - persisted across sessions
+- **Multi-step wizards** - auto-split for large forms (8+ fields)
+- **Custom action buttons** - non-CRUD endpoints like `POST /users/{id}/activate`
+- **Search views** - per-resource filtered search from query params in your spec
+- **Dashboard** - overview of all resources with record counts
+- **Environment switching** - dropdown from your spec's `servers` list
+- **Dark / light theme** - built-in toggle, persisted to local storage
 
 
 ---
@@ -37,7 +37,7 @@ From a single OpenAPI file, UIGen generates a complete, production-quality front
 ## Quick Start
 
 ```bash
-# Run directly with npx — no install required
+# Run directly with npx - no install required
 npx @uigen-dev/cli serve ./openapi.yaml
 
 # Or with a remote spec URL
@@ -70,11 +70,11 @@ node packages/cli/dist/index.js serve examples/twilio_messaging_v1.yaml
 
 ## How it works
 
-UIGen parses your OpenAPI spec and converts it into an **Intermediate Representation (IR)** — a structured description of your resources, operations, schemas, authentication, and relationships. A pre-built React SPA reads that IR and renders the appropriate views.
+UIGen parses your OpenAPI spec and converts it into an **Intermediate Representation (IR)** - a structured description of your resources, operations, schemas, authentication, and relationships. A pre-built React SPA reads that IR and renders the appropriate views.
 
-The CLI serves the SPA and proxies your API calls to your real backend. When running from the monorepo it uses a Vite dev server; when installed via npm/npx it serves the pre-built static dist with a lightweight Node.js HTTP proxy — no Vite required at runtime.
+The CLI serves the SPA and proxies your API calls to your real backend. When running from the monorepo it uses a Vite dev server; when installed via npm/npx it serves the pre-built static dist with a lightweight Node.js HTTP proxy - no Vite required at runtime.
 
-Because the IR is framework-agnostic, the React layer is just the default. The same IR drives `@uigen-dev/svelte` and `@uigen-dev/vue` — same spec, different renderer, your choice of stack.
+Because the IR is framework-agnostic, the React layer is just the default. The same IR drives `@uigen-dev/svelte` and `@uigen-dev/vue` - same spec, different renderer, your choice of stack.
 
 ```
 OpenAPI Spec (YAML/JSON)
@@ -92,7 +92,7 @@ OpenAPI Spec (YAML/JSON)
     Your API
 ```
 
-The IR is the contract. Everything built on top of UIGen talks to the IR — not to the spec format or the UI framework.
+The IR is the contract. Everything built on top of UIGen talks to the IR - not to the spec format or the UI framework.
 
 ---
 
@@ -109,23 +109,23 @@ The IR is the contract. Everything built on top of UIGen talks to the IR — not
 ## What's implemented today
 
 ### Core engine
-- [x] OpenAPI 3.x adapter — full schema resolution, `$ref` handling, circular reference detection
+- [x] OpenAPI 3.x adapter - full schema resolution, `$ref` handling, circular reference detection
 - [x] Swagger 2.0 adapter
-- [x] IR types — resources, operations, auth, relationships, pagination hints, validation rules
-- [x] View hint classifier — detects list, detail, create, update, delete, search, wizard, action
-- [x] Relationship detector — `hasMany` from nested paths, `belongsTo` from URI fields
-- [x] Pagination detector — offset, cursor, and page-based strategies
-- [x] Graceful degradation — malformed operations are skipped, not crashed
+- [x] IR types - resources, operations, auth, relationships, pagination hints, validation rules
+- [x] View hint classifier - detects list, detail, create, update, delete, search, wizard, action
+- [x] Relationship detector - `hasMany` from nested paths, `belongsTo` from URI fields
+- [x] Pagination detector - offset, cursor, and page-based strategies
+- [x] Graceful degradation - malformed operations are skipped, not crashed
 
 ### Views
-- [x] **ListView** — TanStack Table, sorting, pagination, row actions, empty state, filter row
-- [x] **DetailView** — read-only fields, related resource links, edit/delete/custom action buttons
-- [x] **FormView** — React Hook Form + Zod validation, all field types, inline errors, loading state
-- [x] **EditFormView** — pre-populated from current record data, PUT/PATCH on submit
-- [x] **SearchView** — filter inputs per query param, result count, clear filters
-- [x] **DashboardView** — resource cards with record counts and navigation links
-- [x] **WizardView** — multi-step form for large schemas, step validation, back navigation
-- [x] **LoginView** — auth credential input before accessing protected resources
+- [x] **ListView** - TanStack Table, sorting, pagination, row actions, empty state, filter row
+- [x] **DetailView** - read-only fields, related resource links, edit/delete/custom action buttons
+- [x] **FormView** - React Hook Form + Zod validation, all field types, inline errors, loading state
+- [x] **EditFormView** - pre-populated from current record data, PUT/PATCH on submit
+- [x] **SearchView** - filter inputs per query param, result count, clear filters
+- [x] **DashboardView** - resource cards with record counts and navigation links
+- [x] **WizardView** - multi-step form for large schemas, step validation, back navigation
+- [x] **LoginView** - auth credential input before accessing protected resources
 
 ### Field components
 - [x] TextField (with `textarea` variant)
@@ -138,19 +138,19 @@ The IR is the contract. Everything built on top of UIGen talks to the IR — not
 - [x] ObjectField (nested fieldsets, collapsible)
 
 ### Auth & infrastructure
-- [x] Bearer token authentication — input, session storage, `Authorization` header injection, logout
-- [x] API Key authentication — header and query param injection
-- [x] HTTP Basic authentication — username/password, base64 encoded
-- [x] Credential-based login — detects login endpoints from spec, posts credentials, extracts token
-- [x] Server selector — environment dropdown from spec `servers`
+- [x] Bearer token authentication - input, session storage, `Authorization` header injection, logout
+- [x] API Key authentication - header and query param injection
+- [x] HTTP Basic authentication - username/password, base64 encoded
+- [x] Credential-based login - detects login endpoints from spec, posts credentials, extracts token
+- [x] Server selector - environment dropdown from spec `servers`
 - [x] Delete confirmation dialog
 - [x] Custom action buttons (non-CRUD endpoints)
 - [x] Toast notifications (success / error / warning / info, auto-dismiss)
-- [x] Error boundary — component errors contained, app stays running
+- [x] Error boundary - component errors contained, app stays running
 - [x] Dark / light theme toggle with system preference detection
-- [x] **Override system** — selectively customize views with component, render, or useHooks modes (coming soon)
+- [x] **Override system** - selectively customize views with component, render, or useHooks modes (coming soon)
 ### CLI
-- [x] `uigen serve` — starts dev server with IR injected
+- [x] `uigen serve` - starts dev server with IR injected
 - [x] YAML / JSON auto-detection
 - [x] Vite proxy to real API server
 - [x] CORS handling
@@ -176,11 +176,11 @@ Each package is independently publishable:
 
 | Package | npm | Purpose |
 |---|---|---|
-| `@uigen-dev/core` | ✅ published | IR types, adapters, engine — framework agnostic. Build your own renderer on top |
+| `@uigen-dev/core` | ✅ published | IR types, adapters, engine - framework agnostic. Build your own renderer on top |
 | `@uigen-dev/react` | ✅ published | The default React renderer. Extend or swap components via the registry |
 | `@uigen-dev/cli` | ✅ published | The `npx uigen` entry point |
-| `@uigen-dev/svelte` | planned | Svelte renderer — same IR, native Svelte components |
-| `@uigen-dev/vue` | planned | Vue 3 renderer — same IR, native Vue components |
+| `@uigen-dev/svelte` | planned | Svelte renderer - same IR, native Svelte components |
+| `@uigen-dev/vue` | planned | Vue 3 renderer - same IR, native Vue components |
 
 ---
 
@@ -228,9 +228,9 @@ pnpm release
 
 ### Override System
 
-> 🚧 In development — not yet released
+> 🚧 In development - not yet released
 
-UIGen's override system lets you selectively customize specific views while keeping everything else auto-generated. You opt in per view — no changes needed to views you don't touch.
+UIGen's override system lets you selectively customize specific views while keeping everything else auto-generated. You opt in per view - no changes needed to views you don't touch.
 
 Three modes give you different levels of control:
 
@@ -302,29 +302,29 @@ properties:
 ## Roadmap
 
 ### 🔜 Next up
-- [ ] `x-uigen-*` vendor extension support — annotate your spec to customize rendering
-- [ ] `uigen.config.json` — theme, labels, page sizes, field overrides
-- [ ] `uigen validate` — lint your spec, report what can and can't be generated with actionable errors
-- [ ] `uigen generate` — output a static production build to a directory
-- [ ] OAuth2 PKCE flow — full login for OAuth2-secured APIs
-- [ ] Spec hot-reload — file watcher pushes updated IR to UI via WebSocket, no restart needed
-- [ ] Loading skeletons — shimmer placeholders matching actual content layout
-- [ ] Virtual scrolling — TanStack Virtual for tables with 1000+ rows
+- [ ] `x-uigen-*` vendor extension support - annotate your spec to customize rendering
+- [ ] `uigen.config.json` - theme, labels, page sizes, field overrides
+- [ ] `uigen validate` - lint your spec, report what can and can't be generated with actionable errors
+- [ ] `uigen generate` - output a static production build to a directory
+- [ ] OAuth2 PKCE flow - full login for OAuth2-secured APIs
+- [ ] Spec hot-reload - file watcher pushes updated IR to UI via WebSocket, no restart needed
+- [ ] Loading skeletons - shimmer placeholders matching actual content layout
+- [ ] Virtual scrolling - TanStack Virtual for tables with 1000+ rows
 
 ### 🧩 Ecosystem
-- [ ] **`@uigen-dev/svelte`** — Svelte renderer consuming the same IR. Same adapters, different UI layer
-- [ ] **`@uigen-dev/vue`** — Vue 3 renderer. Drop-in alternative to `@uigen-dev/react`
-- [ ] **Plugin API** — register custom adapters, field types, and view strategies as npm packages
-- [ ] **`uigen ui:config`** — a visual configuration dashboard served alongside your generated UI. Point-and-click theme editing, field label overrides, resource reordering — no YAML editing required
+- [ ] **`@uigen-dev/svelte`** - Svelte renderer consuming the same IR. Same adapters, different UI layer
+- [ ] **`@uigen-dev/vue`** - Vue 3 renderer. Drop-in alternative to `@uigen-dev/react`
+- [ ] **Plugin API** - register custom adapters, field types, and view strategies as npm packages
+- [ ] **`uigen ui:config`** - a visual configuration dashboard served alongside your generated UI. Point-and-click theme editing, field label overrides, resource reordering - no YAML editing required
 
 ### 🔭 Further out
 - [ ] OpenAPI 3.1 support
 - [ ] GraphQL adapter
 - [ ] gRPC / Protobuf adapter
-- [ ] Response transformation — JSONPath selectors to reshape API responses before rendering
-- [ ] Request / response interceptors — middleware for custom auth logic or tenant injection
-- [ ] `@uigen-dev/plugin-charts` — auto-generate chart widgets from numeric data
-- [ ] `@uigen-dev/plugin-mapbox` — map field renderer for geo coordinates
+- [ ] Response transformation - JSONPath selectors to reshape API responses before rendering
+- [ ] Request / response interceptors - middleware for custom auth logic or tenant injection
+- [ ] `@uigen-dev/plugin-charts` - auto-generate chart widgets from numeric data
+- [ ] `@uigen-dev/plugin-mapbox` - map field renderer for geo coordinates
 
 ---
 
@@ -332,7 +332,7 @@ properties:
 
 - Schema `$ref` resolution works for most cases; deeply nested circular refs may degrade gracefully
 - Edit view pre-population requires a `GET /resource/{id}` endpoint in your spec
-- Authentication UI covers Bearer, API Key, HTTP Basic, and credential-based login — OAuth2 PKCE is in progress
+- Authentication UI covers Bearer, API Key, HTTP Basic, and credential-based login - OAuth2 PKCE is in progress
 - Sub-resources (e.g. `/services/{id}/members`) appear in the sidebar only when viewing a parent detail page
 - Error messages are informative but not yet fully localised
 
