@@ -101,6 +101,8 @@ export function useApiCall(options: ApiCallOptions) {
     },
     // Only enable when operation exists AND is a GET request AND all path params are resolved
     enabled: enabled && !!operation && operation.method === 'GET' && !hasUnresolvedParams,
+    // Don't show stale data while fetching - prevents flicker when query params change
+    placeholderData: undefined,
     // Cache for 5 minutes (Requirement 44.2)
     staleTime: 5 * 60 * 1000,
     // Retry logic (Requirement 45.1-45.5)

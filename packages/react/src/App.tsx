@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { reconcile } from './overrides';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -28,16 +28,27 @@ interface AppProps {
   config: UIGenApp;
 }
 
-// Protected route wrapper - redirects to login if not authenticated
-function ProtectedRoute({ requiresAuth }: { requiresAuth: boolean }) {
-  if (!requiresAuth) return <Outlet />;
+// Protected route wrapper - checks auth and wraps with layout
+function ProtectedRoute({ 
+  config,
+  requiresAuth,
+  children
+}: { 
+  config: UIGenApp;
+  requiresAuth: boolean;
+  children: React.ReactNode;
+}) {
+  const location = useLocation();
   
-  const authenticated = isAuthenticated();
-  if (!authenticated) {
-    return <Navigate to="/login" replace />;
+  if (requiresAuth && !isAuthenticated()) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
   
-  return <Outlet />;
+  return (
+    <Layout config={config}>
+      {children}
+    </Layout>
+  );
 }
 
 // Login route wrapper - redirects to dashboard if already authenticated
@@ -51,8 +62,7 @@ function LoginRoute({ config }: { config: UIGenApp }) {
     return <Navigate to="/" replace />;
   }
 
-  const authenticated = isAuthenticated();
-  if (authenticated) {
+  if (isAuthenticated()) {
     return <Navigate to="/" replace />;
   }
   
@@ -68,19 +78,21 @@ export function App({ config }: AppProps) {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <BrowserRouter>
-        <Routes>
-          {/* Login route - accessible without authentication */}
-          <Route 
-            path="/login" 
-            element={<LoginRoute config={config} />} 
-          />
-          
-          {/* All other routes require authentication and use Layout */}
-          <Route element={<ProtectedRoute requiresAuth={requiresAuth} />}>
-            <Route element={<Layout config={config}><Outlet /></Layout>}>
-              <Route path="/" element={<DashboardView config={config} />} />
-              
-              {config.resources.map(resource => {
+          <Routes>
+            {/* Public route - no protection */}
+            <Route path="/login" element={<LoginRoute config={config} />} />
+            
+            {/* Dashboard - protected with layout */}
+            <Route path="/" element={
+              <ProtectedRoute config={config} requiresAuth={requiresAuth}>
+                <DashboardView config={config} />
+              </ProtectedRoute>
+            } />
+            
+            {/* Resource routes - each protected with layout */}
+            {config.resources
+              .filter(resource => resource.slug !== 'login') // /login is reserved for the auth page
+              .map(resource => {
                 // Check if resource has a list or search operation
                 const hasListOp = resource.operations.some(op => op.viewHint === 'list' || op.viewHint === 'search');
                 const createOps = resource.operations.filter(op => op.viewHint === 'create');
@@ -207,18 +219,36 @@ export function App({ config }: AppProps) {
 
                 return (
                   <Route key={resource.slug} path={`/${resource.slug}`}>
-                    <Route index element={indexElement} />
-                    <Route path="new" element={createElement} />
-                    <Route path="search" element={searchElement} />
-                    <Route path=":id" element={detailElement} />
-                    <Route path=":id/edit" element={editElement} />
+                    <Route index element={
+                      <ProtectedRoute config={config} requiresAuth={requiresAuth}>
+                        {indexElement}
+                      </ProtectedRoute>
+                    } />
+                    <Route path="new" element={
+                      <ProtectedRoute config={config} requiresAuth={requiresAuth}>
+                        {createElement}
+                      </ProtectedRoute>
+                    } />
+                    <Route path="search" element={
+                      <ProtectedRoute config={config} requiresAuth={requiresAuth}>
+                        {searchElement}
+                      </ProtectedRoute>
+                    } />
+                    <Route path=":id" element={
+                      <ProtectedRoute config={config} requiresAuth={requiresAuth}>
+                        {detailElement}
+                      </ProtectedRoute>
+                    } />
+                    <Route path=":id/edit" element={
+                      <ProtectedRoute config={config} requiresAuth={requiresAuth}>
+                        {editElement}
+                      </ProtectedRoute>
+                    } />
                   </Route>
                 );
               })}
-            </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>
   );

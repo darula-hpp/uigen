@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.1] - 2026-04-15
+
+### Fixed
+
+**React renderer (`@uigen-dev/react`)**
+- **Login route collision** — Resources with a slug of `login` (e.g. an API path like `/login`) no longer collide with the reserved `/login` authentication route. Such resources are now filtered out of the resource routing table so the auth page is always reachable.
+
+**Core engine (`@uigen-dev/core`)**
+- **`x-uigen-login` respects all HTTP methods** — Previously, `x-uigen-login: true` was only honoured on `POST` operations; annotated `GET`, `PUT`, `PATCH`, and `DELETE` endpoints were silently ignored. The adapter now iterates all HTTP methods when scanning for the annotation, so any operation marked `x-uigen-login: true` is included as a login endpoint regardless of its method. Auto-detection (heuristic, no annotation) continues to apply to `POST` only.
+
+---
+
 ## [0.2.0] - 2026-04-15
 
 ### Added
@@ -136,6 +148,7 @@ This is the first release of UIGen — point it at an OpenAPI spec, get a fully 
 
 ---
 
+[0.2.1]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.1
 [0.2.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.0
 [0.1.9]: https://github.com/darula-hpp/uigen/releases/tag/v0.1.9
 [0.1.8]: https://github.com/darula-hpp/uigen/releases/tag/v0.1.8
