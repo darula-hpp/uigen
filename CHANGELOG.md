@@ -29,6 +29,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **React error #300 crash when dashboard loads sub-resources** — Fixed crash that occurred when the dashboard tried to fetch record counts for sub-resources (like AlphaSenders) without providing required parent IDs
+  - Added defensive checks in `useApiCall` to detect and skip operations with unresolved path parameters
+  - Updated `DashboardView` to identify and skip fetching for sub-resources
+  - Added warning logs when path parameters are missing to aid debugging
+- **Conditional hook calls** — Ensured all React hooks are called unconditionally before early returns in all view components to comply with React's Rules of Hooks
+
 **React renderer (`@uigen-dev/react`)**
 - Fixed crash when navigating to search route for resources without search operations. The `useApiCall` hook previously violated React's Rules of Hooks by calling `useQuery` conditionally (early-return when `operation` is undefined, bottom call when defined). Now always calls `useQuery` unconditionally, using `enabled: false` when no operation is provided. This ensures stable hook call order across renders and prevents "Rendered more hooks than during the previous render" errors.
 

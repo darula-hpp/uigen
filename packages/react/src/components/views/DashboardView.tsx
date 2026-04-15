@@ -98,11 +98,15 @@ function ResourceCard({ resource, navigate }: ResourceCardProps) {
   // Find list operation for this resource
   const listOp = resource.operations.find(op => op.viewHint === 'list' || op.viewHint === 'search');
   
+  // Check if this is a sub-resource (has path parameters)
+  const isSubResource = listOp?.path.includes('{') ?? false;
+  
   // Requirement 13.2: Show record count when list operation exists
+  // Skip fetching for sub-resources (they require parent context)
   const { data, isLoading } = useApiCall({
     operation: listOp,
     queryParams: listOp ? { limit: '1' } : {},
-    enabled: !!listOp,
+    enabled: !!listOp && !isSubResource,
   });
 
   // Extract count from response
@@ -131,7 +135,9 @@ function ResourceCard({ resource, navigate }: ResourceCardProps) {
             {/* Requirement 13.2: Show record count when list operation exists */}
             {listOp && (
               <p className="text-sm text-muted-foreground">
-                {isLoading ? (
+                {isSubResource ? (
+                  <span className="text-xs">Sub-resource</span>
+                ) : isLoading ? (
                   <span className="inline-block w-12 h-4 bg-muted animate-pulse rounded" />
                 ) : (
                   <span>{recordCount} record{recordCount !== 1 ? 's' : ''}</span>

@@ -204,30 +204,42 @@ function ResourceSearchResults({ resource, query, onResultClick }: ResourceSearc
   // Find search or list operation
   const searchOp = resource.operations.find(op => op.viewHint === 'search' || op.viewHint === 'list');
   
-  if (!searchOp) return null;
-
+  // Check if this is a sub-resource (has path parameters that need to be resolved)
+  const isSubResource = useMemo(() => {
+    if (!searchOp) return false;
+    const pathParams = searchOp.parameters?.filter((p: any) => p.in === 'path') || [];
+    return pathParams.length > 0;
+  }, [searchOp]);
+  
   // Build query params for search
-  const queryParams: Record<string, string> = {};
-  
-  // Try to find a text search parameter
-  const searchParam = searchOp.parameters?.find((p: any) => 
-    p.in === 'query' && 
-    (p.name.toLowerCase().includes('search') || 
-     p.name.toLowerCase().includes('query') || 
-     p.name.toLowerCase().includes('q') ||
-     p.name.toLowerCase().includes('name') ||
-     p.name.toLowerCase().includes('title'))
-  );
-  
-  if (searchParam) {
-    queryParams[searchParam.name] = query;
-  }
+  const queryParams: Record<string, string> = useMemo(() => {
+    const params: Record<string, string> = {};
+    
+    if (!searchOp) return params;
+    
+    // Try to find a text search parameter
+    const searchParam = searchOp.parameters?.find((p: any) => 
+      p.in === 'query' && 
+      (p.name.toLowerCase().includes('search') || 
+       p.name.toLowerCase().includes('query') || 
+       p.name.toLowerCase().includes('q') ||
+       p.name.toLowerCase().includes('name') ||
+       p.name.toLowerCase().includes('title'))
+    );
+    
+    if (searchParam) {
+      params[searchParam.name] = query;
+    }
+    
+    return params;
+  }, [searchOp, query]);
 
-  // Use the API call hook
+  // Use the API call hook - MUST be called unconditionally
+  // Disable for sub-resources since they need path parameters
   const { data, isLoading } = useApiCall({
-    operation: searchOp,
+    operation: searchOp || { path: '', method: 'GET', operationId: 'dummy', viewHint: 'list' },
     queryParams,
-    enabled: query.length > 0
+    enabled: !!searchOp && !isSubResource && query.length > 0
   });
 
   // Extract items from response
@@ -238,9 +250,6 @@ function ResourceSearchResults({ resource, query, onResultClick }: ResourceSearc
     return itemsArray.slice(0, 5);
   }, [data]);
 
-  // Don't render if no results
-  if (!isLoading && items.length === 0) return null;
-
   // Get display field (first string field or 'name' or 'title')
   const displayField = useMemo(() => {
     const fields = resource.schema.children || [];
@@ -249,6 +258,12 @@ function ResourceSearchResults({ resource, query, onResultClick }: ResourceSearc
     const firstStringField = fields.find((f: any) => f.type === 'string');
     return firstStringField?.key || 'id';
   }, [resource.schema]);
+
+  // Early returns AFTER all hooks
+  if (!searchOp) return null;
+  
+  // Don't render if no results
+  if (!isLoading && items.length === 0) return null;
 
   return (
     <div className="border-b last:border-b-0">

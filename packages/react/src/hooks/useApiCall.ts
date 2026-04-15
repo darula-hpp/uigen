@@ -21,18 +21,33 @@ interface ApiCallOptions {
 export function useApiCall(options: ApiCallOptions) {
   const { operation, pathParams = {}, queryParams = {}, enabled = true } = options;
 
-  // DEBUG: Log to verify this code is running
-  if (!operation) {
-    console.log('[useApiCall] Called with undefined operation - should not crash');
-  }
-
   // Build URL only if operation exists (safe — no hooks involved)
   let url = '';
+  let hasUnresolvedParams = false;
+  
   if (operation) {
     url = operation.path;
-    Object.entries(pathParams).forEach(([key, value]) => {
-      url = url.replace(`{${key}}`, value);
-    });
+    
+    // Check if path has parameters
+    const pathParamMatches = url.match(/\{([^}]+)\}/g);
+    if (pathParamMatches) {
+      // Replace path parameters
+      pathParamMatches.forEach((match) => {
+        const paramName = match.slice(1, -1); // Remove { and }
+        const paramValue = pathParams[paramName];
+        
+        if (paramValue) {
+          url = url.replace(match, paramValue);
+        } else {
+          // Parameter not provided - mark as unresolved
+          hasUnresolvedParams = true;
+          console.warn(
+            `[useApiCall] Path parameter "${paramName}" not provided for operation "${operation.id}". ` +
+            `Path: ${operation.path}. This request will be disabled.`
+          );
+        }
+      });
+    }
 
     const queryString = new URLSearchParams(
       Object.entries(queryParams).reduce((acc, [key, value]) => {
@@ -44,12 +59,12 @@ export function useApiCall(options: ApiCallOptions) {
   }
 
   // ALWAYS call useQuery unconditionally (React's Rules of Hooks)
-  // Use enabled option to disable when no operation is provided
+  // Use enabled option to disable when no operation is provided OR when path params are missing
   return useQuery({
     queryKey: operation ? [operation.id, pathParams, queryParams] : ['disabled'],
     queryFn: async () => {
-      // Guard: return null if no operation
-      if (!operation) return null;
+      // Guard: return null if no operation or unresolved params
+      if (!operation || hasUnresolvedParams) return null;
 
       // Requirement 16.4, 17.5: Inject auth headers into requests
       const authHeaders = getAuthHeaders();
@@ -84,8 +99,8 @@ export function useApiCall(options: ApiCallOptions) {
       }
       return response.json();
     },
-    // Only enable when operation exists AND is a GET request
-    enabled: enabled && !!operation && operation.method === 'GET',
+    // Only enable when operation exists AND is a GET request AND all path params are resolved
+    enabled: enabled && !!operation && operation.method === 'GET' && !hasUnresolvedParams,
     // Cache for 5 minutes (Requirement 44.2)
     staleTime: 5 * 60 * 1000,
     // Retry logic (Requirement 45.1-45.5)
