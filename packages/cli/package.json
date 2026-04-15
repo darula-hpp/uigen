@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Auto-generate frontends from OpenAPI specs",
   "license": "MIT",
   "repository": {
@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@uigen-dev/core": "workspace:*",
-    "@uigen-dev/react": "file:../react/uigen-dev-react-0.2.0.tgz",
+    "@uigen-dev/react": "file:../react/uigen-dev-react-0.2.1.tgz",
     "commander": "^12.1.0",
     "picocolors": "^1.1.1",
     "vite": "^6.0.0"

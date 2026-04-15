@@ -1,6 +1,6 @@
 {
   "name": "uigen",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Auto-generate frontends from OpenAPI specs",
   "license": "MIT",
@@ -33,6 +33,6 @@
   },
   "packageManager": "pnpm@9.0.0",
   "dependencies": {
-    "@uigen-dev/react": "file:packages/react/uigen-dev-react-0.2.0.tgz"
+    "@uigen-dev/react": "file:packages/react/uigen-dev-react-0.2.1.tgz"
   }
 }
