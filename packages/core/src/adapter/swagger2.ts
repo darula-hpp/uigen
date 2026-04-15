@@ -457,14 +457,19 @@ export class Swagger2Adapter {
 
     // Handle array schemas separately
     if (schema.items) {
-      return {
+      const arrayResult: OpenAPIV3.ArraySchemaObject = {
         type: 'array',
         items: this.convertSchema(schema.items, visited) as OpenAPIV3.SchemaObject,
         description: schema.description,
         minItems: schema.minItems,
         maxItems: schema.maxItems,
         uniqueItems: schema.uniqueItems
-      } as OpenAPIV3.ArraySchemaObject;
+      };
+      const uigenLabelArray = (schema as any)['x-uigen-label'];
+      if (uigenLabelArray !== undefined) {
+        (arrayResult as any)['x-uigen-label'] = uigenLabelArray;
+      }
+      return arrayResult;
     }
 
     const result: OpenAPIV3.NonArraySchemaObject = {
@@ -505,6 +510,11 @@ export class Swagger2Adapter {
       } else {
         result.additionalProperties = this.convertSchema(schema.additionalProperties, visited);
       }
+    }
+
+    const uigenLabel = (schema as any)['x-uigen-label'];
+    if (uigenLabel !== undefined) {
+      (result as any)['x-uigen-label'] = uigenLabel;
     }
 
     return result;

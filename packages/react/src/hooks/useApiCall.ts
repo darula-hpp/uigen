@@ -14,35 +14,43 @@ interface ApiCallOptions {
 /**
  * Hook for API queries with caching and retry logic
  * Implements Requirements 44.1-44.4, 45.1-45.5, 16.4, 17.5
+ * 
+ * IMPORTANT: This hook MUST call useQuery unconditionally to satisfy React's Rules of Hooks.
+ * The enabled option is used to disable the query when no operation is provided.
  */
 export function useApiCall(options: ApiCallOptions) {
   const { operation, pathParams = {}, queryParams = {}, enabled = true } = options;
 
-  // If no operation provided, return disabled query
+  // DEBUG: Log to verify this code is running
   if (!operation) {
-    return useQuery({
-      queryKey: ['disabled'],
-      queryFn: () => Promise.resolve(null),
-      enabled: false,
-    });
+    console.log('[useApiCall] Called with undefined operation - should not crash');
   }
 
-  let url = operation.path;
-  Object.entries(pathParams).forEach(([key, value]) => {
-    url = url.replace(`{${key}}`, value);
-  });
+  // Build URL only if operation exists (safe — no hooks involved)
+  let url = '';
+  if (operation) {
+    url = operation.path;
+    Object.entries(pathParams).forEach(([key, value]) => {
+      url = url.replace(`{${key}}`, value);
+    });
 
-  const queryString = new URLSearchParams(
-    Object.entries(queryParams).reduce((acc, [key, value]) => {
-      acc[key] = String(value);
-      return acc;
-    }, {} as Record<string, string>)
-  ).toString();
-  if (queryString) url += `?${queryString}`;
+    const queryString = new URLSearchParams(
+      Object.entries(queryParams).reduce((acc, [key, value]) => {
+        acc[key] = String(value);
+        return acc;
+      }, {} as Record<string, string>)
+    ).toString();
+    if (queryString) url += `?${queryString}`;
+  }
 
+  // ALWAYS call useQuery unconditionally (React's Rules of Hooks)
+  // Use enabled option to disable when no operation is provided
   return useQuery({
-    queryKey: [operation.id, pathParams, queryParams],
+    queryKey: operation ? [operation.id, pathParams, queryParams] : ['disabled'],
     queryFn: async () => {
+      // Guard: return null if no operation
+      if (!operation) return null;
+
       // Requirement 16.4, 17.5: Inject auth headers into requests
       const authHeaders = getAuthHeaders();
       
@@ -76,7 +84,8 @@ export function useApiCall(options: ApiCallOptions) {
       }
       return response.json();
     },
-    enabled: enabled && operation.method === 'GET',
+    // Only enable when operation exists AND is a GET request
+    enabled: enabled && !!operation && operation.method === 'GET',
     // Cache for 5 minutes (Requirement 44.2)
     staleTime: 5 * 60 * 1000,
     // Retry logic (Requirement 45.1-45.5)
@@ -97,7 +106,7 @@ export function useApiCall(options: ApiCallOptions) {
  * Hook for API mutations with cache invalidation and optimistic updates
  * Implements Requirements 44.5, 47.1-47.4, 16.4, 17.5
  */
-export function useApiMutation(operation: Operation, options?: {
+export function useApiMutation(operation: Operation | undefined, options?: {
   optimisticUpdate?: (oldData: any, variables: any) => any;
   relatedQueryKeys?: string[];
 }) {
@@ -105,6 +114,9 @@ export function useApiMutation(operation: Operation, options?: {
 
   return useMutation({
     mutationFn: async ({ pathParams = {}, body }: { pathParams?: Record<string, string>; body?: unknown }) => {
+      if (!operation) {
+        throw new Error('No operation available for mutation');
+      }
       let url = operation.path;
       Object.entries(pathParams).forEach(([key, value]) => {
         url = url.replace(`{${key}}`, value);
@@ -170,7 +182,7 @@ export function useApiMutation(operation: Operation, options?: {
     },
     // Optimistic update support (Requirement 47.1-47.4)
     onMutate: async (variables) => {
-      if (options?.optimisticUpdate) {
+      if (options?.optimisticUpdate && operation) {
         // Cancel outgoing refetches
         await queryClient.cancelQueries({ queryKey: [operation.id] });
         
@@ -189,12 +201,14 @@ export function useApiMutation(operation: Operation, options?: {
     },
     // Revert on error (Requirement 47.2, 47.4)
     onError: (_err, _variables, context) => {
-      if (context?.previousData) {
+      if (context?.previousData && operation) {
         queryClient.setQueryData([operation.id], context.previousData);
       }
     },
     // Invalidate cache on success (Requirement 44.5)
     onSuccess: () => {
+      if (!operation) return;
+
       // Invalidate the operation's own queries
       queryClient.invalidateQueries({ queryKey: [operation.id] });
       

@@ -115,7 +115,8 @@ export function DetailView({ resource }: DetailViewProps) {
 
   const { data, isLoading, error } = useApiCall({
     operation: detailOp!,
-    pathParams: resolvePathParams(detailOp!, id)
+    pathParams: detailOp ? resolvePathParams(detailOp, id) : {},
+    enabled: !!detailOp,
   });
 
   // Find available operations for action buttons - Requirement 8.5
@@ -135,8 +136,8 @@ export function DetailView({ resource }: DetailViewProps) {
   );
 
   // Delete mutation - Requirements 11.4, 11.5, 11.6
-  const deleteMutation = useApiMutation(deleteOp!, {
-    relatedQueryKeys: [detailOp?.id || '', `list${resource.name}`]
+  const deleteMutation = useApiMutation(deleteOp, {
+    relatedQueryKeys: [detailOp?.id || '', `list${resource.name}`],
   });
 
   // Handle delete confirmation - Requirement 11.4
