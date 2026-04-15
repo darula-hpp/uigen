@@ -148,8 +148,7 @@ The IR is the contract. Everything built on top of UIGen talks to the IR — not
 - [x] Toast notifications (success / error / warning / info, auto-dismiss)
 - [x] Error boundary — component errors contained, app stays running
 - [x] Dark / light theme toggle with system preference detection
-- [x] **Override system** — selectively customize views with component, render, or useHooks modes
-
+- [x] **Override system** — selectively customize views with component, render, or useHooks modes (coming soon)
 ### CLI
 - [x] `uigen serve` — starts dev server with IR injected
 - [x] YAML / JSON auto-detection
@@ -228,6 +227,8 @@ pnpm release
 ## Extending UIGen
 
 ### Override System
+
+> 🚧 In development — not yet released
 
 UIGen's override system lets you selectively customize specific views while keeping everything else auto-generated. You opt in per view — no changes needed to views you don't touch.
 
