@@ -31,8 +31,5 @@
     "typescript": "^5.6.0",
     "vitest": "^2.0.0"
   },
-  "packageManager": "pnpm@9.0.0",
-  "dependencies": {
-    "@uigen-dev/react": "file:packages/react/uigen-dev-react-0.2.1.tgz"
-  }
+  "packageManager": "pnpm@9.0.0"
 }

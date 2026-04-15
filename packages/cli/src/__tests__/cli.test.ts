@@ -2,16 +2,19 @@ import { describe, it, expect } from 'vitest';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { readFileSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const cliPath = join(__dirname, '../../dist/index.js');
+const pkg = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf-8'));
+const expectedVersion = pkg.version;
 
 describe('CLI', () => {
   describe('--version flag', () => {
     it('should print version number', () => {
       const output = execSync(`node ${cliPath} --version`, { encoding: 'utf-8' });
-      expect(output.trim()).toBe('0.1.9');
+      expect(output.trim()).toBe(expectedVersion);
     });
 
     it('should exit with code 0', () => {
@@ -25,7 +28,7 @@ describe('CLI', () => {
 
     it('should support -V shorthand', () => {
       const output = execSync(`node ${cliPath} -V`, { encoding: 'utf-8' });
-      expect(output.trim()).toBe('0.1.9');
+      expect(output.trim()).toBe(expectedVersion);
     });
   });
 
