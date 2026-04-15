@@ -13,11 +13,11 @@ Handles OpenAPI 3.0 and 3.1 documents. This is the primary adapter and supports 
 
 The adapter processes:
 
-- `paths` — each path/method combination becomes an `Operation` with a `viewHint`
-- `components/schemas` — resolved and inlined into `SchemaNode` trees
-- `components/securitySchemes` — mapped to `AuthScheme` entries in `AuthConfig`
-- `servers` — mapped to `ServerConfig` entries for the environment switcher
-- `info` — mapped to `AppMeta`
+- `paths`: each path/method combination becomes an `Operation` with a `viewHint`
+- `components/schemas`: resolved and inlined into `SchemaNode` trees
+- `components/securitySchemes`: mapped to `AuthScheme` entries in `AuthConfig`
+- `servers`: mapped to `ServerConfig` entries for the environment switcher
+- `info`: mapped to `AppMeta`
 
 ## Swagger 2.0 adapter
 
@@ -42,10 +42,10 @@ Both adapters perform full `$ref` resolution before building the IR. This means:
 
 Real-world specs are often incomplete or non-standard. The adapters are designed to degrade gracefully rather than fail:
 
-- **Missing schemas** — operations with no response schema produce a generic key-value `SchemaNode`
-- **Unknown field types** — unmapped types fall back to `'string'`
-- **Malformed operations** — skipped with a `console.warn`; recorded in `UIGenApp.parsingErrors`
-- **Missing `servers`** — defaults to `http://localhost:3000`
+- **Missing schemas**: operations with no response schema produce a generic key-value `SchemaNode`
+- **Unknown field types**: unmapped types fall back to `'string'`
+- **Malformed operations**: skipped with a `console.warn`; recorded in `UIGenApp.parsingErrors`
+- **Missing `servers`**: defaults to `http://localhost:3000`
 
 Parsing errors are available in `ir.parsingErrors` for debugging.
 

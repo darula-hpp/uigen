@@ -39,8 +39,8 @@ Both YAML and JSON are accepted.
 
 ## Planned support
 
-- **OpenAPI 3.1** — full support is in progress. Most 3.1 documents work today; edge cases around JSON Schema vocabulary differences are being addressed.
-- **GraphQL** — planned for a future release.
+- **OpenAPI 3.1**: full support is in progress. Most 3.1 documents work today; edge cases around JSON Schema vocabulary differences are being addressed.
+- **GraphQL**: planned for a future release.
 
 ## Compatibility notes
 

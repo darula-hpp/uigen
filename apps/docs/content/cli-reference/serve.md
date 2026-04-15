@@ -89,4 +89,4 @@ Currently only `react` is available. `vue` and `svelte` renderers are planned fo
 
 - The spec file is read once at startup. Changes to the spec require restarting the server.
 - The proxy forwards all requests to `/api/*` to the target server.
-- Authentication headers are injected by the proxy transparently — your API never sees UIGen-specific headers.
+- Authentication headers are injected by the proxy transparently (your API never sees UIGen-specific headers).

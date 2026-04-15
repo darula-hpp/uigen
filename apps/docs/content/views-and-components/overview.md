@@ -5,7 +5,7 @@ description: The UI patterns UIGen generates from your API spec.
 
 # Views & Components
 
-UIGen generates a set of UI patterns — called views — from the operations in your spec. Each view is selected automatically based on the HTTP method, path shape, and request/response schema.
+UIGen generates a set of UI patterns (called views) from the operations in your spec. Each view is selected automatically based on the HTTP method, path shape, and request/response schema.
 
 ## View types
 

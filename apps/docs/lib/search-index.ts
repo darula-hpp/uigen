@@ -64,7 +64,7 @@ export async function buildSearchIndex(): Promise<SearchIndexEntry[]> {
 }
 
 /**
- * Pure helper for testing — builds search index from mock page data without filesystem I/O.
+ * Pure helper for testing: builds search index from mock page data without filesystem I/O.
  */
 export function buildSearchIndexFromEntries(
   entries: Array<{ section: string; slug: string; title: string; content: string }>
@@ -79,7 +79,7 @@ export function buildSearchIndexFromEntries(
 }
 
 /**
- * Pure Fuse.js wrapper for testing — searches entries without filesystem.
+ * Pure Fuse.js wrapper for testing: searches entries without filesystem.
  */
 export function searchEntries(
   entries: Array<{ title: string; content: string; href: string }>,

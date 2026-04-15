@@ -15,8 +15,8 @@ export default async function DocsLayout({ children }: { children: React.ReactNo
         {/* Left sidebar */}
         <NavSidebar currentPath={pathname} />
 
-        {/* Main content */}
-        <main className="flex-1 min-w-0 px-6 py-8 max-w-4xl">
+        {/* Main content area - centered with auto margins */}
+        <main className="flex-1 min-w-0 px-6 py-8 max-w-4xl mx-auto">
           {children}
         </main>
 

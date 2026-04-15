@@ -42,7 +42,7 @@ console.log(ir.resources); // all detected resources
 
 ## `@uigen-dev/react`
 
-The React renderer provides the full UI layer — views, forms, fields, auth, and layout — driven by the IR from `@uigen-dev/core`.
+The React renderer provides the full UI layer (views, forms, fields, auth, and layout) driven by the IR from `@uigen-dev/core`.
 
 ```bash
 npm install @uigen-dev/react @uigen-dev/core
@@ -57,6 +57,6 @@ npm install @uigen-dev/react @uigen-dev/core
 
 ## Next steps
 
-- [Quick Start](/docs/getting-started/quick-start) — run UIGen in under a minute
-- [CLI Reference](/docs/cli-reference/serve) — all available flags for `uigen serve`
-- [Override System](/docs/override-system/overview) — customise the generated UI
+- [Quick Start](/docs/getting-started/quick-start): run UIGen in under a minute
+- [CLI Reference](/docs/cli-reference/serve): all available flags for `uigen serve`
+- [Override System](/docs/override-system/overview): customise the generated UI

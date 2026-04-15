@@ -5,7 +5,7 @@ description: Run UIGen against your OpenAPI spec in under a minute.
 
 # Quick Start
 
-The fastest way to try UIGen is with `npx` — no installation required.
+The fastest way to try UIGen is with `npx` (no installation required).
 
 ## Step 1: Run the CLI
 
@@ -72,6 +72,6 @@ npx @uigen-dev/cli serve ./openapi.yaml --proxy-base http://localhost:3001
 
 ## Next steps
 
-- [Installation](/docs/getting-started/installation) — install packages for programmatic use
-- [CLI Reference](/docs/cli-reference/serve) — all available flags
-- [Authentication](/docs/authentication/overview) — how UIGen handles auth
+- [Installation](/docs/getting-started/installation): install packages for programmatic use
+- [CLI Reference](/docs/cli-reference/serve): all available flags
+- [Authentication](/docs/authentication/overview): how UIGen handles auth

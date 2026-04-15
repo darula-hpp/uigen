@@ -7,7 +7,7 @@ description: CLI commands coming in a future release.
 
 The following CLI commands are planned for a future release. They are not yet available.
 
-> **Coming Soon** — these commands are not implemented yet.
+> **Coming Soon**: these commands are not implemented yet.
 
 ## `uigen validate`
 
@@ -27,10 +27,10 @@ uigen validate ./openapi.yaml
 
 ⚠ 2 warnings found:
 
-  1. GET /pets — no response schema defined (line 42)
+  1. GET /pets: no response schema defined (line 42)
      UIGen will render a generic key-value table.
 
-  2. POST /pets — requestBody missing 'required' field (line 67)
+  2. POST /pets: requestBody missing 'required' field (line 67)
      All fields will be treated as optional.
 ```
 

@@ -5,7 +5,7 @@ description: Replace an entire auto-generated view with your own React component
 
 # Component Mode
 
-Component mode replaces the entire auto-generated view with your own React component. UIGen renders your component instead of the built-in view — you have full control over the UI.
+Component mode replaces the entire auto-generated view with your own React component. UIGen renders your component instead of the built-in view (you have full control over the UI).
 
 ## When to use
 

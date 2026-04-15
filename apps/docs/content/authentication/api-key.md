@@ -41,9 +41,9 @@ UIGen renders an API key input form. The user enters their key and clicks **Conn
 
 The proxy injects the key into forwarded requests:
 
-- **`in: header`** — added as a custom request header with the name from the scheme
-- **`in: query`** — appended as a query parameter to the target URL
-- **`in: cookie`** — set as a `Cookie` header (note: cookie injection has browser security limitations in some environments)
+- **`in: header`**: added as a custom request header with the name from the scheme
+- **`in: query`**: appended as a query parameter to the target URL
+- **`in: cookie`**: set as a `Cookie` header (note: cookie injection has browser security limitations in some environments)
 
 ## Swagger 2.0
 

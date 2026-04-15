@@ -13,8 +13,8 @@ describe('NavSidebarClient', () => {
 
   it('highlights the active link matching currentPath', () => {
     render(<NavSidebarClient sections={nav} currentPath="/docs/getting-started/introduction" />);
-    // Component renders both mobile and desktop sidebars — get all matching links
-    const activeLinks = screen.getAllByRole('link', { name: /Introduction — Getting Started/i });
+    // Component renders both mobile and desktop sidebars: get all matching links
+    const activeLinks = screen.getAllByRole('link', { name: /Introduction - Getting Started/i });
     // All matching links should have the active class
     expect(activeLinks.length).toBeGreaterThan(0);
     activeLinks.forEach(link => {

@@ -18,16 +18,16 @@ UIGen uses the Wizard View instead of the flat [Form View](/docs/views-and-compo
 
 Steps are grouped automatically:
 
-1. **Required fields** — all required fields appear in the first step
-2. **Optional fields** — optional fields are grouped into subsequent steps by object nesting
-3. **Review** — a final read-only review step shows all entered values before submission
+1. **Required fields**: all required fields appear in the first step
+2. **Optional fields**: optional fields are grouped into subsequent steps by object nesting
+3. **Review**: a final read-only review step shows all entered values before submission
 
 ## Features
 
-- **Progress indicator** — shows the current step and total steps
-- **Back / Next navigation** — users can move between steps; earlier steps are validated before advancing
-- **Per-step validation** — only the fields in the current step are validated on Next
-- **Review step** — shows a summary of all entered values before final submission
+- **Progress indicator**: shows the current step and total steps
+- **Back / Next navigation**: users can move between steps; earlier steps are validated before advancing
+- **Per-step validation**: only the fields in the current step are validated on Next
+- **Review step**: shows a summary of all entered values before final submission
 
 ## Example spec
 

@@ -9,10 +9,10 @@ The Edit Form View is generated for `PUT /resources/{id}` and `PATCH /resources/
 
 ## Features
 
-- **Pre-population** — fetches the current record via the corresponding `GET /resources/{id}` endpoint and fills all form fields
-- **Partial updates** — `PATCH` endpoints produce a form where all fields are optional by default
-- **Validation** — same constraint mapping as the Form View
-- **Cancel** — navigates back to the Detail View without saving
+- **Pre-population**: fetches the current record via the corresponding `GET /resources/{id}` endpoint and fills all form fields
+- **Partial updates**: `PATCH` endpoints produce a form where all fields are optional by default
+- **Validation**: same constraint mapping as the Form View
+- **Cancel**: navigates back to the Detail View without saving
 
 ## Difference from Form View
 

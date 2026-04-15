@@ -20,7 +20,7 @@ OpenAPI Spec (YAML/JSON)
         │
         ▼
 ┌───────────────┐
-│      IR       │  Intermediate Representation —
+│      IR       │  Intermediate Representation:
 │               │  a framework-agnostic data model
 └───────┬───────┘
         │
@@ -41,8 +41,8 @@ OpenAPI Spec (YAML/JSON)
 
 The adapter reads the raw spec string and produces the IR. UIGen ships two adapters:
 
-- **OpenAPI 3.x adapter** — handles OpenAPI 3.0 and 3.1 documents
-- **Swagger 2.0 adapter** — handles Swagger 2.0 (formerly OpenAPI 2.0) documents
+- **OpenAPI 3.x adapter**: handles OpenAPI 3.0 and 3.1 documents
+- **Swagger 2.0 adapter**: handles Swagger 2.0 (formerly OpenAPI 2.0) documents
 
 The adapter resolves all `$ref` references, detects view hints (list, detail, create, update, delete, search, wizard, action), infers pagination strategies, and extracts authentication schemes.
 
@@ -52,11 +52,11 @@ See [Adapters](/docs/core-concepts/adapters) for details.
 
 The IR is a plain TypeScript object that describes the entire UI in framework-agnostic terms. It contains:
 
-- **Resources** — the entities in your API (e.g. `users`, `products`)
-- **Operations** — the HTTP endpoints for each resource, with view hints
-- **Schema nodes** — the field types, labels, validations, and UI hints for each field
-- **Auth config** — the authentication schemes and login endpoints
-- **Dashboard config** — widgets and resource counts for the overview page
+- **Resources**: the entities in your API (e.g. `users`, `products`)
+- **Operations**: the HTTP endpoints for each resource, with view hints
+- **Schema nodes**: the field types, labels, validations, and UI hints for each field
+- **Auth config**: the authentication schemes and login endpoints
+- **Dashboard config**: widgets and resource counts for the overview page
 
 The IR is serialised as JSON and injected into the React SPA as `window.__UIGEN_CONFIG__` at startup.
 
@@ -82,7 +82,7 @@ All API calls from the SPA go through the CLI's built-in proxy at `/api/*`. The 
 - Injects authentication headers transparently (Bearer token, API Key, HTTP Basic)
 - Strips UIGen-specific headers before forwarding
 
-This means the SPA never makes direct cross-origin requests — the proxy handles CORS.
+This means the SPA never makes direct cross-origin requests (the proxy handles CORS).
 
 ## Two serving modes
 

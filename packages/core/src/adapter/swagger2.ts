@@ -253,6 +253,12 @@ export class Swagger2Adapter {
       (result as any)['x-uigen-id'] = vendorExtension;
     }
 
+    // Preserve x-uigen-ignore vendor extension from Swagger 2 path item
+    const ignoreAnnotation = (pathItem as any)['x-uigen-ignore'];
+    if (ignoreAnnotation !== undefined) {
+      (result as any)['x-uigen-ignore'] = ignoreAnnotation;
+    }
+
     return result;
   }
 
@@ -290,6 +296,12 @@ export class Swagger2Adapter {
     const loginAnnotation = (operation as any)['x-uigen-login'];
     if (loginAnnotation !== undefined) {
       (result as any)['x-uigen-login'] = loginAnnotation;
+    }
+
+    // Preserve x-uigen-ignore vendor extension from Swagger 2 operation
+    const ignoreAnnotation = (operation as any)['x-uigen-ignore'];
+    if (ignoreAnnotation !== undefined) {
+      (result as any)['x-uigen-ignore'] = ignoreAnnotation;
     }
 
     return result;

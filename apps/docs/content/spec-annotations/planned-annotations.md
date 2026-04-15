@@ -7,7 +7,7 @@ description: x-uigen-* annotations that are coming in a future release.
 
 The following `x-uigen-*` annotations are planned for a future release. They are not yet available.
 
-> **Coming Soon** — these annotations are not implemented yet. This page documents the intended behaviour so you can plan ahead.
+> **Coming Soon**: these annotations are not implemented yet. This page documents the intended behavior so you can plan ahead.
 
 ## `x-uigen-widget`
 

@@ -18,10 +18,10 @@ Without the annotation, UIGen renders a token input form instead (for Bearer/API
 
 ## Features
 
-- **Auto-generated fields** — the form fields are derived from the login endpoint's `requestBody` schema
-- **Token extraction** — after a successful login, UIGen extracts the token from the response using the `x-uigen-token-path` annotation
-- **Session storage** — the token is stored in session storage and injected into subsequent API requests via the proxy
-- **Error handling** — login errors are displayed inline
+- **Auto-generated fields**: the form fields are derived from the login endpoint's `requestBody` schema
+- **Token extraction**: after a successful login, UIGen extracts the token from the response using the `x-uigen-token-path` annotation
+- **Session storage**: the token is stored in session storage and injected into subsequent API requests via the proxy
+- **Error handling**: login errors are displayed inline
 
 ## Example
 

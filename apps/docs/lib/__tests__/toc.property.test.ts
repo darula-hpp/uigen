@@ -8,7 +8,7 @@ import { extractToc } from '../toc';
  * Validates: Requirements 6.1
  *
  * For any Markdown string composed of h2/h3 headings, the headings extracted
- * by extractToc should correspond exactly — in order and level — to the h2/h3
+ * by extractToc should correspond exactly (in order and level) to the h2/h3
  * elements present in the rendered HTML.
  */
 describe('Property 5: TOC extraction matches document headings', () => {

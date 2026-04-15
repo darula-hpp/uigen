@@ -9,10 +9,10 @@ The Dashboard View is the home page of the generated UI. It is auto-generated fr
 
 ## Features
 
-- **Resource count widgets** — each resource gets a card showing the total record count, fetched from the list endpoint
-- **Quick links** — each widget links to the resource's List View
-- **Recent activity** — if the spec includes timestamp fields, a recent activity feed is shown
-- **Error resilience** — if a count fetch fails, the widget shows a warning rather than crashing
+- **Resource count widgets**: each resource gets a card showing the total record count, fetched from the list endpoint
+- **Quick links**: each widget links to the resource's List View
+- **Recent activity**: if the spec includes timestamp fields, a recent activity feed is shown
+- **Error resilience**: if a count fetch fails, the widget shows a warning rather than crashing
 
 ## Widget types
 

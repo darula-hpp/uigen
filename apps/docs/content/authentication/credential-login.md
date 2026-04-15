@@ -5,7 +5,7 @@ description: Custom login endpoint with x-uigen-login annotation.
 
 # Credential Login
 
-Some APIs require a login call to obtain a token — for example, `POST /auth/login` with a username and password that returns a JWT. UIGen supports this via the `x-uigen-login` annotation.
+Some APIs require a login call to obtain a token (for example, `POST /auth/login` with a username and password that returns a JWT). UIGen supports this via the `x-uigen-login` annotation.
 
 ## How it works
 
@@ -81,9 +81,9 @@ paths:
 
 The `x-uigen-token-path` annotation specifies the dot-notation path to the token in the response body. For example:
 
-- `token` — `response.token`
-- `data.access_token` — `response.data.access_token`
-- `auth.tokens.bearer` — `response.auth.tokens.bearer`
+- `token`: `response.token`
+- `data.access_token`: `response.data.access_token`
+- `auth.tokens.bearer`: `response.auth.tokens.bearer`
 
 ## Related
 
