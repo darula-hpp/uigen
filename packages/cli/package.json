@@ -44,7 +44,21 @@
     "fast-check": "^4.6.0",
     "vitest": "^2.0.0"
   },
-  "keywords": ["openapi","swagger","frontend-generator","ui-generator","admin-panel","rest-api","react","cli-tool","automation","low-code","no-code","devtools","typescript"],
+  "keywords": [
+    "openapi",
+    "swagger",
+    "frontend-generator",
+    "ui-generator",
+    "admin-panel",
+    "rest-api",
+    "react",
+    "cli-tool",
+    "automation",
+    "low-code",
+    "no-code",
+    "devtools",
+    "typescript"
+  ],
   "publishConfig": {
     "access": "public"
   }

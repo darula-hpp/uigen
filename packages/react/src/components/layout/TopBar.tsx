@@ -236,19 +236,30 @@ function ResourceSearchResults({ resource, query, onResultClick }: ResourceSearc
 
   // Use the API call hook - MUST be called unconditionally
   // Disable for sub-resources since they need path parameters
-  const { data, isLoading, isFetching } = useApiCall({
+  const { data, isFetching } = useApiCall({
     operation: searchOp || { path: '', method: 'GET', operationId: 'dummy', viewHint: 'list' },
     queryParams,
     enabled: !!searchOp && !isSubResource && query.length > 0
   });
 
+  // Track the query that corresponds to the current data
+  // This prevents showing stale data when the query changes
+  const [lastQueryForData, setLastQueryForData] = useState('');
+  
+  useEffect(() => {
+    if (!isFetching && data !== undefined) {
+      setLastQueryForData(query);
+    }
+  }, [data, isFetching, query]);
+
   // Extract items from response
   const items = useMemo(() => {
-    if (!data) return [];
+    // Only show items if they match the current query
+    if (!data || lastQueryForData !== query) return [];
     const itemsArray = Array.isArray(data) ? data : data?.items || data?.data || [];
     // Limit to first 5 results per resource
     return itemsArray.slice(0, 5);
-  }, [data]);
+  }, [data, lastQueryForData, query]);
 
   // Get display field (first string field or 'name' or 'title')
   const displayField = useMemo(() => {
