@@ -9,10 +9,10 @@ The Search View is generated for `GET` endpoints that define query parameters fo
 
 ## Features
 
-- **Search bar** — a text input that maps to the primary search query parameter
-- **Filter controls** — additional query parameters are rendered as filter inputs (dropdowns for enums, date pickers for date fields, etc.)
-- **Live results** — results update as the user types or changes filters
-- **Results table** — same table component as the List View, with sorting and pagination
+- **Search bar**: a text input that maps to the primary search query parameter
+- **Filter controls**: additional query parameters are rendered as filter inputs (dropdowns for enums, date pickers for date fields, etc.)
+- **Live results**: results update as the user types or changes filters
+- **Results table**: same table component as the List View, with sorting and pagination
 
 ## Query parameter detection
 

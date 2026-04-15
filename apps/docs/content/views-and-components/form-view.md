@@ -9,10 +9,10 @@ The Form View is generated for `POST /resources` endpoints. It renders a validat
 
 ## Features
 
-- **Field generation** — form fields are derived from the `requestBody` schema
-- **Validation** — constraints from the spec (`minLength`, `maxLength`, `pattern`, `minimum`, `maximum`, `required`) are enforced client-side via Zod
-- **Field types** — each field renders the appropriate input component based on its type and format
-- **Submit handling** — on success, navigates to the Detail View for the newly created record
+- **Field generation**: form fields are derived from the `requestBody` schema
+- **Validation**: constraints from the spec (`minLength`, `maxLength`, `pattern`, `minimum`, `maximum`, `required`) are enforced client-side via Zod
+- **Field types**: each field renders the appropriate input component based on its type and format
+- **Submit handling**: on success, navigates to the Detail View for the newly created record
 
 ## Validation mapping
 

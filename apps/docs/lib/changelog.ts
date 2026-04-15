@@ -9,7 +9,7 @@ export interface LatestRelease {
 /**
  * Reads CHANGELOG.md from the repo root and returns the latest version + date.
  * Expects Keep a Changelog format: `## [x.y.z] - YYYY-MM-DD`
- * Runs at build time — zero runtime cost.
+ * Runs at build time (zero runtime cost).
  */
 export function getLatestRelease(): LatestRelease | null {
   try {

@@ -53,7 +53,7 @@ export function NavSidebarClient({ sections, currentPath }: NavSidebarClientProp
                     <li key={page.slug}>
                       <a
                         href={href}
-                        aria-label={`${page.title} — ${section.title}`}
+                        aria-label={`${page.title} - ${section.title}`}
                         className={`block px-2 py-1.5 text-sm rounded transition-colors ${
                           isActive
                             ? 'text-[var(--primary)] bg-teal-50 dark:bg-teal-900/20 font-medium'

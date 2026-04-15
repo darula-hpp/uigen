@@ -31,11 +31,11 @@ export function SearchDialog() {
         setIndexLoaded(true);
       }
     } catch {
-      // Search index unavailable — silently ignore
+      // Search index unavailable: silently ignore
     }
   }, [indexLoaded]);
 
-  // Open on ⌘K / Ctrl+K, close on Escape — both handled at window level
+  // Open on ⌘K / Ctrl+K, close on Escape (both handled at window level)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -110,7 +110,7 @@ export function SearchDialog() {
       onClick={() => setOpen(false)}
       onKeyDown={handleResultKeyDown}
     >
-      {/* Dialog panel — stop propagation so clicks inside don't close */}
+      {/* Dialog panel: stop propagation so clicks inside don't close */}
       <div
         className="relative mx-auto mt-20 w-full max-w-xl bg-[var(--background)] border border-[var(--border)] rounded-xl shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}

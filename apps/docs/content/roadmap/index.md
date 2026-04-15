@@ -7,7 +7,7 @@ description: What's been built and what's coming next in UIGen.
 
 UIGen is developed in phases. Here's what's been shipped and what's coming next.
 
-## Phase 1 — Core vertical slice ✅ Complete
+## Phase 1: Core vertical slice ✅ Complete
 
 - [x] Monorepo scaffold (pnpm + Vite + TypeScript)
 - [x] IR types (auth, relationships, pagination hints, validation rules)
@@ -17,7 +17,7 @@ UIGen is developed in phases. Here's what's been shipped and what's coming next.
 - [x] Relationship detector (hasMany / belongsTo)
 - [x] Pagination detector (offset, cursor, page-based)
 - [x] Core field components (TextField, NumberField, SelectField, DatePicker, FileUpload, ArrayField, ObjectField)
-- [x] ListView with TanStack Table — sorting, pagination, filtering, row actions
+- [x] ListView with TanStack Table: sorting, pagination, filtering, row actions
 - [x] FormView with React Hook Form + Zod validation
 - [x] CLI `serve` command with Vite proxy
 - [x] Opinionated theme (shadcn/ui dark/light toggle)
@@ -25,7 +25,7 @@ UIGen is developed in phases. Here's what's been shipped and what's coming next.
 - [x] Environment switching (server dropdown from spec `servers`)
 - [x] Error resilience (graceful degradation, error boundary, toast notifications)
 
-## Phase 2 — Full surface area ✅ Complete
+## Phase 2: Full surface area ✅ Complete
 
 - [x] DetailView with related resource links
 - [x] EditFormView (pre-populated from current record)
@@ -37,12 +37,12 @@ UIGen is developed in phases. Here's what's been shipped and what's coming next.
 - [x] Sidebar layout + TopBar + Breadcrumbs + responsive shell
 - [x] React Router with full URL navigation and browser history
 
-## Phase 3 — Extension & distribution 🔜 In progress
+## Phase 3: Extension & distribution 🔜 In progress
 
 - [ ] `x-uigen-*` vendor extension support (widget, label, hidden, order, view)
-- [ ] `uigen.config.json` — theme/behaviour/resource overrides
-- [ ] `uigen validate` — spec linting with actionable errors and line numbers
-- [ ] `uigen generate` — static production build output
+- [ ] `uigen.config.json`: theme/behaviour/resource overrides
+- [ ] `uigen validate`: spec linting with actionable errors and line numbers
+- [ ] `uigen generate`: static production build output
 - [ ] OAuth2 PKCE authentication flow
 - [ ] Spec hot-reloading (file watcher → WebSocket push to UI)
 - [ ] Loading skeletons with shimmer animation
@@ -51,19 +51,19 @@ UIGen is developed in phases. Here's what's been shipped and what's coming next.
 - [ ] Response transformation (JSONPath + JS functions)
 - [ ] Publish all packages to npm (`@uigen-dev/core`, `@uigen-dev/react`, `@uigen-dev/cli`)
 
-## Phase 4 — Renderer ecosystem
+## Phase 4: Renderer ecosystem
 
-- [ ] `@uigen-dev/svelte` — Svelte renderer consuming the same IR
-- [ ] `@uigen-dev/vue` — Vue 3 renderer
-- [ ] Plugin API — register custom adapters, field types, and view strategies as npm packages
-- [ ] `uigen ui:config` — visual configuration dashboard
-- [ ] `@uigen-dev/plugin-charts` — chart widgets from numeric data
-- [ ] `@uigen-dev/plugin-mapbox` — map renderer for geo coordinate fields
+- [ ] `@uigen-dev/svelte`: Svelte renderer consuming the same IR
+- [ ] `@uigen-dev/vue`: Vue 3 renderer
+- [ ] Plugin API: register custom adapters, field types, and view strategies as npm packages
+- [ ] `uigen ui:config`: visual configuration dashboard
+- [ ] `@uigen-dev/plugin-charts`: chart widgets from numeric data
+- [ ] `@uigen-dev/plugin-mapbox`: map renderer for geo coordinate fields
 - [ ] GraphQL adapter
 - [ ] OpenAPI 3.1 full support
 
-## Phase 5 — Cloud & enterprise
+## Phase 5: Cloud & enterprise
 
-- [ ] **uigen.cloud** — hosted UIGen: point at a spec URL, get a shareable live frontend
-- [ ] **GitHub Action** — auto-deploy the generated frontend when your spec changes in CI
-- [ ] **Enterprise tier** — SSO/SAML, audit logs, RBAC, on-prem deployment, SLA
+- [ ] **uigen.cloud**: hosted UIGen: point at a spec URL, get a shareable live frontend
+- [ ] **GitHub Action**: auto-deploy the generated frontend when your spec changes in CI
+- [ ] **Enterprise tier**: SSO/SAML, audit logs, RBAC, on-prem deployment, SLA

@@ -24,7 +24,7 @@ Field components are the building blocks of forms and detail views. UIGen select
 
 ## UI hints
 
-You can override the default component selection using the `uiHint.widget` field in the IR, or via the `x-uigen-widget` annotation (planned — see [Planned Annotations](/docs/spec-annotations/planned-annotations)):
+You can override the default component selection using the `uiHint.widget` field in the IR, or via the `x-uigen-widget` annotation (planned, see [Planned Annotations](/docs/spec-annotations/planned-annotations)):
 
 | Widget hint | Component |
 |---|---|

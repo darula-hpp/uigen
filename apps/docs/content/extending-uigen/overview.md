@@ -5,7 +5,7 @@ description: Build your own renderer on top of UIGen's framework-agnostic core.
 
 # Extending UIGen
 
-UIGen is designed to be extended. The core IR is framework-agnostic, which means you can build a renderer for any UI framework — Svelte, Vue, Angular, or anything else — using `@uigen-dev/core` as the only required dependency.
+UIGen is designed to be extended. The core IR is framework-agnostic, which means you can build a renderer for any UI framework (Svelte, Vue, Angular, or anything else) using `@uigen-dev/core` as the only required dependency.
 
 ## Architecture
 
@@ -53,8 +53,8 @@ The CLI looks for `@uigen-dev/my-renderer` in `node_modules`. Your renderer pack
 
 ## Planned renderer packages
 
-- **`@uigen-dev/svelte`** — Svelte renderer (planned, Phase 4)
-- **`@uigen-dev/vue`** — Vue 3 renderer (planned, Phase 4)
+- **`@uigen-dev/svelte`**: Svelte renderer (planned, Phase 4)
+- **`@uigen-dev/vue`**: Vue 3 renderer (planned, Phase 4)
 
 See the [Roadmap](/docs/roadmap/index) for the timeline.
 

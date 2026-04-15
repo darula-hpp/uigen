@@ -17,7 +17,7 @@ export function CodeBlock({ html, language, rawCode }: CodeBlockProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard not available — silently ignore
+      // Clipboard not available: silently ignore
     }
   }
 

@@ -5,7 +5,7 @@ description: Selectively replace or augment any auto-generated view in UIGen.
 
 # Override System
 
-> **In development** — the Override System is implemented and available in the current release, but the API may change in minor versions until it stabilises.
+> **In development**: the Override System is implemented and available in the current release, but the API may change in minor versions until it stabilises.
 
 The Override System lets you selectively replace or augment any auto-generated view without touching the rest of the UI. Think of it like CSS selectors for components: you target a specific view by its ID and provide a replacement or enhancement.
 

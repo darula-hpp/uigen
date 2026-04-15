@@ -5,7 +5,7 @@ description: Replace the rendered output while UIGen still fetches data.
 
 # Render Mode
 
-Render mode lets you replace only the rendered output of a view. UIGen still handles data fetching, loading states, and pagination — you just provide the JSX to render.
+Render mode lets you replace only the rendered output of a view. UIGen still handles data fetching, loading states, and pagination (you just provide the JSX to render).
 
 ## When to use
 

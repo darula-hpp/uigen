@@ -32,7 +32,7 @@ Authorization: Basic <base64(username:password)>
 
 ## Security note
 
-HTTP Basic credentials are stored in `sessionStorage` and cleared when the tab is closed. UIGen is designed for development and internal tooling — do not use it as a production authentication layer.
+HTTP Basic credentials are stored in `sessionStorage` and cleared when the tab is closed. UIGen is designed for development and internal tooling. Do not use it as a production authentication layer.
 
 ## Swagger 2.0
 

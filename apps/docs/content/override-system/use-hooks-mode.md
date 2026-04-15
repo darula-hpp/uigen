@@ -5,7 +5,7 @@ description: Add side effects to a view without changing the built-in rendering.
 
 # Use Hooks Mode
 
-Use hooks mode lets you add side effects to a view without replacing the built-in rendering. UIGen renders the view as normal — your hook runs alongside it.
+Use hooks mode lets you add side effects to a view without replacing the built-in rendering. UIGen renders the view as normal (your hook runs alongside it).
 
 ## When to use
 
@@ -18,7 +18,7 @@ Use hooks mode when:
 
 ## Important
 
-The built-in view **still renders** in hooks mode. You are not replacing anything — you are adding behaviour alongside the existing view.
+The built-in view **still renders** in hooks mode. You are not replacing anything (you are adding behaviour alongside the existing view).
 
 ## Example: analytics tracking
 
@@ -51,7 +51,7 @@ overrideRegistry.register({
   mode: 'useHooks',
   useHooks({ resource }) {
     useEffect(() => {
-      document.title = `${resource.name} — My App`;
+      document.title = `${resource.name} - My App`;
       return () => {
         document.title = 'My App';
       };
@@ -72,5 +72,5 @@ The `useHooks` function receives:
 ## Rules
 
 - You can use any React hooks inside `useHooks`
-- Do not return JSX — the return value is ignored
+- Do not return JSX (the return value is ignored)
 - The hook runs on every render of the view, following normal React rules

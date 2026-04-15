@@ -65,7 +65,7 @@ overrideRegistry.register({
 
 ## Wildcard targeting
 
-You can target all views for a resource using a wildcard (planned — not yet available):
+You can target all views for a resource using a wildcard (planned, not yet available):
 
 ```typescript
 // Coming Soon

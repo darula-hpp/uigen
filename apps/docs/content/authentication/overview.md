@@ -5,7 +5,7 @@ description: How UIGen auto-detects and handles authentication from your spec.
 
 # Authentication
 
-UIGen auto-detects authentication requirements from the `securitySchemes` section of your spec and generates the appropriate UI — no configuration required.
+UIGen auto-detects authentication requirements from the `securitySchemes` section of your spec and generates the appropriate UI (no configuration required).
 
 ## Auto-detection
 
@@ -22,7 +22,7 @@ When UIGen parses your spec, it reads `components/securitySchemes` (OpenAPI 3.x)
 
 ## Session storage
 
-Credentials are stored in the browser's `sessionStorage` under UIGen-specific keys. They are cleared when the browser tab is closed. This is intentional — UIGen is designed for development and internal tooling, not production user-facing apps.
+Credentials are stored in the browser's `sessionStorage` under UIGen-specific keys. They are cleared when the browser tab is closed. This is intentional: UIGen is designed for development and internal tooling, not production user-facing apps.
 
 ## Proxy injection
 

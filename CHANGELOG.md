@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.3] - 2026-04-16
+
+### Added
+
+**Core engine (`@uigen-dev/core`)**
+- `x-uigen-ignore` vendor extension support: annotate operations or entire paths to exclude them from the generated UI. When an operation is marked with `x-uigen-ignore: true`, it is filtered out during IR construction and will not appear in any generated views, sidebar navigation, or dashboard widgets.
+  ```yaml
+  paths:
+    /internal/metrics:
+      x-uigen-ignore: true  # Excludes all operations on this path
+    /users:
+      get:
+        x-uigen-ignore: false  # Explicitly include (overrides path-level)
+      post:
+        x-uigen-ignore: true   # Exclude this specific operation
+  ```
+- Operation-level annotations override path-level annotations for fine-grained control
+- Resources with all operations ignored are automatically excluded from the IR
+- Graceful fallback: non-boolean annotation values are treated as absent with a warning
+- Supported in both OpenAPI 3.x and Swagger 2.0 specs
+
+**Documentation site (`apps/docs`)**
+- Added comprehensive documentation page for `x-uigen-ignore` at `/docs/spec-annotations/x-uigen-ignore`
+- Updated spec annotations overview to list `x-uigen-ignore` as available
+- Removed `x-uigen-ignore` from planned annotations (now implemented)
+
+### Changed
+
+**Documentation site (`apps/docs`)**
+- Removed all em dashes from documentation content and replaced with appropriate punctuation (colons, parentheses, or regular hyphens) for improved readability and consistency with codebase style guidelines
+
+### Tests
+- 27 unit tests covering annotation extraction, operation filtering, resource filtering, and Swagger 2.0 support
+- 14 property-based tests (100 runs each) verifying all correctness properties including precedence rules, annotation validation, and cross-feature interactions
+- 8 integration tests verifying interaction with `x-uigen-login`, relationship detection, and dashboard generation
+
+---
+
 ## [0.2.2] - 2026-04-15
 
 ### Added
@@ -165,6 +203,7 @@ This is the first release of UIGen — point it at an OpenAPI spec, get a fully 
 
 ---
 
+[0.2.3]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.3
 [0.2.2]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.2
 [0.2.1]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.1
 [0.2.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.0

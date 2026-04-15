@@ -5,15 +5,15 @@ description: Paginated, sortable data table generated from GET collection endpoi
 
 # List View
 
-The List View is generated for `GET /resources` endpoints — collection endpoints that return an array of records. It renders a full-featured data table using TanStack Table.
+The List View is generated for `GET /resources` endpoints (collection endpoints that return an array of records). It renders a full-featured data table using TanStack Table.
 
 ## Features
 
-- **Sorting** — click any column header to sort ascending or descending
-- **Pagination** — automatic offset, cursor, or page-based pagination detected from query parameters
-- **Row actions** — Edit and Delete buttons on each row, linked to the corresponding edit form and delete confirmation
-- **Navigation** — clicking a row opens the Detail View for that record
-- **Column generation** — columns are derived from the response schema's top-level fields
+- **Sorting**: click any column header to sort ascending or descending
+- **Pagination**: automatic offset, cursor, or page-based pagination detected from query parameters
+- **Row actions**: Edit and Delete buttons on each row, linked to the corresponding edit form and delete confirmation
+- **Navigation**: clicking a row opens the Detail View for that record
+- **Column generation**: columns are derived from the response schema's top-level fields
 
 ## Pagination detection
 

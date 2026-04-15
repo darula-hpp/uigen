@@ -5,7 +5,7 @@ description: The framework-agnostic data model that drives the generated UI.
 
 # Intermediate Representation
 
-The Intermediate Representation (IR) is the central data model in UIGen. The adapter produces it from your spec, and the React SPA consumes it to render the UI. Because the IR is framework-agnostic, it can drive any renderer — React today, Svelte and Vue in the future.
+The Intermediate Representation (IR) is the central data model in UIGen. The adapter produces it from your spec, and the React SPA consumes it to render the UI. Because the IR is framework-agnostic, it can drive any renderer (React today, Svelte and Vue in the future).
 
 The IR is defined in `packages/core/src/ir/types.ts`. The types below are sourced directly from that file.
 
@@ -49,7 +49,7 @@ interface ServerConfig {
 
 ## `Resource`
 
-A resource maps to a group of related endpoints — typically a REST resource like `users` or `products`.
+A resource maps to a group of related endpoints (typically a REST resource like `users` or `products`).
 
 ```typescript
 interface Resource {
@@ -91,15 +91,15 @@ The view hint tells the renderer which UI pattern to use for an operation.
 
 ```typescript
 type ViewHint =
-  | 'list'      // GET /resources — paginated table
-  | 'detail'    // GET /resources/{id} — read-only record
-  | 'create'    // POST /resources — create form
-  | 'update'    // PUT/PATCH /resources/{id} — edit form
-  | 'delete'    // DELETE /resources/{id} — confirmation dialog
-  | 'search'    // GET with query params — search/filter view
-  | 'wizard'    // POST with large/nested body — multi-step form
+  | 'list'      // GET /resources: paginated table
+  | 'detail'    // GET /resources/{id}: read-only record
+  | 'create'    // POST /resources: create form
+  | 'update'    // PUT/PATCH /resources/{id}: edit form
+  | 'delete'    // DELETE /resources/{id}: confirmation dialog
+  | 'search'    // GET with query params: search/filter view
+  | 'wizard'    // POST with large/nested body: multi-step form
   | 'dashboard' // overview page
-  | 'action';   // non-CRUD operation — action button + dialog
+  | 'action';   // non-CRUD operation: action button + dialog
 ```
 
 ## `SchemaNode`

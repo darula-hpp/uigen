@@ -124,6 +124,59 @@ export class OpenAPI3Adapter {
   }
 
   /**
+   * Extract x-uigen-ignore annotation from a path item or operation.
+   * Returns true for x-uigen-ignore: true, false for x-uigen-ignore: false,
+   * and undefined for absent or non-boolean values.
+   */
+  private extractIgnoreAnnotation(obj: OpenAPIV3.PathItemObject | OpenAPIV3.OperationObject): boolean | undefined {
+    const annotation = (obj as any)['x-uigen-ignore'];
+    
+    // Only accept boolean values
+    if (typeof annotation === 'boolean') {
+      return annotation;
+    }
+    
+    // Treat non-boolean values as absent
+    if (annotation !== undefined) {
+      console.warn(`x-uigen-ignore must be a boolean, found ${typeof annotation}`);
+    }
+    
+    return undefined;
+  }
+
+  /**
+   * Determine if an operation should be ignored based on path-level and operation-level annotations.
+   * Operation-level annotation takes precedence over path-level annotation.
+   * 
+   * Precedence rules:
+   * - Operation has x-uigen-ignore: true → ignore
+   * - Operation has x-uigen-ignore: false → include (overrides path-level)
+   * - Path has x-uigen-ignore: true → ignore
+   * - Path has x-uigen-ignore: false → include
+   * - Neither has annotation → include (default behavior)
+   */
+  private shouldIgnoreOperation(
+    pathItem: OpenAPIV3.PathItemObject,
+    operation: OpenAPIV3.OperationObject
+  ): boolean {
+    const operationAnnotation = this.extractIgnoreAnnotation(operation);
+    
+    // Operation-level annotation takes precedence
+    if (operationAnnotation !== undefined) {
+      return operationAnnotation;
+    }
+    
+    // Fall back to path-level annotation
+    const pathAnnotation = this.extractIgnoreAnnotation(pathItem);
+    if (pathAnnotation !== undefined) {
+      return pathAnnotation;
+    }
+    
+    // Default: do not ignore
+    return false;
+  }
+
+  /**
    * Build a LoginEndpoint object from a path and operation.
    * Extracts request body schema, detects token path, and captures metadata.
    */
@@ -345,6 +398,12 @@ export class OpenAPI3Adapter {
         const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
         if (!operation) continue;
 
+        // Check if operation should be ignored
+        if (this.shouldIgnoreOperation(pathItem, operation)) {
+          console.log(`Ignoring operation: ${method.toUpperCase()} ${path}`);
+          continue;
+        }
+
         try {
           const op = this.adaptOperation(method.toUpperCase() as HttpMethod, path, operation);
           resource.operations.push(op);
@@ -367,15 +426,23 @@ export class OpenAPI3Adapter {
       }
     }
 
+    // Filter out resources with no operations
+    const resourcesWithOperations = Array.from(resourceMap.values()).filter(r => r.operations.length > 0);
+    
+    // Log warning if all resources were filtered out
+    if (resourcesWithOperations.length === 0 && resourceMap.size > 0) {
+      console.warn('All operations were ignored - no resources will be generated');
+    }
+
     // Detect relationships and pagination
-    for (const resource of resourceMap.values()) {
+    for (const resource of resourcesWithOperations) {
       resource.relationships = this.detectRelationships(resource, resourceMap);
       resource.pagination = this.detectPagination(resource);
     }
 
     // Ensure operation IDs are unique
     const usedIds = new Set<string>();
-    for (const resource of resourceMap.values()) {
+    for (const resource of resourcesWithOperations) {
       for (const operation of resource.operations) {
         let uniqueId = operation.id;
         let counter = 1;
@@ -388,7 +455,7 @@ export class OpenAPI3Adapter {
       }
     }
 
-    return Array.from(resourceMap.values());
+    return resourcesWithOperations;
   }
 
   private adaptOperation(method: HttpMethod, path: string, operation: OpenAPIV3.OperationObject): Operation {
