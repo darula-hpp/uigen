@@ -1,0 +1,254 @@
+[
+  {
+    "title": "Introduction",
+    "section": "Getting Started",
+    "slug": "introduction",
+    "href": "/docs/getting-started/introduction",
+    "content": "Introduction\nUIGen is a runtime frontend generator for OpenAPI-described APIs. Point it at any OpenAPI 3.x or Swagger 2.0 spec and it serves a fully functional, interactive frontend — tables, forms, detail views, authentication, search, and more — with zero boilerplate and zero code to write.\nWhat UIGen does\nUIGen reads your API spec and generates a complete UI at runtime:\nList views — paginated, sortable tables for every collection endpoint\nDetail views — read-only record pages with related resource links\nCreate / edit forms — validated forms derived from request body schemas\nSearch — global and per-resource filtered search using query parameters from the spec\nDashboard — auto-generated overview with resource counts and quick links\nMulti-step wizards — triggered automatically for large or nested forms\nAuthentication — Bearer token, API Key, HTTP Basic, and credential-based login, all auto-detected from \nAll API calls are live — UIGen proxies requests to your real backend, so there is no mocking and no stub data.\nWho it's for\nUIGen is useful for:\nAPI developers who want an instant admin UI or internal tool without building a frontend\nTeams that need a quick way to explore and test a new API\nPrototypers who want to demo an API to stakeholders without writing UI code\nHow it works\nUIGen parses your spec into an Intermediate Representation (IR), then uses that IR to drive a React SPA. The CLI injects the IR into the app at startup and starts a local server.\nSee How It Works for a deeper look at the data flow.\nPackages\nUIGen ships as three packages:\nNext steps\nQuick Start — run UIGen in under a minute\nInstallation — install the packages that fit your use case"
+  },
+  {
+    "title": "Quick Start",
+    "section": "Getting Started",
+    "slug": "quick-start",
+    "href": "/docs/getting-started/quick-start",
+    "content": "Quick Start\nThe fastest way to try UIGen is with  — no installation required.\nStep 1: Run the CLI\nPoint UIGen at any OpenAPI 3.x or Swagger 2.0 spec file:\nYou should see output like:\nStep 2: Open the browser\nNavigate to http://localhost:4400. UIGen serves a complete React SPA with:\nA sidebar listing all resources detected from your spec\nA dashboard overview with resource counts\nFully functional list, detail, create, edit, and delete views\nStep 3: Navigate the generated UI\nClick any resource in the sidebar to open its list view. From there you can:\nBrowse records fetched live from your API\nClick a row to open the detail view\nUse the New button to open the create form\nEdit or delete records inline\nUsing a remote spec\nUIGen also accepts a URL:\nCustom port\nCustom proxy base\nIf your API runs on a different host than what's declared in the spec's  field:\nNext steps\nInstallation — install packages for programmatic use\nCLI Reference — all available flags\nAuthentication — how UIGen handles auth"
+  },
+  {
+    "title": "Installation",
+    "section": "Getting Started",
+    "slug": "installation",
+    "href": "/docs/getting-started/installation",
+    "content": "Installation\nUIGen ships as three separate packages. Install only what you need.\nThe CLI is the fastest way to get started. Use it to serve a generated UI directly from a spec file.\nOr use it without installing via :\nUse this when you want to spin up a UI for an existing API without writing any code.\nThe framework-agnostic core contains the adapters, IR types, and the  function. It has no UI dependencies.\nUse this when you want to build your own renderer on top of UIGen's IR, or when you need to parse a spec programmatically.\nThe React renderer provides the full UI layer — views, forms, fields, auth, and layout — driven by the IR from .\nUse this when you want to embed the generated UI inside an existing React application, or when you need to customise the rendering via the Override System.\nRequirements\nNode.js 18 or later\nnpm 9 or later (or pnpm / yarn equivalent)\nNext steps\nQuick Start — run UIGen in under a minute\nCLI Reference — all available flags for \nOverride System — customise the generated UI"
+  },
+  {
+    "title": "How It Works",
+    "section": "Core Concepts",
+    "slug": "how-it-works",
+    "href": "/docs/core-concepts/how-it-works",
+    "content": "How It Works\nUIGen transforms an API spec into a running frontend through a pipeline of discrete steps. Understanding this pipeline helps you know where to customise behaviour and how to debug unexpected output.\nData flow\nStep 1: Adapter\nThe adapter reads the raw spec string and produces the IR. UIGen ships two adapters:\nOpenAPI 3.x adapter — handles OpenAPI 3.0 and 3.1 documents\nSwagger 2.0 adapter — handles Swagger 2.0 (formerly OpenAPI 2.0) documents\nThe adapter resolves all  references, detects view hints (list, detail, create, update, delete, search, wizard, action), infers pagination strategies, and extracts authentication schemes.\nSee Adapters for details.\nStep 2: Intermediate Representation (IR)\nThe IR is a plain TypeScript object that describes the entire UI in framework-agnostic terms. It contains:\nResources — the entities in your API (e.g. , )\nOperations — the HTTP endpoints for each resource, with view hints\nSchema nodes — the field types, labels, validations, and UI hints for each field\nAuth config — the authentication schemes and login endpoints\nDashboard config — widgets and resource counts for the overview page\nThe IR is serialised as JSON and injected into the React SPA as  at startup.\nSee Intermediate Representation for the full type definitions.\nStep 3: React SPA\nThe React SPA reads the IR from  and renders the UI. It uses:\nReact Router for URL navigation and browser history\nTanStack Query for data fetching, caching, and mutations\nTanStack Table for sortable, paginated data tables\nReact Hook Form + Zod for form state and validation\nshadcn/ui for accessible, pre-styled components\nThe SPA is served by the CLI's built-in HTTP server.\nStep 4: API Proxy\nAll API calls from the SPA go through the CLI's built-in proxy at . The proxy:\nForwards requests to the target server (from the spec's  field, or )\nInjects authentication headers transparently (Bearer token, API Key, HTTP Basic)\nStrips UIGen-specific headers before forwarding\nThis means the SPA never makes direct cross-origin requests — the proxy handles CORS.\nTwo serving modes\nThe CLI operates in two modes depending on how it was installed:\nBoth modes expose the same URL and behaviour. The difference is internal."
+  },
+  {
+    "title": "Intermediate Representation",
+    "section": "Core Concepts",
+    "slug": "intermediate-representation",
+    "href": "/docs/core-concepts/intermediate-representation",
+    "content": "Intermediate Representation\nThe Intermediate Representation (IR) is the central data model in UIGen. The adapter produces it from your spec, and the React SPA consumes it to render the UI. Because the IR is framework-agnostic, it can drive any renderer — React today, Svelte and Vue in the future.\nThe IR is defined in . The types below are sourced directly from that file.\nThe root object. Everything the SPA needs is here.\nBasic metadata from the spec's  object.\nEach entry in the spec's  array becomes a . The SPA uses these to populate the environment switcher.\nA resource maps to a group of related endpoints — typically a REST resource like  or .\nAn operation maps to a single HTTP endpoint. The  tells the renderer which view to use.\nThe view hint tells the renderer which UI pattern to use for an operation.\nA  represents a single field or nested object in a request or response schema.\nAuthentication configuration extracted from the spec's .\nThe adapter detects the pagination strategy from query parameter names.\nValidation rules are extracted from JSON Schema constraints in the spec."
+  },
+  {
+    "title": "Adapters",
+    "section": "Core Concepts",
+    "slug": "adapters",
+    "href": "/docs/core-concepts/adapters",
+    "content": "Adapters\nAn adapter reads a raw spec string and produces the Intermediate Representation (IR). UIGen ships two adapters, selected automatically based on the spec's format.\nOpenAPI 3.x adapter\nHandles OpenAPI 3.0 and 3.1 documents. This is the primary adapter and supports the full feature set.\nThe adapter processes:\n— each path/method combination becomes an  with a \n— resolved and inlined into  trees\n— mapped to  entries in \n— mapped to  entries for the environment switcher\n— mapped to \nSwagger 2.0 adapter\nHandles Swagger 2.0 (formerly OpenAPI 2.0) documents. The adapter normalises Swagger 2.0 constructs to the same IR shape:\n→  equivalent\n+  → \n→  equivalent\n/  → \nThe output IR is identical regardless of whether the input was OpenAPI 3.x or Swagger 2.0.\nresolution\nBoth adapters perform full  resolution before building the IR. This means:\nCircular references are detected and broken safely\nInline schemas and  schemas produce the same  output\nDeeply nested  chains are fully resolved\nGraceful degradation\nReal-world specs are often incomplete or non-standard. The adapters are designed to degrade gracefully rather than fail:\nMissing schemas — operations with no response schema produce a generic key-value \nUnknown field types — unmapped types fall back to \nMalformed operations — skipped with a ; recorded in \nMissing  — defaults to \nParsing errors are available in  for debugging.\nUsing the adapter directly\nYou can call  from  to parse a spec programmatically:\n auto-detects the spec format (OpenAPI 3.x vs Swagger 2.0) and selects the appropriate adapter."
+  },
+  {
+    "title": "Overview",
+    "section": "Supported Specs",
+    "slug": "overview",
+    "href": "/docs/supported-specs/overview",
+    "content": "Supported Specs\nUIGen supports the two most widely used API specification formats.\nOpenAPI 3.x\nOpenAPI 3.0 and 3.1 are the primary supported formats. All features are available:\nFull  resolution including circular references\n, , \narray for environment switching\nwith  type negotiation\n, ,  schema composition (flattened to a single )\nAll standard security scheme types:  (bearer, basic), , \nSwagger 2.0\nSwagger 2.0 (formerly OpenAPI 2.0) is fully supported. The adapter normalises Swagger 2.0 constructs to the same IR:\n→ schema resolution\n+  +  → server URL\n→ auth schemes\n/  → content type handling\nparameters → request body schema\nFormat detection\nUIGen auto-detects the spec format from the document's root keys:\n→ OpenAPI 3.x adapter\n→ Swagger 2.0 adapter\nBoth YAML and JSON are accepted.\nPlanned support\nOpenAPI 3.1 — full support is in progress. Most 3.1 documents work today; edge cases around JSON Schema vocabulary differences are being addressed.\nGraphQL — planned for a future release.\nCompatibility notes\nUIGen aims to work with real-world specs, which are often imperfect. If your spec has issues, check  for details. See Adapters for how UIGen handles malformed or incomplete specs."
+  },
+  {
+    "title": "Overview",
+    "section": "Views & Components",
+    "slug": "overview",
+    "href": "/docs/views-and-components/overview",
+    "content": "Views & Components\nUIGen generates a set of UI patterns — called views — from the operations in your spec. Each view is selected automatically based on the HTTP method, path shape, and request/response schema.\nView types\nView selection\nThe adapter assigns a  to each operation. The React renderer uses this hint to select the appropriate view component. You can inspect the assigned hints in .\nField components\nEvery view uses a set of field components to render individual form inputs and display values. See Field Components for the full list.\nCustomisation\nAll views can be replaced or augmented using the Override System. You can swap out an entire view, replace just the render output, or add side effects without changing the built-in rendering."
+  },
+  {
+    "title": "List View",
+    "section": "Views & Components",
+    "slug": "list-view",
+    "href": "/docs/views-and-components/list-view",
+    "content": "List View\nThe List View is generated for  endpoints — collection endpoints that return an array of records. It renders a full-featured data table using TanStack Table.\nFeatures\nSorting — click any column header to sort ascending or descending\nPagination — automatic offset, cursor, or page-based pagination detected from query parameters\nRow actions — Edit and Delete buttons on each row, linked to the corresponding edit form and delete confirmation\nNavigation — clicking a row opens the Detail View for that record\nColumn generation — columns are derived from the response schema's top-level fields\nPagination detection\nThe adapter detects the pagination strategy from the query parameters defined in the spec:\nIf no pagination params are found, the table renders all returned records without pagination controls.\nExample spec\nThis produces a paginated table with offset-based pagination controls.\nCustomisation\nReplace the entire List View for a specific resource using the Override System:"
+  },
+  {
+    "title": "Detail View",
+    "section": "Views & Components",
+    "slug": "detail-view",
+    "href": "/docs/views-and-components/detail-view",
+    "content": "Detail View\nThe Detail View is generated for  endpoints. It renders a read-only page showing all fields of a single record.\nFeatures\nField rendering — all fields from the response schema are displayed with appropriate formatting\nRelated resource links — if the adapter detects relationships (e.g. ), links to related resources appear in the detail view\nEdit button — links to the Edit Form View if a / endpoint exists for the resource\nDelete button — triggers the delete confirmation dialog if a  endpoint exists\nField formatting\nFields are formatted based on their type and format:\nExample spec\nCustomisation\nReplace the Detail View for a specific resource:"
+  },
+  {
+    "title": "Form View",
+    "section": "Views & Components",
+    "slug": "form-view",
+    "href": "/docs/views-and-components/form-view",
+    "content": "Form View\nThe Form View is generated for  endpoints. It renders a validated create form using React Hook Form and Zod.\nFeatures\nField generation — form fields are derived from the  schema\nValidation — constraints from the spec (, , , , , ) are enforced client-side via Zod\nField types — each field renders the appropriate input component based on its type and format\nSubmit handling — on success, navigates to the Detail View for the newly created record\nValidation mapping\nWizard threshold\nIf the  schema has more than 8 fields, or contains nested objects, UIGen renders a Wizard View instead of a flat form.\nExample spec\nCustomisation\nReplace the Form View for a specific resource:"
+  },
+  {
+    "title": "Edit Form View",
+    "section": "Views & Components",
+    "slug": "edit-form-view",
+    "href": "/docs/views-and-components/edit-form-view",
+    "content": "Edit Form View\nThe Edit Form View is generated for  and  endpoints. It works like the Form View but pre-populates all fields with the current record's values.\nFeatures\nPre-population — fetches the current record via the corresponding  endpoint and fills all form fields\nPartial updates —  endpoints produce a form where all fields are optional by default\nValidation — same constraint mapping as the Form View\nCancel — navigates back to the Detail View without saving\nDifference from Form View\nExample spec\nCustomisation\nReplace the Edit Form View for a specific resource:"
+  },
+  {
+    "title": "Search View",
+    "section": "Views & Components",
+    "slug": "search-view",
+    "href": "/docs/views-and-components/search-view",
+    "content": "Search View\nThe Search View is generated for  endpoints that define query parameters for filtering. It renders a search bar and filter controls above a results table.\nFeatures\nSearch bar — a text input that maps to the primary search query parameter\nFilter controls — additional query parameters are rendered as filter inputs (dropdowns for enums, date pickers for date fields, etc.)\nLive results — results update as the user types or changes filters\nResults table — same table component as the List View, with sorting and pagination\nQuery parameter detection\nThe adapter identifies search/filter parameters by their location () and names. Parameters named , , , or  are treated as the primary search input. All other query parameters become secondary filter controls.\nExample spec\nThis produces a search bar plus a status dropdown filter.\nCustomisation\nReplace the Search View for a specific resource:"
+  },
+  {
+    "title": "Dashboard View",
+    "section": "Views & Components",
+    "slug": "dashboard-view",
+    "href": "/docs/views-and-components/dashboard-view",
+    "content": "Dashboard View\nThe Dashboard View is the home page of the generated UI. It is auto-generated from the resources in your spec and provides an at-a-glance overview.\nFeatures\nResource count widgets — each resource gets a card showing the total record count, fetched from the list endpoint\nQuick links — each widget links to the resource's List View\nRecent activity — if the spec includes timestamp fields, a recent activity feed is shown\nError resilience — if a count fetch fails, the widget shows a warning rather than crashing\nWidget types\nCustomisation\nThe dashboard layout is driven by  in the IR:\nYou can replace the entire Dashboard View using the Override System:"
+  },
+  {
+    "title": "Wizard View",
+    "section": "Views & Components",
+    "slug": "wizard-view",
+    "href": "/docs/views-and-components/wizard-view",
+    "content": "Wizard View\nThe Wizard View is a multi-step form triggered automatically when a  endpoint's request body has more than 8 fields, or contains nested objects. It groups fields into logical steps to reduce cognitive load.\nTrigger conditions\nUIGen uses the Wizard View instead of the flat Form View when either condition is met:\nThe  schema has more than 8 top-level fields\nThe  schema contains nested objects (fields with )\nStep grouping\nSteps are grouped automatically:\nRequired fields — all required fields appear in the first step\nOptional fields — optional fields are grouped into subsequent steps by object nesting\nReview — a final read-only review step shows all entered values before submission\nFeatures\nProgress indicator — shows the current step and total steps\nBack / Next navigation — users can move between steps; earlier steps are validated before advancing\nPer-step validation — only the fields in the current step are validated on Next\nReview step — shows a summary of all entered values before final submission\nExample spec\nA  endpoint with a nested  object and more than 8 fields will automatically render as a wizard.\nCustomisation\nReplace the Wizard View for a specific resource:"
+  },
+  {
+    "title": "Login View",
+    "section": "Views & Components",
+    "slug": "login-view",
+    "href": "/docs/views-and-components/login-view",
+    "content": "Login View\nThe Login View is a credential-based login form. It is generated when an endpoint is annotated with  in the spec. This is used for APIs that require a username/password login to obtain a token.\nWhen it appears\nThe Login View appears when:\nThe spec has a  entry requiring authentication\nAt least one endpoint is annotated with \nWithout the annotation, UIGen renders a token input form instead (for Bearer/API Key schemes).\nFeatures\nAuto-generated fields — the form fields are derived from the login endpoint's  schema\nToken extraction — after a successful login, UIGen extracts the token from the response using the  annotation\nSession storage — the token is stored in session storage and injected into subsequent API requests via the proxy\nError handling — login errors are displayed inline\nExample\nSee Credential Login for a full example with YAML annotations.\nCustomisation\nReplace the Login View:"
+  },
+  {
+    "title": "Field Components",
+    "section": "Views & Components",
+    "slug": "field-components",
+    "href": "/docs/views-and-components/field-components",
+    "content": "Field Components\nField components are the building blocks of forms and detail views. UIGen selects the appropriate component for each field based on its  and optional .\nField types\nUI hints\nYou can override the default component selection using the  field in the IR, or via the  annotation (planned — see Planned Annotations):\nValidation display\nValidation errors are displayed inline below each field. The error message comes from the  if provided, otherwise a default message is generated from the rule type.\nCustomisation\nIndividual field components can be replaced using the Override System. See Override System for details."
+  },
+  {
+    "title": "Overview",
+    "section": "Authentication",
+    "slug": "overview",
+    "href": "/docs/authentication/overview",
+    "content": "Authentication\nUIGen auto-detects authentication requirements from the  section of your spec and generates the appropriate UI — no configuration required.\nAuto-detection\nWhen UIGen parses your spec, it reads  (OpenAPI 3.x) or  (Swagger 2.0) and builds an  in the IR. If  is true (i.e. the spec has a top-level  requirement), UIGen shows an authentication prompt before allowing access to the generated UI.\nSupported schemes\nSession storage\nCredentials are stored in the browser's  under UIGen-specific keys. They are cleared when the browser tab is closed. This is intentional — UIGen is designed for development and internal tooling, not production user-facing apps.\nProxy injection\nThe CLI's built-in proxy reads credentials from UIGen-specific request headers and injects them into the forwarded request:\nThe UIGen-specific headers are stripped before the request reaches your API.\nMultiple schemes\nIf your spec defines multiple security schemes, UIGen renders a scheme selector so the user can choose which one to use."
+  },
+  {
+    "title": "Bearer Token",
+    "section": "Authentication",
+    "slug": "bearer-token",
+    "href": "/docs/authentication/bearer-token",
+    "content": "Bearer Token\nUIGen auto-detects Bearer token authentication from  security schemes with .\nSpec example\nUI behaviour\nWhen UIGen detects a Bearer scheme, it renders a token input form before the main UI. The user pastes their token and clicks Connect. The token is stored in  and injected into all subsequent API requests via the proxy as .\nSwagger 2.0\nIn Swagger 2.0, Bearer tokens are typically modelled as an  in the  header. UIGen detects this pattern and renders the same token input form."
+  },
+  {
+    "title": "API Key",
+    "section": "Authentication",
+    "slug": "api-key",
+    "href": "/docs/authentication/api-key",
+    "content": "API Key\nUIGen auto-detects API Key authentication from  security schemes. The key can be sent in a header, query parameter, or cookie.\nSpec example (header)\nSpec example (query parameter)\nUI behaviour\nUIGen renders an API key input form. The user enters their key and clicks Connect. The key is stored in .\nThe proxy injects the key into forwarded requests:\n* — added as a custom request header with the name from the scheme\n— appended as a query parameter to the target URL\n* — set as a  header (note: cookie injection has browser security limitations in some environments)\nSwagger 2.0"
+  },
+  {
+    "title": "HTTP Basic",
+    "section": "Authentication",
+    "slug": "http-basic",
+    "href": "/docs/authentication/http-basic",
+    "content": "HTTP Basic\nUIGen auto-detects HTTP Basic authentication from  security schemes with .\nSpec example\nUI behaviour\nUIGen renders a username and password form. On submit, the credentials are Base64-encoded as  and stored in .\nThe proxy injects the credentials into forwarded requests as:\nSecurity note\nHTTP Basic credentials are stored in  and cleared when the tab is closed. UIGen is designed for development and internal tooling — do not use it as a production authentication layer.\nSwagger 2.0\nSwagger 2.0 does not have a native  scheme type. Basic auth in Swagger 2.0 is typically modelled as:\nUIGen detects this and renders the same username/password form."
+  },
+  {
+    "title": "Credential Login",
+    "section": "Authentication",
+    "slug": "credential-login",
+    "href": "/docs/authentication/credential-login",
+    "content": "Credential Login\nSome APIs require a login call to obtain a token — for example,  with a username and password that returns a JWT. UIGen supports this via the  annotation.\nHow it works\nAnnotate your login endpoint with \nAnnotate the response field that contains the token with \nUIGen generates a login form from the request body schema\nOn successful login, UIGen extracts the token from the response and stores it in \nAll subsequent requests are authenticated with the extracted token\nSpec example (OpenAPI 3.x)\nSpec example (Swagger 2.0)\nToken path\nThe  annotation specifies the dot-notation path to the token in the response body. For example:\n— \n— \n— \nRelated\nAuthentication Overview\nx-uigen-login annotation"
+  },
+  {
+    "title": "Overview",
+    "section": "Spec Annotations",
+    "slug": "overview",
+    "href": "/docs/spec-annotations/overview",
+    "content": "Spec Annotations\nUIGen supports a set of  vendor extensions that let you customise the generated UI directly from your OpenAPI or Swagger spec. These annotations are optional — UIGen works without them — but they give you fine-grained control over labels, identifiers, and behaviour.\nAvailable annotations\nWhere annotations are supported\nAnnotations can be placed at different levels of the spec:\nSchema property — affects a single field\nSchema object — affects all fields in a schema\nPath item — affects all operations on a path\nOperation — affects a single operation\nPrecedence\nWhen the same annotation appears at multiple levels, the most specific level wins:\nSwagger 2.0 support\nAll  annotations work in Swagger 2.0 documents in the same way as OpenAPI 3.x."
+  },
+  {
+    "title": "x-uigen-label",
+    "section": "Spec Annotations",
+    "slug": "x-uigen-label",
+    "href": "/docs/spec-annotations/x-uigen-label",
+    "content": "x-uigen-label\nThe  annotation overrides the display label that UIGen generates for a field, operation, or resource. By default, UIGen derives labels from property names and operation summaries using title-case conversion.\nPurpose\nUse  when:\nThe property name is a technical identifier (e.g. , )\nYou want a more user-friendly label than the auto-generated one\nYou need to localise labels without changing the spec's property names\nSupported locations\nPrecedence\nWhen  appears at multiple levels, the most specific wins:\nOpenAPI 3.x examples\nField label\nResource label\nOperation label\nSwagger 2.0 examples\nField label\nOperation label\nDefault label generation\nWithout , UIGen generates labels by:\nSplitting the property name on , , and camelCase boundaries\nTitle-casing each word\nJoining with spaces\nFor example:  → ,  → ."
+  },
+  {
+    "title": "x-uigen-id",
+    "section": "Spec Annotations",
+    "slug": "x-uigen-id",
+    "href": "/docs/spec-annotations/x-uigen-id",
+    "content": "x-uigen-id\nThe  annotation overrides the stable identifier () that UIGen assigns to a resource or operation. This identifier is used by the Override System to target specific views for replacement.\nPurpose\nBy default, UIGen generates  values from the resource slug and operation method. These IDs can change if you rename resources or restructure your spec. Use  to pin a stable identifier that won't change even if the spec evolves.\nDefault ID generation\nWithout , UIGen generates IDs using the pattern:\nFor example:\n→ \n→ \n→ \nFallback to slug\nIf  is not set, UIGen falls back to the auto-generated slug. The slug is derived from the path by stripping path parameters and joining segments with dots.\nOpenAPI 3.x example\nWith these annotations, the Override System targets use the pinned IDs:\nSwagger 2.0 example\nUniqueness\n values must be unique across all operations in the spec. If two operations share the same , UIGen logs a warning and uses the auto-generated ID for the conflicting operation."
+  },
+  {
+    "title": "Planned Annotations",
+    "section": "Spec Annotations",
+    "slug": "planned-annotations",
+    "href": "/docs/spec-annotations/planned-annotations",
+    "content": "Planned Annotations\nThe following  annotations are planned for a future release. They are not yet available.\n> Coming Soon — these annotations are not implemented yet. This page documents the intended behaviour so you can plan ahead.\nOverride the input component used for a field in forms.\nPlanned usage:\nPlanned widget values: , , , , , , \nHide a field from the generated UI entirely. The field is still sent in API requests if it has a default value.\nPlanned usage:\nControl the display order of fields in forms and table columns. Lower numbers appear first.\nPlanned usage:\nTimeline\nThese annotations are part of Phase 3 of the UIGen roadmap. See the Roadmap for the full plan."
+  },
+  {
+    "title": "Overview",
+    "section": "Override System",
+    "slug": "overview",
+    "href": "/docs/override-system/overview",
+    "content": "Override System\n> In development — the Override System is implemented and available in the current release, but the API may change in minor versions until it stabilises.\nThe Override System lets you selectively replace or augment any auto-generated view without touching the rest of the UI. Think of it like CSS selectors for components: you target a specific view by its ID and provide a replacement or enhancement.\nMental model\nJust as CSS lets you target a specific element and override its styles, the Override System lets you target a specific view by its  and override its rendering. Everything else continues to work as generated.\nThree modes\nPriority order\nWhen multiple overrides target the same view, the most specific wins:\nTargeting views\nEach view has a stable  that you use to target it. The ID follows the pattern :\nYou can also pin custom IDs using the [](/docs/spec-annotations/x-uigen-id) annotation.\nSee Override ID Addressing for the full addressing scheme.\nRegistration\nOverrides are registered before the app mounts:"
+  },
+  {
+    "title": "Component Mode",
+    "section": "Override System",
+    "slug": "component-mode",
+    "href": "/docs/override-system/component-mode",
+    "content": "Component Mode\nComponent mode replaces the entire auto-generated view with your own React component. UIGen renders your component instead of the built-in view — you have full control over the UI.\nWhen to use\nUse component mode when:\nThe built-in view doesn't fit your design requirements\nYou need a completely custom layout or interaction pattern\nYou want to use a third-party component library for a specific view\nExample\nProps\nYour component receives the following props:\nRegistration\nCall  before the UIGen app mounts. Typically this is done in your app's entry point, before rendering the  component.\nMultiple overrides\nYou can register overrides for multiple views:"
+  },
+  {
+    "title": "Render Mode",
+    "section": "Override System",
+    "slug": "render-mode",
+    "href": "/docs/override-system/render-mode",
+    "content": "Render Mode\nRender mode lets you replace only the rendered output of a view. UIGen still handles data fetching, loading states, and pagination — you just provide the JSX to render.\nWhen to use\nUse render mode when:\nYou want a custom layout but don't want to re-implement data fetching\nYou need to change how data is displayed without changing the data source\nYou want to keep UIGen's loading and error states but customise the success state\nExample\nRender props\nThe  function receives:\nDifference from component mode"
+  },
+  {
+    "title": "Use Hooks Mode",
+    "section": "Override System",
+    "slug": "use-hooks-mode",
+    "href": "/docs/override-system/use-hooks-mode",
+    "content": "Use Hooks Mode\nUse hooks mode lets you add side effects to a view without replacing the built-in rendering. UIGen renders the view as normal — your hook runs alongside it.\nWhen to use\nUse hooks mode when:\nYou want to track analytics events when a view is visited\nYou need to update  based on the current resource\nYou want to trigger a side effect (e.g. refresh a badge count) when a view loads\nYou need to integrate with an external system without changing the UI\nImportant\nThe built-in view still renders in hooks mode. You are not replacing anything — you are adding behaviour alongside the existing view.\nExample: analytics tracking\nExample: document title\nHook props\nThe  function receives:\nRules\nYou can use any React hooks inside \nDo not return JSX — the return value is ignored\nThe hook runs on every render of the view, following normal React rules"
+  },
+  {
+    "title": "Override ID Addressing",
+    "section": "Override System",
+    "slug": "override-id-addressing",
+    "href": "/docs/override-system/override-id-addressing",
+    "content": "Override ID Addressing\nEvery view in UIGen has a stable  that you use to target it with the Override System. This page documents the full addressing scheme.\nDefault ID pattern\nAuto-generated IDs follow the pattern:\nFull addressing table\nResource slug derivation\nThe resource slug is derived from the path by:\nTaking the first path segment after  (e.g.  → )\nLowercasing and replacing non-alphanumeric characters with \nFor example:\n→ \n→  (first meaningful segment)\n→ \nCustom IDs\nPin a custom ID using the [](/docs/spec-annotations/x-uigen-id) annotation:\nThen target it in the Override System:\nWildcard targeting\nYou can target all views for a resource using a wildcard (planned — not yet available):\nInspecting IDs\nTo see the  for each view, inspect  in the browser console:"
+  },
+  {
+    "title": "serve",
+    "section": "CLI Reference",
+    "slug": "serve",
+    "href": "/docs/cli-reference/serve",
+    "content": "uigen serve\nThe  command reads an API spec and starts a local server with a fully generated UI.\nUsage\n can be a local file path or a remote URL.\nOptions\nExamples\nLocal file\nRemote URL\nCustom port\nCustom proxy base\nOverride the API target when it differs from the spec's  field:\nVerbose proxy logging\nWith , the CLI logs each proxied request and response:\nServing modes\nThe CLI operates in two modes depending on how it was installed:\nDev mode\nUsed when running from the monorepo (no pre-built renderer in ). Starts a Vite dev server with hot module replacement.\nStatic mode\nUsed when installed via npm or npx. Serves the pre-built  directory with a plain Node.js HTTP server. Vite is not required at runtime.\nBoth modes expose the same URL and behaviour.\nRenderer support\nCurrently only  is available.  and  renderers are planned for a future release. Passing an unknown renderer value falls back to  with a warning.\nNotes\nThe spec file is read once at startup. Changes to the spec require restarting the server.\nThe proxy forwards all requests to  to the target server.\nAuthentication headers are injected by the proxy transparently — your API never sees UIGen-specific headers."
+  },
+  {
+    "title": "Planned Commands",
+    "section": "CLI Reference",
+    "slug": "planned-commands",
+    "href": "/docs/cli-reference/planned-commands",
+    "content": "Planned Commands\nThe following CLI commands are planned for a future release. They are not yet available.\n> Coming Soon — these commands are not implemented yet.\nValidate a spec for UIGen compatibility and report actionable errors.\nPlanned usage:\nPlanned output:\nThe  command will exit with a non-zero code if any errors are found, making it suitable for use in CI pipelines.\nGenerate a static production build of the UI.\nPlanned usage:\nPlanned output:\nThe output will be a self-contained directory of static files that can be deployed to any static hosting service (Vercel, Netlify, S3, etc.).\nTimeline\nBoth commands are part of Phase 3 of the UIGen roadmap. See the Roadmap for the full plan."
+  },
+  {
+    "title": "Overview",
+    "section": "Extending UIGen",
+    "slug": "overview",
+    "href": "/docs/extending-uigen/overview",
+    "content": "Extending UIGen\nUIGen is designed to be extended. The core IR is framework-agnostic, which means you can build a renderer for any UI framework — Svelte, Vue, Angular, or anything else — using  as the only required dependency.\nArchitecture\nThe extension point is the IR. Your renderer:\nReceives the IR from  (injected by the CLI)\nReads , , , and \nRenders the appropriate UI for each resource and operation\nThe CLI handles spec parsing, IR injection, and the API proxy. Your renderer only needs to handle the UI layer.\nRequired dependency\n provides the TypeScript types for the IR, which you need to build a type-safe renderer.\nMinimal renderer example\nServing your renderer\nPass your renderer's entry point to the CLI using :\nThe CLI looks for  in . Your renderer package must export a  that the CLI can serve.\nPlanned renderer packages\n* — Svelte renderer (planned, Phase 4)\n* — Vue 3 renderer (planned, Phase 4)\nSee the Roadmap for the timeline.\nCommunity renderers\nIf you build a renderer for UIGen, open a pull request to add it to this page."
+  },
+  {
+    "title": "Roadmap",
+    "section": "Roadmap",
+    "slug": "index",
+    "href": "/docs/roadmap/index",
+    "content": "Roadmap\nUIGen is developed in phases. Here's what's been shipped and what's coming next.\nPhase 1 — Core vertical slice ✅ Complete\n[x] Monorepo scaffold (pnpm + Vite + TypeScript)\n[x] IR types (auth, relationships, pagination hints, validation rules)\n[x] OpenAPI 3.x adapter with full  resolution\n[x] Swagger 2.0 adapter\n[x] View hint classifier (list, detail, create, update, delete, search, wizard, action)\n[x] Relationship detector (hasMany / belongsTo)\n[x] Pagination detector (offset, cursor, page-based)\n[x] Core field components (TextField, NumberField, SelectField, DatePicker, FileUpload, ArrayField, ObjectField)\n[x] ListView with TanStack Table — sorting, pagination, filtering, row actions\n[x] FormView with React Hook Form + Zod validation\n[x] CLI  command with Vite proxy\n[x] Opinionated theme (shadcn/ui dark/light toggle)\n[x] Authentication UI (Bearer token + API Key)\n[x] Environment switching (server dropdown from spec )\n[x] Error resilience (graceful degradation, error boundary, toast notifications)\nPhase 2 — Full surface area ✅ Complete\n[x] DetailView with related resource links\n[x] EditFormView (pre-populated from current record)\n[x] Delete with confirmation dialog\n[x] Custom action buttons (non-CRUD operations)\n[x] SearchView (global + per-resource filters)\n[x] DashboardView (auto-generated overview with resource counts)\n[x] WizardView (multi-step for large forms)\n[x] Sidebar layout + TopBar + Breadcrumbs + responsive shell\n[x] React Router with full URL navigation and browser history\nPhase 3 — Extension & distribution 🔜 In progress\n[ ]  vendor extension support (widget, label, hidden, order, view)\n[ ]  — theme/behaviour/resource overrides\n[ ]  — spec linting with actionable errors and line numbers\n[ ]  — static production build output\n[ ] OAuth2 PKCE authentication flow\n[ ] Spec hot-reloading (file watcher → WebSocket push to UI)\n[ ] Loading skeletons with shimmer animation\n[ ] Virtual scrolling for large datasets (TanStack Virtual)\n[ ] Request / response interceptors (config-driven middleware)\n[ ] Response transformation (JSONPath + JS functions)\n[ ] Publish all packages to npm (, , )\nPhase 4 — Renderer ecosystem\n[ ]  — Svelte renderer consuming the same IR\n[ ]  — Vue 3 renderer\n[ ] Plugin API — register custom adapters, field types, and view strategies as npm packages\n[ ]  — visual configuration dashboard\n[ ]  — chart widgets from numeric data\n[ ]  — map renderer for geo coordinate fields\n[ ] GraphQL adapter\n[ ] OpenAPI 3.1 full support\nPhase 5 — Cloud & enterprise\n[ ] uigen.cloud — hosted UIGen: point at a spec URL, get a shareable live frontend\n[ ] GitHub Action — auto-deploy the generated frontend when your spec changes in CI\n[ ] Enterprise tier — SSO/SAML, audit logs, RBAC, on-prem deployment, SLA"
+  },
+  {
+    "title": "Contributing",
+    "section": "Contributing",
+    "slug": "index",
+    "href": "/docs/contributing/index",
+    "content": "Contributing\nUIGen is open source and contributions are welcome. This page covers how to set up the monorepo, run tests, and submit changes.\nMonorepo setup\nUIGen uses pnpm workspaces. You need Node.js 18+ and pnpm 9+.\nProject structure\nSee ARCHITECTURE.md for a detailed breakdown of the architecture and design decisions.\nRunning tests\nTests use Vitest and fast-check for property-based testing.\nMaking changes\nCreate a branch from \nMake your changes\nAdd or update tests\nRun  to verify everything passes\nCreate a changeset (see below)\nOpen a pull request\nChangesets\nUIGen uses Changesets to manage versions and changelogs. When you make a change that should be released, create a changeset:\nThis prompts you to:\nSelect which packages have changed\nChoose the version bump type (major, minor, patch)\nWrite a summary of the changes\nThe changeset file is committed with your PR. See RELEASING.md for the full release process.\nVersion bump guidelines\nCode style\nTypeScript strict mode is enabled in all packages\nESLint is configured at the workspace root\nNo  types without a comment explaining why\nTests must pass before merging\nQuestions\nOpen an issue on GitHub if you have questions or want to discuss a change before implementing it."
+  }
+]

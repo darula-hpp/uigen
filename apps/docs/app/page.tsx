@@ -1,27 +1,9 @@
-import { ThemeToggle } from "./ThemeToggle";
-import { VersionBadge } from "./VersionBadge";
+import { SiteHeader } from "../components/SiteHeader";
 
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] font-[var(--font-geist-sans,sans-serif)]">
-      {/* Header */}
-      <header className="px-6 py-5 flex items-center justify-between border-b border-[var(--border)]">
-        <div className="flex items-center gap-3">
-          <span className="text-lg font-semibold tracking-tight">UIGen</span>
-          <VersionBadge />
-        </div>
-        <div className="flex items-center gap-3">
-          <a
-            href="https://github.com/darula-hpp/uigen"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-gray-500 dark:text-gray-400 hover:text-[var(--primary)] transition-colors"
-          >
-            GitHub →
-          </a>
-          <ThemeToggle />
-        </div>
-      </header>
+      <SiteHeader variant="marketing" />
 
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 text-center">
@@ -108,7 +90,7 @@ export default function Home() {
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-2xl font-bold mb-3">What&apos;s shipping</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
-            The core engine is live on npm. The docs site is on its way.
+            The core engine is live on npm. Docs are live too.
           </p>
           <ul className="text-left space-y-3 max-w-sm mx-auto">
             {roadmap.map((item) => (
@@ -250,7 +232,7 @@ const roadmap = [
   { label: "CLI (npx @uigen-dev/cli)", done: true },
   { label: "Swagger 2.0 support", done: true },
   { label: "Override system", done: true },
-  { label: "Docs site", done: false },
+  { label: "Docs site", done: true },
   { label: "x-uigen-* spec annotations", done: false },
   { label: "uigen.config.json", done: false },
   { label: "OAuth2 PKCE flow", done: false },
