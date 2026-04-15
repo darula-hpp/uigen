@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.2] - 2026-04-15
+
+### Added
+
+**Documentation site (`apps/docs`)**
+- Full multi-page documentation site at `/docs/[section]/[slug]`, statically generated at build time from Markdown files in `apps/docs/content/`
+- 36 content pages across 11 sections: Getting Started, Core Concepts, Supported Specs, Views & Components, Authentication, Spec Annotations, Override System, CLI Reference, Extending UIGen, Roadmap, Contributing
+- Left navigation sidebar with expand/collapse sections and active link highlighting
+- Right table of contents with scroll-spy for h2/h3 headings
+- ⌘K / Ctrl+K search dialog backed by a pre-built Fuse.js index (`public/search-index.json`)
+- Copy-to-clipboard code blocks with "Copied!" feedback
+- Shared `SiteHeader` component used by both the landing page and docs layout — consistent header across the site with `variant="marketing"` and `variant="docs"` props
+- "Docs" link added to the landing page header
+- Search closes on Escape key or clicking outside the panel
+
+---
+
 ## [0.2.1] - 2026-04-15
 
 ### Fixed
@@ -148,6 +165,7 @@ This is the first release of UIGen — point it at an OpenAPI spec, get a fully 
 
 ---
 
+[0.2.2]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.2
 [0.2.1]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.1
 [0.2.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.0
 [0.1.9]: https://github.com/darula-hpp/uigen/releases/tag/v0.1.9
