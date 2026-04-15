@@ -29,29 +29,26 @@ export function ListView({ resource, operation }: ListViewProps) {
 
   // Construct view-specific uigenId
   const uigenId = `${resource.uigenId}.list`;
-  
+
   // Reconcile to determine override mode
   const { mode, renderFn } = reconcile(uigenId);
 
   // Try to find list operation, fallback to search operation (which can also list items)
-  const listOp = operation || 
+  const listOp = operation ||
     resource.operations.find(op => op.viewHint === 'list') ||
     resource.operations.find(op => op.viewHint === 'search');
 
-  // Early return if no list operation (must be before hooks)
-  if (!listOp) {
-    return <div className="p-4 text-muted-foreground">No list operation available for {resource.name}</div>;
-  }
+  // ── All hooks unconditionally before any early return ──────────────────────
 
   // Build path params — inject parentId for sub-resources
   const pathParams = useMemo(() => {
-    if (!parentId || !listOp.path.includes('{')) return {};
+    if (!listOp || !parentId || !listOp.path.includes('{')) return {};
     const matches = listOp.path.match(/\{([^}]+)\}/g);
     if (!matches) return {};
     // Map the first path param to the parentId
     const firstParam = matches[0].slice(1, -1);
     return { [firstParam]: parentId };
-  }, [parentId, listOp.path]);
+  }, [parentId, listOp]);
 
   // Pagination state
   const [pagination, setPagination] = useState<PaginationState>({
@@ -66,10 +63,10 @@ export function ListView({ resource, operation }: ListViewProps) {
   // Build query params based on pagination strategy
   const queryParams = useMemo(() => {
     const params: Record<string, string> = {};
-    
+
     if (resource.pagination) {
       const { style, params: paginationParams } = resource.pagination;
-      
+
       if (style === 'offset') {
         // Offset pagination: limit + offset
         const limitParam = paginationParams.limit || 'limit';
@@ -90,7 +87,7 @@ export function ListView({ resource, operation }: ListViewProps) {
         params[pageSizeParam] = String(pagination.pageSize);
       }
     }
-    
+
     return params;
   }, [resource.pagination, pagination, cursorHistory]);
 
@@ -98,13 +95,13 @@ export function ListView({ resource, operation }: ListViewProps) {
     operation: listOp!,
     queryParams,
     pathParams,
-    // Enable if: no path params needed, OR parentId was provided for sub-resources
-    enabled: !listOp?.path.includes('{') || !!parentId,
+    // Disabled when no list operation exists, or when path params are needed but not yet available
+    enabled: !!listOp && (!listOp.path.includes('{') || !!parentId),
   });
 
   // Sorting state
   const [sorting, setSorting] = useState<SortingState>([]);
-  
+
   // Filtering state - Requirements 36.1-36.6
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
 
@@ -256,14 +253,21 @@ export function ListView({ resource, operation }: ListViewProps) {
     pageCount: resource.pagination ? -1 : undefined, // Unknown page count for API pagination
   });
 
+  // ── End hooks ──────────────────────────────────────────────────────────────
+
+  // Early return AFTER all hooks
+  if (!listOp) {
+    return <div className="p-4 text-muted-foreground">No list operation available for {resource.name}</div>;
+  }
+
   // Render mode: call renderFn with fetched data
   if (mode === 'render' && renderFn) {
     try {
-      return <>{renderFn({ 
-        resource, 
+      return <>{renderFn({
+        resource,
         operation: listOp,
-        data: items, 
-        isLoading, 
+        data: items,
+        isLoading,
         error,
         pagination: {
           currentPage: pagination.pageIndex,
@@ -303,7 +307,7 @@ export function ListView({ resource, operation }: ListViewProps) {
       </div>
 
       {/* Sub-resource requires parent context */}
-      {listOp?.path.includes('{') && !parentId && (
+      {listOp.path.includes('{') && !parentId && (
         <div className="p-6 border rounded-md bg-muted/30 text-center space-y-2">
           <p className="font-semibold text-muted-foreground">
             {resource.name} is a sub-resource
@@ -386,7 +390,7 @@ export function ListView({ resource, operation }: ListViewProps) {
                   <Inbox className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No records found</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    {hasCreateOp 
+                    {hasCreateOp
                       ? `Get started by creating your first ${resource.name.toLowerCase()}`
                       : `There are no ${resource.name.toLowerCase()} to display`
                     }
@@ -401,7 +405,7 @@ export function ListView({ resource, operation }: ListViewProps) {
             </TableRow>
           ) : (
             table.getRowModel().rows.map((row) => (
-              <TableRow 
+              <TableRow
                 key={row.id}
                 onClick={() => {
                   if (hasDetailOp) {

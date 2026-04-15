@@ -14,52 +14,63 @@ interface SearchViewProps {
 
 export function SearchView({ resource, operation }: SearchViewProps) {
   const navigate = useNavigate();
-  
+
   // Construct view-specific uigenId
   const uigenId = `${resource.uigenId}.search`;
-  
+
   // Reconcile to determine override mode
   const { mode, renderFn } = reconcile(uigenId);
-  
+
   const searchOp = operation || resource.operations.find(op => op.viewHint === 'search');
 
-  if (!searchOp) {
-    return <div className="p-4 text-muted-foreground">No search operation available for {resource.name}</div>;
-  }
+  // Compute filter params before hooks (safe — no hooks involved)
+  const paginationParams = new Set([
+    'limit', 'offset', 'page', 'pageSize', 'perPage', 'per_page',
+    'cursor', 'nextCursor', 'next', 'pageToken', 'continuationToken',
+  ]);
+  const filterParams = searchOp?.parameters?.filter(
+    p => p.in === 'query' && !paginationParams.has(p.name)
+  ) || [];
 
-  // Extract query parameters (excluding pagination params)
-  const paginationParams = new Set(['limit', 'offset', 'page', 'pageSize', 'perPage', 'per_page', 'cursor', 'nextCursor', 'next', 'pageToken', 'continuationToken']);
-  const filterParams = searchOp.parameters?.filter(p => p.in === 'query' && !paginationParams.has(p.name)) || [];
-
-  // State for filter values
+  // ── All hooks unconditionally before any early return ──────────────────────
   const [filters, setFilters] = useState<Record<string, string>>({});
 
-  // Build query params from filters
   const queryParams = useMemo(() => {
     const params: Record<string, string> = {};
     Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
-        params[key] = value;
-      }
+      if (value) params[key] = value;
     });
     return params;
   }, [filters]);
 
   const { data, isLoading, error } = useApiCall({
-    operation: searchOp,
+    operation: searchOp!,
     queryParams,
+    enabled: !!searchOp,
   });
 
-  // Extract items from response
   const items = useMemo(() => {
     if (!data) return [];
-    return Array.isArray(data) ? data : data?.items || data?.data || [];
+    return Array.isArray(data) ? data : (data as any)?.items || (data as any)?.data || [];
   }, [data]);
 
-  // Get schema columns (limit to first 6 for display)
   const schemaColumns = useMemo(() => {
     return (resource.schema.children || []).slice(0, 6);
   }, [resource.schema.children]);
+
+  const activeFilters = useMemo(() => {
+    return Object.entries(filters).filter(([, value]) => value !== '');
+  }, [filters]);
+  // ── End hooks ──────────────────────────────────────────────────────────────
+
+  // Early return AFTER all hooks
+  if (!searchOp) {
+    return (
+      <div className="p-4 text-muted-foreground">
+        No search operation available for {resource.name}
+      </div>
+    );
+  }
 
   const hasDetailOp = resource.operations.some(op => op.viewHint === 'detail');
 
@@ -73,30 +84,27 @@ export function SearchView({ resource, operation }: SearchViewProps) {
 
   const handleRemoveFilter = (paramName: string) => {
     setFilters(prev => {
-      const newFilters = { ...prev };
-      delete newFilters[paramName];
-      return newFilters;
+      const next = { ...prev };
+      delete next[paramName];
+      return next;
     });
   };
 
-  // Get active filters (non-empty values)
-  const activeFilters = useMemo(() => {
-    return Object.entries(filters).filter(([_, value]) => value !== '');
-  }, [filters]);
-
-  // Render mode: call renderFn with search data
+  // Render mode: UIGen fetches, override renders
   if (mode === 'render' && renderFn) {
     try {
-      return <>{renderFn({ 
-        resource, 
-        operation: searchOp,
-        data: items, 
-        isLoading, 
-        error,
-        filters,
-        setFilters,
-        clearFilters: handleClearFilters
-      })}</>;
+      return (
+        <>{renderFn({
+          resource,
+          operation: searchOp,
+          data: items,
+          isLoading,
+          error,
+          filters,
+          setFilters,
+          clearFilters: handleClearFilters,
+        })}</>
+      );
     } catch (err) {
       console.error(`[UIGen Override] Error in render function for "${uigenId}":`, err);
       // Fall through to built-in view
@@ -138,7 +146,11 @@ export function SearchView({ resource, operation }: SearchViewProps) {
                 ) : (
                   <input
                     id={param.name}
-                    type={param.schema.type === 'integer' || param.schema.type === 'number' ? 'number' : 'text'}
+                    type={
+                      param.schema.type === 'integer' || param.schema.type === 'number'
+                        ? 'number'
+                        : 'text'
+                    }
                     value={filters[param.name] || ''}
                     onChange={(e) => handleFilterChange(param.name, e.target.value)}
                     placeholder={`Enter ${param.schema.label.toLowerCase()}`}
@@ -206,7 +218,6 @@ export function SearchView({ resource, operation }: SearchViewProps) {
         </TableHeader>
         <TableBody>
           {isLoading ? (
-            // Loading skeleton rows
             Array.from({ length: 5 }).map((_, idx) => (
               <TableRow key={`skeleton-${idx}`}>
                 {schemaColumns.map((_, colIdx) => (
@@ -223,7 +234,10 @@ export function SearchView({ resource, operation }: SearchViewProps) {
             ))
           ) : items.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={schemaColumns.length + (hasDetailOp ? 1 : 0)} className="h-32 text-center">
+              <TableCell
+                colSpan={schemaColumns.length + (hasDetailOp ? 1 : 0)}
+                className="h-32 text-center"
+              >
                 <p className="text-muted-foreground">No results found</p>
                 <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters</p>
               </TableCell>
@@ -237,12 +251,10 @@ export function SearchView({ resource, operation }: SearchViewProps) {
                     navigate(`/${resource.slug}/${item.id}`);
                   }
                 }}
-                className={hasDetailOp ? "cursor-pointer hover:bg-muted/50" : ""}
+                className={hasDetailOp ? 'cursor-pointer hover:bg-muted/50' : ''}
               >
                 {schemaColumns.map((col) => (
-                  <TableCell key={col.key}>
-                    {formatValue(item[col.key])}
-                  </TableCell>
+                  <TableCell key={col.key}>{formatValue(item[col.key])}</TableCell>
                 ))}
                 {hasDetailOp && (
                   <TableCell>

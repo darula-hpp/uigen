@@ -395,20 +395,29 @@ export class OpenAPI3Adapter {
     return result;
   }
 
+  private resolveLabel(key: string, schema: object, resolvedTarget?: SchemaNode): string {
+    const ext = (schema as Record<string, unknown>)['x-uigen-label'];
+    if (typeof ext === 'string' && ext.trim() !== '') return ext;
+    if (resolvedTarget && resolvedTarget.label !== this.humanize(resolvedTarget.key)) {
+      return resolvedTarget.label;
+    }
+    return this.humanize(key);
+  }
+
   private adaptSchema(key: string, schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject, visited: Set<string> = new Set()): SchemaNode {
     if (!schema) return this.createPlaceholderSchema(key);
 
     if ('$ref' in schema) {
       const resolved = this.resolver.resolve(schema.$ref, visited);
       if (!resolved) return this.createPlaceholderSchema(key);
-      return { ...resolved, key, label: this.humanize(key) };
+      return { ...resolved, key, label: this.resolveLabel(key, schema, resolved) };
     }
 
     const type = this.mapType(schema.type, schema.format);
     const node: SchemaNode = {
       type,
       key,
-      label: this.humanize(key),
+      label: this.resolveLabel(key, schema),
       required: false,
       description: schema.description,
       default: schema.default

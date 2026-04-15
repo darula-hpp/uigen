@@ -105,7 +105,11 @@ export function App({ config }: AppProps) {
                     </ErrorBoundary>
                   );
                 } else if (hasListOp) {
-                  indexElement = <ListView resource={resource} />;
+                  indexElement = (
+                    <ErrorBoundary>
+                      <ListView resource={resource} />
+                    </ErrorBoundary>
+                  );
                 } else if (createOps.length > 1) {
                   // Multiple create operations - show action selection
                   indexElement = <ActionSelectionView resource={resource} />;
@@ -131,9 +135,17 @@ export function App({ config }: AppProps) {
                     </ErrorBoundary>
                   );
                 } else if (wizardOps.length > 0) {
-                  createElement = <WizardView resource={resource} />;
+                  createElement = (
+                    <ErrorBoundary>
+                      <WizardView resource={resource} />
+                    </ErrorBoundary>
+                  );
                 } else {
-                  createElement = <FormView resource={resource} mode="create" />;
+                  createElement = (
+                    <ErrorBoundary>
+                      <FormView resource={resource} mode="create" />
+                    </ErrorBoundary>
+                  );
                 }
 
                 // Determine which component to use for 'edit' route
@@ -146,9 +158,17 @@ export function App({ config }: AppProps) {
                     </ErrorBoundary>
                   );
                 } else if (wizardOps.length > 0) {
-                  editElement = <WizardView resource={resource} mode="edit" />;
+                  editElement = (
+                    <ErrorBoundary>
+                      <WizardView resource={resource} mode="edit" />
+                    </ErrorBoundary>
+                  );
                 } else {
-                  editElement = <FormView resource={resource} mode="edit" />;
+                  editElement = (
+                    <ErrorBoundary>
+                      <FormView resource={resource} mode="edit" />
+                    </ErrorBoundary>
+                  );
                 }
 
                 // Determine which component to use for 'detail' route
@@ -161,7 +181,11 @@ export function App({ config }: AppProps) {
                     </ErrorBoundary>
                   );
                 } else {
-                  detailElement = <DetailView resource={resource} />;
+                  detailElement = (
+                    <ErrorBoundary>
+                      <DetailView resource={resource} />
+                    </ErrorBoundary>
+                  );
                 }
 
                 // Determine which component to use for 'search' route
@@ -174,7 +198,11 @@ export function App({ config }: AppProps) {
                     </ErrorBoundary>
                   );
                 } else {
-                  searchElement = <SearchView resource={resource} />;
+                  searchElement = (
+                    <ErrorBoundary>
+                      <SearchView resource={resource} />
+                    </ErrorBoundary>
+                  );
                 }
 
                 return (

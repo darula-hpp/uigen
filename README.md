@@ -262,23 +262,41 @@ See [`packages/react/src/overrides/README.md`](./packages/react/src/overrides/RE
 
 ### Spec annotations (`x-uigen-*`)
 
-> Coming in the next release
-
 Annotate your OpenAPI spec directly to control how fields are rendered:
 
+#### `x-uigen-label` — custom field label
+
+Override the auto-generated label for any field. Works on object properties, array item schemas, and `$ref` targets. Supported in both OpenAPI 3.x and Swagger 2.0.
+
 ```yaml
+# OpenAPI 3.x
 properties:
-  description:
-    type: string
-    x-uigen-widget: textarea
-    x-uigen-label: "Product Description"
   internal_code:
     type: string
-    x-uigen-hidden: true
-  status:
+    x-uigen-label: "Product SKU"
+  zip_code:
     type: string
-    x-uigen-order: 1
+    x-uigen-label: "ZIP / Postal Code"
+  tags:
+    type: array
+    items:
+      type: string
+      x-uigen-label: "Tag Value"
 ```
+
+```yaml
+# Swagger 2.0 — same syntax
+definitions:
+  Order:
+    properties:
+      acct_num:
+        type: string
+        x-uigen-label: "Account Number"
+```
+
+**Precedence for `$ref` properties:** a label on the referencing property wins over a label on the `$ref` target, which wins over the auto-humanized key.
+
+> Coming in the next release: `x-uigen-widget`, `x-uigen-hidden`, `x-uigen-order`
 
 ### Configuration file
 
@@ -302,7 +320,8 @@ properties:
 ## Roadmap
 
 ### 🔜 Next up
-- [ ] `x-uigen-*` vendor extension support - annotate your spec to customize rendering
+- [ ] `x-uigen-widget`, `x-uigen-hidden`, `x-uigen-order` vendor extensions - remaining spec annotations
+- [x] `x-uigen-label` - custom field labels via spec annotation
 - [ ] `uigen.config.json` - theme, labels, page sizes, field overrides
 - [ ] `uigen validate` - lint your spec, report what can and can't be generated with actionable errors
 - [ ] `uigen generate` - output a static production build to a directory

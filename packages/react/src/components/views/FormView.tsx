@@ -283,7 +283,7 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
     reset(Object.keys(mapped).length > 0 ? mapped : fetchedData);
   }, [fetchedData, mode, reset, operation]);
 
-  const mutation = useApiMutation(operation!);
+  const mutation = useApiMutation(operation);
 
   if (!operation) {
     return <div className="p-4 text-muted-foreground">No {mode} operation available</div>;
