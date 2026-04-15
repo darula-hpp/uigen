@@ -7,6 +7,8 @@ npx @uigen-dev/cli serve ./openapi.yaml
 # → Your UI is live at http://localhost:4400
 ```
 
+**Documentation:** [Access Full Docs](https://uigen-docs.vercel.app)
+
 ![UIGen Demo](https://github.com/darula-hpp/uigen/raw/main/examples/output.gif)
 
 No code. No config. No boilerplate. Just a spec.
