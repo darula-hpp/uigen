@@ -285,6 +285,13 @@ export class Swagger2Adapter {
       (result as any)['x-uigen-id'] = vendorExtension;
     }
 
+    // Preserve x-uigen-login vendor extension from Swagger 2 operation
+    // Requirements: 1.4, 7.1, 7.2, 7.3
+    const loginAnnotation = (operation as any)['x-uigen-login'];
+    if (loginAnnotation !== undefined) {
+      (result as any)['x-uigen-login'] = loginAnnotation;
+    }
+
     return result;
   }
 

@@ -11,7 +11,6 @@ import {
   SessionStorageStrategy,
   AuthManager,
 } from '@/lib/strategies';
-import { storeAuthCredentials } from '@/lib/auth';
 
 interface LoginViewProps {
   config: AuthConfig;

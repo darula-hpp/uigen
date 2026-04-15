@@ -106,26 +106,84 @@ export class OpenAPI3Adapter {
     };
   }
 
+  /**
+   * Extract x-uigen-login annotation from an operation.
+   * Returns true for x-uigen-login: true, false for x-uigen-login: false,
+   * and undefined for absent or non-boolean values.
+   */
+  private extractLoginAnnotation(operation: OpenAPIV3.OperationObject): boolean | undefined {
+    const annotation = (operation as any)['x-uigen-login'];
+    
+    // Only accept boolean values
+    if (typeof annotation === 'boolean') {
+      return annotation;
+    }
+    
+    // Treat non-boolean values as absent
+    return undefined;
+  }
+
+  /**
+   * Build a LoginEndpoint object from a path and operation.
+   * Extracts request body schema, detects token path, and captures metadata.
+   */
+  private buildLoginEndpoint(path: string, operation: OpenAPIV3.OperationObject): LoginEndpoint {
+    let requestBodySchema: SchemaNode | undefined;
+    
+    if (operation.requestBody && 'content' in operation.requestBody) {
+      const content = this.pickContent(operation.requestBody.content);
+      if (content?.schema) {
+        requestBodySchema = this.adaptSchema('credentials', content.schema);
+      }
+    }
+
+    const tokenPath = this.detectTokenPath(operation);
+
+    return {
+      path,
+      method: 'POST',
+      requestBodySchema: requestBodySchema!,
+      tokenPath,
+      description: operation.summary || operation.description
+    };
+  }
+
   private detectLoginEndpoints(): LoginEndpoint[] {
-    const loginEndpoints: LoginEndpoint[] = [];
+    const annotatedEndpoints: LoginEndpoint[] = [];
+    const autoDetectedEndpoints: LoginEndpoint[] = [];
 
     for (const [path, pathItem] of Object.entries(this.spec.paths)) {
       if (!pathItem) continue;
       const postOp = pathItem.post as OpenAPIV3.OperationObject | undefined;
       if (!postOp) continue;
 
+      // Extract annotation
+      const annotation = this.extractLoginAnnotation(postOp);
+
+      // Explicit exclusion: skip operations with x-uigen-login: false
+      if (annotation === false) {
+        continue;
+      }
+
+      // Explicit inclusion: add operations with x-uigen-login: true
+      if (annotation === true) {
+        const endpoint = this.buildLoginEndpoint(path, postOp);
+        annotatedEndpoints.push(endpoint);
+        continue; // Skip auto-detection for annotated endpoints
+      }
+
+      // Auto-detection for operations without annotations (annotation is undefined)
       const pathMatch = /\/(login|signin|auth\/login|auth\/signin)$/i.test(path);
       const descText = (postOp.summary || postOp.description || '').toLowerCase();
       const descMatch = descText.match(/\b(login|authenticate|sign\s*in)\b/) &&
         !descText.match(/\b(create|generate|get|retrieve|list)\b.*\b(login link|login url)\b/);
 
       let hasCredentialFields = false;
-      let requestBodySchema: SchemaNode | undefined;
 
       if (postOp.requestBody && 'content' in postOp.requestBody) {
         const content = this.pickContent(postOp.requestBody.content);
         if (content?.schema) {
-          requestBodySchema = this.adaptSchema('credentials', content.schema);
+          const requestBodySchema = this.adaptSchema('credentials', content.schema);
           const fields = this.getSchemaFieldNames(requestBodySchema);
           hasCredentialFields =
             (fields.includes('username') || fields.includes('email')) &&
@@ -134,18 +192,19 @@ export class OpenAPI3Adapter {
       }
 
       if (pathMatch || descMatch) {
-        const tokenPath = this.detectTokenPath(postOp);
-        loginEndpoints.push({ path, method: 'POST', requestBodySchema: requestBodySchema!, tokenPath, description: postOp.summary || postOp.description });
+        const endpoint = this.buildLoginEndpoint(path, postOp);
+        autoDetectedEndpoints.push(endpoint);
       } else if (hasCredentialFields) {
         const pathLooksAuthRelated = /\/(auth|account|session|token|user|access)/.test(path);
         if (pathLooksAuthRelated) {
-          const tokenPath = this.detectTokenPath(postOp);
-          loginEndpoints.push({ path, method: 'POST', requestBodySchema: requestBodySchema!, tokenPath, description: postOp.summary || postOp.description });
+          const endpoint = this.buildLoginEndpoint(path, postOp);
+          autoDetectedEndpoints.push(endpoint);
         }
       }
     }
 
-    return loginEndpoints;
+    // Return concatenated array with annotated endpoints first
+    return [...annotatedEndpoints, ...autoDetectedEndpoints];
   }
 
   private detectTokenPath(operation: OpenAPIV3.OperationObject): string {
