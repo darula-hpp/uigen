@@ -250,9 +250,14 @@ export class OpenAPI3Adapter {
       if (!resourceName) continue;
 
       if (!resourceMap.has(resourceName)) {
+        // Extract x-uigen-id vendor extension from path item if present, fall back to slug
+        const vendorExtension = (pathItem as any)['x-uigen-id'];
+        const uigenId = vendorExtension || resourceName;
+        
         resourceMap.set(resourceName, {
           name: this.capitalize(resourceName),
           slug: resourceName,
+          uigenId: uigenId,
           operations: [],
           schema: this.createPlaceholderSchema(resourceName),
           relationships: [],
@@ -328,8 +333,15 @@ export class OpenAPI3Adapter {
     const responses = this.adaptResponses(operation.responses);
     const viewHint = this.viewHintClassifier.classify(method, path, parameters, requestBody);
 
+    const operationId = operation.operationId || `${method.toLowerCase()}_${path.replace(/\//g, '_')}`;
+    
+    // Extract x-uigen-id vendor extension from operation if present
+    const vendorExtension = (operation as any)['x-uigen-id'];
+    const uigenId = vendorExtension || operationId;
+
     return {
-      id: operation.operationId || `${method.toLowerCase()}_${path.replace(/\//g, '_')}`,
+      id: operationId,
+      uigenId: uigenId,
       method,
       path,
       summary: operation.summary,

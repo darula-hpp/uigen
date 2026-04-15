@@ -103,11 +103,6 @@ describe('OpenAPI3Adapter - Comprehensive Unit Tests', () => {
     });
 
     it('should mark required fields correctly in petstore schema', () => {
-      const petResource = result.resources[0];
-      const nameField = petResource.schema.children!.find((c: any) => c.key === 'name');
-      const statusField = petResource.schema.children!.find((c: any) => c.key === 'status');
-      
-    it('should mark required fields correctly in petstore schema', () => {
       const petResource = result.resources.find(r => r.slug === 'pet');
       expect(petResource).toBeDefined();
       const nameField = petResource!.schema.children!.find((c: any) => c.key === 'name');

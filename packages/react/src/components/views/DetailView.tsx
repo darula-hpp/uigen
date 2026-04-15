@@ -1,6 +1,7 @@
 import { useApiCall, useApiMutation } from '@/hooks/useApiCall';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import type { Resource, SchemaNode, Operation } from '@uigen-dev/core';
+import { reconcile, OverrideHooksHost } from '@/overrides';
 import { Button } from '@/components/ui/button';
 import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 import { ActionButton } from '@/components/ActionButton';
@@ -104,6 +105,12 @@ export function DetailView({ resource }: DetailViewProps) {
   const { showToast } = useToast();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
+  // Construct view-specific uigenId
+  const uigenId = `${resource.uigenId}.detail`;
+  
+  // Reconcile to determine override mode
+  const { mode, renderFn } = reconcile(uigenId);
+  
   const detailOp = resource.operations.find(op => op.viewHint === 'detail');
 
   const { data, isLoading, error } = useApiCall({
@@ -163,7 +170,24 @@ export function DetailView({ resource }: DetailViewProps) {
   const schema = detailOp.responses['200']?.schema || detailOp.responses['2XX']?.schema || resource.schema;
   const fields = schema.children || [];
 
-  return (
+  // Render mode: call renderFn with fetched data
+  if (mode === 'render' && renderFn) {
+    try {
+      return <>{renderFn({ 
+        resource, 
+        operation: detailOp,
+        data, 
+        isLoading, 
+        error
+      })}</>;
+    } catch (err) {
+      console.error(`[UIGen Override] Error in render function for "${uigenId}":`, err);
+      // Fall through to built-in view
+    }
+  }
+
+  // Built-in content
+  const content = (
     <div className="space-y-6">
       {/* Confirmation Dialog - Requirements 11.2, 11.3, 64.1-64.6 */}
       {deleteOp && (
@@ -296,4 +320,16 @@ export function DetailView({ resource }: DetailViewProps) {
 
     </div>
   );
+
+  // Hooks mode: wrap in OverrideHooksHost
+  if (mode === 'hooks') {
+    return (
+      <OverrideHooksHost uigenId={uigenId} resource={resource} operation={detailOp}>
+        {content}
+      </OverrideHooksHost>
+    );
+  }
+
+  // None mode: render built-in as normal
+  return content;
 }

@@ -148,6 +148,7 @@ The IR is the contract. Everything built on top of UIGen talks to the IR — not
 - [x] Toast notifications (success / error / warning / info, auto-dismiss)
 - [x] Error boundary — component errors contained, app stays running
 - [x] Dark / light theme toggle with system preference detection
+- [x] **Override system** — selectively customize views with component, render, or useHooks modes
 
 ### CLI
 - [x] `uigen serve` — starts dev server with IR injected
@@ -226,6 +227,37 @@ pnpm release
 
 ## Extending UIGen
 
+### Override System
+
+UIGen's override system lets you selectively customize specific views while keeping everything else auto-generated. You opt in per view — no changes needed to views you don't touch.
+
+Three modes give you different levels of control:
+
+```typescript
+import { overrideRegistry } from '@uigen-dev/react';
+
+// Component mode: full ownership (data fetching, rendering, routing)
+overrideRegistry.register({
+  targetId: 'users.list',
+  component: MyCustomUserList,
+});
+
+// Render mode: UIGen fetches, you control the display
+overrideRegistry.register({
+  targetId: 'users.detail',
+  render: ({ data, isLoading }) => <MyCustomDetail data={data} loading={isLoading} />,
+});
+
+// useHooks mode: side effects only, built-in view renders normally
+overrideRegistry.register({
+  targetId: 'users.create',
+  useHooks: ({ resource }) => {
+    useEffect(() => analytics.track('page_view', { resource: resource.uigenId }), []);
+  },
+});
+```
+
+See [`packages/react/src/overrides/README.md`](./packages/react/src/overrides/README.md) for the full override system documentation.
 
 ### Spec annotations (`x-uigen-*`)
 

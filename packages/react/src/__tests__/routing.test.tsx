@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { createMemoryRouter, RouterProvider, Routes, Route, Navigate } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
 import { ListView } from '../components/views/ListView';
@@ -33,9 +33,11 @@ vi.mock('@/components/Toast', () => ({
 const createMockResource = (slug: string, name: string): Resource => ({
   name,
   slug,
+  uigenId: slug,
   operations: [
     {
       id: `list${name}`,
+      uigenId: `list${name}`,
       method: 'GET',
       path: `/${slug}`,
       summary: `List ${name}`,
@@ -55,6 +57,7 @@ const createMockResource = (slug: string, name: string): Resource => ({
     },
     {
       id: `get${name}`,
+      uigenId: `get${name}`,
       method: 'GET',
       path: `/${slug}/{id}`,
       summary: `Get ${name}`,
@@ -85,21 +88,19 @@ const createMockResource = (slug: string, name: string): Resource => ({
     },
     {
       id: `create${name}`,
+      uigenId: `create${name}`,
       method: 'POST',
       path: `/${slug}`,
       summary: `Create ${name}`,
       parameters: [],
       requestBody: {
+        type: 'object',
+        key: 'body',
+        label: 'Body',
         required: true,
-        schema: {
-          type: 'object',
-          key: 'body',
-          label: 'Body',
-          required: true,
-          children: [
-            { type: 'string', key: 'name', label: 'Name', required: true },
-          ],
-        },
+        children: [
+          { type: 'string', key: 'name', label: 'Name', required: true },
+        ],
       },
       responses: {
         '201': {
@@ -116,6 +117,7 @@ const createMockResource = (slug: string, name: string): Resource => ({
     },
     {
       id: `update${name}`,
+      uigenId: `update${name}`,
       method: 'PUT',
       path: `/${slug}/{id}`,
       summary: `Update ${name}`,
@@ -128,16 +130,13 @@ const createMockResource = (slug: string, name: string): Resource => ({
         },
       ],
       requestBody: {
+        type: 'object',
+        key: 'body',
+        label: 'Body',
         required: true,
-        schema: {
-          type: 'object',
-          key: 'body',
-          label: 'Body',
-          required: true,
-          children: [
-            { type: 'string', key: 'name', label: 'Name', required: true },
-          ],
-        },
+        children: [
+          { type: 'string', key: 'name', label: 'Name', required: true },
+        ],
       },
       responses: {
         '200': {
@@ -178,6 +177,7 @@ const createMockConfig = (): UIGenApp => ({
   ],
   auth: {
     schemes: [],
+    globalRequired: false,
   },
   servers: [
     {
@@ -186,6 +186,7 @@ const createMockConfig = (): UIGenApp => ({
     },
   ],
   dashboard: {
+    enabled: true,
     widgets: [],
   },
 });
@@ -259,7 +260,9 @@ describe('Routing', () => {
 
       // Should show dashboard with app title
       await waitFor(() => {
-        expect(screen.getByText('Test API')).toBeInTheDocument();
+        // Multiple headings with the app title exist (sidebar, header, dashboard)
+        const headings = screen.getAllByRole('heading', { name: 'Test API' });
+        expect(headings.length).toBeGreaterThan(0);
         expect(screen.getByText('Resources')).toBeInTheDocument();
       });
     });
@@ -276,7 +279,8 @@ describe('Routing', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Users')).toBeInTheDocument();
+        // The list view renders an h2 heading with the resource name
+        expect(screen.getByRole('heading', { name: 'Users' })).toBeInTheDocument();
       });
     });
 
@@ -531,8 +535,11 @@ describe('Routing', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Home')).toBeInTheDocument();
-        expect(screen.getByText('Users')).toBeInTheDocument();
+        // Query within the breadcrumb nav to avoid ambiguity with sidebar links
+        const breadcrumbNav = document.querySelector('nav.h-10');
+        expect(breadcrumbNav).not.toBeNull();
+        expect(breadcrumbNav!.textContent).toContain('Home');
+        expect(breadcrumbNav!.textContent).toContain('Users');
       });
     });
 
@@ -550,16 +557,20 @@ describe('Routing', () => {
       // Navigate to detail
       router.navigate('/users/123');
       await waitFor(() => {
-        expect(screen.getByText('Home')).toBeInTheDocument();
-        expect(screen.getByText('Users')).toBeInTheDocument();
+        const breadcrumbNav = document.querySelector('nav.h-10');
+        expect(breadcrumbNav).not.toBeNull();
+        expect(breadcrumbNav!.textContent).toContain('Home');
+        expect(breadcrumbNav!.textContent).toContain('Users');
       });
 
       // Navigate to edit
       router.navigate('/users/123/edit');
       await waitFor(() => {
-        expect(screen.getByText('Home')).toBeInTheDocument();
-        expect(screen.getByText('Users')).toBeInTheDocument();
-        expect(screen.getByText('Edit')).toBeInTheDocument();
+        const breadcrumbNav = document.querySelector('nav.h-10');
+        expect(breadcrumbNav).not.toBeNull();
+        expect(breadcrumbNav!.textContent).toContain('Home');
+        expect(breadcrumbNav!.textContent).toContain('Users');
+        expect(breadcrumbNav!.textContent).toContain('Edit');
       });
     });
   });

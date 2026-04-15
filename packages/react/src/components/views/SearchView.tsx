@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import type { Resource, Operation } from '@uigen-dev/core';
+import { reconcile, OverrideHooksHost } from '@/overrides';
 
 interface SearchViewProps {
   resource: Resource;
@@ -13,6 +14,13 @@ interface SearchViewProps {
 
 export function SearchView({ resource, operation }: SearchViewProps) {
   const navigate = useNavigate();
+  
+  // Construct view-specific uigenId
+  const uigenId = `${resource.uigenId}.search`;
+  
+  // Reconcile to determine override mode
+  const { mode, renderFn } = reconcile(uigenId);
+  
   const searchOp = operation || resource.operations.find(op => op.viewHint === 'search');
 
   if (!searchOp) {
@@ -76,7 +84,27 @@ export function SearchView({ resource, operation }: SearchViewProps) {
     return Object.entries(filters).filter(([_, value]) => value !== '');
   }, [filters]);
 
-  return (
+  // Render mode: call renderFn with search data
+  if (mode === 'render' && renderFn) {
+    try {
+      return <>{renderFn({ 
+        resource, 
+        operation: searchOp,
+        data: items, 
+        isLoading, 
+        error,
+        filters,
+        setFilters,
+        clearFilters: handleClearFilters
+      })}</>;
+    } catch (err) {
+      console.error(`[UIGen Override] Error in render function for "${uigenId}":`, err);
+      // Fall through to built-in view
+    }
+  }
+
+  // Built-in search content
+  const content = (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Search {resource.name}</h2>
@@ -237,6 +265,18 @@ export function SearchView({ resource, operation }: SearchViewProps) {
       </Table>
     </div>
   );
+
+  // Hooks mode: wrap in OverrideHooksHost
+  if (mode === 'hooks') {
+    return (
+      <OverrideHooksHost uigenId={uigenId} resource={resource} operation={searchOp}>
+        {content}
+      </OverrideHooksHost>
+    );
+  }
+
+  // None mode: render built-in as normal
+  return content;
 }
 
 function formatValue(value: unknown): string {

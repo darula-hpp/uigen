@@ -92,6 +92,7 @@ export interface DashboardWidget {
 export interface Resource {
   name: string;
   slug: string;
+  uigenId: string;
   description?: string;
   operations: Operation[];
   schema: SchemaNode;
@@ -112,6 +113,7 @@ export interface PaginationHint {
 
 export interface Operation {
   id: string;
+  uigenId: string;
   method: HttpMethod;
   path: string;
   summary?: string;

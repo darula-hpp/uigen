@@ -5,6 +5,7 @@ import { useApiMutation, useApiCall } from '@/hooks/useApiCall';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import type { Resource, SchemaNode, ValidationRule, Operation } from '@uigen-dev/core';
+import { reconcile, OverrideHooksHost } from '@/overrides';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMemo, useEffect } from 'react';
 import { componentRegistry } from '@/components/fields';
@@ -216,6 +217,12 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
   const params = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   
+  // Construct view-specific uigenId
+  const uigenId = `${resource.uigenId}.${mode}`;
+  
+  // Reconcile to determine override mode
+  const { mode: overrideMode, renderFn } = reconcile(uigenId);
+  
   // Get operation ID from query parameter (for resources with multiple create operations)
   const operationId = searchParams.get('operation');
   
@@ -337,7 +344,31 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
     }
   };
 
-  return (
+  // Render mode: call renderFn with form data and methods
+  if (overrideMode === 'render' && renderFn) {
+    try {
+      return <>{renderFn({ 
+        resource, 
+        operation,
+        data: formData, 
+        isLoading: isFetchingData, 
+        error: fetchError,
+        mode,
+        formMethods: {
+          register,
+          handleSubmit,
+          errors,
+          isSubmitting: isSubmitting || mutation.isPending
+        }
+      })}</>;
+    } catch (err) {
+      console.error(`[UIGen Override] Error in render function for "${uigenId}":`, err);
+      // Fall through to built-in view
+    }
+  }
+
+  // Built-in form content
+  const content = (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">
         {mode === 'create' ? 'Create' : 'Edit'} {resource.name}
@@ -379,4 +410,16 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
       </form>
     </div>
   );
+
+  // Hooks mode: wrap in OverrideHooksHost
+  if (overrideMode === 'hooks') {
+    return (
+      <OverrideHooksHost uigenId={uigenId} resource={resource} operation={operation}>
+        {content}
+      </OverrideHooksHost>
+    );
+  }
+
+  // None mode: render built-in as normal
+  return content;
 }

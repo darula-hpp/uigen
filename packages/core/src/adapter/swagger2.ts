@@ -246,6 +246,13 @@ export class Swagger2Adapter {
       result.parameters = pathItem.parameters.map(p => this.convertParameter(p));
     }
 
+    // Preserve x-uigen-id vendor extension from Swagger 2 path item
+    // Requirements: 1.3, 1.4
+    const vendorExtension = (pathItem as any)['x-uigen-id'];
+    if (vendorExtension) {
+      (result as any)['x-uigen-id'] = vendorExtension;
+    }
+
     return result;
   }
 
@@ -269,6 +276,13 @@ export class Swagger2Adapter {
       const { parameters, requestBody } = this.convertParameters(operation.parameters);
       if (parameters.length > 0) result.parameters = parameters;
       if (requestBody) result.requestBody = requestBody;
+    }
+
+    // Preserve x-uigen-id vendor extension from Swagger 2 operation
+    // Requirements: 1.5, 1.6
+    const vendorExtension = (operation as any)['x-uigen-id'];
+    if (vendorExtension) {
+      (result as any)['x-uigen-id'] = vendorExtension;
     }
 
     return result;

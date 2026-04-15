@@ -5,6 +5,7 @@ import { useApiMutation, useApiCall } from '@/hooks/useApiCall';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import type { Resource, SchemaNode, ValidationRule, Operation } from '@uigen-dev/core';
+import { reconcile, OverrideHooksHost } from '@/overrides';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMemo, useState, useEffect } from 'react';
 import { componentRegistry } from '@/components/fields';
@@ -230,6 +231,12 @@ export function WizardView({ resource, mode = 'create', initialData, onSuccess }
   const navigate = useNavigate();
   const params = useParams<{ id: string }>();
   
+  // Construct view-specific uigenId
+  const uigenId = `${resource.uigenId}.${mode}`;
+  
+  // Reconcile to determine override mode
+  const { mode: overrideMode, renderFn } = reconcile(uigenId);
+  
   // Find wizard or update operation based on mode
   const operation = mode === 'edit'
     ? resource.operations.find(op => op.viewHint === 'update')
@@ -419,7 +426,31 @@ export function WizardView({ resource, mode = 'create', initialData, onSuccess }
   const isLastStep = currentStep === steps.length - 1;
   const isFirstStep = currentStep === 0;
 
-  return (
+  // Render mode: call renderFn with wizard data
+  if (overrideMode === 'render' && renderFn) {
+    try {
+      return <>{renderFn({ 
+        resource, 
+        operation,
+        data: getValues(), 
+        isLoading: isFetchingData, 
+        error: null,
+        currentStep,
+        totalSteps: steps.length,
+        nextStep: handleNext,
+        previousStep: handlePrevious,
+        goToStep: handleStepClick,
+        isFirstStep,
+        isLastStep
+      })}</>;
+    } catch (err) {
+      console.error(`[UIGen Override] Error in render function for "${uigenId}":`, err);
+      // Fall through to built-in view
+    }
+  }
+
+  // Built-in wizard content
+  const content = (
     <div className="space-y-6 max-w-4xl mx-auto">
       <h2 className="text-2xl font-bold">{mode === 'edit' ? 'Edit' : 'Create'} {resource.name}</h2>
 
@@ -547,4 +578,16 @@ export function WizardView({ resource, mode = 'create', initialData, onSuccess }
       </form>
     </div>
   );
+
+  // Hooks mode: wrap in OverrideHooksHost
+  if (overrideMode === 'hooks') {
+    return (
+      <OverrideHooksHost uigenId={uigenId} resource={resource} operation={operation}>
+        {content}
+      </OverrideHooksHost>
+    );
+  }
+
+  // None mode: render built-in as normal
+  return content;
 }

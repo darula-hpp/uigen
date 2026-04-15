@@ -2,6 +2,7 @@ import { useApiCall } from '@/hooks/useApiCall';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import type { Resource, Operation } from '@uigen-dev/core';
+import { reconcile, OverrideHooksHost } from '@/overrides';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   useReactTable,
@@ -25,6 +26,12 @@ export function ListView({ resource, operation }: ListViewProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const parentId = searchParams.get('parentId');
+
+  // Construct view-specific uigenId
+  const uigenId = `${resource.uigenId}.list`;
+  
+  // Reconcile to determine override mode
+  const { mode, renderFn } = reconcile(uigenId);
 
   // Try to find list operation, fallback to search operation (which can also list items)
   const listOp = operation || 
@@ -249,7 +256,32 @@ export function ListView({ resource, operation }: ListViewProps) {
     pageCount: resource.pagination ? -1 : undefined, // Unknown page count for API pagination
   });
 
-  return (
+  // Render mode: call renderFn with fetched data
+  if (mode === 'render' && renderFn) {
+    try {
+      return <>{renderFn({ 
+        resource, 
+        operation: listOp,
+        data: items, 
+        isLoading, 
+        error,
+        pagination: {
+          currentPage: pagination.pageIndex,
+          pageSize: pagination.pageSize,
+          totalPages: table.getPageCount(),
+          goToPage: (page: number) => setPagination(prev => ({ ...prev, pageIndex: page })),
+          nextPage: () => table.nextPage(),
+          previousPage: () => table.previousPage(),
+        }
+      })}</>;
+    } catch (err) {
+      console.error(`[UIGen Override] Error in render function for "${uigenId}":`, err);
+      // Fall through to built-in view
+    }
+  }
+
+  // Built-in table content
+  const content = (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
@@ -509,6 +541,18 @@ export function ListView({ resource, operation }: ListViewProps) {
       )}
     </div>
   );
+
+  // Hooks mode: wrap in OverrideHooksHost
+  if (mode === 'hooks') {
+    return (
+      <OverrideHooksHost uigenId={uigenId} resource={resource} operation={listOp}>
+        {content}
+      </OverrideHooksHost>
+    );
+  }
+
+  // None mode: render built-in as normal
+  return content;
 }
 
 function formatValue(value: unknown): string {
