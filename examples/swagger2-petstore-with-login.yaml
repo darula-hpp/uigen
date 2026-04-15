@@ -510,7 +510,6 @@ paths:
           description: "User not found"
   /user/login:
     get:
-      x-uigen-login: false
       tags:
       - "user"
       summary: "Logs user into the system"
@@ -546,99 +545,7 @@ paths:
             type: "string"
         400:
           description: "Invalid username/password supplied"
-  /auth/authenticate:
-    post:
       x-uigen-login: true
-      tags:
-      - "user"
-      summary: "Authenticate user with credentials"
-      description: "Primary authentication endpoint for the Petstore API"
-      operationId: "authenticateUser"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - in: "body"
-        name: "body"
-        description: "User credentials"
-        required: true
-        schema:
-          type: "object"
-          required:
-          - "username"
-          - "password"
-          properties:
-            username:
-              type: "string"
-              description: "Username for authentication"
-            password:
-              type: "string"
-              description: "Password for authentication"
-      responses:
-        200:
-          description: "Authentication successful"
-          schema:
-            type: "object"
-            properties:
-              accessToken:
-                type: "string"
-                description: "JWT access token"
-              refreshToken:
-                type: "string"
-                description: "JWT refresh token"
-              expiresIn:
-                type: "integer"
-                description: "Token expiration time in seconds"
-              user:
-                $ref: "#/definitions/User"
-        401:
-          description: "Invalid credentials"
-        400:
-          description: "Bad request"
-  /auth/phone-login:
-    post:
-      x-uigen-login: true
-      tags:
-      - "user"
-      summary: "Authenticate user with phone and OTP"
-      description: "Alternative authentication endpoint using phone number and OTP"
-      operationId: "phoneLogin"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - in: "body"
-        name: "body"
-        description: "Phone credentials"
-        required: true
-        schema:
-          type: "object"
-          required:
-          - "phone"
-          - "otp"
-          properties:
-            phone:
-              type: "string"
-              description: "Phone number"
-            otp:
-              type: "string"
-              description: "One-time password"
-      responses:
-        200:
-          description: "Authentication successful"
-          schema:
-            type: "object"
-            properties:
-              token:
-                type: "string"
-                description: "Authentication token"
-              userId:
-                type: "integer"
-                format: "int64"
-        401:
-          description: "Invalid OTP"
   /user:
     post:
       tags:

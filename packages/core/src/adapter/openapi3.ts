@@ -154,22 +154,37 @@ export class OpenAPI3Adapter {
 
     for (const [path, pathItem] of Object.entries(this.spec.paths)) {
       if (!pathItem) continue;
+
+      // Check all HTTP methods for x-uigen-login annotation
+      const methods = ['get', 'post', 'put', 'patch', 'delete'] as const;
+      for (const method of methods) {
+        const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
+        if (!operation) continue;
+
+        // Extract annotation
+        const annotation = this.extractLoginAnnotation(operation);
+
+        // Explicit exclusion: skip operations with x-uigen-login: false
+        if (annotation === false) {
+          continue;
+        }
+
+        // Explicit inclusion: add operations with x-uigen-login: true
+        if (annotation === true) {
+          const endpoint = this.buildLoginEndpoint(path, operation);
+          annotatedEndpoints.push(endpoint);
+          continue; // Skip auto-detection for annotated endpoints
+        }
+      }
+
+      // Auto-detection only for POST operations without annotations
       const postOp = pathItem.post as OpenAPIV3.OperationObject | undefined;
       if (!postOp) continue;
 
-      // Extract annotation
+      // Skip if already processed as annotated
       const annotation = this.extractLoginAnnotation(postOp);
-
-      // Explicit exclusion: skip operations with x-uigen-login: false
-      if (annotation === false) {
+      if (annotation === true || annotation === false) {
         continue;
-      }
-
-      // Explicit inclusion: add operations with x-uigen-login: true
-      if (annotation === true) {
-        const endpoint = this.buildLoginEndpoint(path, postOp);
-        annotatedEndpoints.push(endpoint);
-        continue; // Skip auto-detection for annotated endpoints
       }
 
       // Auto-detection for operations without annotations (annotation is undefined)
