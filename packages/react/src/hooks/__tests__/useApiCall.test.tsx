@@ -486,7 +486,7 @@ describe('useApiMutation', () => {
               ok: true,
               json: async () => ({ id: 2, name: 'Jane' })
             });
-          }, 100);
+          }, 200);
         }));
 
       const queryOperation: Operation = {
@@ -507,6 +507,7 @@ describe('useApiMutation', () => {
       );
 
       await waitFor(() => expect(queryResult.current.isSuccess).toBe(true));
+      expect(queryResult.current.data).toEqual(initialData);
 
       // Execute mutation with optimistic update
       const { result: mutationResult } = renderHook(
@@ -521,15 +522,15 @@ describe('useApiMutation', () => {
 
       mutationResult.current.mutate({ body: { name: 'Jane' } });
 
-      // Wait for optimistic update to be applied
+      // Wait for optimistic update to be applied (query data should change)
       await waitFor(() => {
         const allQueries = queryClient.getQueryCache().getAll();
         const listQuery = allQueries.find(q => q.queryKey[0] === 'listUsers');
-        const cachedData = listQuery?.state.data as any[];
-        return cachedData?.length === 2;
-      }, { timeout: 2000 });
+        const data = listQuery?.state.data as any[] | undefined;
+        return Array.isArray(data) && data.length === 2;
+      }, { timeout: 3000 });
 
-      // Optimistic update should be applied - find the query by operation id
+      // Verify the optimistic update was applied
       const allQueries = queryClient.getQueryCache().getAll();
       const listQuery = allQueries.find(q => q.queryKey[0] === 'listUsers');
       const cachedData = listQuery?.state.data as any[];

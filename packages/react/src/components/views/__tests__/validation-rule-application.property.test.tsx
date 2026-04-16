@@ -59,12 +59,17 @@ describe('Validation Rule Application - Property Tests', () => {
         fc.string({ minLength: 1, maxLength: 20 }).filter(s => /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(s) && s !== '__proto__' && s !== 'constructor' && s !== 'prototype'),
         fc.string({ minLength: 3, maxLength: 30 }).filter(s => s.trim().length >= 3),
         async (fieldKey: string, fieldLabel: string) => {
+          // Clear mock between iterations
+          mockMutateAsync.mockClear();
+          
           const resource: Resource = {
             name: 'TestResource',
             slug: 'test-resource',
+            uigenId: 'test-resource',
             operations: [
               {
                 id: 'createTest',
+                uigenId: 'createTest',
                 method: 'POST',
                 path: '/test',
                 viewHint: 'create',
