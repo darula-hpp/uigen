@@ -212,8 +212,9 @@ describe('List View Rendering - Property Tests', () => {
         // Get the number of visible fields (max 6)
         const fieldCount = Math.min((resource.schema.children || []).length, 6);
 
-        // Count the number of header cells
-        const headerCells = container.querySelectorAll('thead th');
+        // Count the number of header cells in the first header row only
+        const firstHeaderRow = container.querySelector('thead tr');
+        const headerCells = firstHeaderRow ? firstHeaderRow.querySelectorAll('th') : [];
         
         // Should have exactly fieldCount columns (no actions column since no operations)
         expect(headerCells.length).toBe(fieldCount);
@@ -271,8 +272,9 @@ describe('List View Rendering - Property Tests', () => {
           // Get the number of visible fields (max 6)
           const fieldCount = Math.min((resource.schema.children || []).length, 6);
 
-          // Count the number of header cells
-          const headerCells = container.querySelectorAll('thead th');
+          // Count the number of header cells in the first header row only
+          const firstHeaderRow = container.querySelector('thead tr');
+          const headerCells = firstHeaderRow ? firstHeaderRow.querySelectorAll('th') : [];
 
           // Should have fieldCount + 1 (for Actions column)
           expect(headerCells.length).toBe(fieldCount + 1);
@@ -398,8 +400,9 @@ describe('List View Rendering - Property Tests', () => {
             </BrowserRouter>
           );
 
-          // Count the number of header cells
-          const headerCells = container.querySelectorAll('thead th');
+          // Count the number of header cells in the first header row only
+          const firstHeaderRow = container.querySelector('thead tr');
+          const headerCells = firstHeaderRow ? firstHeaderRow.querySelectorAll('th') : [];
 
           // Should have exactly 6 columns (no actions column)
           expect(headerCells.length).toBe(6);

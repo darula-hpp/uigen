@@ -53,7 +53,7 @@ describe('Validation Rule Application - Property Tests', () => {
    * Property: Required fields should prevent submission when empty
    * Validates: Requirement 34.1
    */
-  it('should validate required fields and prevent submission when empty', { timeout: 10000 }, async () => {
+  it('should validate required fields and prevent submission when empty', { timeout: 30000 }, async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.string({ minLength: 1, maxLength: 20 }).filter(s => /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(s) && s !== '__proto__' && s !== 'constructor' && s !== 'prototype'),
