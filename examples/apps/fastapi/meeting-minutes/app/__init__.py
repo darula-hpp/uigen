@@ -1,0 +1,1 @@
+"""Meeting Minutes Backend Application."""
