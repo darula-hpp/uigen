@@ -6,6 +6,80 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.4] - 2026-04-16
+
+### Added
+
+**Core engine (`@uigen-dev/core`)**
+- File upload support for OpenAPI 3.x and Swagger 2.0 specs
+  - Automatic detection of binary format fields (`type: string`, `format: binary`)
+  - Swagger 2.0 `type: file` parameters automatically converted to OpenAPI 3.x binary format
+  - File metadata extraction: `contentMediaType`, `x-uigen-file-types`, `x-uigen-max-file-size`
+  - Multiple file upload detection from array schemas with binary items
+  - HTML `accept` attribute generation from allowed MIME types
+  - Automatic `multipart/form-data` content type detection for operations with file fields
+  ```yaml
+  # OpenAPI 3.x example
+  requestBody:
+    content:
+      multipart/form-data:
+        schema:
+          properties:
+            file:
+              type: string
+              format: binary
+              contentMediaType: image/png
+              x-uigen-file-types: ["image/png", "image/jpeg"]
+              x-uigen-max-file-size: 5242880  # 5MB
+  
+  # Swagger 2.0 example
+  parameters:
+    - name: file
+      in: formData
+      type: file
+      required: true
+  ```
+
+**React renderer (`@uigen-dev/react`)**
+- File upload strategy system with type-aware validation and previews
+  - `ImageUploadStrategy` - supports image/*, 5MB max, shows image preview
+  - `DocumentUploadStrategy` - supports PDF, Word, text files, 10MB max, shows document icon
+  - `VideoUploadStrategy` - supports video/*, 100MB max, shows video icon
+  - `GenericUploadStrategy` - fallback for any file type, 10MB max
+- Enhanced `FileUpload` component with:
+  - Drag-and-drop support with visual feedback
+  - File type and size validation with user-friendly error messages
+  - Preview components for uploaded files (image thumbnails, document icons, etc.)
+  - Multiple file upload support
+  - Remove button for each uploaded file
+  - Loading state during preview generation
+  - Accessibility features (ARIA labels, live regions, keyboard navigation)
+- `StrategyRegistry` for managing and extending file upload strategies
+- Utility functions: `formatFileSize`, `getFileIcon` (maps MIME types to Lucide React icons)
+- File validation utilities with extension-MIME type consistency checks
+- Form submission support for `multipart/form-data` with proper File object handling
+
+**React renderer routing**
+- Action operations (`viewHint: 'action'`) now properly routed to `ActionSelectionView`
+- `ActionSelectionView` enhanced to display both create and action operations
+- Resources with only action operations (like file upload endpoints) now show available actions instead of "No operations available"
+
+### Fixed
+
+**Core engine (`@uigen-dev/core`)**
+- Swagger 2.0 file type conversion: `type: "file"` in formData parameters now correctly converts to `type: "string"` with `format: "binary"` in OpenAPI 3.x intermediate format
+
+**React renderer (`@uigen-dev/react`)**
+- Fixed routing for resources with action operations (e.g., file upload endpoints)
+- Fixed `ActionSelectionView` to handle operations with `viewHint: 'action'` in addition to `viewHint: 'create'`
+
+### Tests
+- 30 file upload related tests passing (11 OpenAPI3, 7 Swagger2, 10 content type detection, 2 integration)
+- Property-based tests for file metadata preservation, binary format detection, and adapter consistency
+- Integration tests verifying end-to-end file upload flow from Swagger 2.0 specs
+
+---
+
 ## [0.2.3] - 2026-04-16
 
 ### Added
@@ -203,6 +277,7 @@ This is the first release of UIGen — point it at an OpenAPI spec, get a fully 
 
 ---
 
+[0.2.4]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.4
 [0.2.3]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.3
 [0.2.2]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.2
 [0.2.1]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.1

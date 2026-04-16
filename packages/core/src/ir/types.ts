@@ -161,6 +161,7 @@ export interface SchemaNode {
   writeOnly?: boolean;
   nullable?: boolean;
   deprecated?: boolean;
+  fileMetadata?: FileMetadata;
 }
 
 export interface ValidationRule {
@@ -173,4 +174,11 @@ export interface UIHint {
   widget?: 'textarea' | 'select' | 'radio' | 'checkbox' | 'date' | 'file' | 'color';
   placeholder?: string;
   helpText?: string;
+}
+
+export interface FileMetadata {
+  allowedMimeTypes: string[];
+  maxSizeBytes: number;
+  multiple: boolean;
+  accept: string;
 }
