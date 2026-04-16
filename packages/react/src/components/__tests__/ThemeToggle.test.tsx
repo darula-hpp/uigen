@@ -56,14 +56,16 @@ describe('ThemeToggle', () => {
       render(<ThemeToggle />);
       const button = screen.getByRole('button');
       
-      // Light theme shows moon icon
-      expect(button.textContent).toBe('🌙');
+      // Light theme shows moon icon (SVG path for moon)
+      expect(button.querySelector('svg')).toBeInTheDocument();
+      expect(button).toHaveAttribute('title', 'Switch to dark mode');
       
       // Click to switch to dark
       fireEvent.click(button);
       
-      // Dark theme shows sun icon
-      expect(button.textContent).toBe('☀️');
+      // Dark theme shows sun icon (SVG path for sun)
+      expect(button.querySelector('svg')).toBeInTheDocument();
+      expect(button).toHaveAttribute('title', 'Switch to light mode');
     });
   });
 

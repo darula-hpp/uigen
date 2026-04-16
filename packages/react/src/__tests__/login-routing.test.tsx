@@ -139,7 +139,7 @@ describe('Login Routing', () => {
 
       // Should redirect to login page
       await waitFor(() => {
-        expect(screen.getByText('Sign in to access the admin dashboard')).toBeInTheDocument();
+        expect(screen.getByText('Sign in to access the dashboard')).toBeInTheDocument();
       });
     });
 
@@ -155,7 +155,7 @@ describe('Login Routing', () => {
 
       // Should redirect to login page
       await waitFor(() => {
-        expect(screen.getByText('Sign in to access the admin dashboard')).toBeInTheDocument();
+        expect(screen.getByText('Sign in to access the dashboard')).toBeInTheDocument();
       });
     });
 
@@ -169,7 +169,7 @@ describe('Login Routing', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Sign in to access the admin dashboard')).toBeInTheDocument();
+        expect(screen.getByText('Sign in to access the dashboard')).toBeInTheDocument();
         expect(screen.getByLabelText('Bearer Token')).toBeInTheDocument();
       });
     });
@@ -240,7 +240,7 @@ describe('Login Routing', () => {
 
       // Should NOT show login page
       await waitFor(() => {
-        expect(screen.queryByText('Sign in to access the admin dashboard')).not.toBeInTheDocument();
+        expect(screen.queryByText('Sign in to access the dashboard')).not.toBeInTheDocument();
       });
       
       // Should render some content (not empty)
@@ -262,7 +262,7 @@ describe('Login Routing', () => {
 
       // Should NOT show login page
       await waitFor(() => {
-        expect(screen.queryByText('Sign in to access the admin dashboard')).not.toBeInTheDocument();
+        expect(screen.queryByText('Sign in to access the dashboard')).not.toBeInTheDocument();
       });
       
       // Should render some content (not empty)
@@ -297,7 +297,7 @@ describe('Login Routing', () => {
       });
 
       // Should NOT show login page
-      expect(screen.queryByText('Sign in to access the admin dashboard')).not.toBeInTheDocument();
+      expect(screen.queryByText('Sign in to access the dashboard')).not.toBeInTheDocument();
     });
 
     it('should redirect to dashboard after successful login', async () => {
@@ -311,7 +311,7 @@ describe('Login Routing', () => {
 
       // Should show login page
       await waitFor(() => {
-        expect(screen.getByText('Sign in to access the admin dashboard')).toBeInTheDocument();
+        expect(screen.getByText('Sign in to access the dashboard')).toBeInTheDocument();
       });
 
       // Enter bearer token
@@ -349,7 +349,7 @@ describe('Login Routing', () => {
         );
 
         await waitFor(() => {
-          expect(screen.getByText('Sign in to access the admin dashboard')).toBeInTheDocument();
+          expect(screen.getByText('Sign in to access the dashboard')).toBeInTheDocument();
         });
 
         unmount();
@@ -367,7 +367,7 @@ describe('Login Routing', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Sign in to access the admin dashboard')).toBeInTheDocument();
+        expect(screen.getByText('Sign in to access the dashboard')).toBeInTheDocument();
       });
 
       // Should show login form, not redirect
@@ -412,7 +412,7 @@ describe('Login Routing', () => {
 
       // Should redirect to login
       await waitFor(() => {
-        expect(screen.getByText('Sign in to access the admin dashboard')).toBeInTheDocument();
+        expect(screen.getByText('Sign in to access the dashboard')).toBeInTheDocument();
       });
     });
 
@@ -431,7 +431,7 @@ describe('Login Routing', () => {
 
       // Should redirect to login
       await waitFor(() => {
-        expect(screen.getByText('Sign in to access the admin dashboard')).toBeInTheDocument();
+        expect(screen.getByText('Sign in to access the dashboard')).toBeInTheDocument();
       });
     });
   });
@@ -451,7 +451,7 @@ describe('Login Routing', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Sign in to access the admin dashboard')).toBeInTheDocument();
+        expect(screen.getByText('Sign in to access the dashboard')).toBeInTheDocument();
       });
 
       // Layout components should not be present

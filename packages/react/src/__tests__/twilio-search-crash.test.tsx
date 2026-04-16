@@ -124,12 +124,10 @@ describe('Twilio Search Crash Scenario', () => {
       await new Promise(resolve => setTimeout(resolve, 10));
       return {
         ok: true,
-        json: async () => ({
-          services: [
-            { sid: 'MG123', friendly_name: 'Test Service 1', date_created: '2024-01-01' },
-            { sid: 'MG456', friendly_name: 'Test Service 2', date_created: '2024-01-02' },
-          ],
-        }),
+        json: async () => ([
+          { sid: 'MG123', friendly_name: 'Test Service 1', date_created: '2024-01-01' },
+          { sid: 'MG456', friendly_name: 'Test Service 2', date_created: '2024-01-02' },
+        ]),
       };
     });
 
@@ -141,7 +139,7 @@ describe('Twilio Search Crash Scenario', () => {
 
     // Wait for data to load
     await waitFor(() => {
-      expect(screen.queryByText(/Test Service 1/i)).toBeInTheDocument();
+      expect(screen.getByText(/Test Service 1/i)).toBeInTheDocument();
     }, { timeout: 3000 });
 
     // Force multiple re-renders after data loads (simulates React's behavior)
@@ -203,11 +201,9 @@ describe('Twilio Search Crash Scenario', () => {
       await dataPromise;
       return {
         ok: true,
-        json: async () => ({
-          services: [
-            { sid: 'MG123', friendly_name: 'Test Service', date_created: '2024-01-01' },
-          ],
-        }),
+        json: async () => ([
+          { sid: 'MG123', friendly_name: 'Test Service', date_created: '2024-01-01' },
+        ]),
       };
     });
 
@@ -223,7 +219,7 @@ describe('Twilio Search Crash Scenario', () => {
 
     // Wait for transition to loaded state
     await waitFor(() => {
-      expect(screen.queryByText(/Test Service/i)).toBeInTheDocument();
+      expect(screen.getByText(/Test Service/i)).toBeInTheDocument();
     }, { timeout: 3000 });
 
     // Should not crash during state transition

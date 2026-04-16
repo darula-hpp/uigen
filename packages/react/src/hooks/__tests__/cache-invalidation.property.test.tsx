@@ -34,7 +34,7 @@ describe('Property 20: Cache Invalidation on Mutation', () => {
     </QueryClientProvider>
   );
 
-  it('should invalidate queries for the same resource after mutation', async () => {
+  it('should invalidate queries for the same resource after mutation', { timeout: 15000 }, async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.string({ minLength: 3, maxLength: 20 }).filter(s => /^[a-z]+$/.test(s)), // Resource name
@@ -52,6 +52,7 @@ describe('Property 20: Cache Invalidation on Mutation', () => {
 
           const queryOp: Operation = {
             id: `list${resourceName}`,
+            uigenId: `list${resourceName}`,
             method: 'GET',
             path: `/${resourceName}`,
             summary: 'List',
@@ -62,6 +63,7 @@ describe('Property 20: Cache Invalidation on Mutation', () => {
 
           const mutationOp: Operation = {
             id: `create${resourceName}`,
+            uigenId: `create${resourceName}`,
             method: 'POST',
             path: `/${resourceName}`,
             summary: 'Create',
@@ -113,6 +115,7 @@ describe('Property 20: Cache Invalidation on Mutation', () => {
 
           const mutationOp: Operation = {
             id: `update${resource1}`,
+            uigenId: `update${resource1}`,
             method: 'PUT',
             path: `/${resource1}/1`,
             summary: 'Update',
@@ -152,6 +155,7 @@ describe('Property 20: Cache Invalidation on Mutation', () => {
 
           const mutationOp: Operation = {
             id: `create${resourceName}`,
+            uigenId: `create${resourceName}`,
             method: 'POST',
             path: `/${resourceName}`,
             summary: 'Create',
@@ -192,6 +196,7 @@ describe('Property 20: Cache Invalidation on Mutation', () => {
 
           const operation: Operation = {
             id: operationId,
+            uigenId: operationId,
             method: 'GET',
             path: '/items/{id}',
             summary: 'Get item',

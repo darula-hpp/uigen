@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import {
   TextField,
   NumberField,
@@ -21,12 +21,15 @@ import type { SchemaNode } from '@uigen-dev/core';
  * Test wrapper component that provides react-hook-form context
  */
 function TestWrapper({ children, defaultValues = {} }: { children: React.ReactNode; defaultValues?: any }) {
-  const { register, formState: { errors } } = useForm({ defaultValues });
+  const methods = useForm({ defaultValues });
+  const { register, formState: { errors } } = methods;
   
   return (
-    <form>
-      {typeof children === 'function' ? children({ register, errors }) : children}
-    </form>
+    <FormProvider {...methods}>
+      <form>
+        {typeof children === 'function' ? children({ register, errors }) : children}
+      </form>
+    </FormProvider>
   );
 }
 
@@ -376,7 +379,7 @@ describe('FileUpload Component', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByText(/drag and drop a file here/i)).toBeInTheDocument();
+    expect(screen.getByText(/drag and drop files here/i)).toBeInTheDocument();
   });
 });
 
