@@ -226,32 +226,33 @@ export function useApiMutation(operation: Operation | undefined, options?: {
     // Optimistic update support (Requirement 47.1-47.4)
     onMutate: async (variables) => {
       if (options?.optimisticUpdate && operation) {
-        // Cancel outgoing refetches - use prefix matching to catch all variants of the key
-        await queryClient.cancelQueries({ queryKey: [operation.id] });
+        // Find all queries matching this operation's resource
+        const allQueries = queryClient.getQueryCache().getAll();
+        const matchingQueries = allQueries.filter(q => q.queryKey[0] === operation.id);
         
-        // Snapshot previous value - try full key first, then prefix
-        const previousData = queryClient.getQueryData([operation.id, {}, {}]) 
-          ?? queryClient.getQueryData([operation.id]);
+        if (matchingQueries.length === 0) return;
         
-        // Optimistically update - update all matching queries
-        if (previousData) {
-          queryClient.setQueryData([operation.id, {}, {}], (old: any) => 
-            options.optimisticUpdate!(old, variables)
-          );
-          queryClient.setQueryData([operation.id], (old: any) => {
-            if (old === undefined) return old;
-            return options.optimisticUpdate!(old, variables);
-          });
+        // Snapshot and optimistically update each matching query
+        const snapshots: Array<{ queryKey: readonly unknown[]; previousData: unknown }> = [];
+        for (const q of matchingQueries) {
+          const previousData = q.state.data;
+          if (previousData !== undefined) {
+            snapshots.push({ queryKey: q.queryKey, previousData });
+            queryClient.setQueryData(q.queryKey, (old: any) => 
+              options.optimisticUpdate!(old, variables)
+            );
+          }
         }
         
-        return { previousData };
+        return { snapshots };
       }
     },
     // Revert on error (Requirement 47.2, 47.4)
     onError: (_err, _variables, context) => {
-      if (context?.previousData && operation) {
-        queryClient.setQueryData([operation.id, {}, {}], context.previousData);
-        queryClient.setQueryData([operation.id], context.previousData);
+      if (context?.snapshots) {
+        for (const { queryKey, previousData } of context.snapshots) {
+          queryClient.setQueryData(queryKey, previousData);
+        }
       }
     },
     // Invalidate cache on success (Requirement 44.5)

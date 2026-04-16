@@ -521,11 +521,18 @@ describe('useApiMutation', () => {
 
       mutationResult.current.mutate({ body: { name: 'Jane' } });
 
-      // Wait a bit for optimistic update to be applied
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Wait for optimistic update to be applied
+      await waitFor(() => {
+        const allQueries = queryClient.getQueryCache().getAll();
+        const listQuery = allQueries.find(q => q.queryKey[0] === 'listUsers');
+        const cachedData = listQuery?.state.data as any[];
+        return cachedData?.length === 2;
+      }, { timeout: 2000 });
 
-      // Optimistic update should be applied
-      const cachedData = queryClient.getQueryData(['listUsers', {}, {}]) as any[];
+      // Optimistic update should be applied - find the query by operation id
+      const allQueries = queryClient.getQueryCache().getAll();
+      const listQuery = allQueries.find(q => q.queryKey[0] === 'listUsers');
+      const cachedData = listQuery?.state.data as any[];
       expect(cachedData).toEqual([
         { id: 1, name: 'John' },
         { id: 2, name: 'Jane' }
@@ -583,7 +590,9 @@ describe('useApiMutation', () => {
       await waitFor(() => expect(mutationResult.current.isError).toBe(true));
 
       // Data should be reverted to original
-      const cachedData = queryClient.getQueryData(['listUsers', {}, {}]);
+      const allQueriesAfterError = queryClient.getQueryCache().getAll();
+      const listQueryAfterError = allQueriesAfterError.find(q => q.queryKey[0] === 'listUsers');
+      const cachedData = listQueryAfterError?.state.data;
       expect(cachedData).toEqual(initialData);
     });
   });

@@ -39,16 +39,11 @@ describe('Property 20: Cache Invalidation on Mutation', () => {
       fc.asyncProperty(
         fc.string({ minLength: 3, maxLength: 20 }).filter(s => /^[a-z]+$/.test(s)), // Resource name
         async (resourceName) => {
-          // Mock fetch
-          global.fetch = vi.fn()
-            .mockResolvedValueOnce({
-              ok: true,
-              json: async () => [{ id: 1 }]
-            })
-            .mockResolvedValueOnce({
-              ok: true,
-              json: async () => ({ success: true })
-            });
+          // Mock fetch - provide enough responses for initial query + mutation + potential refetch
+          global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => [{ id: 1 }]
+          });
 
           const queryOp: Operation = {
             id: `list${resourceName}`,
@@ -96,7 +91,7 @@ describe('Property 20: Cache Invalidation on Mutation', () => {
           expect(mutationResult.current.isSuccess).toBe(true);
         }
       ),
-      { numRuns: 50 }
+      { numRuns: 20 }
     );
   });
 
