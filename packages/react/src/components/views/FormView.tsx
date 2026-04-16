@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useApiMutation, useApiCall } from '@/hooks/useApiCall';
@@ -247,25 +247,56 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
   // Use fetched data for edit mode, or initialData/empty object for create mode
   const formData = mode === 'edit' ? (fetchedData || initialData || {}) : (initialData || {});
 
+  // Include path and query parameters as form fields for operations that need them
+  // (excluding the :id parameter which comes from the route)
+  const pathParamFields: SchemaNode[] = useMemo(() => {
+    if (!operation?.parameters) return [];
+    
+    const fields: SchemaNode[] = [];
+    for (const param of operation.parameters) {
+      // Only include path and query parameters in the form
+      // Header and cookie parameters are handled differently
+      if (param.in !== 'path' && param.in !== 'query') continue;
+      
+      // Skip if this is the :id route parameter (handled by URL)
+      if (mode === 'edit' && params.id && param.name === 'id') continue;
+      
+      fields.push({
+        type: param.schema.type,
+        key: param.name,
+        label: param.schema.label || param.name,
+        required: param.required,
+        validations: param.schema.validations || [],
+        description: param.schema.description,
+        format: param.schema.format
+      });
+    }
+    return fields;
+  }, [operation, mode, params.id]);
+
   // Generate Zod schema from IR SchemaNode — only for fields that will be shown
   const zodSchema = useMemo(() => {
     if (!operation) return z.object({});
     const schema = operation.requestBody || resource.schema;
     // Build a filtered schema node so Zod only validates visible fields
     const filteredChildren = (schema.children || []).filter(field => !field.readOnly);
-    return generateZodSchema({ ...schema, children: filteredChildren });
-  }, [operation, resource.schema, mode]);
+    // Include path parameters in validation
+    const allChildren = [...pathParamFields, ...filteredChildren];
+    return generateZodSchema({ ...schema, children: allChildren });
+  }, [operation, resource.schema, mode, pathParamFields]);
 
   // Set up React Hook Form with Zod resolver
+  const formMethods = useForm({
+    resolver: zodResolver(zodSchema),
+    defaultValues: formData,
+  });
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm({
-    resolver: zodResolver(zodSchema),
-    defaultValues: formData,
-  });
+  } = formMethods;
 
   // Reset form when fetched data changes (for edit mode)
   // Map response keys (snake_case) to form field keys using the schema
@@ -320,14 +351,45 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
 
   const schema = operation.requestBody || resource.schema;
 
-  const fields = (schema.children || []).filter(field => !field.readOnly);
+  const fields = [...pathParamFields, ...(schema.children || []).filter(field => !field.readOnly)];
 
   const onSubmit = async (data: Record<string, unknown>) => {
     try {
+      // Separate path parameters, query parameters, and body data
+      const pathParamNames = new Set(
+        operation?.parameters?.filter(p => p.in === 'path').map(p => p.name) || []
+      );
+      const queryParamNames = new Set(
+        operation?.parameters?.filter(p => p.in === 'query').map(p => p.name) || []
+      );
+      
+      const pathParamsFromForm: Record<string, string> = {};
+      const queryParamsFromForm: Record<string, string> = {};
+      const bodyData: Record<string, unknown> = {};
+      
+      for (const [key, value] of Object.entries(data)) {
+        if (pathParamNames.has(key)) {
+          pathParamsFromForm[key] = String(value);
+        } else if (queryParamNames.has(key)) {
+          queryParamsFromForm[key] = String(value);
+        } else {
+          bodyData[key] = value;
+        }
+      }
+      
       // For edit mode, include the id in path params (Requirement 10.5)
-      const mutationParams = mode === 'edit' && params.id && operation
-        ? { pathParams: resolvePathParams(operation, params.id), body: data }
-        : { body: data };
+      // Merge with any path params from the form
+      const allPathParams = mode === 'edit' && params.id && operation
+        ? { ...resolvePathParams(operation, params.id), ...pathParamsFromForm }
+        : pathParamsFromForm;
+      
+      const mutationParams: any = { body: bodyData };
+      if (Object.keys(allPathParams).length > 0) {
+        mutationParams.pathParams = allPathParams;
+      }
+      if (Object.keys(queryParamsFromForm).length > 0) {
+        mutationParams.queryParams = queryParamsFromForm;
+      }
       
       await mutation.mutateAsync(mutationParams);
       
@@ -374,40 +436,42 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
         {mode === 'create' ? 'Create' : 'Edit'} {resource.name}
       </h2>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-2xl">
-        {fields.map(field => (
-          <div key={field.key} className="space-y-2">
-            <Label htmlFor={field.key}>
-              {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
-            </Label>
-            {renderFieldInput(field, register, errors)}
-            {errors[field.key] && (
-              <p className="text-sm text-destructive">{errors[field.key]?.message as string}</p>
-            )}
-            {field.description && (
-              <p className="text-sm text-muted-foreground">{field.description}</p>
-            )}
+      <FormProvider {...formMethods}>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-2xl">
+          {fields.map(field => (
+            <div key={field.key} className="space-y-2">
+              <Label htmlFor={field.key}>
+                {field.label}
+                {field.required && <span className="text-destructive ml-1">*</span>}
+              </Label>
+              {renderFieldInput(field, register, errors)}
+              {errors[field.key] && (
+                <p className="text-sm text-destructive">{errors[field.key]?.message as string}</p>
+              )}
+              {field.description && (
+                <p className="text-sm text-muted-foreground">{field.description}</p>
+              )}
+            </div>
+          ))}
+
+          <div className="flex gap-2">
+            <Button type="submit" disabled={isSubmitting || mutation.isPending}>
+              {isSubmitting || mutation.isPending 
+                ? (mode === 'edit' ? 'Updating...' : 'Creating...') 
+                : (mode === 'edit' ? 'Update' : 'Create')}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => navigate(`/${resource.slug}`)}>
+              Cancel
+            </Button>
           </div>
-        ))}
 
-        <div className="flex gap-2">
-          <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-            {isSubmitting || mutation.isPending 
-              ? (mode === 'edit' ? 'Updating...' : 'Creating...') 
-              : (mode === 'edit' ? 'Update' : 'Create')}
-          </Button>
-          <Button type="button" variant="outline" onClick={() => navigate(`/${resource.slug}`)}>
-            Cancel
-          </Button>
-        </div>
-
-        {mutation.isError && (
-          <p className="text-sm text-destructive">
-            Error {mode === 'edit' ? 'updating' : 'creating'} {resource.name.toLowerCase()}: {mutation.error.message}
-          </p>
-        )}
-      </form>
+          {mutation.isError && (
+            <p className="text-sm text-destructive">
+              Error {mode === 'edit' ? 'updating' : 'creating'} {resource.name.toLowerCase()}: {mutation.error.message}
+            </p>
+          )}
+        </form>
+      </FormProvider>
     </div>
   );
 
