@@ -1,0 +1,28 @@
+# FastAPI and server
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+
+# Database
+sqlalchemy[asyncio]>=2.0.36
+asyncpg>=0.30.0
+alembic>=1.14.0
+
+# Data validation and settings
+pydantic>=2.10.0
+pydantic-settings>=2.6.0
+
+# File handling
+python-multipart>=0.0.20
+python-docx>=1.1.2
+docxtpl>=0.18.0
+pypdf>=5.1.0
+
+# Data generation (mocked AI)
+faker>=33.1.0
+
+# Testing
+pytest>=8.3.0
+pytest-asyncio>=0.25.0
+hypothesis>=6.122.0
+jsonschema>=4.21.1
+httpx>=0.28.1
