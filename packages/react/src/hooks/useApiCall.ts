@@ -130,7 +130,11 @@ export function useApiMutation(operation: Operation | undefined, options?: {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ pathParams = {}, body }: { pathParams?: Record<string, string>; body?: unknown }) => {
+    mutationFn: async ({ pathParams = {}, queryParams = {}, body }: { 
+      pathParams?: Record<string, string>; 
+      queryParams?: Record<string, string>;
+      body?: unknown 
+    }) => {
       if (!operation) {
         throw new Error('No operation available for mutation');
       }
@@ -138,6 +142,12 @@ export function useApiMutation(operation: Operation | undefined, options?: {
       Object.entries(pathParams).forEach(([key, value]) => {
         url = url.replace(`{${key}}`, value);
       });
+
+      // Add query parameters to URL
+      if (Object.keys(queryParams).length > 0) {
+        const queryString = new URLSearchParams(queryParams).toString();
+        url += `?${queryString}`;
+      }
 
       // Requirement 16.4, 17.5: Inject auth headers into requests
       const authHeaders = getAuthHeaders();

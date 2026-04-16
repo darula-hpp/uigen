@@ -115,7 +115,7 @@ export function NavSidebarClient({ sections, currentPath }: NavSidebarClientProp
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:block w-64 shrink-0 border-r border-[var(--border)] px-4 py-6 overflow-y-auto sticky top-16 h-[calc(100vh-4rem)]">
+        <aside className="hidden md:block w-64 shrink-0 border-r border-[var(--border)] px-4 py-6 overflow-y-auto sticky top-14 h-[calc(100vh-3.5rem)]">
         {sidebarContent}
       </aside>
     </>
