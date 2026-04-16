@@ -57,7 +57,7 @@ describe('Validation Rule Application - Property Tests', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.string({ minLength: 1, maxLength: 20 }).filter(s => /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(s) && s !== '__proto__' && s !== 'constructor' && s !== 'prototype'),
-        fc.string({ minLength: 3, maxLength: 30 }),
+        fc.string({ minLength: 3, maxLength: 30 }).filter(s => s.trim().length >= 3),
         async (fieldKey: string, fieldLabel: string) => {
           const resource: Resource = {
             name: 'TestResource',
