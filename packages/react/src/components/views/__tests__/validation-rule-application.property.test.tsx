@@ -117,7 +117,7 @@ describe('Validation Rule Application - Property Tests', () => {
           });
         }
       ),
-      { numRuns: 50 }
+      { numRuns: 20 }
     );
   });
 

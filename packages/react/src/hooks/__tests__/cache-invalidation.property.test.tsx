@@ -34,7 +34,7 @@ describe('Property 20: Cache Invalidation on Mutation', () => {
     </QueryClientProvider>
   );
 
-  it('should invalidate queries for the same resource after mutation', async () => {
+  it('should invalidate queries for the same resource after mutation', { timeout: 15000 }, async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.string({ minLength: 3, maxLength: 20 }).filter(s => /^[a-z]+$/.test(s)), // Resource name

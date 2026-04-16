@@ -526,11 +526,7 @@ describe('useApiMutation', () => {
 
       // Optimistic update should be applied
       const cachedData = queryClient.getQueryData(['listUsers', {}, {}]) as any[];
-      // The optimistic update uses operation.id as key, so check if data was updated
-      // either via the full key or the short key
-      const shortKeyCachedData = queryClient.getQueryData(['listUsers']) as any[];
-      const updatedData = cachedData || shortKeyCachedData;
-      expect(updatedData).toEqual([
+      expect(cachedData).toEqual([
         { id: 1, name: 'John' },
         { id: 2, name: 'Jane' }
       ]);

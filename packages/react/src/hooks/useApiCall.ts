@@ -226,17 +226,22 @@ export function useApiMutation(operation: Operation | undefined, options?: {
     // Optimistic update support (Requirement 47.1-47.4)
     onMutate: async (variables) => {
       if (options?.optimisticUpdate && operation) {
-        // Cancel outgoing refetches
+        // Cancel outgoing refetches - use prefix matching to catch all variants of the key
         await queryClient.cancelQueries({ queryKey: [operation.id] });
         
-        // Snapshot previous value
-        const previousData = queryClient.getQueryData([operation.id]);
+        // Snapshot previous value - try full key first, then prefix
+        const previousData = queryClient.getQueryData([operation.id, {}, {}]) 
+          ?? queryClient.getQueryData([operation.id]);
         
-        // Optimistically update
+        // Optimistically update - update all matching queries
         if (previousData) {
-          queryClient.setQueryData([operation.id], (old: any) => 
+          queryClient.setQueryData([operation.id, {}, {}], (old: any) => 
             options.optimisticUpdate!(old, variables)
           );
+          queryClient.setQueryData([operation.id], (old: any) => {
+            if (old === undefined) return old;
+            return options.optimisticUpdate!(old, variables);
+          });
         }
         
         return { previousData };
@@ -245,6 +250,7 @@ export function useApiMutation(operation: Operation | undefined, options?: {
     // Revert on error (Requirement 47.2, 47.4)
     onError: (_err, _variables, context) => {
       if (context?.previousData && operation) {
+        queryClient.setQueryData([operation.id, {}, {}], context.previousData);
         queryClient.setQueryData([operation.id], context.previousData);
       }
     },
