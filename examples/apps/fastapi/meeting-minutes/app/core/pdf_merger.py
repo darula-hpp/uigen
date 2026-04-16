@@ -2,7 +2,7 @@
 import asyncio
 from pathlib import Path
 from typing import List
-from pypdf import PdfMerger
+from pypdf import PdfWriter
 from app.exceptions import MergeError
 
 
@@ -54,14 +54,14 @@ class PDFMerger:
         output_dir = Path(output_path).parent
         output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Create merger and append PDFs in order
-        merger = PdfMerger()
+        # Create writer and append PDFs in order
+        writer = PdfWriter()
         
         for pdf_path in pdf_paths:
-            merger.append(pdf_path)
+            writer.append(pdf_path)
         
         # Write merged PDF
-        merger.write(output_path)
-        merger.close()
+        with open(output_path, 'wb') as output_file:
+            writer.write(output_file)
         
         return output_path
