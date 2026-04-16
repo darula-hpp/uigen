@@ -1,7 +1,10 @@
 """Database connection and session management."""
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from app.config import settings
+from app.config import get_settings
 
+
+# Get settings
+settings = get_settings()
 
 # Create async engine with connection pooling
 engine = create_async_engine(

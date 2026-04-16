@@ -1,4 +1,5 @@
 """Application configuration using pydantic-settings."""
+from functools import lru_cache
 from pydantic_settings import BaseSettings
 from pydantic import ConfigDict
 
@@ -14,4 +15,7 @@ class Settings(BaseSettings):
     LIBREOFFICE_PATH: str = "soffice"
 
 
-settings = Settings()
+@lru_cache()
+def get_settings() -> Settings:
+    """Get cached settings instance."""
+    return Settings()
