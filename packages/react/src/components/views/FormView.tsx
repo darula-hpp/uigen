@@ -353,6 +353,13 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
 
   const fields = [...pathParamFields, ...(schema.children || []).filter(field => !field.readOnly)];
 
+  // Create unique keys for rendering to avoid React duplicate key warnings
+  // when parameters and body fields have the same name
+  const fieldsWithUniqueKeys = fields.map((field, index) => ({
+    ...field,
+    renderKey: `field-${index}-${field.key}`
+  }));
+
   const onSubmit = async (data: Record<string, unknown>) => {
     try {
       // Separate path parameters, query parameters, and body data
@@ -438,8 +445,8 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
 
       <FormProvider {...formMethods}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-2xl">
-          {fields.map(field => (
-            <div key={field.key} className="space-y-2">
+          {fieldsWithUniqueKeys.map(field => (
+            <div key={field.renderKey} className="space-y-2">
               <Label htmlFor={field.key}>
                 {field.label}
                 {field.required && <span className="text-destructive ml-1">*</span>}
