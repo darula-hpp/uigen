@@ -168,7 +168,23 @@ export function useApiMutation(operation: Operation | undefined, options?: {
         } else if (contentType === 'multipart/form-data') {
           const fd = new FormData();
           for (const [k, v] of Object.entries(body as Record<string, unknown>)) {
-            if (v !== undefined && v !== null) fd.append(k, v instanceof File ? v : String(v));
+            if (v === undefined || v === null) continue;
+            
+            // Handle File objects
+            if (v instanceof File) {
+              fd.append(k, v);
+            }
+            // Handle FileList or array of Files
+            else if (v instanceof FileList) {
+              Array.from(v).forEach(file => fd.append(`${k}[]`, file));
+            }
+            else if (Array.isArray(v) && v.length > 0 && v[0] instanceof File) {
+              v.forEach(file => fd.append(`${k}[]`, file));
+            }
+            // Handle other values as strings
+            else {
+              fd.append(k, String(v));
+            }
           }
           serializedBody = fd;
           // Let browser set Content-Type with boundary for multipart

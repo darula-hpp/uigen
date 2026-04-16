@@ -13,7 +13,11 @@ import { DashboardView } from './components/views/DashboardView';
 import { LoginView } from './components/views/LoginView';
 import { ToastProvider } from './components/Toast';
 import { isAuthenticated } from './lib/auth';
+import { registerDefaultStrategies } from './lib/file-upload';
 import type { UIGenApp } from '@uigen-dev/core';
+
+// Register default file upload strategies on module load
+registerDefaultStrategies();
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -97,6 +101,7 @@ export function App({ config }: AppProps) {
                 const hasListOp = resource.operations.some(op => op.viewHint === 'list' || op.viewHint === 'search');
                 const createOps = resource.operations.filter(op => op.viewHint === 'create');
                 const wizardOps = resource.operations.filter(op => op.viewHint === 'wizard');
+                const actionOps = resource.operations.filter(op => op.viewHint === 'action');
                 
                 // Reconcile overrides for each view
                 const listReconcile = reconcile(`${resource.uigenId}.list`);
@@ -128,6 +133,9 @@ export function App({ config }: AppProps) {
                 } else if (createOps.length === 1) {
                   // Single create operation - redirect to form
                   indexElement = <Navigate to={`/${resource.slug}/new`} replace />;
+                } else if (actionOps.length > 0) {
+                  // Action operations (like file upload) - show action selection
+                  indexElement = <ActionSelectionView resource={resource} />;
                 } else {
                   // No operations available
                   indexElement = (

@@ -308,6 +308,39 @@ export class Swagger2Adapter {
   }
 
   /**
+   * Check if a schema contains file fields (including nested objects and arrays).
+   * This method is used to detect when multipart/form-data content type should be used.
+   * 
+   * Requirement 16.5: Apply same content type detection rules as OpenAPI3 adapter
+   * 
+   * @param schema - The OpenAPI 3.x schema to check (after conversion from Swagger 2.0)
+   * @returns True if the schema contains any file fields
+   */
+  private hasFileFields(schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject): boolean {
+    // Handle references
+    if ('$ref' in schema) {
+      return false; // References are not expanded here for simplicity
+    }
+
+    // Direct file field (format: binary)
+    if (schema.format === 'binary') {
+      return true;
+    }
+
+    // Check children in object schemas
+    if (schema.type === 'object' && schema.properties) {
+      return Object.values(schema.properties).some(prop => this.hasFileFields(prop));
+    }
+
+    // Check items in array schemas
+    if (schema.type === 'array' && schema.items) {
+      return this.hasFileFields(schema.items);
+    }
+
+    return false;
+  }
+
+  /**
    * Convert parameters, separating body parameters into requestBody
    */
   private convertParameters(params: Array<Swagger2Parameter | Swagger2Reference>): {
@@ -316,6 +349,16 @@ export class Swagger2Adapter {
   } {
     const parameters: Array<OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject> = [];
     let requestBody: OpenAPIV3.RequestBodyObject | undefined;
+
+    // First pass: check if any formData parameters are file type
+    // Requirement 16.5: Detect file fields to determine content type
+    let hasFileInFormData = false;
+    for (const param of params) {
+      if (!('$ref' in param) && param.in === 'formData' && param.type === 'file') {
+        hasFileInFormData = true;
+        break;
+      }
+    }
 
     for (const param of params) {
       if ('$ref' in param) {
@@ -338,11 +381,14 @@ export class Swagger2Adapter {
         };
       } else if (param.in === 'formData') {
         // FormData parameters also become requestBody
+        // Requirement 16.5: Use multipart/form-data when file fields are present
+        const contentType = hasFileInFormData ? 'multipart/form-data' : 'application/x-www-form-urlencoded';
+        
         if (!requestBody) {
           requestBody = {
             required: param.required,
             content: {
-              'application/x-www-form-urlencoded': {
+              [contentType]: {
                 schema: {
                   type: 'object',
                   properties: {}
@@ -351,7 +397,7 @@ export class Swagger2Adapter {
             }
           };
         }
-        const schema = requestBody.content['application/x-www-form-urlencoded'].schema as OpenAPIV3.SchemaObject;
+        const schema = requestBody.content[contentType].schema as OpenAPIV3.SchemaObject;
         if (!schema.properties) schema.properties = {};
         schema.properties[param.name] = this.convertParameterToSchema(param);
       } else {
@@ -396,9 +442,15 @@ export class Swagger2Adapter {
       } as OpenAPIV3.ArraySchemaObject;
     }
 
+    // Convert Swagger2 file type to OpenAPI3 binary format
+    // In Swagger2, formData parameters use type: "file"
+    // In OpenAPI3, this becomes type: "string" with format: "binary"
+    const type = param.type === 'file' ? 'string' : param.type;
+    const format = param.type === 'file' ? 'binary' : param.format;
+
     const schema: OpenAPIV3.NonArraySchemaObject = {
-      type: param.type as any,
-      format: param.format,
+      type: type as any,
+      format: format,
       default: param.default,
       enum: param.enum,
       minimum: param.minimum,
@@ -536,7 +588,49 @@ export class Swagger2Adapter {
       (result as any)['x-uigen-label'] = uigenLabel;
     }
 
+    // Preserve file metadata extensions for binary format fields
+    // Requirement 1.6: Apply same file type detection rules as OpenAPI3 adapter
+    this.preserveFileMetadataExtensions(schema, result);
+
     return result;
+  }
+
+  /**
+   * Preserves file metadata extensions from Swagger 2.0 schema to OpenAPI 3.x schema.
+   * This ensures that file upload metadata (contentMediaType, x-uigen-file-types, x-uigen-max-file-size)
+   * is carried over during the conversion process.
+   * 
+   * Requirement 1.6: Apply same file type detection rules as OpenAPI3 adapter
+   * 
+   * @param swagger2Schema - The original Swagger 2.0 schema
+   * @param openapi3Schema - The converted OpenAPI 3.x schema to preserve extensions on
+   */
+  private preserveFileMetadataExtensions(
+    swagger2Schema: Swagger2Schema,
+    openapi3Schema: OpenAPIV3.SchemaObject
+  ): void {
+    // Only preserve extensions for binary format fields
+    if (swagger2Schema.format !== 'binary') {
+      return;
+    }
+
+    // Preserve contentMediaType if present
+    const contentMediaType = (swagger2Schema as any).contentMediaType;
+    if (typeof contentMediaType === 'string' && contentMediaType.trim() !== '') {
+      (openapi3Schema as any).contentMediaType = contentMediaType;
+    }
+
+    // Preserve x-uigen-file-types extension if present
+    const xUigenFileTypes = (swagger2Schema as any)['x-uigen-file-types'];
+    if (Array.isArray(xUigenFileTypes)) {
+      (openapi3Schema as any)['x-uigen-file-types'] = xUigenFileTypes;
+    }
+
+    // Preserve x-uigen-max-file-size extension if present
+    const xUigenMaxFileSize = (swagger2Schema as any)['x-uigen-max-file-size'];
+    if (typeof xUigenMaxFileSize === 'number') {
+      (openapi3Schema as any)['x-uigen-max-file-size'] = xUigenMaxFileSize;
+    }
   }
 
   /**

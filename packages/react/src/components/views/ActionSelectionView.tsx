@@ -9,10 +9,12 @@ interface ActionSelectionViewProps {
 export function ActionSelectionView({ resource }: ActionSelectionViewProps) {
   const navigate = useNavigate();
   
-  // Get all create operations
+  // Get all create and action operations
   const createOps = resource.operations.filter(op => op.viewHint === 'create');
+  const actionOps = resource.operations.filter(op => op.viewHint === 'action');
+  const allOps = [...createOps, ...actionOps];
   
-  if (createOps.length === 0) {
+  if (allOps.length === 0) {
     return (
       <div className="p-4 text-muted-foreground">
         No create operations available for {resource.name}
@@ -20,20 +22,20 @@ export function ActionSelectionView({ resource }: ActionSelectionViewProps) {
     );
   }
 
-  // If only one create operation, show it directly
-  if (createOps.length === 1) {
+  // If only one operation, show it directly
+  if (allOps.length === 1) {
     return (
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">{resource.name}</h2>
-        <p className="text-muted-foreground">{createOps[0].summary}</p>
-        <Button onClick={() => navigate(`/${resource.slug}/new?operation=${createOps[0].id}`)}>
-          {createOps[0].summary || 'Create'}
+        <p className="text-muted-foreground">{allOps[0].summary}</p>
+        <Button onClick={() => navigate(`/${resource.slug}/new?operation=${allOps[0].id}`)}>
+          {allOps[0].summary || 'Create'}
         </Button>
       </div>
     );
   }
 
-  // Multiple create operations - show selection
+  // Multiple operations - show selection
   return (
     <div className="space-y-6">
       <div>
@@ -42,7 +44,7 @@ export function ActionSelectionView({ resource }: ActionSelectionViewProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {createOps.map((op) => (
+        {allOps.map((op) => (
           <div
             key={op.id}
             className="p-6 border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"

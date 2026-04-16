@@ -465,10 +465,30 @@ export class OpenAPI3Adapter {
     let requestContentType: string | undefined;
     if (operation.requestBody && 'content' in operation.requestBody) {
       const content = operation.requestBody.content;
-      if (content['application/json']) requestContentType = 'application/json';
-      else if (content['application/x-www-form-urlencoded']) requestContentType = 'application/x-www-form-urlencoded';
-      else if (content['multipart/form-data']) requestContentType = 'multipart/form-data';
-      else requestContentType = Object.keys(content)[0];
+      const hasFileFields = requestBody ? this.hasFileFields(requestBody) : false;
+      
+      // Prefer multipart/form-data when file fields are present
+      if (hasFileFields && content['multipart/form-data']) {
+        requestContentType = 'multipart/form-data';
+      }
+      // Preserve explicit multipart/form-data from spec
+      else if (content['multipart/form-data']) {
+        requestContentType = 'multipart/form-data';
+      }
+      // Set multipart/form-data when file fields are present but not explicitly specified
+      else if (hasFileFields) {
+        requestContentType = 'multipart/form-data';
+      }
+      // Fall back to existing logic for non-file operations
+      else if (content['application/json']) {
+        requestContentType = 'application/json';
+      }
+      else if (content['application/x-www-form-urlencoded']) {
+        requestContentType = 'application/x-www-form-urlencoded';
+      }
+      else {
+        requestContentType = Object.keys(content)[0];
+      }
     }
 
     const responses = this.adaptResponses(operation.responses);
@@ -583,6 +603,20 @@ export class OpenAPI3Adapter {
 
     if (type === 'array' && 'items' in schema && schema.items) {
       node.items = this.adaptSchema('item', schema.items as OpenAPIV3.SchemaObject, visited);
+      
+      // Detect array of binary files for multiple file upload
+      const itemsSchema = schema.items as OpenAPIV3.SchemaObject;
+      if (itemsSchema && itemsSchema.format === 'binary' && node.items) {
+        const itemFileMetadata = this.extractFileMetadata(itemsSchema);
+        if (itemFileMetadata) {
+          node.items.fileMetadata = { ...itemFileMetadata, multiple: true };
+        }
+      }
+    }
+
+    // Extract file metadata for binary format fields
+    if (type === 'file') {
+      node.fileMetadata = this.extractFileMetadata(schema);
     }
 
     node.validations = this.extractValidations(schema);
@@ -621,6 +655,78 @@ export class OpenAPI3Adapter {
     if (schema.format === 'email') rules.push({ type: 'email' as const, value: '', message: 'Must be a valid email address' });
     if (schema.format === 'uri') rules.push({ type: 'url' as const, value: '', message: 'Must be a valid URL' });
     return rules;
+  }
+
+  /**
+   * Extract file metadata from a schema with format: binary
+   * Extracts contentMediaType, x-uigen-file-types, and x-uigen-max-file-size
+   */
+  /**
+   * Check if a schema contains file fields (including nested objects and arrays)
+   * @param schema - The schema node to check
+   * @returns True if the schema contains any file fields
+   */
+  private hasFileFields(schema: SchemaNode): boolean {
+    // Direct file field
+    if (schema.type === 'file') {
+      return true;
+    }
+    
+    // Check children in object schemas
+    if (schema.type === 'object' && schema.children) {
+      return schema.children.some(child => this.hasFileFields(child));
+    }
+    
+    // Check items in array schemas
+    if (schema.type === 'array' && schema.items) {
+      return this.hasFileFields(schema.items);
+    }
+    
+    return false;
+  }
+
+  private extractFileMetadata(schema: OpenAPIV3.SchemaObject): import('../ir/types.js').FileMetadata | undefined {
+    // Only extract metadata for binary format fields
+    if (schema.format !== 'binary') {
+      return undefined;
+    }
+
+    const allowedMimeTypes: string[] = [];
+    
+    // Extract from x-uigen-file-types extension
+    const xUigenFileTypes = (schema as any)['x-uigen-file-types'];
+    if (Array.isArray(xUigenFileTypes)) {
+      allowedMimeTypes.push(...xUigenFileTypes.filter((t: any) => typeof t === 'string'));
+    }
+    
+    // Extract from contentMediaType property
+    const contentMediaType = (schema as any).contentMediaType;
+    if (typeof contentMediaType === 'string' && contentMediaType.trim() !== '') {
+      if (!allowedMimeTypes.includes(contentMediaType)) {
+        allowedMimeTypes.push(contentMediaType);
+      }
+    }
+    
+    // Default to accepting all files if no MIME types specified
+    if (allowedMimeTypes.length === 0) {
+      allowedMimeTypes.push('*/*');
+    }
+    
+    // Extract max file size from x-uigen-max-file-size extension
+    const xUigenMaxFileSize = (schema as any)['x-uigen-max-file-size'];
+    const maxSizeBytes = typeof xUigenMaxFileSize === 'number' && xUigenMaxFileSize > 0
+      ? xUigenMaxFileSize
+      : 10 * 1024 * 1024; // Default 10MB
+    
+    // Generate HTML accept attribute from allowed MIME types
+    const accept = allowedMimeTypes.join(',');
+    
+    return {
+      allowedMimeTypes,
+      maxSizeBytes,
+      multiple: false, // Will be set to true for array schemas
+      accept
+    };
   }
 
   private inferResourceName(path: string): string | null {
