@@ -226,9 +226,16 @@ export function useApiMutation(operation: Operation | undefined, options?: {
     // Optimistic update support (Requirement 47.1-47.4)
     onMutate: async (variables) => {
       if (options?.optimisticUpdate && operation) {
-        // Find all queries matching this operation's resource
+        // Find all queries matching this operation's resource path
+        // The mutation path (e.g. POST /users) should match query paths (e.g. GET /users)
+        const resourcePath = operation.path.split('/')[1]; // e.g. 'users' from '/users'
         const allQueries = queryClient.getQueryCache().getAll();
-        const matchingQueries = allQueries.filter(q => q.queryKey[0] === operation.id);
+        const matchingQueries = allQueries.filter(q => {
+          const queryId = q.queryKey[0] as string;
+          // Match by operation id or by resource path prefix
+          return queryId === operation.id || 
+            (typeof queryId === 'string' && queryId.toLowerCase().includes(resourcePath?.toLowerCase() || ''));
+        });
         
         if (matchingQueries.length === 0) return;
         

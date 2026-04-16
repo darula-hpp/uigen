@@ -101,16 +101,13 @@ const createMockConfig = (hasAuth: boolean = true): UIGenApp => ({
 });
 
 /**
- * Property 1: Bug Condition - Login Route White Screen
+ * Regression Guard: Login Route White Screen
  * 
  * **Validates: Requirements 1.1, 1.2, 1.3, 2.1, 2.2, 2.3**
  * 
- * CRITICAL: This test MUST FAIL on unfixed code - failure confirms the bug exists
- * DO NOT attempt to fix the test or the code when it fails
- * 
- * This test encodes the expected behavior - it will validate the fix when it passes after implementation
- * 
- * GOAL: Surface counterexamples that demonstrate the bug exists
+ * This test was originally written as a bug-condition exploration test.
+ * The bug (blank screen on /login navigation) has since been fixed.
+ * This test now serves as a regression guard to ensure the fix is preserved.
  * 
  * For any navigation to /login route, the routing structure SHALL render the LoginRoute component,
  * which displays LoginView (if unauthenticated and auth is configured) or redirects to dashboard
