@@ -388,7 +388,7 @@ export function LoginView({ config, appTitle }: LoginViewProps) {
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          Auto-generated admin UI powered by UIGen
+          Powered by UIGen
         </p>
       </div>
     </div>
