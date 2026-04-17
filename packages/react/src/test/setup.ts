@@ -18,48 +18,35 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock sessionStorage for storage strategy tests
-let sessionStorageStore: Record<string, string> = {};
-
 const sessionStorageMock = {
-  getItem: (key: string) => sessionStorageStore[key] || null,
-  setItem: (key: string, value: string) => {
-    sessionStorageStore[key] = value;
+  _store: {} as Record<string, string>,
+  getItem(key: string) {
+    return this._store[key] || null;
   },
-  removeItem: (key: string) => {
-    delete sessionStorageStore[key];
+  setItem(key: string, value: string) {
+    this._store[key] = value;
   },
-  clear: () => {
-    sessionStorageStore = {};
+  removeItem(key: string) {
+    delete this._store[key];
+  },
+  clear() {
+    // Clear all keys from the store object without reassigning
+    Object.keys(this._store).forEach(key => {
+      delete this._store[key];
+    });
   },
   get length() {
-    return Object.keys(sessionStorageStore).length;
+    return Object.keys(this._store).length;
   },
-  key: (index: number) => {
-    const keys = Object.keys(sessionStorageStore);
+  key(index: number) {
+    const keys = Object.keys(this._store);
     return keys[index] || null;
   },
 };
 
-// Set up sessionStorage mock on all possible global objects
-if (typeof globalThis !== 'undefined') {
-  (globalThis as any).sessionStorage = sessionStorageMock;
-}
-
-if (typeof window !== 'undefined') {
-  (window as any).sessionStorage = sessionStorageMock;
-}
-
-if (typeof global !== 'undefined') {
-  (global as any).sessionStorage = sessionStorageMock;
-}
-
-// Also make it available as a bare identifier by setting it on the global scope
-// This is needed for code that accesses sessionStorage without window/globalThis prefix
-if (typeof globalThis !== 'undefined' && !globalThis.sessionStorage) {
-  Object.defineProperty(globalThis, 'sessionStorage', {
-    value: sessionStorageMock,
-    writable: true,
-    configurable: true,
-    enumerable: true,
-  });
-}
+// Set up sessionStorage mock on globalThis (most reliable)
+Object.defineProperty(globalThis, 'sessionStorage', {
+  value: sessionStorageMock,
+  writable: true,
+  configurable: true,
+});

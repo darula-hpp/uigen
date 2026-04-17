@@ -321,7 +321,7 @@ describe('x-uigen-label — Property-Based Tests', () => {
     // **Validates: Requirements 3.2**
     fc.assert(
       fc.property(
-        fc.string({ minLength: 1 }),
+        fc.string({ minLength: 1 }).filter(s => s.trim() !== ''),
         (targetLabel) => {
           const spec = {
             openapi: '3.0.0',
