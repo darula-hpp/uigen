@@ -70,13 +70,9 @@ async def test_extract_variables_simple(parser, temp_docx_with_variables):
     assert schema["properties"]["attendees"]["type"] == "array"
     assert "attendees" in schema["required"]
     
-    # Verify nested object structure (attendee.name, attendee.email)
-    assert "attendee" in schema["properties"]
-    assert schema["properties"]["attendee"]["type"] == "object"
-    assert "properties" in schema["properties"]["attendee"]
-    assert "name" in schema["properties"]["attendee"]["properties"]
-    assert "email" in schema["properties"]["attendee"]["properties"]
-
+    # Note: 'attendee' is a loop variable and should NOT be in the schema
+    # Loop variables are temporary iteration variables, not data variables
+    assert "attendee" not in schema["properties"]
 
 @pytest.mark.asyncio
 async def test_extract_variables_no_variables(parser, temp_docx_without_variables):

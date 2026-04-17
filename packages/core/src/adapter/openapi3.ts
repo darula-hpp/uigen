@@ -18,6 +18,8 @@ import { SchemaResolver } from './schema-resolver.js';
 import { ViewHintClassifier } from './view-hint-classifier.js';
 import { RelationshipDetector } from './relationship-detector.js';
 import { PaginationDetector } from './pagination-detector.js';
+import { AnnotationHandlerRegistry, createOperationContext } from './annotations/index.js';
+import type { AdapterUtils } from './annotations/index.js';
 
 export class OpenAPI3Adapter {
   private spec: OpenAPIV3.Document;
@@ -26,6 +28,9 @@ export class OpenAPI3Adapter {
   private relationshipDetector: RelationshipDetector;
   private paginationDetector: PaginationDetector;
   private parsingErrors: ParsingError[] = [];
+  private annotationRegistry: AnnotationHandlerRegistry;
+  private adapterUtils: AdapterUtils;
+  private currentIR?: UIGenApp;
 
   /**
    * Pick the best available content schema from a content map.
@@ -48,17 +53,31 @@ export class OpenAPI3Adapter {
     this.viewHintClassifier = new ViewHintClassifier();
     this.relationshipDetector = new RelationshipDetector();
     this.paginationDetector = new PaginationDetector();
+    this.annotationRegistry = AnnotationHandlerRegistry.getInstance();
+    
+    // Create adapter utils for annotation handlers
+    this.adapterUtils = {
+      humanize: this.humanize.bind(this),
+      resolveRef: (ref: string) => this.resolver.resolveRef(ref),
+      logError: (error: ParsingError) => this.parsingErrors.push(error),
+      logWarning: (message: string) => console.warn(message)
+    };
   }
 
   adapt(): UIGenApp {
-    return {
+    this.currentIR = {
       meta: this.extractMeta(),
-      resources: this.extractResources(),
+      resources: [],
       auth: this.extractAuth(),
       dashboard: { enabled: true, widgets: [] },
       servers: this.extractServers(),
       parsingErrors: this.parsingErrors.length > 0 ? this.parsingErrors : undefined
     };
+    
+    // Extract resources after IR is initialized
+    this.currentIR.resources = this.extractResources();
+    
+    return this.currentIR;
   }
 
   private extractMeta() {
@@ -398,14 +417,30 @@ export class OpenAPI3Adapter {
         const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
         if (!operation) continue;
 
-        // Check if operation should be ignored
-        if (this.shouldIgnoreOperation(pathItem, operation)) {
-          console.log(`Ignoring operation: ${method.toUpperCase()} ${path}`);
-          continue;
-        }
-
         try {
           const op = this.adaptOperation(method.toUpperCase() as HttpMethod, path, operation);
+          
+          // Process annotations using the registry
+          if (this.currentIR) {
+            const context = createOperationContext(
+              operation,
+              pathItem,
+              path,
+              method.toUpperCase() as HttpMethod,
+              this.adapterUtils,
+              this.currentIR,
+              resource,
+              op
+            );
+            this.annotationRegistry.processAnnotations(context);
+          }
+          
+          // Check if operation should be ignored (set by IgnoreHandler)
+          if ((op as any).__shouldIgnore) {
+            console.log(`Ignoring operation: ${method.toUpperCase()} ${path}`);
+            continue;
+          }
+
           resource.operations.push(op);
 
           if (op.viewHint === 'detail' || op.viewHint === 'list') {

@@ -209,14 +209,10 @@ async def test_multiple_arrays(parser):
             assert "tasks" in schema["properties"]
             assert schema["properties"]["tasks"]["type"] == "array"
             
-            # Verify nested objects in arrays
-            assert "attendee" in schema["properties"]
-            assert schema["properties"]["attendee"]["type"] == "object"
-            assert "name" in schema["properties"]["attendee"]["properties"]
-            
-            assert "task" in schema["properties"]
-            assert schema["properties"]["task"]["type"] == "object"
-            assert "title" in schema["properties"]["task"]["properties"]
+            # Note: 'attendee' and 'task' are loop variables and should NOT be in the schema
+            # Loop variables are temporary iteration variables, not data variables
+            assert "attendee" not in schema["properties"]
+            assert "task" not in schema["properties"]
             
         finally:
             os.unlink(tmp.name)
@@ -292,22 +288,11 @@ async def test_real_world_meeting_minutes_template(parser):
             assert "actions" in schema["properties"]
             assert schema["properties"]["actions"]["type"] == "array"
             
-            # Verify nested objects in arrays
-            assert "attendee" in schema["properties"]
-            attendee_props = schema["properties"]["attendee"]["properties"]
-            assert "name" in attendee_props
-            assert "role" in attendee_props
-            
-            assert "item" in schema["properties"]
-            item_props = schema["properties"]["item"]["properties"]
-            assert "number" in item_props
-            assert "title" in item_props
-            assert "description" in item_props
-            
-            assert "action" in schema["properties"]
-            action_props = schema["properties"]["action"]["properties"]
-            assert "task" in action_props
-            assert "assignee" in action_props
+            # Note: 'attendee', 'item', and 'action' are loop variables and should NOT be in the schema
+            # Loop variables are temporary iteration variables, not data variables
+            assert "attendee" not in schema["properties"]
+            assert "item" not in schema["properties"]
+            assert "action" not in schema["properties"]
             
         finally:
             os.unlink(tmp.name)

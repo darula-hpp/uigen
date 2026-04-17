@@ -24,6 +24,10 @@ class PDFMerger:
             MergeError: If merging fails
         """
         try:
+            # Validate input list is not empty
+            if not pdf_paths:
+                raise MergeError("Cannot merge empty list of PDFs")
+            
             # Validate input files exist
             for pdf_path in pdf_paths:
                 if not Path(pdf_path).exists():
