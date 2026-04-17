@@ -18,37 +18,34 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock sessionStorage for storage strategy tests
-const sessionStorageMock = (() => {
-  let store: Record<string, string> = {};
+const sessionStorageMock = {
+  _store: {} as Record<string, string>,
+  getItem(key: string) {
+    return this._store[key] || null;
+  },
+  setItem(key: string, value: string) {
+    this._store[key] = value;
+  },
+  removeItem(key: string) {
+    delete this._store[key];
+  },
+  clear() {
+    // Clear all keys from the store object without reassigning
+    Object.keys(this._store).forEach(key => {
+      delete this._store[key];
+    });
+  },
+  get length() {
+    return Object.keys(this._store).length;
+  },
+  key(index: number) {
+    const keys = Object.keys(this._store);
+    return keys[index] || null;
+  },
+};
 
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value;
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-    get length() {
-      return Object.keys(store).length;
-    },
-    key: (index: number) => {
-      const keys = Object.keys(store);
-      return keys[index] || null;
-    },
-  };
-})();
-
+// Set up sessionStorage mock on globalThis (most reliable)
 Object.defineProperty(globalThis, 'sessionStorage', {
-  value: sessionStorageMock,
-  writable: true,
-  configurable: true,
-});
-
-Object.defineProperty(window, 'sessionStorage', {
   value: sessionStorageMock,
   writable: true,
   configurable: true,

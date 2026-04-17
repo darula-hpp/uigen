@@ -116,11 +116,11 @@ describe('Resource Extraction', () => {
       
       const usersResource = result.resources.find(r => r.slug === 'users');
       expect(usersResource).toBeDefined();
-      expect(usersResource?.operations).toHaveLength(3); // /users, /users/{id}, /users/{id}/posts
+      expect(usersResource?.operations).toHaveLength(2); // /users, /users/{id}
       
       const postsResource = result.resources.find(r => r.slug === 'posts');
       expect(postsResource).toBeDefined();
-      expect(postsResource?.operations).toHaveLength(1); // /posts
+      expect(postsResource?.operations).toHaveLength(2); // /posts, /users/{id}/posts
     });
 
     it('should handle multiple distinct resources', () => {

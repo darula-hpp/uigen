@@ -1,0 +1,1189 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Meeting Minutes Backend",
+    "description": "Automated meeting minutes document generation API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/templates": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "List Templates",
+        "description": "List all templates.\n\nArgs:\n    db: Database session\n    \nReturns:\n    List of all templates",
+        "operationId": "list_templates_api_v1_templates_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Template"
+                  },
+                  "type": "array",
+                  "title": "Response List Templates Api V1 Templates Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Upload Template",
+        "description": "Upload a new template.\n\nArgs:\n    file: Word document (.docx) with Jinja2 variables\n    name: Template name\n    population_type: How template will be populated (ai or manual)\n    db: Database session\n    \nReturns:\n    Created template with extracted Jinja2 schema",
+        "operationId": "upload_template_api_v1_templates_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_template_api_v1_templates_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Template"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/templates/{template_id}": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Get Template",
+        "description": "Get template by ID.\n\nArgs:\n    template_id: Template identifier\n    db: Database session\n    \nReturns:\n    Template details",
+        "operationId": "get_template_api_v1_templates__template_id__get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Template"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Delete Template",
+        "description": "Delete a template.\n\nArgs:\n    template_id: Template identifier\n    db: Database session\n    \nReturns:\n    No content on success",
+        "operationId": "delete_template_api_v1_templates__template_id__delete",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings": {
+      "get": {
+        "tags": [
+          "meetings"
+        ],
+        "summary": "List Meetings",
+        "description": "List all meetings.\n\nArgs:\n    db: Database session\n    \nReturns:\n    List of all meetings",
+        "operationId": "list_meetings_api_v1_meetings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Meeting"
+                  },
+                  "type": "array",
+                  "title": "Response List Meetings Api V1 Meetings Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "meetings"
+        ],
+        "summary": "Create Meeting",
+        "description": "Create a new meeting.\n\nArgs:\n    title: Meeting title\n    datetime: Meeting date and time\n    recording: Optional audio recording file\n    db: Database session\n    \nReturns:\n    Created meeting",
+        "operationId": "create_meeting_api_v1_meetings_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_meeting_api_v1_meetings_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meeting"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meeting_id}": {
+      "get": {
+        "tags": [
+          "meetings"
+        ],
+        "summary": "Get Meeting",
+        "description": "Get meeting by ID.\n\nArgs:\n    meeting_id: Meeting identifier\n    db: Database session\n    \nReturns:\n    Meeting details",
+        "operationId": "get_meeting_api_v1_meetings__meeting_id__get",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Meeting Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meeting"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "meetings"
+        ],
+        "summary": "Update Meeting",
+        "description": "Update meeting metadata.\n\nArgs:\n    meeting_id: Meeting identifier\n    meeting_data: Updated meeting data\n    db: Database session\n    \nReturns:\n    Updated meeting",
+        "operationId": "update_meeting_api_v1_meetings__meeting_id__put",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Meeting Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meeting"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "meetings"
+        ],
+        "summary": "Delete Meeting",
+        "description": "Delete a meeting.\n\nArgs:\n    meeting_id: Meeting identifier\n    db: Database session\n    \nReturns:\n    No content on success",
+        "operationId": "delete_meeting_api_v1_meetings__meeting_id__delete",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Meeting Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meeting_id}/templates": {
+      "post": {
+        "tags": [
+          "meetings"
+        ],
+        "summary": "Associate Template",
+        "description": "Associate a template with a meeting.\n\nArgs:\n    meeting_id: Meeting identifier\n    association_data: Template ID and order index\n    db: Database session\n    \nReturns:\n    Created association",
+        "operationId": "associate_template_api_v1_meetings__meeting_id__templates_post",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Meeting Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssociationCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Association"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "meetings"
+        ],
+        "summary": "Get Template Associations",
+        "description": "Get all template associations for a meeting.\n\nArgs:\n    meeting_id: Meeting identifier\n    db: Database session\n    \nReturns:\n    List of template associations",
+        "operationId": "get_template_associations_api_v1_meetings__meeting_id__templates_get",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Meeting Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Association"
+                  },
+                  "title": "Response Get Template Associations Api V1 Meetings  Meeting Id  Templates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meeting_id}/templates/{template_id}": {
+      "delete": {
+        "tags": [
+          "meetings"
+        ],
+        "summary": "Remove Template Association",
+        "description": "Remove template association from a meeting.\n\nArgs:\n    meeting_id: Meeting identifier\n    template_id: Template identifier\n    db: Database session\n    \nReturns:\n    No content on success",
+        "operationId": "remove_template_association_api_v1_meetings__meeting_id__templates__template_id__delete",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Meeting Id"
+            }
+          },
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meeting_id}/generate-ai-data": {
+      "post": {
+        "tags": [
+          "meetings"
+        ],
+        "summary": "Generate Ai Data",
+        "description": "Generate AI data for meeting's AI template.\n\nArgs:\n    meeting_id: Meeting identifier\n    db: Database session\n    \nReturns:\n    Generated filled data",
+        "operationId": "generate_ai_data_api_v1_meetings__meeting_id__generate_ai_data_post",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Meeting Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Generate Ai Data Api V1 Meetings  Meeting Id  Generate Ai Data Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meeting_id}/templates/{template_id}/data": {
+      "post": {
+        "tags": [
+          "meetings"
+        ],
+        "summary": "Submit Manual Data",
+        "description": "Submit manual data for a template.\n\nArgs:\n    meeting_id: Meeting identifier\n    template_id: Template identifier\n    data_submission: Filled data for template variables\n    db: Database session\n    \nReturns:\n    Success message",
+        "operationId": "submit_manual_data_api_v1_meetings__meeting_id__templates__template_id__data_post",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Meeting Id"
+            }
+          },
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataSubmission"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "meetings"
+        ],
+        "summary": "Get Filled Data",
+        "description": "Get current filled data for a template.\n\nArgs:\n    meeting_id: Meeting identifier\n    template_id: Template identifier\n    db: Database session\n    \nReturns:\n    Filled data or empty object if not set",
+        "operationId": "get_filled_data_api_v1_meetings__meeting_id__templates__template_id__data_get",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Meeting Id"
+            }
+          },
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Filled Data Api V1 Meetings  Meeting Id  Templates  Template Id  Data Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meeting_id}/generate-documents": {
+      "post": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Generate Documents",
+        "description": "Generate Word documents for all templates in a meeting.\n\nArgs:\n    meeting_id: Meeting identifier\n    db: Database session\n    \nReturns:\n    List of generated document records",
+        "operationId": "generate_documents_api_v1_meetings__meeting_id__generate_documents_post",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Meeting Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GeneratedDocumentSchema"
+                  },
+                  "title": "Response Generate Documents Api V1 Meetings  Meeting Id  Generate Documents Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meeting_id}/convert-to-pdf": {
+      "post": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Convert To Pdf",
+        "description": "Convert all meeting documents to PDF format.\n\nArgs:\n    meeting_id: Meeting identifier\n    db: Database session\n    \nReturns:\n    List of document records with PDF paths",
+        "operationId": "convert_to_pdf_api_v1_meetings__meeting_id__convert_to_pdf_post",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Meeting Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GeneratedDocumentSchema"
+                  },
+                  "title": "Response Convert To Pdf Api V1 Meetings  Meeting Id  Convert To Pdf Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meetings/{meeting_id}/download-pdf": {
+      "get": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Download Merged Pdf",
+        "description": "Download merged PDF of all meeting documents.\n\nArgs:\n    meeting_id: Meeting identifier\n    db: Database session\n    \nReturns:\n    Merged PDF file",
+        "operationId": "download_merged_pdf_api_v1_meetings__meeting_id__download_pdf_get",
+        "parameters": [
+          {
+            "name": "meeting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Meeting Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "Root endpoint.",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "description": "Health check endpoint.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Association": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "meeting_id": {
+            "type": "integer",
+            "title": "Meeting Id"
+          },
+          "template_id": {
+            "type": "integer",
+            "title": "Template Id"
+          },
+          "order_index": {
+            "type": "integer",
+            "title": "Order Index"
+          },
+          "filled_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filled Data"
+          },
+          "template": {
+            "$ref": "#/components/schemas/Template"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "meeting_id",
+          "template_id",
+          "order_index",
+          "template"
+        ],
+        "title": "Association",
+        "description": "Schema for meeting-template association response."
+      },
+      "AssociationCreate": {
+        "properties": {
+          "template_id": {
+            "type": "integer",
+            "title": "Template Id"
+          },
+          "order_index": {
+            "type": "integer",
+            "title": "Order Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_id",
+          "order_index"
+        ],
+        "title": "AssociationCreate",
+        "description": "Schema for creating a meeting-template association."
+      },
+      "Body_create_meeting_api_v1_meetings_post": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "datetime": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Datetime"
+          },
+          "recording": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recording"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "datetime"
+        ],
+        "title": "Body_create_meeting_api_v1_meetings_post"
+      },
+      "Body_upload_template_api_v1_templates_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "population_type": {
+            "$ref": "#/components/schemas/PopulationType"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "name",
+          "population_type"
+        ],
+        "title": "Body_upload_template_api_v1_templates_post"
+      },
+      "DataSubmission": {
+        "properties": {
+          "filled_data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Filled Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filled_data"
+        ],
+        "title": "DataSubmission",
+        "description": "Schema for submitting filled data for a template."
+      },
+      "GeneratedDocumentSchema": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "meeting_id": {
+            "type": "integer",
+            "title": "Meeting Id"
+          },
+          "template_id": {
+            "type": "integer",
+            "title": "Template Id"
+          },
+          "docx_path": {
+            "type": "string",
+            "title": "Docx Path"
+          },
+          "pdf_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdf Path"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "meeting_id",
+          "template_id",
+          "docx_path",
+          "created_at"
+        ],
+        "title": "GeneratedDocumentSchema",
+        "description": "Schema for generated document response."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Meeting": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "datetime": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Datetime"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "recording_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recording Path"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "datetime",
+          "id",
+          "created_at"
+        ],
+        "title": "Meeting",
+        "description": "Schema for meeting response."
+      },
+      "MeetingUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "datetime": {
+            "type": "null",
+            "title": "Datetime"
+          }
+        },
+        "type": "object",
+        "title": "MeetingUpdate",
+        "description": "Schema for updating meeting metadata."
+      },
+      "PopulationType": {
+        "type": "string",
+        "enum": [
+          "ai",
+          "manual"
+        ],
+        "title": "PopulationType",
+        "description": "Enumeration for template population methods."
+      },
+      "Template": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "population_type": {
+            "$ref": "#/components/schemas/PopulationType"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "file_path": {
+            "type": "string",
+            "title": "File Path"
+          },
+          "jinja_shape": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Jinja Shape"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "population_type",
+          "id",
+          "file_path",
+          "jinja_shape",
+          "created_at"
+        ],
+        "title": "Template",
+        "description": "Schema for template response."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
