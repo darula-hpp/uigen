@@ -12,7 +12,9 @@ import {
   FileUpload,
   ArrayField,
   ObjectField,
+  RefSelectField,
   registerDefaultComponents,
+  componentRegistry,
 } from '../index';
 import type { FieldProps } from '../ComponentRegistry';
 import type { SchemaNode } from '@uigen-dev/core';
@@ -518,4 +520,36 @@ describe('Error Display', () => {
     expect(input).toHaveClass('border-destructive');
   });
 });
+});
+
+describe('ComponentRegistry Integration', () => {
+  it('should return RefSelectField for schema with refConfig', () => {
+    const schema: SchemaNode = {
+      type: 'string',
+      key: 'assigned_to',
+      label: 'Assigned To',
+      required: false,
+    };
+    (schema as any).refConfig = {
+      resource: '/users',
+      valueField: 'id',
+      labelField: 'name',
+      filter: {},
+    };
+
+    const component = componentRegistry.getFieldComponent(schema);
+    expect(component).toBe(RefSelectField);
+  });
+
+  it('should return TextField for schema without refConfig', () => {
+    const schema: SchemaNode = {
+      type: 'string',
+      key: 'name',
+      label: 'Name',
+      required: false,
+    };
+
+    const component = componentRegistry.getFieldComponent(schema);
+    expect(component).toBe(TextField);
+  });
 });

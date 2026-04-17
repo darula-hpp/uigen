@@ -17,3 +17,7 @@ export type {
   SearchRenderProps,
   WizardRenderProps,
 } from './overrides/types';
+
+// x-uigen-ref annotation exports
+export { resolveLabel } from './lib/resolve-label';
+export { RefSelectField } from './components/fields/RefSelectField';

@@ -64,7 +64,7 @@ export class AnnotationHandlerRegistry {
    */
   public processAnnotations(context: AnnotationContext): void {
     // Define processing order (ignore must run first)
-    const priorityOrder = ['x-uigen-ignore', 'x-uigen-login', 'x-uigen-label'];
+    const priorityOrder = ['x-uigen-ignore', 'x-uigen-login', 'x-uigen-label', 'x-uigen-ref'];
     const handlers = this.getAll();
     
     // Process priority handlers first

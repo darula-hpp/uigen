@@ -162,6 +162,7 @@ export interface SchemaNode {
   nullable?: boolean;
   deprecated?: boolean;
   fileMetadata?: FileMetadata;
+  refConfig?: RefConfig;
 }
 
 export interface ValidationRule {
@@ -181,4 +182,11 @@ export interface FileMetadata {
   maxSizeBytes: number;
   multiple: boolean;
   accept: string;
+}
+
+export interface RefConfig {
+  resource: string;
+  valueField: string;
+  labelField: string;
+  filter: Record<string, string | number | boolean>;
 }

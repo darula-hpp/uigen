@@ -10,6 +10,7 @@ export { Swagger2Adapter } from './swagger2.js';
 export { ViewHintClassifier } from './view-hint-classifier.js';
 export { RelationshipDetector } from './relationship-detector.js';
 export { PaginationDetector } from './pagination-detector.js';
+export { IgnoreHandler, LabelHandler, RefHandler } from './annotations/handlers/index.js';
 
 export async function parseSpec(content: string): Promise<UIGenApp> {
   let doc: unknown;
