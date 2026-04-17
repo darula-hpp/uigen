@@ -5,11 +5,11 @@ from app.exceptions import ConversionError
 
 
 class PDFConverter:
-    """Converter for transforming .docx files to PDF format."""
+    """Converter for transforming Word documents to PDF format."""
     
     async def convert_to_pdf(self, docx_path: str, output_dir: str) -> str:
         """
-        Convert a .docx file to PDF.
+        Convert a .docx file to PDF using LibreOffice headless.
         
         Args:
             docx_path: Path to .docx file
@@ -23,7 +23,8 @@ class PDFConverter:
         """
         try:
             # Ensure output directory exists
-            Path(output_dir).mkdir(parents=True, exist_ok=True)
+            output_path = Path(output_dir)
+            output_path.mkdir(parents=True, exist_ok=True)
             
             # Build LibreOffice command
             cmd = [
@@ -34,7 +35,7 @@ class PDFConverter:
                 docx_path
             ]
             
-            # Execute LibreOffice conversion
+            # Execute LibreOffice conversion asynchronously
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,

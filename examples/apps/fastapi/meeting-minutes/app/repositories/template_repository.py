@@ -1,29 +1,35 @@
-"""Repository for template data access."""
-from typing import List, Optional
+"""Template repository for database operations."""
+from typing import Optional, List
 from pathlib import Path
+import shutil
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models import Template
-from app.schemas import TemplateCreate
+from app.schemas import TemplateCreate, PopulationType
 
 
 class TemplateRepository:
-    """Repository for managing template persistence."""
+    """Repository for template data access operations."""
     
-    def __init__(self, session: AsyncSession, storage_path: str):
+    def __init__(self, session: AsyncSession, storage_path: str = "/data/uploads"):
         """
-        Initialize the template repository.
+        Initialize template repository.
         
         Args:
-            session: Async SQLAlchemy session
+            session: Async database session
             storage_path: Base path for file storage
         """
         self.session = session
-        self.storage_path = storage_path
+        self.storage_path = Path(storage_path)
+        self.templates_dir = self.storage_path / "templates"
+        self.templates_dir.mkdir(parents=True, exist_ok=True)
     
     async def create(
         self,
-        template_data: TemplateCreate,
+        name: str,
+        population_type: PopulationType,
         file_path: str,
         jinja_shape: dict
     ) -> Template:
@@ -31,35 +37,36 @@ class TemplateRepository:
         Create a new template record.
         
         Args:
-            template_data: Template creation data
-            file_path: Path where template file is stored
+            name: Template name
+            population_type: Population type (ai or manual)
+            file_path: Path to stored template file
             jinja_shape: JSON schema of template variables
             
         Returns:
-            Created template instance
+            Template: Created template instance
         """
         template = Template(
-            name=template_data.name,
-            population_type=template_data.population_type.value,
+            name=name,
+            population_type=population_type.value,
             file_path=file_path,
             jinja_shape=jinja_shape
         )
         
         self.session.add(template)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(template)
         
         return template
     
     async def get_by_id(self, template_id: int) -> Optional[Template]:
         """
-        Retrieve template by ID.
+        Retrieve a template by ID.
         
         Args:
             template_id: Template identifier
             
         Returns:
-            Template instance or None if not found
+            Optional[Template]: Template instance or None if not found
         """
         result = await self.session.execute(
             select(Template).where(Template.id == template_id)
@@ -71,50 +78,59 @@ class TemplateRepository:
         List all templates.
         
         Returns:
-            List of all template instances
+            List[Template]: List of all template instances
         """
         result = await self.session.execute(select(Template))
         return list(result.scalars().all())
     
     async def delete(self, template_id: int) -> bool:
         """
-        Delete template record and associated files.
+        Delete a template record and associated files.
         
         Args:
             template_id: Template identifier
             
         Returns:
-            True if deleted, False if not found
+            bool: True if deleted, False if not found
         """
         template = await self.get_by_id(template_id)
         
         if not template:
             return False
         
-        # Delete file from storage
-        file_path = Path(template.file_path)
-        if file_path.exists():
-            file_path.unlink()
-        
-        # Delete template directory if empty
-        template_dir = file_path.parent
-        if template_dir.exists() and not any(template_dir.iterdir()):
-            template_dir.rmdir()
+        # Delete associated files
+        template_dir = self.templates_dir / str(template_id)
+        if template_dir.exists():
+            shutil.rmtree(template_dir)
         
         # Delete database record
         await self.session.delete(template)
-        await self.session.commit()
+        await self.session.flush()
         
         return True
     
-    def get_storage_path(self, template_id: int) -> Path:
+    def get_template_storage_path(self, template_id: int) -> Path:
         """
-        Get storage path for a template.
+        Get the storage directory path for a template.
         
         Args:
             template_id: Template identifier
             
         Returns:
-            Path object for template storage directory
+            Path: Directory path for template files
         """
-        return Path(self.storage_path) / "templates" / str(template_id)
+        template_dir = self.templates_dir / str(template_id)
+        template_dir.mkdir(parents=True, exist_ok=True)
+        return template_dir
+    
+    def get_template_file_path(self, template_id: int) -> Path:
+        """
+        Get the file path for a template's .docx file.
+        
+        Args:
+            template_id: Template identifier
+            
+        Returns:
+            Path: Full path to template .docx file
+        """
+        return self.get_template_storage_path(template_id) / f"{template_id}_original.docx"

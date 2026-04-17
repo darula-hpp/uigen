@@ -113,12 +113,26 @@ class TemplateParser:
         # Track which variables we've seen to avoid duplicates
         seen_variables: Set[str] = set()
         
+        # Track loop variables to exclude them from the schema
+        loop_variables: Set[str] = set()
+        
+        # First pass: identify all loop variables
+        for expression in expressions:
+            for_loop_match = re.match(self.FOR_LOOP_PATTERN, expression)
+            if for_loop_match:
+                loop_var = for_loop_match.group(1)
+                loop_variables.add(loop_var)
+        
+        # Second pass: process all expressions
         for expression in expressions:
             # Handle variable expressions: {{variable}}
             variable_match = re.match(self.VARIABLE_PATTERN, expression)
             if variable_match:
                 var_path = variable_match.group(1)
-                self._add_variable_to_schema(schema, var_path, seen_variables)
+                # Skip if this is a loop variable or starts with a loop variable
+                root_var = var_path.split('.')[0]
+                if root_var not in loop_variables:
+                    self._add_variable_to_schema(schema, var_path, seen_variables)
             
             # Handle for loop expressions: {% for item in items %}
             for_loop_match = re.match(self.FOR_LOOP_PATTERN, expression)
@@ -156,7 +170,7 @@ class TemplateParser:
             # Nested variable: {{object.property}}
             root_var = parts[0]
             
-            # Create object structure if it doesn't exist
+            # Create object structure if it doesn't exist, or upgrade from simple type
             if root_var not in schema["properties"]:
                 schema["properties"][root_var] = {
                     "type": "object",
@@ -165,6 +179,13 @@ class TemplateParser:
                 }
                 if root_var not in schema["required"]:
                     schema["required"].append(root_var)
+            elif schema["properties"][root_var].get("type") != "object":
+                # Upgrade from simple type to object type
+                schema["properties"][root_var] = {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
             
             # Navigate/create nested structure
             current = schema["properties"][root_var]
@@ -186,6 +207,13 @@ class TemplateParser:
                             "required": []
                         }
                         current["required"].append(part)
+                    elif current["properties"][part].get("type") != "object":
+                        # Upgrade from simple/array type to object type
+                        current["properties"][part] = {
+                            "type": "object",
+                            "properties": {},
+                            "required": []
+                        }
                     current = current["properties"][part]
     
     def _add_array_to_schema(
@@ -207,7 +235,17 @@ class TemplateParser:
         if len(parts) == 1:
             # Simple array: {% for item in items %}
             var_name = parts[0]
-            if var_name not in seen_variables:
+            
+            # Check if variable already exists with a different type and needs upgrading
+            if var_name in schema["properties"] and schema["properties"][var_name].get("type") != "array":
+                # Upgrade to array type
+                schema["properties"][var_name] = {
+                    "type": "array",
+                    "items": {"type": "object"}
+                }
+                seen_variables.add(var_name)
+            elif var_name not in seen_variables:
+                # Add new array variable
                 schema["properties"][var_name] = {
                     "type": "array",
                     "items": {"type": "object"}
@@ -218,7 +256,7 @@ class TemplateParser:
             # Nested array: {% for item in user.items %}
             root_var = parts[0]
             
-            # Create object structure if it doesn't exist
+            # Create object structure if it doesn't exist, or upgrade from simple type
             if root_var not in schema["properties"]:
                 schema["properties"][root_var] = {
                     "type": "object",
@@ -227,6 +265,13 @@ class TemplateParser:
                 }
                 if root_var not in schema["required"]:
                     schema["required"].append(root_var)
+            elif schema["properties"][root_var].get("type") != "object":
+                # Upgrade from simple type to object type
+                schema["properties"][root_var] = {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
             
             # Navigate/create nested structure
             current = schema["properties"][root_var]
@@ -251,4 +296,11 @@ class TemplateParser:
                             "required": []
                         }
                         current["required"].append(part)
+                    elif current["properties"][part].get("type") != "object":
+                        # Upgrade from simple/array type to object type
+                        current["properties"][part] = {
+                            "type": "object",
+                            "properties": {},
+                            "required": []
+                        }
                     current = current["properties"][part]
