@@ -26,7 +26,9 @@ import type { IStorageStrategy } from '../IStorageStrategy';
 describe('Property-Based Tests: Auth Manager', () => {
   beforeEach(() => {
     // Clear sessionStorage before each test
-    globalThis.sessionStorage.clear();
+    if (globalThis.sessionStorage) {
+      globalThis.sessionStorage.clear();
+    }
   });
 
   /**

@@ -16,7 +16,7 @@ export class SessionStorageStrategy implements IStorageStrategy {
       // Requirement 1.4: Serialize complex values to strings
       const serialized = JSON.stringify(value);
       // Requirement 2.2: Store in browser sessionStorage
-      sessionStorage.setItem(key, serialized);
+      globalThis.sessionStorage.setItem(key, serialized);
     } catch (error) {
       // Requirement 2.5: Log errors and continue (graceful degradation)
       console.error(`SessionStorage save failed for key "${key}":`, error);
@@ -32,7 +32,7 @@ export class SessionStorageStrategy implements IStorageStrategy {
   load(key: string): unknown | null {
     try {
       // Requirement 2.3: Retrieve from browser sessionStorage
-      const serialized = sessionStorage.getItem(key);
+      const serialized = globalThis.sessionStorage.getItem(key);
       if (serialized === null) {
         return null;
       }
@@ -53,7 +53,7 @@ export class SessionStorageStrategy implements IStorageStrategy {
   remove(key: string): void {
     try {
       // Requirement 2.4: Delete value from browser sessionStorage
-      sessionStorage.removeItem(key);
+      globalThis.sessionStorage.removeItem(key);
     } catch (error) {
       // Requirement 2.5: Log errors and continue
       console.error(`SessionStorage remove failed for key "${key}":`, error);

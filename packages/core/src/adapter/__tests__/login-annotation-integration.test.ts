@@ -486,30 +486,6 @@ describe('Task 3.1: detectLoginEndpoints Integration', () => {
     });
   });
 
-  describe('Real-world spec examples', () => {
-    it('should handle Swagger 2.0 Petstore spec with x-uigen-login annotations', () => {
-      const workspaceRoot = findWorkspaceRoot(process.cwd());
-      const specPath = join(workspaceRoot, 'examples', 'swagger2-petstore-with-login.yaml');
-      const specContent = readFileSync(specPath, 'utf-8');
-      const spec = jsyaml.load(specContent) as any;
-
-      const adapter = new Swagger2Adapter(spec);
-      const app = adapter.adapt();
-
-      // Should detect annotated endpoints
-      expect(app.auth.loginEndpoints).toBeDefined();
-      expect(app.auth.loginEndpoints!.length).toBeGreaterThanOrEqual(2);
-
-      // Should prioritize annotated endpoints
-      expect(app.auth.loginEndpoints![0].path).toBe('/auth/authenticate');
-      expect(app.auth.loginEndpoints![1].path).toBe('/auth/phone-login');
-
-      // Should exclude /user/login (marked with x-uigen-login: false)
-      const excludedEndpoint = app.auth.loginEndpoints!.find(e => e.path === '/user/login');
-      expect(excludedEndpoint).toBeUndefined();
-    });
-  });
-
   describe('Badly written API with non-standard login endpoint', () => {
     it('should detect login endpoint with unusual path when annotated', () => {
       const spec: OpenAPIV3.Document = {

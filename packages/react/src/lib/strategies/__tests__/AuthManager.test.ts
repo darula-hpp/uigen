@@ -3,7 +3,7 @@ import { AuthManager } from '../AuthManager';
 import { BearerStrategy } from '../BearerStrategy';
 import { ApiKeyStrategy } from '../ApiKeyStrategy';
 import { SessionStorageStrategy } from '../SessionStorageStrategy';
-import type { IAuthStrategy, AuthResult, SerializedAuthData } from '../IAuthStrategy';
+import type { IAuthStrategy, SerializedAuthData } from '../IAuthStrategy';
 import type { IStorageStrategy } from '../IStorageStrategy';
 
 describe('AuthManager', () => {
@@ -13,7 +13,9 @@ describe('AuthManager', () => {
 
   beforeEach(() => {
     // Clear sessionStorage before each test
-    globalThis.sessionStorage.clear();
+    if (globalThis.sessionStorage) {
+      globalThis.sessionStorage.clear();
+    }
     
     authStrategy = new BearerStrategy();
     storageStrategy = new SessionStorageStrategy();

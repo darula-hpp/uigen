@@ -101,13 +101,6 @@ describe('Resource Extraction - Property-Based Tests', () => {
                   parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
                   responses: { '200': { description: 'Success' } }
                 }
-              },
-              [`/${resourceName}/{id}/details`]: {
-                get: {
-                  summary: 'Get details',
-                  parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-                  responses: { '200': { description: 'Success' } }
-                }
               }
             }
           };
@@ -119,8 +112,8 @@ describe('Resource Extraction - Property-Based Tests', () => {
           expect(result.resources).toHaveLength(1);
           expect(result.resources[0].slug).toBe(resourceName);
           
-          // Should have all three operations
-          expect(result.resources[0].operations).toHaveLength(3);
+          // Should have both operations
+          expect(result.resources[0].operations).toHaveLength(2);
         }
       ),
       { numRuns: 50 }

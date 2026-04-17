@@ -18,7 +18,7 @@ import { SchemaResolver } from './schema-resolver.js';
 import { ViewHintClassifier } from './view-hint-classifier.js';
 import { RelationshipDetector } from './relationship-detector.js';
 import { PaginationDetector } from './pagination-detector.js';
-import { AnnotationHandlerRegistry, createOperationContext } from './annotations/index.js';
+import { AnnotationHandlerRegistry, createOperationContext, createSchemaContext } from './annotations/index.js';
 import type { AdapterUtils } from './annotations/index.js';
 
 export class OpenAPI3Adapter {
@@ -58,7 +58,7 @@ export class OpenAPI3Adapter {
     // Create adapter utils for annotation handlers
     this.adapterUtils = {
       humanize: this.humanize.bind(this),
-      resolveRef: (ref: string) => this.resolver.resolveRef(ref),
+      resolveRef: (ref: string) => this.resolveRef(ref),
       logError: (error: ParsingError) => this.parsingErrors.push(error),
       logWarning: (message: string) => console.warn(message)
     };
@@ -606,7 +606,22 @@ export class OpenAPI3Adapter {
     if ('$ref' in schema) {
       const resolved = this.resolver.resolve(schema.$ref, visited);
       if (!resolved) return this.createPlaceholderSchema(key);
-      return { ...resolved, key, label: this.resolveLabel(key, schema, resolved) };
+      const node = { ...resolved, key, label: this.resolveLabel(key, schema, resolved) };
+      
+      // Process annotations using the registry for $ref properties
+      if (this.currentIR) {
+        const context = createSchemaContext(
+          schema,
+          key,
+          this.adapterUtils,
+          this.currentIR,
+          undefined,
+          node
+        );
+        this.annotationRegistry.processAnnotations(context);
+      }
+      
+      return node;
     }
 
     const type = this.mapType(schema.type, schema.format);
@@ -660,6 +675,19 @@ export class OpenAPI3Adapter {
     node.writeOnly = schema.writeOnly;
     node.nullable = schema.nullable;
     node.deprecated = schema.deprecated;
+
+    // Process annotations using the registry
+    if (this.currentIR) {
+      const context = createSchemaContext(
+        schema,
+        key,
+        this.adapterUtils,
+        this.currentIR,
+        undefined,
+        node
+      );
+      this.annotationRegistry.processAnnotations(context);
+    }
 
     return node;
   }
