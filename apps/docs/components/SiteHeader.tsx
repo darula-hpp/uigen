@@ -1,6 +1,7 @@
 import { ThemeToggle } from '../app/ThemeToggle';
 import { VersionBadge } from '../app/VersionBadge';
 import { SearchDialog } from './docs/SearchDialog';
+import { BlogNavLink } from './BlogNavLink';
 
 interface SiteHeaderProps {
   variant: 'marketing' | 'docs';
@@ -46,6 +47,7 @@ export function SiteHeader({ variant }: SiteHeaderProps) {
               Docs
             </a>
           )}
+          <BlogNavLink />
           <a
             href="https://github.com/darula-hpp/uigen"
             target="_blank"

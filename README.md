@@ -33,6 +33,7 @@ From a single OpenAPI file, UIGen generates a complete, production-quality front
 - **Dashboard** - overview of all resources with record counts
 - **Environment switching** - dropdown from your spec's `servers` list
 - **Dark / light theme** - built-in toggle, persisted to local storage
+- **Blog** - technical articles and architecture deep-dives at `/blog` on the docs site
 
 
 ---
