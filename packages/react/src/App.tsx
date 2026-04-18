@@ -11,6 +11,8 @@ import { SearchView } from './components/views/SearchView';
 import { ActionSelectionView } from './components/views/ActionSelectionView';
 import { DashboardView } from './components/views/DashboardView';
 import { LoginView } from './components/views/LoginView';
+import { SignUpView } from './components/views/SignUpView';
+import { PasswordResetView } from './components/views/PasswordResetView';
 import { ToastProvider } from './components/Toast';
 import { isAuthenticated } from './lib/auth';
 import { registerDefaultStrategies } from './lib/file-upload';
@@ -73,6 +75,38 @@ function LoginRoute({ config }: { config: UIGenApp }) {
   return <LoginView config={config.auth} appTitle={config.meta.title} />;
 }
 
+// Sign-up route wrapper - redirects to dashboard if already authenticated
+function SignUpRoute({ config }: { config: UIGenApp }) {
+  const hasSignUp = (config.auth.signUpEndpoints?.length ?? 0) > 0;
+
+  // No sign-up endpoints configured — redirect to login
+  if (!hasSignUp) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (isAuthenticated()) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <SignUpView config={config.auth} appTitle={config.meta.title} />;
+}
+
+// Password reset route wrapper - redirects to dashboard if already authenticated
+function PasswordResetRoute({ config }: { config: UIGenApp }) {
+  const hasPasswordReset = (config.auth.passwordResetEndpoints?.length ?? 0) > 0;
+
+  // No password reset endpoints configured — redirect to login
+  if (!hasPasswordReset) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (isAuthenticated()) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <PasswordResetView config={config.auth} appTitle={config.meta.title} />;
+}
+
 export function App({ config }: AppProps) {
   const requiresAuth =
     config.auth.schemes.length > 0 ||
@@ -83,8 +117,10 @@ export function App({ config }: AppProps) {
       <ToastProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public route - no protection */}
+            {/* Public routes - no protection */}
             <Route path="/login" element={<LoginRoute config={config} />} />
+            <Route path="/signup" element={<SignUpRoute config={config} />} />
+            <Route path="/password-reset" element={<PasswordResetRoute config={config} />} />
             
             {/* Dashboard - protected with layout */}
             <Route path="/" element={
@@ -95,7 +131,11 @@ export function App({ config }: AppProps) {
             
             {/* Resource routes - each protected with layout */}
             {config.resources
-              .filter(resource => resource.slug !== 'login') // /login is reserved for the auth page
+              .filter(resource => 
+                resource.slug !== 'login' && 
+                resource.slug !== 'signup' && 
+                resource.slug !== 'password-reset'
+              ) // Reserved for auth pages
               .map(resource => {
                 // Check if resource has a list or search operation
                 const hasListOp = resource.operations.some(op => op.viewHint === 'list' || op.viewHint === 'search');
