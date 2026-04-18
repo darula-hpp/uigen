@@ -320,6 +320,39 @@ export class Swagger2Adapter {
   }
 
   /**
+   * Check if a Swagger 2.0 schema contains file fields (including nested objects and arrays).
+   * This method checks the original Swagger 2.0 schema structure before conversion.
+   * 
+   * Requirement 1.6: Apply same file type detection rules as OpenAPI3 adapter
+   * 
+   * @param schema - The Swagger 2.0 schema to check
+   * @returns True if the schema contains any file fields
+   */
+  private hasFileFieldsSwagger2(schema: Swagger2Schema | Swagger2Reference): boolean {
+    // Handle references
+    if ('$ref' in schema) {
+      return false; // References are not expanded here for simplicity
+    }
+
+    // Direct file field (format: binary in Swagger 2.0)
+    if (schema.format === 'binary') {
+      return true;
+    }
+
+    // Check children in object schemas
+    if (schema.type === 'object' && schema.properties) {
+      return Object.values(schema.properties).some(prop => this.hasFileFieldsSwagger2(prop));
+    }
+
+    // Check items in array schemas
+    if (schema.type === 'array' && schema.items) {
+      return this.hasFileFieldsSwagger2(schema.items);
+    }
+
+    return false;
+  }
+
+  /**
    * Check if a schema contains file fields (including nested objects and arrays).
    * This method is used to detect when multipart/form-data content type should be used.
    * 
@@ -363,7 +396,7 @@ export class Swagger2Adapter {
     let requestBody: OpenAPIV3.RequestBodyObject | undefined;
 
     // First pass: check if any formData parameters are file type
-    // Requirement 16.5: Detect file fields to determine content type
+    // Requirement 1.6: Detect file fields to determine content type
     let hasFileInFormData = false;
     for (const param of params) {
       if (!('$ref' in param) && param.in === 'formData' && param.type === 'file') {
@@ -382,18 +415,22 @@ export class Swagger2Adapter {
 
       // Body parameters become requestBody in OpenAPI 3.x
       if (param.in === 'body') {
+        // Check if the body schema contains file fields
+        const bodyHasFiles = param.schema ? this.hasFileFieldsSwagger2(param.schema) : false;
+        const contentType = bodyHasFiles ? 'multipart/form-data' : 'application/json';
+        
         requestBody = {
           description: param.description,
           required: param.required,
           content: {
-            'application/json': {
+            [contentType]: {
               schema: param.schema ? this.convertSchema(param.schema) : {}
             }
           }
         };
       } else if (param.in === 'formData') {
         // FormData parameters also become requestBody
-        // Requirement 16.5: Use multipart/form-data when file fields are present
+        // Requirement 1.6: Use multipart/form-data when file fields are present
         const contentType = hasFileInFormData ? 'multipart/form-data' : 'application/x-www-form-urlencoded';
         
         if (!requestBody) {
