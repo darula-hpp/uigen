@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     description:
       "Point it at an OpenAPI spec. Get a fully functional frontend. Optional code, optional config.",
     type: "website",
-    url: "https://uigen.dev",
+    url: "https://uigen-docs.vercel.app",
   },
   twitter: {
     card: "summary_large_image",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
       "Point it at an OpenAPI spec. Get a fully functional frontend. Optional code, optional config.",
   },
   alternates: {
-    canonical: "https://uigen.dev",
+    canonical: "https://uigen-docs.vercel.app",
   },
 };
 
