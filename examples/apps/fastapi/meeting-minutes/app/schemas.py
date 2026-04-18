@@ -1,5 +1,5 @@
 """Pydantic schemas for request/response models."""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 from enum import Enum
@@ -107,3 +107,90 @@ class GeneratedDocumentSchema(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+# Auth Schemas
+from pydantic import EmailStr, ConfigDict
+
+
+class UserRegister(BaseModel):
+    """Schema for user registration request."""
+    username: str = Field(min_length=3, max_length=50)
+    password: str = Field(min_length=8, max_length=72)
+    email: Optional[EmailStr] = None
+
+
+class UserLogin(BaseModel):
+    """Schema for user login request."""
+    username: str
+    password: str
+
+
+class PasswordResetRequest(BaseModel):
+    """Schema for requesting a password reset."""
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+
+class PasswordResetConfirm(BaseModel):
+    """Schema for confirming a password reset."""
+    token: str
+    new_password: str = Field(min_length=8, max_length=72)
+
+
+class UserResponse(BaseModel):
+    """Schema for user response."""
+    id: int
+    username: str
+    email: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TokenResponse(BaseModel):
+    """Schema for authentication token response."""
+    access_token: str
+    token_type: str = "bearer"
+
+
+# Authentication Schemas
+class UserRegister(BaseModel):
+    """Schema for user registration."""
+    username: str = Field(min_length=3, max_length=50)
+    password: str = Field(min_length=8, max_length=72)
+    email: Optional[EmailStr] = None
+
+
+class UserLogin(BaseModel):
+    """Schema for user login."""
+    username: str
+    password: str
+
+
+class PasswordResetRequest(BaseModel):
+    """Schema for requesting a password reset."""
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+
+class PasswordResetConfirm(BaseModel):
+    """Schema for confirming a password reset."""
+    token: str
+    new_password: str = Field(min_length=8, max_length=72)
+
+
+class UserResponse(BaseModel):
+    """Schema for user response."""
+    id: int
+    username: str
+    email: Optional[str] = None
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TokenResponse(BaseModel):
+    """Schema for authentication token response."""
+    access_token: str
+    token_type: str = "bearer"

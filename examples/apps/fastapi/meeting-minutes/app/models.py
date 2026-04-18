@@ -121,3 +121,22 @@ class GeneratedDocument(Base):
     
     # Relationships
     meeting = relationship("Meeting", back_populates="documents")
+
+
+class User(Base):
+    """User model for authentication and account management."""
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), unique=True, index=True, nullable=False)
+    email = Column(String(255), nullable=True)
+    password_hash = Column(String(255), nullable=False)
+    reset_token_hash = Column(String(255), nullable=True)
+    reset_token_expires_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("email", name="uq_users_email"),
+    )

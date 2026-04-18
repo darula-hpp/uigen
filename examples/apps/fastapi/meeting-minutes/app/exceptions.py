@@ -19,3 +19,18 @@ class ConversionError(Exception):
 class MergeError(Exception):
     """Raised when PDF merging fails."""
     pass
+
+
+class AuthenticationError(Exception):
+    """Raised when authentication fails."""
+    pass
+
+
+class TokenExpiredError(AuthenticationError):
+    """Raised when a JWT token has expired."""
+    pass
+
+
+class InvalidTokenError(AuthenticationError):
+    """Raised when a JWT token is invalid or malformed."""
+    pass
