@@ -31,6 +31,12 @@ class ComponentRegistry {
    * Falls back to TextField for unknown types
    */
   getFieldComponent(schema: SchemaNode): FieldComponent {
+    // Check for ref annotation first (x-uigen-ref takes precedence)
+    if ((schema as any).refConfig) {
+      const RefSelectField = this.fieldComponents.get('ref');
+      if (RefSelectField) return RefSelectField;
+    }
+
     // Check for format-specific components first
     if (schema.format) {
       const formatKey = `${schema.type}:${schema.format}`;

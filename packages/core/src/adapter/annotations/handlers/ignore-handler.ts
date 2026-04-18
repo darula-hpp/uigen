@@ -1,6 +1,27 @@
 import type { AnnotationHandler, AnnotationContext } from '../types.js';
 
 /**
+ * Metadata interface for annotation handlers.
+ */
+interface AnnotationMetadata {
+  name: string;
+  description: string;
+  targetType: 'field' | 'operation' | 'resource';
+  parameterSchema: {
+    type: 'object' | 'string' | 'boolean' | 'number';
+    properties?: Record<string, {
+      type: 'string' | 'boolean' | 'number' | 'object' | 'array' | 'enum';
+      description?: string;
+      enum?: string[];
+      items?: any;
+      properties?: Record<string, any>;
+    }>;
+    required?: string[];
+  };
+  examples: Array<{ description: string; value: unknown }>;
+}
+
+/**
  * Handler for x-uigen-ignore annotation.
  * Filters operations and resources from the IR based on boolean annotation values.
  * 
@@ -10,6 +31,25 @@ import type { AnnotationHandler, AnnotationContext } from '../types.js';
  */
 export class IgnoreHandler implements AnnotationHandler<boolean> {
   public readonly name = 'x-uigen-ignore';
+
+  public static readonly metadata: AnnotationMetadata = {
+    name: 'x-uigen-ignore',
+    description: 'Filters operations and resources from the IR',
+    targetType: 'operation',
+    parameterSchema: {
+      type: 'boolean'
+    },
+    examples: [
+      {
+        description: 'Ignore internal operations',
+        value: true
+      },
+      {
+        description: 'Explicitly include operation',
+        value: false
+      }
+    ]
+  };
   
   /**
    * Extract the x-uigen-ignore annotation value from the spec element.

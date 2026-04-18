@@ -1,4 +1,5 @@
 import type { AnnotationHandler, AnnotationContext } from './types.js';
+import type { ConfigLoader } from '../../config/loader.js';
 
 /**
  * Singleton registry for annotation handlers.
@@ -7,6 +8,7 @@ import type { AnnotationHandler, AnnotationContext } from './types.js';
 export class AnnotationHandlerRegistry {
   private static instance: AnnotationHandlerRegistry;
   private handlers: Map<string, AnnotationHandler> = new Map();
+  private configLoader?: ConfigLoader;
   
   private constructor() {
     // Private constructor for singleton pattern
@@ -57,6 +59,24 @@ export class AnnotationHandlerRegistry {
   }
   
   /**
+   * Set the config loader for annotation precedence handling.
+   * 
+   * @param loader - The config loader instance
+   */
+  public setConfigLoader(loader: ConfigLoader | undefined): void {
+    this.configLoader = loader;
+  }
+  
+  /**
+   * Get the current config loader.
+   * 
+   * @returns The config loader or undefined
+   */
+  public getConfigLoader(): ConfigLoader | undefined {
+    return this.configLoader;
+  }
+  
+  /**
    * Process all annotations on a spec element.
    * Executes handlers in a specific order: ignore → login → label → others
    * 
@@ -64,7 +84,7 @@ export class AnnotationHandlerRegistry {
    */
   public processAnnotations(context: AnnotationContext): void {
     // Define processing order (ignore must run first)
-    const priorityOrder = ['x-uigen-ignore', 'x-uigen-login', 'x-uigen-label'];
+    const priorityOrder = ['x-uigen-ignore', 'x-uigen-login', 'x-uigen-label', 'x-uigen-ref'];
     const handlers = this.getAll();
     
     // Process priority handlers first
@@ -87,25 +107,59 @@ export class AnnotationHandlerRegistry {
    * Execute a single handler with error handling.
    * Never throws - logs errors and continues.
    * 
+   * Implements annotation precedence logic:
+   * 1. If annotation is disabled in config, skip it even if in spec
+   * 2. If both config and spec values exist, use spec value (log debug message)
+   * 3. If only config value exists, use it
+   * 4. If only spec value exists, use it
+   * 
    * @param handler - The handler to execute
    * @param context - The annotation context
    */
   private executeHandler(handler: AnnotationHandler, context: AnnotationContext): void {
     try {
-      // Extract
-      const value = handler.extract(context);
-      if (value === undefined) {
-        return; // Annotation not present
+      // Check if annotation is disabled in config
+      if (this.configLoader?.isAnnotationDisabled(handler.name)) {
+        // Annotation is disabled, skip processing even if present in spec
+        return;
+      }
+      
+      // Extract value from spec
+      const specValue = handler.extract(context);
+      
+      // Get config value (defaults + element-specific config)
+      const configValue = this.configLoader?.getAnnotationConfig(context.path, handler.name);
+      
+      // Determine which value to use based on precedence rules
+      let valueToUse: unknown;
+      
+      if (specValue !== undefined && configValue !== undefined) {
+        // Both spec and config have values - spec takes precedence
+        valueToUse = specValue;
+        
+        // Log debug message for override (Requirement 11.4)
+        if (process.env.NODE_ENV !== 'test') {
+          console.debug(`[Config] Explicit spec annotation "${handler.name}" at "${context.path}" overrides config default`);
+        }
+      } else if (specValue !== undefined) {
+        // Only spec has value
+        valueToUse = specValue;
+      } else if (configValue !== undefined) {
+        // Only config has value
+        valueToUse = configValue;
+      } else {
+        // Neither has value
+        return;
       }
       
       // Validate
-      const isValid = handler.validate(value);
+      const isValid = handler.validate(valueToUse);
       if (!isValid) {
         return; // Invalid value, handler should have logged warning
       }
       
       // Apply
-      handler.apply(value, context);
+      handler.apply(valueToUse, context);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(`Error executing handler "${handler.name}":`, errorMessage);

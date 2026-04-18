@@ -14,6 +14,7 @@ UIGen supports a set of `x-uigen-*` vendor extensions that let you customise the
 | [`x-uigen-label`](/docs/spec-annotations/x-uigen-label) | Override the display label for a field, operation, or resource | Available |
 | [`x-uigen-id`](/docs/spec-annotations/x-uigen-id) | Override the stable identifier used for overrides | Available |
 | [`x-uigen-ignore`](/docs/spec-annotations/x-uigen-ignore) | Exclude specific operations or entire resources from the generated UI | Available |
+| [`x-uigen-ref`](/docs/spec-annotations/x-uigen-ref) | Declare that a field references another resource with full control over resolution and display | Available |
 | [`x-uigen-login`](/docs/authentication/credential-login) | Mark an endpoint as the credential login endpoint | Available |
 | [`x-uigen-token-path`](/docs/authentication/credential-login) | Dot-notation path to the token in a login response | Available |
 | [`x-uigen-widget`](/docs/spec-annotations/planned-annotations) | Override the field input component | Coming Soon |

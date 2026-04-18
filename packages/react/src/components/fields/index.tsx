@@ -8,12 +8,16 @@ import { DateTimePicker } from './DateTimePicker';
 import { FileUpload } from './FileUpload';
 import { ArrayField } from './ArrayField';
 import { ObjectField } from './ObjectField';
+import { RefSelectField } from './RefSelectField';
 
 /**
  * Register default field components
  * Implements Requirements 33.1-33.11
  */
 export function registerDefaultComponents() {
+  // Ref annotation (x-uigen-ref)
+  componentRegistry.registerField('ref', RefSelectField);
+  
   // String types
   componentRegistry.registerField('string', TextField);
   
@@ -56,4 +60,5 @@ export {
   FileUpload,
   ArrayField,
   ObjectField,
+  RefSelectField,
 };

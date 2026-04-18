@@ -1,6 +1,27 @@
 import type { AnnotationHandler, AnnotationContext } from '../types.js';
 
 /**
+ * Metadata interface for annotation handlers.
+ */
+interface AnnotationMetadata {
+  name: string;
+  description: string;
+  targetType: 'field' | 'operation' | 'resource';
+  parameterSchema: {
+    type: 'object' | 'string' | 'boolean' | 'number';
+    properties?: Record<string, {
+      type: 'string' | 'boolean' | 'number' | 'object' | 'array' | 'enum';
+      description?: string;
+      enum?: string[];
+      items?: any;
+      properties?: Record<string, any>;
+    }>;
+    required?: string[];
+  };
+  examples: Array<{ description: string; value: unknown }>;
+}
+
+/**
  * Handler for x-uigen-label annotation.
  * Applies custom labels to schema properties and objects.
  * 
@@ -10,6 +31,25 @@ import type { AnnotationHandler, AnnotationContext } from '../types.js';
  */
 export class LabelHandler implements AnnotationHandler<string> {
   public readonly name = 'x-uigen-label';
+
+  public static readonly metadata: AnnotationMetadata = {
+    name: 'x-uigen-label',
+    description: 'Applies custom labels to schema properties and objects',
+    targetType: 'field',
+    parameterSchema: {
+      type: 'string'
+    },
+    examples: [
+      {
+        description: 'Custom label for email field',
+        value: 'Email Address'
+      },
+      {
+        description: 'Custom label for role field',
+        value: 'User Role'
+      }
+    ]
+  };
   
   /**
    * Extract the x-uigen-label annotation value from the spec element.

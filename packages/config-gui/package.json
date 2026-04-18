@@ -1,0 +1,67 @@
+{
+  "name": "@uigen-dev/config-gui",
+  "version": "0.2.5",
+  "description": "Visual GUI for managing UIGen annotation configurations",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/darula-hpp/uigen.git"
+  },
+  "homepage": "https://github.com/darula-hpp/uigen#readme",
+  "bugs": {
+    "url": "https://github.com/darula-hpp/uigen/issues"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepack": "cp ../../README.md ./README.md",
+    "postpack": "rm -f ./README.md"
+  },
+  "dependencies": {
+    "@uigen-dev/core": "workspace:*",
+    "clsx": "^2.1.1",
+    "js-yaml": "^4.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.5.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/react": "^16.0.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "fast-check": "^4.6.0",
+    "jsdom": "^25.0.0",
+    "tailwindcss": "^4.0.0",
+    "vite": "^6.0.0",
+    "vitest": "^2.0.0"
+  },
+  "keywords": [
+    "openapi",
+    "swagger",
+    "frontend-generator",
+    "ui-generator",
+    "config-gui",
+    "annotation-config",
+    "react",
+    "vite",
+    "typescript"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

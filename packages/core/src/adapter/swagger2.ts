@@ -540,6 +540,10 @@ export class Swagger2Adapter {
       if (uigenLabelArray !== undefined) {
         (arrayResult as any)['x-uigen-label'] = uigenLabelArray;
       }
+      const uigenRefArray = (schema as any)['x-uigen-ref'];
+      if (uigenRefArray !== undefined) {
+        (arrayResult as any)['x-uigen-ref'] = uigenRefArray;
+      }
       return arrayResult;
     }
 
@@ -586,6 +590,11 @@ export class Swagger2Adapter {
     const uigenLabel = (schema as any)['x-uigen-label'];
     if (uigenLabel !== undefined) {
       (result as any)['x-uigen-label'] = uigenLabel;
+    }
+
+    const uigenRef = (schema as any)['x-uigen-ref'];
+    if (uigenRef !== undefined) {
+      (result as any)['x-uigen-ref'] = uigenRef;
     }
 
     // Preserve file metadata extensions for binary format fields
