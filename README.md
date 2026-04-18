@@ -11,7 +11,7 @@ npx @uigen-dev/cli serve ./openapi.yaml
 
 ![UIGen Demo](https://github.com/darula-hpp/uigen/raw/main/examples/output.gif)
 
-No code. No config. No boilerplate. Just a spec.
+Optional Code, Optional Config. PS: This is still in early development, read through
 
 ---
 
