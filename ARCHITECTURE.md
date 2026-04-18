@@ -28,24 +28,29 @@ npx uigen serve --spec ./openapi.yaml
 CLI Command
     │
     ▼
-┌──────────────┐     ┌──────────┐     ┌──────┐     ┌────────┐     ┌──────────────┐
-│ API Document │────▸│ Adapter  │────▸│  IR  │────▸│ Engine │────▸│   React SPA  │
-│ (YAML/JSON)  │     │ (Parser) │     │      │     │        │     │ (served)     │
-└──────────────┘     └──────────┘     └──────┘     └────────┘     └──────────────┘
-                                                                        │
-                                                              ┌─────────┘
-                                                              ▼
-                                                        ┌───────────┐
-                                                        │ API Proxy │──▸ Real API
-                                                        └───────────┘
+┌──────────────┐     ┌──────────────┐     ┌──────────┐     ┌──────┐     ┌────────┐     ┌──────────────┐
+│ API Document │────▸│ Reconciler   │────▸│ Adapter  │────▸│  IR  │────▸│ Engine │────▸│   React SPA  │
+│ (YAML/JSON)  │     │ (Config      │     │ (Parser) │     │      │     │        │     │ (served)     │
+│              │     │  Merge)      │     │          │     │      │     │        │     │              │
+└──────────────┘     └──────────────┘     └──────────┘     └──────┘     └────────┘     └──────────────┘
+       │                    ▲                                                                   │
+       │                    │                                                         ┌─────────┘
+       │             ┌──────────────┐                                                 ▼
+       │             │ Config File  │                                           ┌───────────┐
+       │             │ (.uigen/     │                                           │ API Proxy │──▸ Real API
+       │             │  config.yaml)│                                           └───────────┘
+       │             └──────────────┘
+       │
+       └──▸ (Source spec unchanged on disk)
 ```
 
 The CLI:
 1. Reads & parses the spec file
-2. Adapts it to the IR
-3. Injects the IR as `window.__UIGEN_CONFIG__` into the React SPA's `index.html`
-4. **Dev mode** (monorepo): starts a Vite dev server that serves the SPA and proxies `/api/*` to the real backend
-5. **Static mode** (npm/npx install): serves the pre-built `dist/` with a plain Node.js HTTP server and a built-in proxy — no Vite required at runtime
+2. Loads `.uigen/config.yaml` (if present) and reconciles annotations into the spec
+3. Adapts the reconciled spec to the IR
+4. Injects the IR as `window.__UIGEN_CONFIG__` into the React SPA's `index.html`
+5. **Dev mode** (monorepo): starts a Vite dev server that serves the SPA and proxies `/api/*` to the real backend
+6. **Static mode** (npm/npx install): serves the pre-built `dist/` with a plain Node.js HTTP server and a built-in proxy — no Vite required at runtime
 
 ---
 
@@ -54,6 +59,7 @@ The CLI:
 | Pattern | Where | Why |
 |---|---|---|
 | **Adapter** | Document ingestion | Normalizes OpenAPI 3.x / Swagger 2.0 into IR |
+| **Reconciler** | Config merging | Merges user config annotations into spec at runtime |
 | **Factory** | Component creation | Produces the right widget for a field type |
 | **Strategy** | View rendering | Swaps between table, form, detail, dashboard, wizard |
 | **Registry** | Component lookup | Central `type → Component` map |
@@ -132,6 +138,135 @@ type ViewHint = "list" | "detail" | "create" | "update" | "delete"
 type FieldType = "string" | "number" | "integer" | "boolean"
               | "object" | "array" | "enum" | "date" | "file";
 ```
+
+---
+
+## Config Reconciliation System
+
+The Config Reconciliation System enables runtime merging of user-defined annotation overrides from `.uigen/config.yaml` into OpenAPI/Swagger specifications without modifying source files. This bridges the config-gui's annotation preferences with the serve command's spec processing pipeline.
+
+### Core Principle
+
+Reconciliation is **non-destructive**, **idempotent**, and **deterministic**:
+- Source spec file remains unchanged on disk
+- In-memory reconciled spec reflects all config annotations
+- Config annotations take precedence over spec annotations
+- Applying reconciliation twice produces the same result as applying it once
+
+### Architecture
+
+```
+┌─────────────────┐
+│  Serve Command  │
+└────────┬────────┘
+         │
+         ├──▶ Config Loader ──▶ Reads .uigen/config.yaml
+         │
+         ├──▶ Spec Loader ──▶ Reads OpenAPI/Swagger YAML
+         │
+         ▼
+    ┌─────────────────────────────────────────┐
+    │         Reconciler (Core)               │
+    │                                         │
+    │  ┌────────────────────────────────┐   │
+    │  │  Element Path Resolver         │   │
+    │  │  - Parses element paths        │   │
+    │  │  - Locates spec elements       │   │
+    │  │  - Caches resolved paths       │   │
+    │  └────────────────────────────────┘   │
+    │                                         │
+    │  ┌────────────────────────────────┐   │
+    │  │  Annotation Merger             │   │
+    │  │  - Deep clones source spec     │   │
+    │  │  - Applies config annotations  │   │
+    │  │  - Handles null (removal)      │   │
+    │  │  - Deterministic ordering      │   │
+    │  └────────────────────────────────┘   │
+    │                                         │
+    │  ┌────────────────────────────────┐   │
+    │  │  Validator                     │   │
+    │  │  - Validates reconciled spec   │   │
+    │  │  - Checks $ref integrity       │   │
+    │  │  - Verifies required fields    │   │
+    │  └────────────────────────────────┘   │
+    └─────────────────┬───────────────────────┘
+                      │
+                      ▼
+              ┌──────────────────┐
+              │ Reconciled Spec  │──▸ In-memory only
+              │ (OpenAPI 3.x or  │    Used for IR generation
+              │  Swagger 2.0)    │    API proxy, view rendering
+              └──────────────────┘
+```
+
+### Element Path Syntax
+
+The reconciler uses element paths to identify where annotations should be applied:
+
+**Operations**: `METHOD:/path/to/endpoint`
+- Examples: `POST:/api/v1/users`, `GET:/users/{id}`, `DELETE:/items/{itemId}`
+- Supports all HTTP methods: GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD
+
+**Schema Properties**: `SchemaName.propertyName`
+- Examples: `User.email`, `Product.price`, `Address.street`
+- Nested properties: `User.address.street`, `Order.items.quantity`
+- Resolves $ref references automatically
+
+### Generic Annotation Handling
+
+The reconciler treats **ALL** `x-uigen-*` annotations generically without hardcoding specific annotation names. This means:
+- New annotations work automatically without code changes
+- No switch statements on annotation names
+- Open-closed principle: open for extension, closed for modification
+
+### Config File Structure
+
+```yaml
+version: "1.0"
+enabled:
+  x-uigen-ignore: true
+  x-uigen-login: true
+defaults:
+  x-uigen-ignore:
+    value: false
+annotations:
+  POST:/api/v1/users:
+    x-uigen-ignore: true
+  User.email:
+    x-uigen-label: "Email Address"
+  POST:/auth/login:
+    x-uigen-login: true
+```
+
+### Reconciliation Workflow
+
+1. **Load Config**: Check for `.uigen/config.yaml`, parse YAML into ConfigFile object
+2. **Deep Clone**: Create in-memory copy of source spec (never modify original)
+3. **Resolve Paths**: For each element path in config, locate corresponding spec element
+4. **Merge Annotations**: Apply config annotations to resolved elements (config takes precedence)
+5. **Validate**: Ensure reconciled spec is valid OpenAPI/Swagger
+6. **Return**: Reconciled spec with metadata (applied count, warnings)
+
+### Error Handling
+
+- **Missing config**: Gracefully degrade to source spec
+- **Invalid element path**: Log warning with suggestions, skip annotation, continue
+- **Validation failure**: Log error with path, exit (don't serve invalid spec)
+- **Malformed config**: Log error, exit with non-zero status
+
+### Testing Strategy
+
+The reconciler is validated through:
+- **Unit tests**: Specific scenarios and edge cases
+- **Property-based tests**: 20 universal correctness properties, 100+ iterations each
+- **Integration tests**: End-to-end with real OpenAPI/Swagger specs
+
+Key properties verified:
+- Config precedence over spec annotations
+- Idempotence (applying twice = applying once)
+- Determinism (same input → same output)
+- Source spec non-mutation
+- Output validity preservation
 
 ---
 

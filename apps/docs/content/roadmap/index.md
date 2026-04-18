@@ -36,6 +36,7 @@ UIGen is developed in phases. Here's what's been shipped and what's coming next.
 - [x] WizardView (multi-step for large forms)
 - [x] Sidebar layout + TopBar + Breadcrumbs + responsive shell
 - [x] React Router with full URL navigation and browser history
+- [x] Config reconciliation system (runtime annotation merging from `.uigen/config.yaml`)
 
 ## Phase 3: Extension & distribution 🔜 In progress
 

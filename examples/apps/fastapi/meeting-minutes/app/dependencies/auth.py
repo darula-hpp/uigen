@@ -8,11 +8,11 @@ from app.config import get_settings
 from app.services.auth_service import AuthService
 from app.repositories.user_repository import UserRepository
 from app.models import User
-from app.exceptions import AuthenticationError
+from app.exceptions import AuthenticationError, TokenExpiredError
 
 
 async def get_current_user(
-    authorization: str = Header(...),
+    authorization: Optional[str] = Header(None),
     db: AsyncSession = Depends(get_db)
 ) -> User:
     """
@@ -48,6 +48,8 @@ async def get_current_user(
     
     try:
         user_id = auth_service.validate_token(token)
+    except TokenExpiredError:
+        raise HTTPException(status_code=401, detail="Authentication token has expired")
     except AuthenticationError:
         raise HTTPException(status_code=401, detail="Invalid authentication token")
     
