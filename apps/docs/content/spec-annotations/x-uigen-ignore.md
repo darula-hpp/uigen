@@ -1,11 +1,11 @@
 ---
 title: x-uigen-ignore
-description: Exclude specific operations or entire resources from the generated UI.
+description: Exclude operations, schemas, properties, parameters, or request/response bodies from the generated UI.
 ---
 
 # x-uigen-ignore
 
-The `x-uigen-ignore` annotation allows you to exclude specific operations or entire resources from the generated UI. When an operation is marked with `x-uigen-ignore: true`, it is filtered out during IR construction and will not appear in any generated views, sidebar navigation, or dashboard widgets.
+The `x-uigen-ignore` annotation allows you to exclude any element in your OpenAPI/Swagger spec from the generated UI. When an element is marked with `x-uigen-ignore: true`, it is filtered out during IR construction and will not appear in any generated views, forms, or API configurations.
 
 ## Purpose
 
@@ -14,11 +14,13 @@ Use `x-uigen-ignore` when:
 - You have internal or admin-only endpoints that should not appear in the public UI
 - You want to hide deprecated endpoints while keeping them in the spec
 - You have utility endpoints (health checks, metrics) that don't need UI representation
-- You want to exclude specific operations from a resource without removing them from the spec
+- You want to exclude sensitive or internal fields from generated forms and views
+- You need to hide debug parameters or internal request/response structures
+- You want to exclude specific elements without removing them from the spec
 
 ## How it works
 
-`x-uigen-ignore` is a filtering mechanism that operates at the adapter layer, before operations reach the view hint classifier or relationship detector. Unlike `x-uigen-login` which classifies operations for special handling, `x-uigen-ignore` removes operations entirely from the IR.
+`x-uigen-ignore` is a filtering mechanism that operates at the adapter layer, before elements reach the view hint classifier or relationship detector. When an element is marked with `x-uigen-ignore: true`, the adapter stops processing at that node and does not evaluate any nested children (pruning behavior).
 
 When all operations for a resource are ignored, the entire resource is excluded from the IR.
 
@@ -33,32 +35,207 @@ Non-boolean values (strings, numbers, objects, arrays, null) are treated as abse
 
 ## Supported locations
 
+`x-uigen-ignore` can be applied to any of the following OpenAPI/Swagger spec elements:
+
 | Location | Effect |
 |---|---|
+| Schema property | Excludes a single property from all generated forms and views |
+| Schema object | Excludes an entire schema and all its properties from the UI |
+| Parameter | Excludes a query, path, header, or cookie parameter from forms and API calls |
+| Request body | Excludes the request body from an operation (no input form generated) |
+| Response | Excludes a response from an operation (no detail view or table columns) |
 | Operation | Excludes a single operation from the UI |
 | Path item | Excludes all operations on that path (can be overridden per operation) |
 
+## Pruning behavior
+
+When an element is marked with `x-uigen-ignore: true`, the adapter uses a pruning strategy: it stops processing at that node and does not evaluate any nested children or referenced schemas.
+
+**Example**: If a schema object is ignored, none of its properties are processed:
+
+```yaml
+components:
+  schemas:
+    InternalMetrics:
+      type: object
+      x-uigen-ignore: true  # Stop here
+      properties:
+        cpu_usage:
+          type: number  # Not processed
+        memory_usage:
+          type: number  # Not processed
+```
+
+**Example**: If a request body is ignored, its schema is not processed:
+
+```yaml
+paths:
+  /internal/sync:
+    post:
+      requestBody:
+        x-uigen-ignore: true  # Stop here
+        content:
+          application/json:
+            schema:
+              type: object  # Not processed
+              properties:
+                data:
+                  type: string  # Not processed
+```
+
+This pruning behavior improves performance by avoiding unnecessary processing of ignored subtrees.
+
 ## Precedence
 
-When `x-uigen-ignore` appears at both path and operation levels, the operation-level annotation takes precedence:
+When `x-uigen-ignore` appears at multiple levels in the spec hierarchy, the most specific (child-level) annotation takes precedence. This allows you to override parent-level ignores for specific child elements.
+
+### Precedence hierarchy
 
 ```
-Operation-level > Path-level
+Property-level annotation
+    ↓ (if undefined)
+Schema object-level annotation
+    ↓ (if undefined)
+Parameter-level annotation
+    ↓ (if undefined)
+Operation-level annotation
+    ↓ (if undefined)
+Path-level annotation
+    ↓ (if undefined)
+Default: include (false)
 ```
+
+**Rule**: Child annotations override parent annotations. An explicit `false` at the child level overrides `true` at the parent level, and vice versa.
 
 ### Precedence examples
 
-| Path annotation | Operation annotation | Result |
+| Parent annotation | Child annotation | Result |
 |---|---|---|
-| `true` | `false` | Operation is **included** (override) |
-| `false` | `true` | Operation is **excluded** (override) |
-| `true` | (absent) | Operation is **excluded** (inherited) |
-| `false` | (absent) | Operation is **included** (inherited) |
-| (absent) | `true` | Operation is **excluded** |
-| (absent) | `false` | Operation is **included** |
-| (absent) | (absent) | Operation is **included** (default) |
+| `true` | `false` | Child is **included** (override) |
+| `false` | `true` | Child is **excluded** (override) |
+| `true` | (absent) | Child is **excluded** (inherited) |
+| `false` | (absent) | Child is **included** (inherited) |
+| (absent) | `true` | Child is **excluded** |
+| (absent) | `false` | Child is **included** |
+| (absent) | (absent) | Child is **included** (default) |
 
 ## OpenAPI 3.x examples
+
+### Exclude a schema property
+
+```yaml
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        password_hash:
+          type: string
+          x-uigen-ignore: true
+          # This property is excluded from all forms and views
+        internal_id:
+          type: string
+          x-uigen-ignore: true
+          # This property is excluded from all forms and views
+```
+
+### Exclude an entire schema object
+
+```yaml
+components:
+  schemas:
+    InternalMetrics:
+      type: object
+      x-uigen-ignore: true
+      # Entire schema excluded - properties not processed
+      properties:
+        cpu_usage:
+          type: number
+        memory_usage:
+          type: number
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        metrics:
+          $ref: '#/components/schemas/InternalMetrics'
+          # This property is excluded because it references an ignored schema
+```
+
+### Exclude a parameter
+
+```yaml
+paths:
+  /users:
+    get:
+      summary: List users
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          # This parameter appears in the UI
+        - name: debug
+          in: query
+          schema:
+            type: boolean
+          x-uigen-ignore: true
+          # This parameter is excluded from forms and API calls
+```
+
+### Exclude a request body
+
+```yaml
+paths:
+  /internal/sync:
+    post:
+      summary: Internal sync operation
+      requestBody:
+        x-uigen-ignore: true
+        # Request body excluded - no input form generated
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: string
+      responses:
+        '200':
+          description: Success
+```
+
+### Exclude a response
+
+```yaml
+paths:
+  /users/{id}:
+    get:
+      summary: Get user
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          # This response appears in detail views
+        '500':
+          description: Internal error details
+          x-uigen-ignore: true
+          # This response is excluded from the UI
+          content:
+            application/json:
+              schema:
+                type: object
+```
 
 ### Exclude a single operation
 
@@ -113,6 +290,51 @@ paths:
       # Included (overrides path-level annotation)
 ```
 
+### Override schema-level annotation for specific property
+
+```yaml
+components:
+  schemas:
+    InternalUser:
+      type: object
+      x-uigen-ignore: true
+      # Parent says ignore all properties
+      properties:
+        id:
+          type: integer
+          x-uigen-ignore: false
+          # Included (overrides schema-level annotation)
+        name:
+          type: string
+          # Excluded (inherits schema-level annotation)
+        internal_data:
+          type: object
+          # Excluded (inherits schema-level annotation)
+```
+
+### Override path-level parameter for specific operation
+
+```yaml
+paths:
+  /users:
+    parameters:
+      - name: debug
+        in: query
+        schema:
+          type: boolean
+        x-uigen-ignore: true
+        # Excluded from all operations by default
+    get:
+      summary: List users
+      parameters:
+        - name: debug
+          in: query
+          schema:
+            type: boolean
+          x-uigen-ignore: false
+          # Included (overrides path-level annotation)
+```
+
 ### Exclude entire resource
 
 When all operations for a resource are ignored, the resource is automatically excluded:
@@ -131,6 +353,68 @@ paths:
 ```
 
 ## Swagger 2.0 examples
+
+### Exclude a schema property
+
+```yaml
+definitions:
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      password_hash:
+        type: string
+        x-uigen-ignore: true
+```
+
+### Exclude an entire schema object
+
+```yaml
+definitions:
+  InternalMetrics:
+    type: object
+    x-uigen-ignore: true
+    properties:
+      cpu_usage:
+        type: number
+```
+
+### Exclude a parameter
+
+```yaml
+paths:
+  /users:
+    get:
+      parameters:
+        - name: limit
+          in: query
+          type: integer
+        - name: debug
+          in: query
+          type: boolean
+          x-uigen-ignore: true
+```
+
+### Exclude a response
+
+```yaml
+paths:
+  /users/{id}:
+    get:
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/User'
+        500:
+          description: Internal error
+          x-uigen-ignore: true
+          schema:
+            type: object
+```
 
 ### Exclude a single operation
 

@@ -152,11 +152,11 @@ export function RefLinkCanvas({ structure }: RefLinkCanvasProps) {
     <div className="space-y-6" data-testid="ref-link-canvas">
       {/* Existing links */}
       <section>
-        <h4 className="text-sm font-semibold text-gray-700 mb-3">
+        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
           Existing Ref Links
         </h4>
         {existingLinks.length === 0 ? (
-          <p className="text-sm text-gray-400 italic">
+          <p className="text-sm text-gray-400 dark:text-gray-500 italic">
             No ref links configured. Drag a field onto a resource below to create one.
           </p>
         ) : (
@@ -164,27 +164,27 @@ export function RefLinkCanvas({ structure }: RefLinkCanvasProps) {
             {existingLinks.map(link => (
               <li
                 key={link.fieldPath}
-                className="flex items-center gap-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md"
+                className="flex items-center gap-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md"
                 data-testid="ref-link-item"
               >
-                <span className="text-blue-600 flex-shrink-0">
+                <span className="text-blue-600 dark:text-blue-400 flex-shrink-0">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                   </svg>
                 </span>
                 <span className="flex-1 text-sm">
-                  <span className="font-mono text-gray-800">{link.fieldPath}</span>
-                  <span className="text-gray-500 mx-2">→</span>
-                  <span className="font-medium text-blue-700">{link.resource}</span>
-                  <span className="text-gray-400 text-xs ml-2">
+                  <span className="font-mono text-gray-800 dark:text-gray-200">{link.fieldPath}</span>
+                  <span className="text-gray-500 dark:text-gray-400 mx-2">→</span>
+                  <span className="font-medium text-blue-700 dark:text-blue-300">{link.resource}</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-xs ml-2">
                     (value: <span className="font-mono">{link.valueField}</span>,
                     label: <span className="font-mono">{link.labelField}</span>)
                   </span>
                 </span>
                 <button
                   onClick={() => handleDeleteLink(link.fieldPath)}
-                  className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                  className="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"
                   aria-label={`Remove ref link for ${link.fieldPath}`}
                   data-testid="delete-ref-link"
                 >
@@ -202,20 +202,20 @@ export function RefLinkCanvas({ structure }: RefLinkCanvasProps) {
       {/* Pending link form */}
       {pendingLink && (
         <section
-          className="border border-yellow-300 bg-yellow-50 rounded-md p-4"
+          className="border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 rounded-md p-4"
           data-testid="pending-link-form"
         >
-          <h4 className="text-sm font-semibold text-gray-800 mb-3">
-            Configure Ref Link: <span className="font-mono text-blue-700">{pendingLink.fieldPath}</span>
-            <span className="text-gray-500 mx-2">→</span>
-            <span className="font-medium text-blue-700">{pendingLink.targetResource.slug}</span>
+          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
+            Configure Ref Link: <span className="font-mono text-blue-700 dark:text-blue-400">{pendingLink.fieldPath}</span>
+            <span className="text-gray-500 dark:text-gray-400 mx-2">→</span>
+            <span className="font-medium text-blue-700 dark:text-blue-400">{pendingLink.targetResource.slug}</span>
           </h4>
 
           <div className="space-y-3">
             <div>
               <label
                 htmlFor="ref-value-field"
-                className="block text-xs font-medium text-gray-700 mb-1"
+                className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
                 Value Field <span className="text-red-500">*</span>
               </label>
@@ -223,8 +223,8 @@ export function RefLinkCanvas({ structure }: RefLinkCanvasProps) {
                 id="ref-value-field"
                 value={pendingLink.valueField}
                 onChange={e => handlePendingChange('valueField', e.target.value)}
-                className={`w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                  validationErrors.valueField ? 'border-red-400' : 'border-gray-300'
+                className={`w-full text-sm border rounded px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                  validationErrors.valueField ? 'border-red-400' : 'border-gray-300 dark:border-gray-600'
                 }`}
                 data-testid="value-field-select"
               >
@@ -234,7 +234,7 @@ export function RefLinkCanvas({ structure }: RefLinkCanvasProps) {
                 ))}
               </select>
               {validationErrors.valueField && (
-                <p className="text-xs text-red-600 mt-1" data-testid="value-field-error">
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1" data-testid="value-field-error">
                   {validationErrors.valueField}
                 </p>
               )}
@@ -243,7 +243,7 @@ export function RefLinkCanvas({ structure }: RefLinkCanvasProps) {
             <div>
               <label
                 htmlFor="ref-label-field"
-                className="block text-xs font-medium text-gray-700 mb-1"
+                className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
                 Label Field <span className="text-red-500">*</span>
               </label>
@@ -251,8 +251,8 @@ export function RefLinkCanvas({ structure }: RefLinkCanvasProps) {
                 id="ref-label-field"
                 value={pendingLink.labelField}
                 onChange={e => handlePendingChange('labelField', e.target.value)}
-                className={`w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                  validationErrors.labelField ? 'border-red-400' : 'border-gray-300'
+                className={`w-full text-sm border rounded px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                  validationErrors.labelField ? 'border-red-400' : 'border-gray-300 dark:border-gray-600'
                 }`}
                 data-testid="label-field-select"
               >
@@ -262,7 +262,7 @@ export function RefLinkCanvas({ structure }: RefLinkCanvasProps) {
                 ))}
               </select>
               {validationErrors.labelField && (
-                <p className="text-xs text-red-600 mt-1" data-testid="label-field-error">
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1" data-testid="label-field-error">
                   {validationErrors.labelField}
                 </p>
               )}
@@ -272,14 +272,14 @@ export function RefLinkCanvas({ structure }: RefLinkCanvasProps) {
           <div className="flex gap-2 mt-4">
             <button
               onClick={handleConfirmLink}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+              className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 rounded hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
               data-testid="confirm-link-button"
             >
               Save Link
             </button>
             <button
               onClick={handleCancelLink}
-              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+              className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               data-testid="cancel-link-button"
             >
               Cancel
@@ -290,7 +290,7 @@ export function RefLinkCanvas({ structure }: RefLinkCanvasProps) {
 
       {/* Resource drop zones */}
       <section>
-        <h4 className="text-sm font-semibold text-gray-700 mb-3">
+        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
           Resources (drop a field here to create a ref link)
         </h4>
         <div className="space-y-2">
@@ -334,21 +334,21 @@ function ResourceDropZone({
       onDrop={onDrop}
       className={`border-2 border-dashed rounded-md px-4 py-3 transition-colors ${
         isDragOver
-          ? 'border-blue-400 bg-blue-50'
-          : 'border-gray-200 bg-white hover:border-gray-300'
+          ? 'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
       }`}
       data-testid={`resource-drop-zone-${resource.slug}`}
       aria-label={`Drop zone for ${resource.name} resource`}
     >
       <div className="flex items-center gap-2">
-        <span className="text-blue-500 flex-shrink-0">
+        <span className="text-blue-500 dark:text-blue-400 flex-shrink-0">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
         </span>
-        <span className="font-medium text-gray-800 text-sm">{resource.name}</span>
-        <span className="text-xs text-gray-400 ml-auto">
+        <span className="font-medium text-gray-800 dark:text-gray-200 text-sm">{resource.name}</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">
           {resource.fields.length} field{resource.fields.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -362,7 +362,7 @@ function ResourceDropZone({
       )}
 
       {isDragOver && (
-        <p className="text-xs text-blue-600 mt-2 font-medium">
+        <p className="text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
           Drop to link to {resource.name}
         </p>
       )}
@@ -376,9 +376,9 @@ interface FieldPillProps {
 
 function FieldPill({ field }: FieldPillProps) {
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600 font-mono">
+    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-mono">
       {field.key}
-      <span className="ml-1 text-gray-400">{field.type}</span>
+      <span className="ml-1 text-gray-400 dark:text-gray-500">{field.type}</span>
     </span>
   );
 }

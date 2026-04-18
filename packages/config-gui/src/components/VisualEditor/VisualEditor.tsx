@@ -39,10 +39,10 @@ export function VisualEditor({ structure }: VisualEditorProps) {
 
   if (!structure) {
     return (
-      <div className="bg-white shadow rounded-lg p-8">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-8">
         <div className="text-center">
           <svg
-            className="mx-auto h-12 w-12 text-gray-400"
+            className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -54,8 +54,8 @@ export function VisualEditor({ structure }: VisualEditorProps) {
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No spec loaded</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No spec loaded</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Load a spec file to start configuring annotations visually.
           </p>
         </div>
@@ -66,15 +66,15 @@ export function VisualEditor({ structure }: VisualEditorProps) {
   return (
     <div className="space-y-6" data-testid="visual-editor">
       {/* Tab Navigation */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="flex -mb-px" aria-label="Visual editor tabs">
             <button
               onClick={() => setActiveTab('structure')}
               className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'structure'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
               aria-current={activeTab === 'structure' ? 'page' : undefined}
               data-testid="structure-tab"
@@ -95,8 +95,8 @@ export function VisualEditor({ structure }: VisualEditorProps) {
               onClick={() => setActiveTab('refs')}
               className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'refs'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
               aria-current={activeTab === 'refs' ? 'page' : undefined}
               data-testid="refs-tab"
@@ -128,31 +128,31 @@ export function VisualEditor({ structure }: VisualEditorProps) {
       </div>
 
       {/* Help Text */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="text-sm font-semibold text-blue-900 mb-2">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">
           Visual Editor Tips
         </h4>
-        <ul className="text-sm text-blue-800 space-y-1">
+        <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
           <li className="flex items-start gap-2">
-            <span className="text-blue-600 mt-0.5">•</span>
+            <span className="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
             <span>
               <strong>Labels:</strong> Click on a field's label badge or "+ label" button to edit inline
             </span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-blue-600 mt-0.5">•</span>
+            <span className="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
             <span>
               <strong>Ignore:</strong> Toggle the switch next to a field to add/remove x-uigen-ignore
             </span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-blue-600 mt-0.5">•</span>
+            <span className="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
             <span>
               <strong>Login:</strong> Toggle the switch next to an operation to mark it as the login endpoint
             </span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-blue-600 mt-0.5">•</span>
+            <span className="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
             <span>
               <strong>Ref Links:</strong> Switch to the "Ref Links" tab to create references by dragging fields onto resources
             </span>
@@ -174,10 +174,10 @@ function StructureView({ structure }: StructureViewProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           API Resources
         </h3>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
           Configure annotations directly on fields and operations below. Changes are saved immediately.
         </p>
       </div>
@@ -202,12 +202,12 @@ function ResourceSection({ resource }: ResourceSectionProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-left"
       >
-        <span className="text-gray-400">
+        <span className="text-gray-400 dark:text-gray-500">
           {isExpanded ? (
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -218,7 +218,7 @@ function ResourceSection({ resource }: ResourceSectionProps) {
             </svg>
           )}
         </span>
-        <span className="text-blue-600">
+        <span className="text-blue-600 dark:text-blue-400">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
@@ -228,8 +228,8 @@ function ResourceSection({ resource }: ResourceSectionProps) {
             />
           </svg>
         </span>
-        <span className="flex-1 font-semibold text-gray-900">{resource.name}</span>
-        <span className="text-xs text-gray-500">
+        <span className="flex-1 font-semibold text-gray-900 dark:text-white">{resource.name}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400">
           {resource.operations.length} operation{resource.operations.length !== 1 ? 's' : ''}, {resource.fields.length} field{resource.fields.length !== 1 ? 's' : ''}
         </span>
       </button>
@@ -237,13 +237,13 @@ function ResourceSection({ resource }: ResourceSectionProps) {
       {isExpanded && (
         <div className="p-4 space-y-6">
           {resource.description && (
-            <p className="text-sm text-gray-600">{resource.description}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">{resource.description}</p>
           )}
 
           {/* Operations */}
           {resource.operations.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Operations</h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Operations</h4>
               <div className="space-y-2">
                 {resource.operations.map(operation => (
                   <OperationNode key={operation.id} operation={operation} />
@@ -255,7 +255,7 @@ function ResourceSection({ resource }: ResourceSectionProps) {
           {/* Fields */}
           {resource.fields.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Fields</h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Fields</h4>
               <div className="space-y-1">
                 {resource.fields.map(field => (
                   <FieldNode key={field.path} field={field} />
@@ -280,10 +280,10 @@ function RefsView({ structure }: RefsViewProps) {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
           Reference Link Manager
         </h3>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
           Create x-uigen-ref annotations by dragging fields from the left panel onto resources on the right.
           Ref links enable select/autocomplete widgets that pull data from related resources.
         </p>
@@ -292,15 +292,15 @@ function RefsView({ structure }: RefsViewProps) {
       {/* Split View: Fields on left, Canvas on right */}
       <div className="grid grid-cols-2 gap-6">
         {/* Left: Fields to drag */}
-        <div className="border border-gray-200 rounded-lg p-4 bg-white max-h-[600px] overflow-y-auto">
-          <h4 className="text-sm font-semibold text-gray-900 mb-3">
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800 max-h-[600px] overflow-y-auto">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
             Fields (Drag to create refs)
           </h4>
           <div className="space-y-4">
             {structure.resources.map(resource => (
-              <div key={resource.slug} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <div className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div key={resource.slug} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                <div className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -315,11 +315,11 @@ function RefsView({ structure }: RefsViewProps) {
                     <div
                       key={field.path}
                       draggable
-                      className="px-3 py-2 text-sm bg-white border border-gray-300 rounded cursor-move hover:border-blue-500 hover:bg-blue-50 transition-colors text-gray-900 font-medium"
+                      className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded cursor-move hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-gray-900 dark:text-white font-medium"
                     >
                       <div className="flex items-center justify-between">
                         <span>{field.label}</span>
-                        <span className="text-xs text-gray-500 ml-2">{field.type}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">{field.type}</span>
                       </div>
                     </div>
                   ))}
@@ -330,8 +330,8 @@ function RefsView({ structure }: RefsViewProps) {
         </div>
 
         {/* Right: Canvas to drop */}
-        <div className="border border-gray-200 rounded-lg p-4 bg-white">
-          <h4 className="text-sm font-semibold text-gray-900 mb-3">
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
             Resources (Drop fields here)
           </h4>
           <RefLinkCanvas structure={structure} />

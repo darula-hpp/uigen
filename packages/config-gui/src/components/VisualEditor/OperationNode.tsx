@@ -57,7 +57,7 @@ export function OperationNode({ operation }: OperationNodeProps) {
 
   return (
     <div
-      className="flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-gray-50"
+      className="flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
       data-operation-path={operationPath}
       data-testid="operation-node"
     >
@@ -67,11 +67,11 @@ export function OperationNode({ operation }: OperationNodeProps) {
       </span>
 
       {/* Operation path */}
-      <span className="flex-1 text-sm text-gray-700 font-mono">{operation.path}</span>
+      <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 font-mono">{operation.path}</span>
 
       {/* Summary (if available) */}
       {operation.summary && (
-        <span className="text-xs text-gray-500 truncate max-w-xs flex-shrink-0">
+        <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs flex-shrink-0">
           {operation.summary}
         </span>
       )}
@@ -81,7 +81,7 @@ export function OperationNode({ operation }: OperationNodeProps) {
         {/* x-uigen-login badge (if active) */}
         {isLoginOperation && (
           <span
-            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200"
             data-testid="login-badge"
           >
             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,8 +101,8 @@ export function OperationNode({ operation }: OperationNodeProps) {
           role="switch"
           aria-checked={isLoginOperation}
           onClick={handleLoginToggle}
-          className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-400 ${
-            isLoginOperation ? 'bg-indigo-400' : 'bg-gray-200'
+          className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-400 dark:focus:ring-offset-gray-800 ${
+            isLoginOperation ? 'bg-indigo-400 dark:bg-indigo-500' : 'bg-gray-200 dark:bg-gray-600'
           }`}
           title={isLoginOperation ? 'Remove x-uigen-login' : 'Mark as login operation'}
           aria-label={isLoginOperation ? 'Disable login annotation' : 'Enable login annotation'}
@@ -115,7 +115,7 @@ export function OperationNode({ operation }: OperationNodeProps) {
           />
         </button>
         {isLoginOperation && (
-          <span className="text-xs text-indigo-600 font-medium">login</span>
+          <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">login</span>
         )}
       </div>
     </div>

@@ -318,6 +318,629 @@ describe('x-uigen-ignore: Task 1.4 - Annotation Extraction', () => {
       expect(result).toBe(false);
     });
   });
+
+  describe('shouldIgnoreSchema method behavior', () => {
+    it('should exist as a private method on OpenAPI3Adapter', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      
+      // Verify the method exists
+      expect(typeof (adapter as any).shouldIgnoreSchema).toBe('function');
+    });
+
+    it('should return true when schema has x-uigen-ignore: true', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'object',
+        'x-uigen-ignore': true
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreSchema(schema);
+      expect(result).toBe(true);
+    });
+
+    it('should return false when schema has x-uigen-ignore: false', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        'x-uigen-ignore': false
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreSchema(schema);
+      expect(result).toBe(false);
+    });
+
+    it('should return false when schema has no annotation', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string'
+      };
+
+      const result = (adapter as any).shouldIgnoreSchema(schema);
+      expect(result).toBe(false);
+    });
+
+    it('should return true when parent has x-uigen-ignore: true and schema has no annotation', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const parent: OpenAPIV3.SchemaObject = {
+        type: 'object',
+        'x-uigen-ignore': true
+      } as any;
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string'
+      };
+
+      const result = (adapter as any).shouldIgnoreSchema(schema, parent);
+      expect(result).toBe(true);
+    });
+
+    it('should return false when schema has x-uigen-ignore: false and parent has x-uigen-ignore: true (schema overrides)', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const parent: OpenAPIV3.SchemaObject = {
+        type: 'object',
+        'x-uigen-ignore': true
+      } as any;
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        'x-uigen-ignore': false
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreSchema(schema, parent);
+      expect(result).toBe(false);
+    });
+
+    it('should return true when schema has x-uigen-ignore: true and parent has x-uigen-ignore: false (schema overrides)', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const parent: OpenAPIV3.SchemaObject = {
+        type: 'object',
+        'x-uigen-ignore': false
+      } as any;
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        'x-uigen-ignore': true
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreSchema(schema, parent);
+      expect(result).toBe(true);
+    });
+
+    it('should return false when parent has x-uigen-ignore: false and schema has no annotation', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const parent: OpenAPIV3.SchemaObject = {
+        type: 'object',
+        'x-uigen-ignore': false
+      } as any;
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string'
+      };
+
+      const result = (adapter as any).shouldIgnoreSchema(schema, parent);
+      expect(result).toBe(false);
+    });
+
+    it('should return undefined and log warning for string value', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        'x-uigen-ignore': 'yes'
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreSchema(schema);
+      expect(result).toBe(false); // Default behavior when invalid
+      expect(consoleWarnSpy).toHaveBeenCalledWith('x-uigen-ignore must be a boolean, found string');
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should return undefined and log warning for number value', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        'x-uigen-ignore': 1
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreSchema(schema);
+      expect(result).toBe(false); // Default behavior when invalid
+      expect(consoleWarnSpy).toHaveBeenCalledWith('x-uigen-ignore must be a boolean, found number');
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should log warning for invalid parent annotation value', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const parent: OpenAPIV3.SchemaObject = {
+        type: 'object',
+        'x-uigen-ignore': 'invalid'
+      } as any;
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string'
+      };
+
+      const result = (adapter as any).shouldIgnoreSchema(schema, parent);
+      expect(result).toBe(false); // Default behavior when invalid
+      expect(consoleWarnSpy).toHaveBeenCalledWith('x-uigen-ignore must be a boolean, found string');
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should work with $ref schemas', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const schema: OpenAPIV3.ReferenceObject = {
+        $ref: '#/components/schemas/User',
+        'x-uigen-ignore': true
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreSchema(schema);
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('shouldIgnoreProperty method behavior', () => {
+    it('should exist as a private method on OpenAPI3Adapter', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      
+      // Verify the method exists
+      expect(typeof (adapter as any).shouldIgnoreProperty).toBe('function');
+    });
+
+    it('should return true when property has x-uigen-ignore: true', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const property: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        'x-uigen-ignore': true
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreProperty(property);
+      expect(result).toBe(true);
+    });
+
+    it('should return false when property has x-uigen-ignore: false', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const property: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        'x-uigen-ignore': false
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreProperty(property);
+      expect(result).toBe(false);
+    });
+
+    it('should return false when property has no annotation', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const property: OpenAPIV3.SchemaObject = {
+        type: 'string'
+      };
+
+      const result = (adapter as any).shouldIgnoreProperty(property);
+      expect(result).toBe(false);
+    });
+
+    it('should delegate to shouldIgnoreSchema for consistency', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const property: OpenAPIV3.SchemaObject = {
+        type: 'object',
+        properties: {
+          nested: { type: 'string' }
+        },
+        'x-uigen-ignore': true
+      } as any;
+
+      // Both methods should return the same result
+      const propertyResult = (adapter as any).shouldIgnoreProperty(property);
+      const schemaResult = (adapter as any).shouldIgnoreSchema(property);
+      
+      expect(propertyResult).toBe(schemaResult);
+      expect(propertyResult).toBe(true);
+    });
+
+    it('should work with $ref properties', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const property: OpenAPIV3.ReferenceObject = {
+        $ref: '#/components/schemas/User',
+        'x-uigen-ignore': true
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreProperty(property);
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('shouldIgnoreParameter method behavior', () => {
+    it('should exist as a private method on OpenAPI3Adapter', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      
+      // Verify the method exists
+      expect(typeof (adapter as any).shouldIgnoreParameter).toBe('function');
+    });
+
+    it('should return true when parameter has x-uigen-ignore: true', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const param: OpenAPIV3.ParameterObject = {
+        name: 'userId',
+        in: 'path',
+        required: true,
+        schema: { type: 'string' },
+        'x-uigen-ignore': true
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreParameter(param);
+      expect(result).toBe(true);
+    });
+
+    it('should return false when parameter has x-uigen-ignore: false', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const param: OpenAPIV3.ParameterObject = {
+        name: 'userId',
+        in: 'query',
+        schema: { type: 'string' },
+        'x-uigen-ignore': false
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreParameter(param);
+      expect(result).toBe(false);
+    });
+
+    it('should return false when parameter has no annotation', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const param: OpenAPIV3.ParameterObject = {
+        name: 'userId',
+        in: 'header',
+        schema: { type: 'string' }
+      };
+
+      const result = (adapter as any).shouldIgnoreParameter(param);
+      expect(result).toBe(false);
+    });
+
+    it('should return true when path-level parameter has x-uigen-ignore: true and operation parameter has no annotation', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const pathParam: OpenAPIV3.ParameterObject = {
+        name: 'debug',
+        in: 'query',
+        schema: { type: 'boolean' },
+        'x-uigen-ignore': true
+      } as any;
+      const operationParam: OpenAPIV3.ParameterObject = {
+        name: 'debug',
+        in: 'query',
+        schema: { type: 'boolean' }
+      };
+
+      const result = (adapter as any).shouldIgnoreParameter(operationParam, [pathParam]);
+      expect(result).toBe(true);
+    });
+
+    it('should return false when operation-level parameter has x-uigen-ignore: false and path-level has x-uigen-ignore: true (operation overrides)', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const pathParam: OpenAPIV3.ParameterObject = {
+        name: 'debug',
+        in: 'query',
+        schema: { type: 'boolean' },
+        'x-uigen-ignore': true
+      } as any;
+      const operationParam: OpenAPIV3.ParameterObject = {
+        name: 'debug',
+        in: 'query',
+        schema: { type: 'boolean' },
+        'x-uigen-ignore': false
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreParameter(operationParam, [pathParam]);
+      expect(result).toBe(false);
+    });
+
+    it('should return true when operation-level parameter has x-uigen-ignore: true and path-level has x-uigen-ignore: false (operation overrides)', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const pathParam: OpenAPIV3.ParameterObject = {
+        name: 'debug',
+        in: 'query',
+        schema: { type: 'boolean' },
+        'x-uigen-ignore': false
+      } as any;
+      const operationParam: OpenAPIV3.ParameterObject = {
+        name: 'debug',
+        in: 'query',
+        schema: { type: 'boolean' },
+        'x-uigen-ignore': true
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreParameter(operationParam, [pathParam]);
+      expect(result).toBe(true);
+    });
+
+    it('should match parameters by name and location (in)', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const pathParam: OpenAPIV3.ParameterObject = {
+        name: 'id',
+        in: 'path',
+        schema: { type: 'string' },
+        'x-uigen-ignore': true
+      } as any;
+      const operationParam: OpenAPIV3.ParameterObject = {
+        name: 'id',
+        in: 'query', // Different location
+        schema: { type: 'string' }
+      };
+
+      // Should not match because 'in' is different
+      const result = (adapter as any).shouldIgnoreParameter(operationParam, [pathParam]);
+      expect(result).toBe(false);
+    });
+
+    it('should return false and log warning for string value', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const param: OpenAPIV3.ParameterObject = {
+        name: 'userId',
+        in: 'query',
+        schema: { type: 'string' },
+        'x-uigen-ignore': 'yes'
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreParameter(param);
+      expect(result).toBe(false); // Default behavior when invalid
+      expect(consoleWarnSpy).toHaveBeenCalledWith('x-uigen-ignore must be a boolean, found string');
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should return false and log warning for number value', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const param: OpenAPIV3.ParameterObject = {
+        name: 'userId',
+        in: 'query',
+        schema: { type: 'string' },
+        'x-uigen-ignore': 1
+      } as any;
+
+      const result = (adapter as any).shouldIgnoreParameter(param);
+      expect(result).toBe(false); // Default behavior when invalid
+      expect(consoleWarnSpy).toHaveBeenCalledWith('x-uigen-ignore must be a boolean, found number');
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should log warning for invalid path-level parameter annotation value', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const pathParam: OpenAPIV3.ParameterObject = {
+        name: 'debug',
+        in: 'query',
+        schema: { type: 'boolean' },
+        'x-uigen-ignore': 'invalid'
+      } as any;
+      const operationParam: OpenAPIV3.ParameterObject = {
+        name: 'debug',
+        in: 'query',
+        schema: { type: 'boolean' }
+      };
+
+      const result = (adapter as any).shouldIgnoreParameter(operationParam, [pathParam]);
+      expect(result).toBe(false); // Default behavior when invalid
+      expect(consoleWarnSpy).toHaveBeenCalledWith('x-uigen-ignore must be a boolean, found string');
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should handle empty pathParams array', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const param: OpenAPIV3.ParameterObject = {
+        name: 'userId',
+        in: 'query',
+        schema: { type: 'string' }
+      };
+
+      const result = (adapter as any).shouldIgnoreParameter(param, []);
+      expect(result).toBe(false);
+    });
+
+    it('should handle undefined pathParams', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test', version: '1.0.0' },
+        paths: {}
+      };
+
+      const adapter = new OpenAPI3Adapter(spec);
+      const param: OpenAPIV3.ParameterObject = {
+        name: 'userId',
+        in: 'query',
+        schema: { type: 'string' }
+      };
+
+      const result = (adapter as any).shouldIgnoreParameter(param, undefined);
+      expect(result).toBe(false);
+    });
+  });
 });
 
 describe('x-uigen-ignore: Task 1.5 - Operation Filtering', () => {
@@ -865,6 +1488,147 @@ describe('x-uigen-ignore: Task 3.3 - Swagger 2.0 Annotation Preservation', () =>
     expect(openapi3Spec.paths['/users'].get['x-uigen-ignore']).toBeUndefined();
   });
 });
+
+describe('x-uigen-ignore: Task 1.5 - Schema Property Filtering', () => {
+  it('should mark schema property with __shouldIgnore when x-uigen-ignore: true', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users': {
+          get: {
+            summary: 'List users',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        name: { type: 'string' },
+                        password: {
+                          type: 'string',
+                          'x-uigen-ignore': true
+                        } as any
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    expect(app.resources).toHaveLength(1);
+    const operation = app.resources[0].operations[0];
+    const responseSchema = operation.responses['200']?.schema;
+    
+    expect(responseSchema).toBeDefined();
+    expect(responseSchema?.children).toBeDefined();
+    
+    // Verify password property is marked with __shouldIgnore
+    const passwordChild = responseSchema?.children?.find(c => c.key === 'password');
+    expect(passwordChild).toBeDefined();
+    expect((passwordChild as any).__shouldIgnore).toBe(true);
+  });
+
+  it('should not mark schema property with __shouldIgnore when x-uigen-ignore: false', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users': {
+          get: {
+            summary: 'List users',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        name: {
+                          type: 'string',
+                          'x-uigen-ignore': false
+                        } as any
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    expect(app.resources).toHaveLength(1);
+    const operation = app.resources[0].operations[0];
+    const responseSchema = operation.responses['200']?.schema;
+    
+    const nameChild = responseSchema?.children?.find(c => c.key === 'name');
+    expect(nameChild).toBeDefined();
+    expect((nameChild as any).__shouldIgnore).toBeUndefined();
+  });
+
+  it('should not mark schema property without annotation', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users': {
+          get: {
+            summary: 'List users',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        name: { type: 'string' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    expect(app.resources).toHaveLength(1);
+    const operation = app.resources[0].operations[0];
+    const responseSchema = operation.responses['200']?.schema;
+    
+    const nameChild = responseSchema?.children?.find(c => c.key === 'name');
+    expect(nameChild).toBeDefined();
+    expect((nameChild as any).__shouldIgnore).toBeUndefined();
+  });
+});
+
+// Note: Integration tests for parameters, request bodies, and responses will be added
+// in Tasks 4 and 5 when the adapter is updated to call processAnnotations() for these elements.
+// The apply() method in IgnoreHandler already has the marking logic for all element types,
+// which is verified by the unit tests in ignore-handler.test.ts.
 
 describe('x-uigen-ignore: Task 3.4 - Swagger 2.0 End-to-End Filtering', () => {
   it('should exclude operation with x-uigen-ignore: true from Swagger 2.0 spec', () => {
@@ -1947,5 +2711,742 @@ describe('x-uigen-ignore: Task 7 - Integration Tests', () => {
       const existingResourceSlugs = app.resources.map(r => r.slug);
       expect(existingResourceSlugs).not.toContain('debug');
     });
+  });
+});
+
+
+describe('x-uigen-ignore: Task 4.2 - Parameter Filtering', () => {
+  it('should filter out operation-level parameter with x-uigen-ignore: true', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users': {
+          get: {
+            summary: 'List users',
+            parameters: [
+              {
+                name: 'limit',
+                in: 'query',
+                schema: { type: 'integer' }
+              },
+              {
+                name: 'debug',
+                in: 'query',
+                schema: { type: 'boolean' },
+                'x-uigen-ignore': true
+              } as any
+            ],
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    expect(app.resources).toHaveLength(1);
+    expect(app.resources[0].operations).toHaveLength(1);
+    const operation = app.resources[0].operations[0];
+    expect(operation.parameters).toHaveLength(1);
+    expect(operation.parameters[0].name).toBe('limit');
+    expect(operation.parameters.find(p => p.name === 'debug')).toBeUndefined();
+  });
+
+  it('should filter out path-level parameter with x-uigen-ignore: true from all operations', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users': {
+          parameters: [
+            {
+              name: 'api_key',
+              in: 'header',
+              schema: { type: 'string' },
+              'x-uigen-ignore': true
+            } as any
+          ],
+          get: {
+            summary: 'List users',
+            parameters: [
+              {
+                name: 'limit',
+                in: 'query',
+                schema: { type: 'integer' }
+              }
+            ],
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          post: {
+            summary: 'Create user',
+            parameters: [
+              {
+                name: 'validate',
+                in: 'query',
+                schema: { type: 'boolean' }
+              }
+            ],
+            requestBody: {
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            },
+            responses: {
+              '201': {
+                description: 'Created'
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    expect(app.resources).toHaveLength(1);
+    expect(app.resources[0].operations).toHaveLength(2);
+    
+    // GET operation should have only 'limit' parameter
+    const getOp = app.resources[0].operations.find(op => op.method === 'GET');
+    expect(getOp).toBeDefined();
+    expect(getOp!.parameters).toHaveLength(1);
+    expect(getOp!.parameters[0].name).toBe('limit');
+    expect(getOp!.parameters.find(p => p.name === 'api_key')).toBeUndefined();
+    
+    // POST operation should have only 'validate' parameter
+    const postOp = app.resources[0].operations.find(op => op.method === 'POST');
+    expect(postOp).toBeDefined();
+    expect(postOp!.parameters).toHaveLength(1);
+    expect(postOp!.parameters[0].name).toBe('validate');
+    expect(postOp!.parameters.find(p => p.name === 'api_key')).toBeUndefined();
+  });
+
+  it('should include operation-level parameter with x-uigen-ignore: false even when path-level has x-uigen-ignore: true', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users': {
+          parameters: [
+            {
+              name: 'debug',
+              in: 'query',
+              schema: { type: 'boolean' },
+              'x-uigen-ignore': true
+            } as any
+          ],
+          get: {
+            summary: 'List users',
+            parameters: [
+              {
+                name: 'debug',
+                in: 'query',
+                schema: { type: 'boolean' },
+                'x-uigen-ignore': false
+              } as any,
+              {
+                name: 'limit',
+                in: 'query',
+                schema: { type: 'integer' }
+              }
+            ],
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    expect(app.resources).toHaveLength(1);
+    expect(app.resources[0].operations).toHaveLength(1);
+    const operation = app.resources[0].operations[0];
+    expect(operation.parameters).toHaveLength(2);
+    expect(operation.parameters.find(p => p.name === 'debug')).toBeDefined();
+    expect(operation.parameters.find(p => p.name === 'limit')).toBeDefined();
+  });
+
+  it('should merge path-level and operation-level parameters correctly', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users/{userId}': {
+          parameters: [
+            {
+              name: 'userId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            },
+            {
+              name: 'api_version',
+              in: 'header',
+              schema: { type: 'string' }
+            }
+          ],
+          get: {
+            summary: 'Get user',
+            parameters: [
+              {
+                name: 'include',
+                in: 'query',
+                schema: { type: 'string' }
+              }
+            ],
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        name: { type: 'string' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    expect(app.resources).toHaveLength(1);
+    expect(app.resources[0].operations).toHaveLength(1);
+    const operation = app.resources[0].operations[0];
+    expect(operation.parameters).toHaveLength(3);
+    expect(operation.parameters.find(p => p.name === 'userId')).toBeDefined();
+    expect(operation.parameters.find(p => p.name === 'api_version')).toBeDefined();
+    expect(operation.parameters.find(p => p.name === 'include')).toBeDefined();
+  });
+
+  it('should maintain parameter order (path-level first, then operation-level)', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users': {
+          parameters: [
+            {
+              name: 'path_param_1',
+              in: 'header',
+              schema: { type: 'string' }
+            },
+            {
+              name: 'path_param_2',
+              in: 'header',
+              schema: { type: 'string' }
+            }
+          ],
+          get: {
+            summary: 'List users',
+            parameters: [
+              {
+                name: 'op_param_1',
+                in: 'query',
+                schema: { type: 'string' }
+              },
+              {
+                name: 'op_param_2',
+                in: 'query',
+                schema: { type: 'string' }
+              }
+            ],
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    expect(app.resources).toHaveLength(1);
+    expect(app.resources[0].operations).toHaveLength(1);
+    const operation = app.resources[0].operations[0];
+    expect(operation.parameters).toHaveLength(4);
+    expect(operation.parameters[0].name).toBe('path_param_1');
+    expect(operation.parameters[1].name).toBe('path_param_2');
+    expect(operation.parameters[2].name).toBe('op_param_1');
+    expect(operation.parameters[3].name).toBe('op_param_2');
+  });
+
+  it('should handle operation-level parameter overriding path-level parameter with same name', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users': {
+          parameters: [
+            {
+              name: 'format',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Path-level format parameter'
+            }
+          ],
+          get: {
+            summary: 'List users',
+            parameters: [
+              {
+                name: 'format',
+                in: 'query',
+                schema: { type: 'string' },
+                description: 'Operation-level format parameter (overrides path-level)'
+              },
+              {
+                name: 'limit',
+                in: 'query',
+                schema: { type: 'integer' }
+              }
+            ],
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    expect(app.resources).toHaveLength(1);
+    expect(app.resources[0].operations).toHaveLength(1);
+    const operation = app.resources[0].operations[0];
+    // Should have 2 parameters: operation-level 'format' and 'limit'
+    expect(operation.parameters).toHaveLength(2);
+    const formatParam = operation.parameters.find(p => p.name === 'format');
+    expect(formatParam).toBeDefined();
+    expect(formatParam!.description).toBe('Operation-level format parameter (overrides path-level)');
+    expect(operation.parameters.find(p => p.name === 'limit')).toBeDefined();
+  });
+});
+
+describe('x-uigen-ignore: Task 7.3 - Schema Property Override Scenarios', () => {
+  it('should include property with x-uigen-ignore: false when parent schema has x-uigen-ignore: true', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users': {
+          get: {
+            summary: 'Get user',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      'x-uigen-ignore': true,
+                      properties: {
+                        id: {
+                          type: 'string',
+                          'x-uigen-ignore': false
+                        } as any,
+                        name: { type: 'string' },
+                        email: { type: 'string' }
+                      }
+                    } as any
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    expect(app.resources).toHaveLength(1);
+    const operation = app.resources[0].operations[0];
+    const responseSchema = operation.responses['200']?.schema;
+    
+    expect(responseSchema).toBeDefined();
+    expect(responseSchema?.children).toBeDefined();
+    
+    // Property 'id' should be included (child false overrides parent true)
+    const idChild = responseSchema?.children?.find(c => c.key === 'id');
+    expect(idChild).toBeDefined();
+    expect((idChild as any).__shouldIgnore).toBeUndefined();
+    
+    // Properties 'name' and 'email' should be marked as ignored (inherit from parent)
+    const nameChild = responseSchema?.children?.find(c => c.key === 'name');
+    expect(nameChild).toBeDefined();
+    expect((nameChild as any).__shouldIgnore).toBe(true);
+    
+    const emailChild = responseSchema?.children?.find(c => c.key === 'email');
+    expect(emailChild).toBeDefined();
+    expect((emailChild as any).__shouldIgnore).toBe(true);
+  });
+
+  it('should exclude property with x-uigen-ignore: true when parent schema has x-uigen-ignore: false', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users': {
+          get: {
+            summary: 'Get user',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      'x-uigen-ignore': false,
+                      properties: {
+                        id: { type: 'string' },
+                        name: { type: 'string' },
+                        password: {
+                          type: 'string',
+                          'x-uigen-ignore': true
+                        } as any
+                      }
+                    } as any
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    expect(app.resources).toHaveLength(1);
+    const operation = app.resources[0].operations[0];
+    const responseSchema = operation.responses['200']?.schema;
+    
+    expect(responseSchema).toBeDefined();
+    expect(responseSchema?.children).toBeDefined();
+    
+    // Properties 'id' and 'name' should be included (no annotation, parent is false)
+    const idChild = responseSchema?.children?.find(c => c.key === 'id');
+    expect(idChild).toBeDefined();
+    expect((idChild as any).__shouldIgnore).toBeUndefined();
+    
+    const nameChild = responseSchema?.children?.find(c => c.key === 'name');
+    expect(nameChild).toBeDefined();
+    expect((nameChild as any).__shouldIgnore).toBeUndefined();
+    
+    // Property 'password' should be marked as ignored (child true overrides parent false)
+    const passwordChild = responseSchema?.children?.find(c => c.key === 'password');
+    expect(passwordChild).toBeDefined();
+    expect((passwordChild as any).__shouldIgnore).toBe(true);
+  });
+
+  it('should handle nested schema property overrides with multiple levels', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users': {
+          get: {
+            summary: 'Get user with nested data',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      'x-uigen-ignore': true,
+                      properties: {
+                        id: {
+                          type: 'string',
+                          'x-uigen-ignore': false
+                        } as any,
+                        profile: {
+                          type: 'object',
+                          'x-uigen-ignore': false,
+                          properties: {
+                            name: { type: 'string' },
+                            email: { type: 'string' },
+                            internal_id: {
+                              type: 'string',
+                              'x-uigen-ignore': true
+                            } as any
+                          }
+                        } as any,
+                        metadata: {
+                          type: 'object',
+                          properties: {
+                            created: { type: 'string' }
+                          }
+                        }
+                      }
+                    } as any
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    expect(app.resources).toHaveLength(1);
+    const operation = app.resources[0].operations[0];
+    const responseSchema = operation.responses['200']?.schema;
+    
+    expect(responseSchema).toBeDefined();
+    expect(responseSchema?.children).toBeDefined();
+    
+    // Property 'id' should be included (child false overrides parent true)
+    const idChild = responseSchema?.children?.find(c => c.key === 'id');
+    expect(idChild).toBeDefined();
+    expect((idChild as any).__shouldIgnore).toBeUndefined();
+    
+    // Property 'profile' should be included (child false overrides parent true)
+    const profileChild = responseSchema?.children?.find(c => c.key === 'profile');
+    expect(profileChild).toBeDefined();
+    expect((profileChild as any).__shouldIgnore).toBeUndefined();
+    
+    // Within 'profile', 'internal_id' should be marked as ignored
+    if (profileChild && profileChild.children) {
+      const internalIdChild = profileChild.children.find(c => c.key === 'internal_id');
+      expect(internalIdChild).toBeDefined();
+      expect((internalIdChild as any).__shouldIgnore).toBe(true);
+      
+      // 'name' and 'email' should be included (no annotation, parent profile is false)
+      const nameChild = profileChild.children.find(c => c.key === 'name');
+      expect(nameChild).toBeDefined();
+      expect((nameChild as any).__shouldIgnore).toBeUndefined();
+    }
+    
+    // Property 'metadata' should be marked as ignored (inherits from root parent true)
+    const metadataChild = responseSchema?.children?.find(c => c.key === 'metadata');
+    expect(metadataChild).toBeDefined();
+    expect((metadataChild as any).__shouldIgnore).toBe(true);
+  });
+
+  it('should handle schema property override in request body', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users': {
+          post: {
+            summary: 'Create user',
+            requestBody: {
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    'x-uigen-ignore': true,
+                    properties: {
+                      username: {
+                        type: 'string',
+                        'x-uigen-ignore': false
+                      } as any,
+                      password: {
+                        type: 'string',
+                        'x-uigen-ignore': false
+                      } as any,
+                      internal_token: { type: 'string' }
+                    }
+                  } as any
+                }
+              }
+            },
+            responses: {
+              '201': {
+                description: 'Created'
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    expect(app.resources).toHaveLength(1);
+    const operation = app.resources[0].operations[0];
+    const requestBody = operation.requestBody;
+    
+    expect(requestBody).toBeDefined();
+    expect(requestBody?.children).toBeDefined();
+    
+    // Properties 'username' and 'password' should be included (child false overrides parent true)
+    const usernameChild = requestBody?.children?.find(c => c.key === 'username');
+    expect(usernameChild).toBeDefined();
+    expect((usernameChild as any).__shouldIgnore).toBeUndefined();
+    
+    const passwordChild = requestBody?.children?.find(c => c.key === 'password');
+    expect(passwordChild).toBeDefined();
+    expect((passwordChild as any).__shouldIgnore).toBeUndefined();
+    
+    // Property 'internal_token' should be marked as ignored (inherits from parent)
+    const tokenChild = requestBody?.children?.find(c => c.key === 'internal_token');
+    expect(tokenChild).toBeDefined();
+    expect((tokenChild as any).__shouldIgnore).toBe(true);
+  });
+
+  it('should verify precedence order: property > schema > parameter > operation > path', () => {
+    const spec: OpenAPIV3.Document = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      paths: {
+        '/users': {
+          'x-uigen-ignore': true,
+          parameters: [
+            {
+              name: 'debug',
+              in: 'query',
+              schema: { type: 'boolean' },
+              'x-uigen-ignore': false
+            } as any
+          ],
+          get: {
+            'x-uigen-ignore': false,
+            summary: 'Get users',
+            parameters: [
+              {
+                name: 'limit',
+                in: 'query',
+                schema: { type: 'integer' },
+                'x-uigen-ignore': false
+              } as any
+            ],
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      'x-uigen-ignore': false,
+                      properties: {
+                        id: { type: 'string' },
+                        secret: {
+                          type: 'string',
+                          'x-uigen-ignore': true
+                        } as any
+                      }
+                    } as any
+                  }
+                }
+              }
+            }
+          } as any
+        } as any
+      }
+    };
+
+    const adapter = new OpenAPI3Adapter(spec);
+    const app = adapter.adapt();
+
+    // Operation should be included (operation false overrides path true)
+    expect(app.resources).toHaveLength(1);
+    expect(app.resources[0].operations).toHaveLength(1);
+    
+    const operation = app.resources[0].operations[0];
+    
+    // Parameters should be included (parameter false overrides path true)
+    expect(operation.parameters).toHaveLength(2);
+    expect(operation.parameters.find(p => p.name === 'debug')).toBeDefined();
+    expect(operation.parameters.find(p => p.name === 'limit')).toBeDefined();
+    
+    // Schema should be included (schema false overrides operation/path)
+    const responseSchema = operation.responses['200']?.schema;
+    expect(responseSchema).toBeDefined();
+    
+    // Property 'id' should be included (no annotation, parent schema is false)
+    const idChild = responseSchema?.children?.find(c => c.key === 'id');
+    expect(idChild).toBeDefined();
+    expect((idChild as any).__shouldIgnore).toBeUndefined();
+    
+    // Property 'secret' should be marked as ignored (property true overrides schema false)
+    const secretChild = responseSchema?.children?.find(c => c.key === 'secret');
+    expect(secretChild).toBeDefined();
+    expect((secretChild as any).__shouldIgnore).toBe(true);
   });
 });
