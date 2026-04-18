@@ -248,7 +248,13 @@ class AuthService:
         if user.reset_token_hash != token_hash:
             raise HTTPException(status_code=400, detail="Invalid or expired reset token")
         
-        if not user.reset_token_expires_at or user.reset_token_expires_at < datetime.now(timezone.utc):
+        # Handle both timezone-aware and timezone-naive datetimes (SQLite compatibility)
+        now = datetime.now(timezone.utc)
+        if user.reset_token_expires_at.tzinfo is None:
+            # Convert to naive for comparison with SQLite timestamps
+            now = now.replace(tzinfo=None)
+        
+        if not user.reset_token_expires_at or user.reset_token_expires_at < now:
             raise HTTPException(status_code=400, detail="Invalid or expired reset token")
         
         # Hash new password and update
