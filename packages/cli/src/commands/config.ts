@@ -68,7 +68,11 @@ async function startServerWithRetry(
         server: {
           port: currentPort,
           strictPort: false, // Allow Vite to find next available port
-          cors: { origin: '*', credentials: true }
+          cors: { origin: '*', credentials: true },
+          watch: {
+            // Ignore .uigen directory to prevent reloads when config changes
+            ignored: ['**/.uigen/**']
+          }
         },
         plugins: [{
           name: 'uigen-spec-injection',
