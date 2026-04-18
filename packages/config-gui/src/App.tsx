@@ -1,20 +1,33 @@
+import { useState } from 'react';
 import { useAppContext } from './contexts/AppContext.js';
 import { AnnotationList } from './components/AnnotationList.js';
+import { AnnotationForm } from './components/AnnotationForm.js';
+import { VisualEditor } from './components/VisualEditor/index.js';
+import { PreviewRenderer } from './components/Preview/PreviewRenderer.js';
+import { HelpPanel } from './components/HelpPanel.js';
 
 /**
  * Main application component for the Config GUI
  * 
  * Provides the layout structure with:
  * - Header with title and navigation
+ * - Tab navigation between views
  * - Main content area for components
  * - Error display
  * - Loading state
  * 
- * Requirements: 1.5
+ * Requirements: 1.5, 4.5, 5.4, 6.8
  */
 function App() {
   const { state, actions } = useAppContext();
-  const { isLoading, error, config } = state;
+  const { isLoading, error, config, specPath, specStructure, annotations } = state;
+  const [activeTab, setActiveTab] = useState<'annotations' | 'visual' | 'preview'>('annotations');
+  const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
+  
+  // Find the selected annotation metadata
+  const selectedAnnotationMetadata = selectedAnnotation 
+    ? annotations.find(a => a.name === selectedAnnotation)
+    : null;
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -22,9 +35,16 @@ function App() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900">
-              UIGen Config GUI
-            </h1>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                UIGen Config GUI
+              </h1>
+              {specPath && (
+                <p className="mt-1 text-sm text-gray-500">
+                  Spec: {specPath}
+                </p>
+              )}
+            </div>
             <div className="flex items-center gap-4">
               {config && (
                 <span className="text-sm text-gray-500">
@@ -75,14 +95,107 @@ function App() {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="bg-white shadow rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  Annotation Configuration
-                </h2>
-                <p className="text-sm text-gray-600 mb-6">
-                  Enable or disable annotations and configure their behavior. Changes are saved immediately.
-                </p>
-                <AnnotationList />
+              {/* Help Panel */}
+              <HelpPanel annotations={annotations} />
+              
+              {/* Tab Navigation */}
+              <div className="bg-white shadow rounded-lg overflow-hidden">
+                <div className="border-b border-gray-200">
+                  <nav className="flex -mb-px" aria-label="Main navigation tabs">
+                    <button
+                      onClick={() => setActiveTab('annotations')}
+                      className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'annotations'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                      aria-current={activeTab === 'annotations' ? 'page' : undefined}
+                      data-testid="annotations-tab"
+                    >
+                      Annotations
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('visual')}
+                      className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'visual'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                      aria-current={activeTab === 'visual' ? 'page' : undefined}
+                      data-testid="visual-tab"
+                      disabled={!specStructure}
+                    >
+                      Visual Editor
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('preview')}
+                      className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'preview'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                      aria-current={activeTab === 'preview' ? 'page' : undefined}
+                      data-testid="preview-tab"
+                      disabled={!specStructure}
+                    >
+                      Preview
+                    </button>
+                  </nav>
+                </div>
+                
+                {/* Tab Content */}
+                <div className="p-6">
+                  {activeTab === 'annotations' && (
+                    <div className="space-y-6">
+                      <div>
+                        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                          Annotation Configuration
+                        </h2>
+                        <p className="text-sm text-gray-600 mb-6">
+                          Enable or disable annotations and configure their default values. Changes are saved immediately.
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-4">Available Annotations</h3>
+                          <AnnotationList onAnnotationSelect={setSelectedAnnotation} />
+                        </div>
+                        
+                        {selectedAnnotation && selectedAnnotationMetadata && (
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">Default Values</h3>
+                            <AnnotationForm annotation={selectedAnnotationMetadata} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {activeTab === 'visual' && (
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                        Visual Editor
+                      </h2>
+                      <p className="text-sm text-gray-600 mb-6">
+                        Configure annotations visually on specific fields, operations, and resources.
+                      </p>
+                      <VisualEditor structure={specStructure} />
+                    </div>
+                  )}
+                  
+                  {activeTab === 'preview' && (
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                        UI Preview
+                      </h2>
+                      <p className="text-sm text-gray-600 mb-6">
+                        See how your annotation settings affect the generated UI.
+                      </p>
+                      <PreviewRenderer structure={specStructure} />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
