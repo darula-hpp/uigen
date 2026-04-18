@@ -6,9 +6,9 @@
  */
 
 import type { OpenAPIV3 } from 'openapi-types';
-import type { MergeResult, Swagger2Document, Logger } from './types';
-import type { ElementPathResolver } from './path-resolver';
-import { deepClone } from './utils';
+import type { MergeResult, Swagger2Document, Logger } from './types.js';
+import type { ElementPathResolver } from './path-resolver.js';
+import { deepClone } from './utils.js';
 
 /**
  * Configuration file interface

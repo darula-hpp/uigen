@@ -6,7 +6,7 @@
  */
 
 import type { OpenAPIV3 } from 'openapi-types';
-import type { ResolvedElement, Swagger2Document } from './types';
+import type { ResolvedElement, Swagger2Document } from './types.js';
 
 /**
  * Cache for resolved element paths

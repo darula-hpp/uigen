@@ -92,7 +92,9 @@ export class SpecParser {
     const operations = resource.operations.map(op => this.parseOperation(op));
     
     // Extract fields from schema
-    const fields = this.parseFields(resource.schema, resource.slug);
+    // Use the actual schema name from OpenAPI spec if available, otherwise fallback to capitalized slug
+    const schemaName = resource.schemaName || (resource.slug.charAt(0).toUpperCase() + resource.slug.slice(1));
+    const fields = this.parseFields(resource.schema, schemaName);
     
     // Extract resource-level annotations
     const annotations = this.extractAnnotations(resource.schema as unknown as Record<string, unknown>);
@@ -141,13 +143,13 @@ export class SpecParser {
    * Parse fields from a schema node and build the field tree.
    * 
    * @param schema - The schema node to parse
-   * @param resourceSlug - The slug of the parent resource
+   * @param schemaName - The actual OpenAPI schema name (e.g., "Template" not "templates")
    * @param parentPath - The path of the parent field (for nested fields)
    * @returns Array of field nodes
    */
   private parseFields(
     schema: SchemaNode,
-    resourceSlug: string,
+    schemaName: string,
     parentPath?: string
   ): FieldNode[] {
     const fields: FieldNode[] = [];
@@ -155,7 +157,7 @@ export class SpecParser {
     // If schema has children (object type), parse them
     if (schema.children && schema.children.length > 0) {
       for (const child of schema.children) {
-        const field = this.parseField(child, resourceSlug, parentPath);
+        const field = this.parseField(child, schemaName, parentPath);
         fields.push(field);
       }
     }
@@ -167,19 +169,20 @@ export class SpecParser {
    * Parse a single field from a schema node.
    * 
    * @param schema - The schema node representing the field
-   * @param resourceSlug - The slug of the parent resource
+   * @param schemaName - The actual OpenAPI schema name (e.g., "Template" not "templates")
    * @param parentPath - The path of the parent field (for nested fields)
    * @returns The field node
    */
   private parseField(
     schema: SchemaNode,
-    resourceSlug: string,
+    schemaName: string,
     parentPath?: string
   ): FieldNode {
     // Build the field path (e.g., "User.email" or "User.address.street")
+    // Use the actual schema name from OpenAPI spec
     const path = parentPath 
       ? `${parentPath}.${schema.key}`
-      : `${resourceSlug}.${schema.key}`;
+      : `${schemaName}.${schema.key}`;
     
     // Extract field-level annotations
     const annotations = this.extractAnnotations(schema as unknown as Record<string, unknown>);
@@ -188,7 +191,7 @@ export class SpecParser {
     let children: FieldNode[] | undefined;
     if (schema.type === 'object' && schema.children && schema.children.length > 0) {
       children = schema.children.map(child => 
-        this.parseField(child, resourceSlug, path)
+        this.parseField(child, schemaName, path)
       );
     }
     
@@ -197,7 +200,7 @@ export class SpecParser {
       // For arrays, we create a virtual child representing the array items
       const itemField = this.parseField(
         { ...schema.items, key: 'items' },
-        resourceSlug,
+        schemaName,
         path
       );
       children = [itemField];

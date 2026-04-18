@@ -698,6 +698,17 @@ export class OpenAPI3Adapter {
 
           resource.operations.push(op);
 
+          // Extract schema name from response for deterministic path resolution
+          if (!resource.schemaName) {
+            const responseSchema = op.responses['200']?.schema || op.responses['201']?.schema;
+            if (responseSchema) {
+              const schemaName = this.extractSchemaNameFromResponse(operation, method);
+              if (schemaName) {
+                resource.schemaName = schemaName;
+              }
+            }
+          }
+
           if (op.viewHint === 'detail' || op.viewHint === 'list') {
             const responseSchema = op.responses['200']?.schema || op.responses['201']?.schema;
             if (responseSchema) resource.schema = this.mergeSchemas(resource.schema, responseSchema);
@@ -1265,6 +1276,59 @@ export class OpenAPI3Adapter {
 
   private createPlaceholderSchema(key: string): SchemaNode {
     return { type: 'object', key, label: this.humanize(key), required: false, children: [] };
+  }
+
+  /**
+   * Extract the schema name from a response $ref
+   * e.g., "#/components/schemas/Template" -> "Template"
+   */
+  private extractSchemaNameFromResponse(operation: OpenAPIV3.OperationObject, method: string): string | null {
+    // Check 200 and 201 responses
+    const response200 = operation.responses?.['200'] as OpenAPIV3.ResponseObject | undefined;
+    const response201 = operation.responses?.['201'] as OpenAPIV3.ResponseObject | undefined;
+    const response = response200 || response201;
+    
+    if (!response) return null;
+    
+    const content = this.pickContent(response.content);
+    if (!content?.schema) return null;
+    
+    const schema = content.schema;
+    
+    // Handle direct $ref
+    if ('$ref' in schema && typeof schema.$ref === 'string') {
+      return this.extractSchemaNameFromRef(schema.$ref);
+    }
+    
+    // Handle array of $ref
+    if ('type' in schema && schema.type === 'array' && schema.items) {
+      const items = schema.items as OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject;
+      if ('$ref' in items && typeof items.$ref === 'string') {
+        return this.extractSchemaNameFromRef(items.$ref);
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Extract schema name from a $ref string
+   * e.g., "#/components/schemas/Template" -> "Template"
+   */
+  private extractSchemaNameFromRef(ref: string): string | null {
+    // Handle #/components/schemas/SchemaName
+    const componentsMatch = ref.match(/#\/components\/schemas\/([^/]+)$/);
+    if (componentsMatch) {
+      return componentsMatch[1];
+    }
+    
+    // Handle #/definitions/SchemaName (Swagger 2.0)
+    const definitionsMatch = ref.match(/#\/definitions\/([^/]+)$/);
+    if (definitionsMatch) {
+      return definitionsMatch[1];
+    }
+    
+    return null;
   }
 
   private mergeSchemas(base: SchemaNode, update: SchemaNode): SchemaNode {
