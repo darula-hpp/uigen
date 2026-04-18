@@ -1,6 +1,12 @@
+import { useEffect, useRef, memo, useCallback } from 'react';
 import type { OperationNode as OperationNodeType } from '../../types/index.js';
 import type { ConfigFile } from '@uigen-dev/core';
 import { useAppContext } from '../../contexts/AppContext.js';
+import { useKeyboardNavigation } from '../../contexts/KeyboardNavigationContext.js';
+import { NoInputFormBadge } from './ElementTree/RequestBodyNode.js';
+import { NoOutputBadge } from './ElementTree/ResponseNode.js';
+import { buildAnnotationsMap } from './ElementTree/shared-utils.js';
+import { IgnoreStateCalculator } from '../../lib/ignore-state-calculator.js';
 
 /**
  * Props for OperationNode component
@@ -17,30 +23,96 @@ interface OperationNodeProps {
  * - Toggle for x-uigen-login annotation
  * - Login badge for operations with x-uigen-login
  * - Method-specific color coding
+ * - "No Input Form" badge when request body is ignored
+ * - "No Output" badge when all responses are ignored
+ * - Keyboard navigation support with focus indicator
+ * - ARIA labels for accessibility
+ * - Memoized to prevent unnecessary re-renders (Requirements: 23.1, 23.4)
  *
  * Annotation changes are saved immediately to the config file via AppContext.
  *
- * Requirements: 6.7, 6.9
+ * Requirements: 1.6, 6.7, 6.9, 12.1, 13.1, 21.2, 21.4, 22.1, 23.1, 23.4
  *
  * Usage:
  * ```tsx
  * <OperationNode operation={operation} />
  * ```
  */
-export function OperationNode({ operation }: OperationNodeProps) {
+export const OperationNode = memo(function OperationNode({ operation }: OperationNodeProps) {
   const { state, actions } = useAppContext();
+  const { state: navState } = useKeyboardNavigation();
+  const nodeRef = useRef<HTMLDivElement>(null);
 
   const operationPath = `${operation.method}:${operation.path}`;
   const currentAnnotations = getOperationAnnotations(state.config, operationPath);
   const isLoginOperation = Boolean(currentAnnotations['x-uigen-login']);
 
+  // Check if this operation is focused
+  // Requirements: 21.2, 21.4
+  const isFocused = navState.focusedPath === operationPath;
+
+  // Scroll into view when focused
+  useEffect(() => {
+    if (isFocused && nodeRef.current) {
+      nodeRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [isFocused]);
+
+  // Build annotations map for ignore state calculation
+  const annotations = buildAnnotationsMap(state.config);
+  const calculator = new IgnoreStateCalculator();
+
+  // Check if request body is ignored
+  // Path format: paths./auth/login.post.requestBody
+  // Note: operation.path already starts with '/', so we get 'paths./auth/login.post.requestBody'
+  const requestBodyPath = `paths.${operation.path}.${operation.method.toLowerCase()}.requestBody`;
+  
+  // Simple direct check: does the request body have an explicit ignore annotation?
+  const requestBodyExplicitIgnore = annotations.get(requestBodyPath);
+  
+  // Also check if the operation itself is ignored (using operation format: POST:/auth/login)
+  // The calculator doesn't know about the operation format, so we need to check it separately
+  const operationIgnored = Boolean(
+    (getOperationAnnotations(state.config, operationPath)['x-uigen-ignore'])
+  );
+  
+  // Request body is ignored if:
+  // 1. It has an explicit ignore annotation (true), OR
+  // 2. The operation is ignored AND the request body doesn't have an explicit override (false)
+  const isRequestBodyIgnored = requestBodyExplicitIgnore === true || 
+    (operationIgnored && requestBodyExplicitIgnore !== false);
+
+  // Check if all responses are ignored
+  // We need to check common response status codes
+  const commonStatusCodes = ['200', '201', '204', '400', '401', '403', '404', '500'];
+  const responsePaths = commonStatusCodes.map(
+    code => `paths.${operation.path}.${operation.method.toLowerCase()}.responses.${code}`
+  );
+  
+  // Check if at least one response exists and all existing responses are ignored
+  const responseStates = responsePaths.map(path => ({
+    path,
+    state: calculator.calculateState(path, 'response', annotations)
+  }));
+  
+  // A response "exists" if it has an explicit annotation
+  // If any response has an annotation, check if all annotated responses are ignored
+  const annotatedResponses = responseStates.filter(({ path }) => annotations.has(path));
+  
+  // All responses are ignored if:
+  // 1. There are annotated responses and all of them are ignored, OR
+  // 2. The operation is ignored and there are no explicit response annotations (all responses inherit the ignore state)
+  const hasAnyNonIgnoredResponse = annotatedResponses.some(({ state }) => !state.effective);
+  const allResponsesIgnored = (annotatedResponses.length > 0 && !hasAnyNonIgnoredResponse) || 
+    (operationIgnored && annotatedResponses.length === 0);
+
   // --- Handlers ---
 
-  function handleLoginToggle() {
+  const handleLoginToggle = useCallback(() => {
     const newValue = !isLoginOperation ? true : undefined;
     const updated = buildUpdatedAnnotations(state.config, operationPath, 'x-uigen-login', newValue);
     actions.saveConfig(updated);
-  }
+  }, [isLoginOperation, state.config, operationPath, actions]);
 
   // --- Method color mapping ---
   const methodColors: Record<string, string> = {
@@ -57,9 +129,14 @@ export function OperationNode({ operation }: OperationNodeProps) {
 
   return (
     <div
-      className="flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+      ref={nodeRef}
+      className={`flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
+        isFocused ? 'ring-2 ring-blue-500 ring-inset bg-blue-50 dark:bg-blue-900/20' : ''
+      }`}
       data-operation-path={operationPath}
       data-testid="operation-node"
+      role="group"
+      aria-label={`Operation: ${operation.method} ${operation.path}${operation.summary ? ` - ${operation.summary}` : ''}`}
     >
       {/* HTTP Method badge */}
       <span className={`px-2 py-0.5 text-xs font-semibold rounded flex-shrink-0 ${methodColor}`}>
@@ -78,6 +155,12 @@ export function OperationNode({ operation }: OperationNodeProps) {
 
       {/* Annotation controls */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
+        {/* "No Input Form" badge (if request body is ignored) */}
+        {isRequestBodyIgnored && <NoInputFormBadge />}
+
+        {/* "No Output" badge (if all responses are ignored) */}
+        {allResponsesIgnored && <NoOutputBadge />}
+
         {/* x-uigen-login badge (if active) */}
         {isLoginOperation && (
           <span
@@ -120,7 +203,18 @@ export function OperationNode({ operation }: OperationNodeProps) {
       </div>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  // Only re-render if operation path, method, or annotations change
+  // Requirements: 23.1, 23.4
+  return (
+    prevProps.operation.id === nextProps.operation.id &&
+    prevProps.operation.method === nextProps.operation.method &&
+    prevProps.operation.path === nextProps.operation.path &&
+    prevProps.operation.summary === nextProps.operation.summary &&
+    JSON.stringify(prevProps.operation.annotations) === JSON.stringify(nextProps.operation.annotations)
+  );
+});
 
 // --- Helpers ---
 

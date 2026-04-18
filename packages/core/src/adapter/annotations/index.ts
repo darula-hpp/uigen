@@ -6,7 +6,7 @@
  */
 
 export type { AnnotationHandler, AnnotationContext, AdapterUtils, SpecElement } from './types.js';
-export { AnnotationContextImpl, createOperationContext, createSchemaContext } from './context.js';
+export { AnnotationContextImpl, createOperationContext, createSchemaContext, createServerContext } from './context.js';
 export { AnnotationHandlerRegistry } from './registry.js';
 
 // Import handlers to trigger auto-registration

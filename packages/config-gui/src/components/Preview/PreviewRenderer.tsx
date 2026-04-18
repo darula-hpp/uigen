@@ -220,6 +220,31 @@ interface FormPreviewProps {
 }
 
 function FormPreview({ data }: FormPreviewProps) {
+  // Show "No fields to display" message when all properties are ignored
+  // Requirements: 19.5
+  if (data.fields.length === 0) {
+    return (
+      <div className="bg-white dark:bg-gray-800 p-8 rounded border border-gray-200 dark:border-gray-700 text-center">
+        <svg
+          className="mx-auto h-10 w-10 text-gray-400 dark:text-gray-500 mb-3"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+          />
+        </svg>
+        <p className="text-sm text-gray-600 dark:text-gray-400" data-testid="no-fields-message">
+          No fields to display (all properties ignored)
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 bg-white dark:bg-gray-800 p-4 rounded border border-gray-200 dark:border-gray-700">
       {data.fields.map(field => (
@@ -348,6 +373,13 @@ interface DetailPreviewData {
 
 /**
  * Generate preview data from spec structure and config
+ * 
+ * Handles ignore annotations for:
+ * - Schema properties (hide from forms, detail views, tables)
+ * - Request bodies (hide input form)
+ * - Responses (hide output view)
+ * 
+ * Requirements: 19.2, 19.3, 19.4, 19.5
  */
 function generatePreviewData(
   structure: SpecStructure,
@@ -382,15 +414,18 @@ function generatePreviewData(
     };
   });
 
+  // Filter out ignored fields for form and detail views
+  const activeFields = fields.filter(f => !f.ignored);
+
   return {
     formView: {
-      fields: fields.filter(f => !f.ignored)
+      fields: activeFields
     },
     listView: {
-      columns: fields.slice(0, 5) // Show first 5 columns
+      columns: fields.slice(0, 5) // Show first 5 columns (including ignored for visibility)
     },
     detailView: {
-      fields: fields.filter(f => !f.ignored)
+      fields: activeFields
     }
   };
 }

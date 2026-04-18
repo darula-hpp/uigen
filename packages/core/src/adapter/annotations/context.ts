@@ -75,3 +75,24 @@ export function createSchemaContext(
     schemaNode
   );
 }
+
+/**
+ * Create an AnnotationContext for a server object.
+ */
+export function createServerContext(
+  server: OpenAPIV3.ServerObject,
+  utils: AdapterUtils,
+  ir: UIGenApp
+): AnnotationContext {
+  return new AnnotationContextImpl(
+    server as any,
+    '',
+    utils,
+    ir,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined
+  );
+}

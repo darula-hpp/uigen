@@ -304,6 +304,18 @@ export class Swagger2Adapter {
       (result as any)['x-uigen-ignore'] = ignoreAnnotation;
     }
 
+    // Preserve x-uigen-password-reset vendor extension from Swagger 2 operation
+    const passwordResetAnnotation = (operation as any)['x-uigen-password-reset'];
+    if (passwordResetAnnotation !== undefined) {
+      (result as any)['x-uigen-password-reset'] = passwordResetAnnotation;
+    }
+
+    // Preserve x-uigen-sign-up vendor extension from Swagger 2 operation
+    const signUpAnnotation = (operation as any)['x-uigen-sign-up'];
+    if (signUpAnnotation !== undefined) {
+      (result as any)['x-uigen-sign-up'] = signUpAnnotation;
+    }
+
     return result;
   }
 

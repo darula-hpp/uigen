@@ -28,6 +28,7 @@ export interface UIGenApp {
   auth: AuthConfig;
   dashboard: DashboardConfig;
   servers: ServerConfig[];
+  activeServer?: ServerConfig;
   parsingErrors?: ParsingError[];
 }
 
@@ -53,6 +54,8 @@ export interface AuthConfig {
   globalRequired: boolean;
   loginEndpoints?: LoginEndpoint[];
   refreshEndpoints?: RefreshEndpoint[];
+  passwordResetEndpoints?: PasswordResetEndpoint[];
+  signUpEndpoints?: SignUpEndpoint[];
 }
 
 export interface LoginEndpoint {
@@ -69,6 +72,20 @@ export interface RefreshEndpoint {
   method: 'POST';
   requestBodySchema: SchemaNode;
   responseSchema?: SchemaNode;
+}
+
+export interface PasswordResetEndpoint {
+  path: string;
+  method: 'POST';
+  requestBodySchema?: SchemaNode;
+  description?: string;
+}
+
+export interface SignUpEndpoint {
+  path: string;
+  method: 'POST';
+  requestBodySchema?: SchemaNode;
+  description?: string;
 }
 
 export interface AuthScheme {
