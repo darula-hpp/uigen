@@ -5,6 +5,7 @@ import type { FieldNode as FieldNodeType } from '../../../types/index.js';
 import type { ConfigFile } from '@uigen-dev/core';
 import { AppContext } from '../../../contexts/AppContext.js';
 import type { AppContextValue } from '../../../contexts/AppContext.js';
+import { KeyboardNavigationProvider } from '../../../contexts/KeyboardNavigationContext.js';
 
 // --- Helpers ---
 
@@ -41,7 +42,9 @@ function renderWithContext(
       annotations: [],
       isLoading: false,
       error: null,
-      configPath: '.uigen/config.yaml'
+      configPath: '.uigen/config.yaml',
+      specPath: null,
+      specStructure: null
     },
     actions: {
       loadConfig: vi.fn(),
@@ -54,7 +57,9 @@ function renderWithContext(
 
   return render(
     <AppContext.Provider value={contextValue}>
-      {ui}
+      <KeyboardNavigationProvider>
+        {ui}
+      </KeyboardNavigationProvider>
     </AppContext.Provider>
   );
 }

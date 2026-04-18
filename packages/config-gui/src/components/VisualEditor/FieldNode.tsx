@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, memo, useCallback } from 'react';
 import type { FieldNode as FieldNodeType } from '../../types/index.js';
 import type { ConfigFile } from '@uigen-dev/core';
 import { useAppContext } from '../../contexts/AppContext.js';
+import { useKeyboardNavigation } from '../../contexts/KeyboardNavigationContext.js';
 
 /**
  * Props for FieldNode component
@@ -20,72 +21,95 @@ interface FieldNodeProps {
  * - Inline text input for x-uigen-label (click badge or "Add label" to edit)
  * - Toggle switch for x-uigen-ignore
  * - Draggable for x-uigen-ref linking (drag source for RefLinkCanvas)
+ * - Keyboard navigation support with focus indicator
+ * - ARIA labels for accessibility
+ * - Memoized to prevent unnecessary re-renders (Requirements: 23.1, 23.4)
  *
  * Annotation changes are saved immediately to the config file via AppContext.
  *
- * Requirements: 6.5, 6.6, 6.9
+ * Requirements: 6.5, 6.6, 6.9, 21.2, 21.4, 22.1, 23.1, 23.4
  *
  * Usage:
  * ```tsx
  * <FieldNode field={field} onDragStart={handleDragStart} />
  * ```
  */
-export function FieldNode({ field, onDragStart }: FieldNodeProps) {
+export const FieldNode = memo(function FieldNode({ field, onDragStart }: FieldNodeProps) {
   const { state, actions } = useAppContext();
+  const { state: navState } = useKeyboardNavigation();
   const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [labelDraft, setLabelDraft] = useState('');
   const labelInputRef = useRef<HTMLInputElement>(null);
+  const nodeRef = useRef<HTMLDivElement>(null);
 
   const currentAnnotations = getFieldAnnotations(state.config, field.path);
   const currentLabel = currentAnnotations['x-uigen-label'] as string | undefined;
   const isIgnored = Boolean(currentAnnotations['x-uigen-ignore']);
   const hasRef = Boolean(currentAnnotations['x-uigen-ref']);
 
+  // Check if this field is focused
+  // Requirements: 21.2, 21.4
+  const isFocused = navState.focusedPath === field.path;
+
+  // Scroll into view when focused
+  useEffect(() => {
+    if (isFocused && nodeRef.current) {
+      nodeRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [isFocused]);
+
   // --- Handlers ---
 
-  function handleLabelBadgeClick() {
+  const handleLabelBadgeClick = useCallback(() => {
     setLabelDraft(currentLabel ?? '');
     setIsEditingLabel(true);
     // Focus after render
     setTimeout(() => labelInputRef.current?.focus(), 0);
-  }
+  }, [currentLabel]);
 
-  function handleLabelSave() {
+  const handleLabelSave = useCallback(() => {
     const trimmed = labelDraft.trim();
     const updated = buildUpdatedAnnotations(state.config, field.path, 'x-uigen-label', trimmed || undefined);
     actions.saveConfig(updated);
     setIsEditingLabel(false);
-  }
+  }, [labelDraft, state.config, field.path, actions]);
 
-  function handleLabelKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  const handleLabelKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleLabelSave();
     if (e.key === 'Escape') setIsEditingLabel(false);
-  }
+  }, [handleLabelSave]);
 
-  function handleIgnoreToggle() {
+  const handleIgnoreToggle = useCallback(() => {
     const newValue = !isIgnored ? true : undefined;
     const updated = buildUpdatedAnnotations(state.config, field.path, 'x-uigen-ignore', newValue);
     actions.saveConfig(updated);
-  }
+  }, [isIgnored, state.config, field.path, actions]);
 
-  function handleDragStart(e: React.DragEvent) {
+  const handleDragStart = useCallback((e: React.DragEvent) => {
     // dataTransfer may be unavailable in test environments (jsdom)
     if (e.dataTransfer) {
       e.dataTransfer.setData('text/plain', field.path);
       e.dataTransfer.effectAllowed = 'link';
     }
     onDragStart?.(field.path, e);
-  }
+  }, [field.path, onDragStart]);
 
   // --- Render ---
 
   return (
     <div
-      className={`flex items-center gap-2 px-3 py-1.5 rounded transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${isIgnored ? 'opacity-50' : ''}`}
+      ref={nodeRef}
+      className={`flex items-center gap-2 px-3 py-1.5 rounded transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
+        isIgnored ? 'opacity-50' : ''
+      } ${
+        isFocused ? 'ring-2 ring-blue-500 ring-inset bg-blue-50 dark:bg-blue-900/20' : ''
+      }`}
       draggable
       onDragStart={handleDragStart}
       data-field-path={field.path}
       data-testid="field-node"
+      role="group"
+      aria-label={`Field: ${field.label}${field.required ? ' (required)' : ''}`}
     >
       {/* Drag handle icon */}
       <span
@@ -182,7 +206,18 @@ export function FieldNode({ field, onDragStart }: FieldNodeProps) {
       </div>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  // Only re-render if field path or annotations change
+  // Requirements: 23.1, 23.4
+  return (
+    prevProps.field.path === nextProps.field.path &&
+    prevProps.field.label === nextProps.field.label &&
+    prevProps.field.type === nextProps.field.type &&
+    prevProps.field.required === nextProps.field.required &&
+    JSON.stringify(prevProps.field.annotations) === JSON.stringify(nextProps.field.annotations)
+  );
+});
 
 // --- Helpers ---
 

@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { load as parseYaml, dump as stringifyYaml } from 'js-yaml';
 import type { ConfigFile, AnnotationHandler } from '@uigen-dev/core';
@@ -52,8 +52,34 @@ export function handleGetConfig(specDir: string): ConfigFile | null {
 }
 
 /**
+ * GET /api/config/modified-time
+ * Get the last modification time of the config file
+ * Requirements: 24.5
+ */
+export function handleGetConfigModifiedTime(specDir: string): number | null {
+  const configPath = resolve(specDir, CONFIG_PATH);
+  
+  if (!existsSync(configPath)) {
+    return null;
+  }
+  
+  try {
+    const stats = statSync(configPath);
+    return stats.mtimeMs;
+  } catch (error) {
+    console.error('Error getting config file modification time:', error);
+    return null;
+  }
+}
+
+/**
  * POST /api/config
- * Write the config file
+ * Write the config file to .uigen/config.yaml
+ * 
+ * Requirements: 24.1, 24.2, 24.4
+ * 
+ * This function writes the config to .uigen/config.yaml as a clean YAML file.
+ * We don't preserve comments since this is a generated config file.
  */
 export function handleSaveConfig(specDir: string, config: ConfigFile): void {
   const configPath = resolve(specDir, CONFIG_PATH);
@@ -79,11 +105,24 @@ export function handleSaveConfig(specDir: string, config: ConfigFile): void {
       config.annotations = {};
     }
     
-    // Write config file
+    // If file exists, check if configs are deeply equal (no changes)
+    if (existsSync(configPath)) {
+      const existingContent = readFileSync(configPath, 'utf-8');
+      const existingConfig = parseYaml(existingContent) as ConfigFile;
+      
+      if (isDeepEqual(existingConfig, config)) {
+        // No changes, don't write
+        // Requirements: 24.1
+        return;
+      }
+    }
+    
+    // Generate clean YAML
     const yamlContent = stringifyYaml(config, {
       indent: 2,
       lineWidth: 120,
-      noRefs: true
+      noRefs: true,
+      sortKeys: false
     });
     
     writeFileSync(configPath, yamlContent, 'utf-8');
@@ -91,6 +130,30 @@ export function handleSaveConfig(specDir: string, config: ConfigFile): void {
     console.error('Error writing config file:', error);
     throw new Error(`Failed to write config file: ${error instanceof Error ? error.message : String(error)}`);
   }
+}
+
+/**
+ * Deep equality check for config objects
+ * Requirements: 24.1
+ */
+function isDeepEqual(obj1: any, obj2: any): boolean {
+  if (obj1 === obj2) return true;
+  
+  if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 === null || obj2 === null) {
+    return false;
+  }
+  
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+  
+  if (keys1.length !== keys2.length) return false;
+  
+  for (const key of keys1) {
+    if (!keys2.includes(key)) return false;
+    if (!isDeepEqual(obj1[key], obj2[key])) return false;
+  }
+  
+  return true;
 }
 
 /**
@@ -130,7 +193,7 @@ export function handleGetAnnotations(): any[] {
     return {
       name: handler.name,
       description: `Annotation handler for ${handler.name}`,
-      targetType: 'field', // Default, should be overridden by handler metadata
+      targetType: 'field',
       parameterSchema: {
         type: 'object',
         properties: {}
@@ -165,6 +228,15 @@ export function createApiMiddleware(specPath: string, specDir: string) {
         res.setHeader('Content-Type', 'application/json');
         res.statusCode = 200;
         res.end(JSON.stringify(config));
+        return;
+      }
+      
+      // GET /api/config/modified-time
+      if (url.pathname === '/api/config/modified-time' && req.method === 'GET') {
+        const modifiedTime = handleGetConfigModifiedTime(specDir);
+        res.setHeader('Content-Type', 'application/json');
+        res.statusCode = 200;
+        res.end(JSON.stringify({ modifiedTime }));
         return;
       }
       

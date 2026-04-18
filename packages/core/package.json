@@ -45,6 +45,7 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
+    "@vitest/coverage-v8": "2.1.9",
     "fast-check": "^4.6.0",
     "vitest": "^2.0.0"
   },

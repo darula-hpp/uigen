@@ -1,8 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { FieldNode } from './FieldNode.js';
 import { OperationNode } from './OperationNode.js';
+import { SchemaPropertyNode } from './ElementTree/SchemaPropertyNode.js';
+import { OperationIgnoreNode } from './ElementTree/OperationIgnoreNode.js';
 import { RefLinkCanvas } from './RefLinkCanvas.js';
+import { ValidationWarnings } from './ValidationWarnings.js';
 import type { SpecStructure, ResourceNode } from '../../types/index.js';
+import { useKeyboardNavigation } from '../../contexts/KeyboardNavigationContext.js';
+import { useAppContext } from '../../contexts/AppContext.js';
+import { ValidationEngine } from '../../lib/validation-engine.js';
+import { ErrorDialog } from '../ErrorDialog.js';
 
 /**
  * Props for VisualEditor component
@@ -21,13 +28,16 @@ export interface VisualEditorProps {
  * - Enables drag-and-drop ref linking (RefLinkCanvas)
  * - Handles annotation deletion via visual controls
  * - Saves all changes to config file immediately
+ * - Keyboard navigation with arrow keys, Enter, Space, Tab
+ * - Keyboard shortcuts: I (toggle ignore), O (override), C (clear overrides)
+ * - Accessibility support with ARIA labels and live regions
  *
  * The visual editor is organized into three main sections:
  * 1. Spec Structure - Tree view with inline annotation controls
  * 2. Ref Link Manager - Drag-and-drop interface for x-uigen-ref
  * 3. Help Text - Instructions for using the visual editor
  *
- * Requirements: 6.8, 6.10
+ * Requirements: 6.8, 6.10, 21.1, 21.2, 21.3, 21.4, 21.5, 22.1, 22.2
  *
  * Usage:
  * ```tsx
@@ -36,6 +46,172 @@ export interface VisualEditorProps {
  */
 export function VisualEditor({ structure }: VisualEditorProps) {
   const [activeTab, setActiveTab] = useState<'structure' | 'refs'>('structure');
+  const { state: navState, actions: navActions } = useKeyboardNavigation();
+  const { state: appState, actions: appActions } = useAppContext();
+  const [ariaLiveMessage, setAriaLiveMessage] = useState<string>('');
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [pendingConfig, setPendingConfig] = useState<any>(null);
+  
+  // Initialize validation engine
+  const validationEngine = useMemo(() => new ValidationEngine(), []);
+  
+  // Compute validation warnings
+  // Requirements: 20.1, 20.2, 20.3, 20.5
+  const validationWarnings = useMemo(() => {
+    if (!appState.config || !appState.specStructure) {
+      return [];
+    }
+    return validationEngine.validateConfig(appState.config, appState.specStructure);
+  }, [appState.config, appState.specStructure, validationEngine]);
+
+  // Keyboard navigation handler
+  // Requirements: 21.1, 21.2, 21.3, 21.4, 21.5
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle keyboard navigation in structure tab
+      if (activeTab !== 'structure') return;
+
+      // Arrow key navigation
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        navActions.focusNext();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        navActions.focusPrevious();
+      }
+      // Enter key to toggle selected element (handled by individual components)
+      // Space key to expand/collapse tree nodes (handled by ResourceSection)
+      // Tab/Shift+Tab for interactive element navigation (browser default)
+      
+      // Keyboard shortcuts (only when not in an input field)
+      const target = e.target as HTMLElement;
+      const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+      
+      if (!isInputField && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // "I" to toggle ignore on selected element
+        if (e.key === 'i' || e.key === 'I') {
+          e.preventDefault();
+          triggerToggleOnFocused();
+        }
+        // "O" to override parent ignore
+        else if (e.key === 'o' || e.key === 'O') {
+          e.preventDefault();
+          triggerOverrideOnFocused();
+        }
+        // "C" to clear overrides
+        else if (e.key === 'c' || e.key === 'C') {
+          e.preventDefault();
+          triggerClearOverridesOnFocused();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab, navActions, navState.focusedPath]);
+
+  // Helper functions for keyboard shortcuts
+  const triggerToggleOnFocused = useCallback(() => {
+    if (!navState.focusedPath) return;
+    
+    // Find the element and trigger its toggle
+    const element = document.querySelector(`[data-field-path="${navState.focusedPath}"], [data-operation-path="${navState.focusedPath}"]`);
+    if (element) {
+      const toggleButton = element.querySelector('[role="switch"]') as HTMLButtonElement;
+      if (toggleButton && !toggleButton.disabled) {
+        toggleButton.click();
+        announceStateChange('Toggled ignore state');
+      }
+    }
+  }, [navState.focusedPath]);
+
+  const triggerOverrideOnFocused = useCallback(() => {
+    if (!navState.focusedPath) return;
+    
+    // Find the element and trigger its override button
+    const element = document.querySelector(`[data-field-path="${navState.focusedPath}"], [data-operation-path="${navState.focusedPath}"]`);
+    if (element) {
+      const overrideButton = element.querySelector('[data-testid="override-button"]') as HTMLButtonElement;
+      if (overrideButton) {
+        overrideButton.click();
+        announceStateChange('Override applied');
+      }
+    }
+  }, [navState.focusedPath]);
+
+  const triggerClearOverridesOnFocused = useCallback(() => {
+    if (!navState.focusedPath) return;
+    
+    // Find the element and trigger its clear overrides button
+    const element = document.querySelector(`[data-field-path="${navState.focusedPath}"], [data-operation-path="${navState.focusedPath}"]`);
+    if (element) {
+      const clearButton = element.querySelector('[data-testid="clear-overrides-button"]') as HTMLButtonElement;
+      if (clearButton) {
+        clearButton.click();
+        announceStateChange('Overrides cleared');
+      }
+    }
+  }, [navState.focusedPath]);
+
+  // Announce state changes to screen readers
+  // Requirements: 22.2
+  const announceStateChange = useCallback((message: string) => {
+    setAriaLiveMessage(message);
+    // Clear message after announcement
+    setTimeout(() => setAriaLiveMessage(''), 1000);
+  }, []);
+
+  // Activate keyboard navigation when component mounts
+  useEffect(() => {
+    navActions.activate();
+    return () => navActions.deactivate();
+  }, [navActions]);
+  
+  // Handle navigation to validation warning paths
+  // Requirements: 20.5
+  const handleNavigateToWarning = useCallback((path: string) => {
+    // Focus the element at the given path
+    navActions.setFocusedPath(path);
+    
+    // Scroll to the element
+    const element = document.querySelector(`[data-field-path="${path}"], [data-operation-path="${path}"]`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [navActions]);
+  
+  // Handle error dialog retry
+  // Requirements: 20.4
+  const handleRetry = useCallback(async () => {
+    if (pendingConfig) {
+      try {
+        await appActions.saveConfigImmediate(pendingConfig);
+        setShowErrorDialog(false);
+        setPendingConfig(null);
+        appActions.clearError();
+      } catch (err) {
+        // Error will be set by saveConfigImmediate
+      }
+    }
+  }, [pendingConfig, appActions]);
+  
+  // Handle copy error to clipboard
+  // Requirements: 20.4
+  const handleCopyError = useCallback(() => {
+    if (appState.error) {
+      navigator.clipboard.writeText(appState.error);
+    }
+  }, [appState.error]);
+  
+  // Show error dialog when error occurs
+  useEffect(() => {
+    if (appState.error) {
+      setShowErrorDialog(true);
+      if (appState.config) {
+        setPendingConfig(appState.config);
+      }
+    }
+  }, [appState.error, appState.config]);
 
   if (!structure) {
     return (
@@ -65,10 +241,42 @@ export function VisualEditor({ structure }: VisualEditorProps) {
 
   return (
     <div className="space-y-6" data-testid="visual-editor">
+      {/* Error Dialog */}
+      {/* Requirements: 20.4 */}
+      <ErrorDialog
+        isOpen={showErrorDialog}
+        title="Failed to Save Configuration"
+        message={appState.error || 'An unknown error occurred'}
+        onRetry={handleRetry}
+        onCopyToClipboard={handleCopyError}
+        onClose={() => {
+          setShowErrorDialog(false);
+          appActions.clearError();
+        }}
+      />
+      
+      {/* ARIA live region for state change announcements */}
+      {/* Requirements: 22.2 */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {ariaLiveMessage}
+      </div>
+
       {/* Tab Navigation */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+        {/* Validation Warnings */}
+        {/* Requirements: 20.1, 20.2, 20.3, 20.5 */}
+        <ValidationWarnings
+          warnings={validationWarnings}
+          onNavigate={handleNavigateToWarning}
+        />
+        
         <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="flex -mb-px" aria-label="Visual editor tabs">
+          <nav className="flex -mb-px" aria-label="Visual editor tabs" role="tablist">
             <button
               onClick={() => setActiveTab('structure')}
               className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
@@ -76,7 +284,9 @@ export function VisualEditor({ structure }: VisualEditorProps) {
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
-              aria-current={activeTab === 'structure' ? 'page' : undefined}
+              role="tab"
+              aria-selected={activeTab === 'structure'}
+              aria-controls="structure-panel"
               data-testid="structure-tab"
             >
               <div className="flex items-center gap-2">
@@ -98,7 +308,9 @@ export function VisualEditor({ structure }: VisualEditorProps) {
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
-              aria-current={activeTab === 'refs' ? 'page' : undefined}
+              role="tab"
+              aria-selected={activeTab === 'refs'}
+              aria-controls="refs-panel"
               data-testid="refs-tab"
             >
               <div className="flex items-center gap-2">
@@ -119,16 +331,20 @@ export function VisualEditor({ structure }: VisualEditorProps) {
         {/* Tab Content */}
         <div className="p-6">
           {activeTab === 'structure' && (
-            <StructureView structure={structure} />
+            <div role="tabpanel" id="structure-panel" aria-labelledby="structure-tab">
+              <StructureView structure={structure} />
+            </div>
           )}
           {activeTab === 'refs' && (
-            <RefsView structure={structure} />
+            <div role="tabpanel" id="refs-panel" aria-labelledby="refs-tab">
+              <RefsView structure={structure} />
+            </div>
           )}
         </div>
       </div>
 
       {/* Help Text */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4" role="complementary" aria-label="Visual editor tips">
         <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">
           Visual Editor Tips
         </h4>
@@ -157,6 +373,12 @@ export function VisualEditor({ structure }: VisualEditorProps) {
               <strong>Ref Links:</strong> Switch to the "Ref Links" tab to create references by dragging fields onto resources
             </span>
           </li>
+          <li className="flex items-start gap-2">
+            <span className="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
+            <span>
+              <strong>Keyboard:</strong> Use arrow keys to navigate, Enter to toggle, I to ignore, O to override, C to clear overrides
+            </span>
+          </li>
         </ul>
       </div>
     </div>
@@ -165,14 +387,37 @@ export function VisualEditor({ structure }: VisualEditorProps) {
 
 /**
  * StructureView displays the spec structure with inline annotation controls
+ * Requirements: 21.1, 21.2, 22.3, 22.5
  */
 interface StructureViewProps {
   structure: SpecStructure;
 }
 
 function StructureView({ structure }: StructureViewProps) {
+  const { actions: navActions } = useKeyboardNavigation();
+
+  // Register all navigable paths when structure changes
+  // Requirements: 21.1
+  useEffect(() => {
+    const paths: string[] = [];
+    
+    structure.resources.forEach(resource => {
+      // Add operation paths
+      resource.operations.forEach(operation => {
+        paths.push(`${operation.method}:${operation.path}`);
+      });
+      
+      // Add field paths
+      resource.fields.forEach(field => {
+        paths.push(field.path);
+      });
+    });
+    
+    navActions.setNavigablePaths(paths);
+  }, [structure, navActions]);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="API Resources">
       <div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           API Resources
@@ -193,6 +438,7 @@ function StructureView({ structure }: StructureViewProps) {
 
 /**
  * ResourceSection displays a single resource with its operations and fields
+ * Requirements: 21.3, 22.3
  */
 interface ResourceSectionProps {
   resource: ResourceNode;
@@ -201,13 +447,25 @@ interface ResourceSectionProps {
 function ResourceSection({ resource }: ResourceSectionProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
+  // Handle Space key to expand/collapse
+  // Requirements: 21.3
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      setIsExpanded(!isExpanded);
+    }
+  };
+
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-left"
+        onKeyDown={handleKeyDown}
+        className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+        aria-expanded={isExpanded}
+        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${resource.name} resource`}
       >
-        <span className="text-gray-400 dark:text-gray-500">
+        <span className="text-gray-400 dark:text-gray-500" aria-hidden="true">
           {isExpanded ? (
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -218,7 +476,7 @@ function ResourceSection({ resource }: ResourceSectionProps) {
             </svg>
           )}
         </span>
-        <span className="text-blue-600 dark:text-blue-400">
+        <span className="text-blue-600 dark:text-blue-400" aria-hidden="true">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
@@ -242,11 +500,11 @@ function ResourceSection({ resource }: ResourceSectionProps) {
 
           {/* Operations */}
           {resource.operations.length > 0 && (
-            <div>
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Operations</h4>
+            <div role="group" aria-labelledby={`${resource.slug}-operations-heading`}>
+              <h4 id={`${resource.slug}-operations-heading`} className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Operations</h4>
               <div className="space-y-2">
                 {resource.operations.map(operation => (
-                  <OperationNode key={operation.id} operation={operation} />
+                  <OperationIgnoreNode key={operation.id} operation={operation} />
                 ))}
               </div>
             </div>
@@ -254,11 +512,11 @@ function ResourceSection({ resource }: ResourceSectionProps) {
 
           {/* Fields */}
           {resource.fields.length > 0 && (
-            <div>
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Fields</h4>
+            <div role="group" aria-labelledby={`${resource.slug}-fields-heading`}>
+              <h4 id={`${resource.slug}-fields-heading`} className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Fields</h4>
               <div className="space-y-1">
                 {resource.fields.map(field => (
-                  <FieldNode key={field.path} field={field} />
+                  <SchemaPropertyNode key={field.path} field={field} level={0} />
                 ))}
               </div>
             </div>

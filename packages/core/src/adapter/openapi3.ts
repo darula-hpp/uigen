@@ -12,13 +12,15 @@ import type {
   PaginationHint,
   ParsingError,
   LoginEndpoint,
-  RefreshEndpoint
+  RefreshEndpoint,
+  PasswordResetEndpoint,
+  SignUpEndpoint
 } from '../ir/types.js';
 import { SchemaResolver } from './schema-resolver.js';
 import { ViewHintClassifier } from './view-hint-classifier.js';
 import { RelationshipDetector } from './relationship-detector.js';
 import { PaginationDetector } from './pagination-detector.js';
-import { AnnotationHandlerRegistry, createOperationContext, createSchemaContext } from './annotations/index.js';
+import { AnnotationHandlerRegistry, createOperationContext, createSchemaContext, createServerContext } from './annotations/index.js';
 import type { AdapterUtils } from './annotations/index.js';
 
 export class OpenAPI3Adapter {
@@ -74,6 +76,9 @@ export class OpenAPI3Adapter {
       parsingErrors: this.parsingErrors.length > 0 ? this.parsingErrors : undefined
     };
     
+    // Process server annotations after IR is initialized
+    this.processServerAnnotations();
+    
     // Extract resources after IR is initialized
     this.currentIR.resources = this.extractResources();
     
@@ -98,6 +103,26 @@ export class OpenAPI3Adapter {
     }));
   }
 
+  /**
+   * Process annotations on server objects.
+   * This must be called after the IR is initialized with servers.
+   */
+  private processServerAnnotations(): void {
+    if (!this.spec.servers || this.spec.servers.length === 0) {
+      return;
+    }
+
+    // Process annotations for each server
+    this.spec.servers.forEach((server) => {
+      const context = createServerContext(
+        server,
+        this.adapterUtils,
+        this.currentIR!
+      );
+      this.annotationRegistry.processAnnotations(context);
+    });
+  }
+
   private extractAuth() {
     const schemes: AuthScheme[] = [];
     const securitySchemes = this.spec.components?.securitySchemes || {};
@@ -116,12 +141,16 @@ export class OpenAPI3Adapter {
 
     const loginEndpoints = this.detectLoginEndpoints();
     const refreshEndpoints = this.detectRefreshEndpoints();
+    const passwordResetEndpoints = this.detectPasswordResetEndpoints();
+    const signUpEndpoints = this.detectSignUpEndpoints();
 
     return {
       schemes,
       globalRequired: !!this.spec.security && this.spec.security.length > 0,
       loginEndpoints,
-      refreshEndpoints
+      refreshEndpoints,
+      passwordResetEndpoints: passwordResetEndpoints.length > 0 ? passwordResetEndpoints : undefined,
+      signUpEndpoints: signUpEndpoints.length > 0 ? signUpEndpoints : undefined
     };
   }
 
@@ -481,6 +510,128 @@ export class OpenAPI3Adapter {
     }
 
     return refreshEndpoints;
+  }
+
+  /**
+   * Detect password reset endpoints based on x-uigen-password-reset annotations.
+   * Only processes annotated endpoints (no auto-detection).
+   * 
+   * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
+   */
+  private detectPasswordResetEndpoints(): PasswordResetEndpoint[] {
+    const endpoints: PasswordResetEndpoint[] = [];
+
+    for (const [path, pathItem] of Object.entries(this.spec.paths)) {
+      if (!pathItem) continue;
+
+      // Check all HTTP methods for x-uigen-password-reset annotation
+      const methods = ['get', 'post', 'put', 'patch', 'delete'] as const;
+      for (const method of methods) {
+        const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
+        if (!operation) continue;
+
+        // Extract annotation from operation (read directly from spec)
+        const annotation = (operation as any)['x-uigen-password-reset'];
+
+        // Explicit exclusion: skip operations with x-uigen-password-reset: false
+        if (annotation === false) {
+          continue;
+        }
+
+        // Explicit inclusion: add operations with x-uigen-password-reset: true
+        if (annotation === true) {
+          const endpoint = this.buildPasswordResetEndpoint(path, operation);
+          endpoints.push(endpoint);
+        }
+      }
+    }
+
+    return endpoints;
+  }
+
+  /**
+   * Build a PasswordResetEndpoint from an operation.
+   * Extracts request body schema and description.
+   * 
+   * Requirements: 6.3, 6.4, 6.5
+   */
+  private buildPasswordResetEndpoint(path: string, operation: OpenAPIV3.OperationObject): PasswordResetEndpoint {
+    let requestBodySchema: SchemaNode | undefined;
+    
+    if (operation.requestBody && 'content' in operation.requestBody) {
+      const content = this.pickContent(operation.requestBody.content);
+      if (content?.schema) {
+        requestBodySchema = this.adaptSchema('passwordReset', content.schema);
+      }
+    }
+
+    return {
+      path,
+      method: 'POST',
+      requestBodySchema,
+      description: operation.summary || operation.description
+    };
+  }
+
+  /**
+   * Detect sign-up endpoints based on x-uigen-sign-up annotations.
+   * Only processes annotated endpoints (no auto-detection).
+   * 
+   * Requirements: 8.1, 8.2, 8.3, 8.4, 8.5
+   */
+  private detectSignUpEndpoints(): SignUpEndpoint[] {
+    const endpoints: SignUpEndpoint[] = [];
+
+    for (const [path, pathItem] of Object.entries(this.spec.paths)) {
+      if (!pathItem) continue;
+
+      // Check all HTTP methods for x-uigen-sign-up annotation
+      const methods = ['get', 'post', 'put', 'patch', 'delete'] as const;
+      for (const method of methods) {
+        const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
+        if (!operation) continue;
+
+        // Extract annotation from operation (read directly from spec)
+        const annotation = (operation as any)['x-uigen-sign-up'];
+
+        // Explicit exclusion: skip operations with x-uigen-sign-up: false
+        if (annotation === false) {
+          continue;
+        }
+
+        // Explicit inclusion: add operations with x-uigen-sign-up: true
+        if (annotation === true) {
+          const endpoint = this.buildSignUpEndpoint(path, operation);
+          endpoints.push(endpoint);
+        }
+      }
+    }
+
+    return endpoints;
+  }
+
+  /**
+   * Build a SignUpEndpoint from an operation.
+   * Extracts request body schema and description.
+   * 
+   * Requirements: 8.3, 8.4, 8.5
+   */
+  private buildSignUpEndpoint(path: string, operation: OpenAPIV3.OperationObject): SignUpEndpoint {
+    let requestBodySchema: SchemaNode | undefined;
+    
+    if (operation.requestBody && 'content' in operation.requestBody) {
+      const content = this.pickContent(operation.requestBody.content);
+      if (content?.schema) {
+        requestBodySchema = this.adaptSchema('signUp', content.schema);
+      }
+    }
+
+    return {
+      path,
+      method: 'POST',
+      requestBodySchema,
+      description: operation.summary || operation.description
+    };
   }
 
   private getSchemaFieldNames(schema: SchemaNode): string[] {

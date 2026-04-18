@@ -2,22 +2,37 @@ import { AnnotationHandlerRegistry } from '../registry.js';
 import { IgnoreHandler } from './ignore-handler.js';
 import { LabelHandler } from './label-handler.js';
 import { RefHandler } from './ref-handler.js';
+import { LoginHandler } from './login-handler.js';
+import { PasswordResetHandler } from './password-reset-handler.js';
+import { SignUpHandler } from './sign-up-handler.js';
+import { ActiveServerHandler } from './active-server-handler.js';
 
 /**
  * Initialize and register all annotation handlers.
  * This function is called automatically when the module is imported.
+ * 
+ * Registration order matters:
+ * - Priority handlers (ignore, login, label, ref) are processed first
+ * - Operation-level handlers (password-reset, sign-up) are processed next
+ * - Server-level handlers (active-server) are processed last
+ * 
+ * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5
  */
 function registerHandlers(): void {
   const registry = AnnotationHandlerRegistry.getInstance();
   
-  // Register IgnoreHandler
+  // Register priority handlers (processed first by registry)
   registry.register(new IgnoreHandler());
-  
-  // Register LabelHandler
+  registry.register(new LoginHandler());
   registry.register(new LabelHandler());
-
-  // Register RefHandler
   registry.register(new RefHandler());
+  
+  // Register operation-level handlers (Requirements 1.2, 1.3, 1.4)
+  registry.register(new PasswordResetHandler());
+  registry.register(new SignUpHandler());
+  
+  // Register server-level handlers (Requirement 1.5)
+  registry.register(new ActiveServerHandler());
 }
 
 // Auto-register handlers on module load
@@ -27,3 +42,7 @@ registerHandlers();
 export { IgnoreHandler } from './ignore-handler.js';
 export { LabelHandler } from './label-handler.js';
 export { RefHandler } from './ref-handler.js';
+export { LoginHandler } from './login-handler.js';
+export { PasswordResetHandler } from './password-reset-handler.js';
+export { SignUpHandler } from './sign-up-handler.js';
+export { ActiveServerHandler } from './active-server-handler.js';

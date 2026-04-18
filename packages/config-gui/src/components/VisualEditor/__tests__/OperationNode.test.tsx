@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { OperationNode } from '../OperationNode.js';
 import { AppContext } from '../../../contexts/AppContext.js';
+import { KeyboardNavigationProvider } from '../../../contexts/KeyboardNavigationContext.js';
 import type { OperationNode as OperationNodeType } from '../../../types/index.js';
 import type { ConfigFile } from '@uigen-dev/core';
 
@@ -21,13 +22,18 @@ describe('OperationNode', () => {
       config,
       annotations: [],
       specStructure: null,
+      specPath: null,
+      configPath: '.uigen/config.yaml',
+      handlers: [],
       isLoading: false,
       error: null
     },
     actions: {
       saveConfig: vi.fn(),
-      loadAnnotations: vi.fn(),
-      loadSpecStructure: vi.fn()
+      loadConfig: vi.fn(),
+      updateConfig: vi.fn(),
+      setError: vi.fn(),
+      clearError: vi.fn()
     }
   });
 
@@ -36,7 +42,9 @@ describe('OperationNode', () => {
     return {
       ...render(
         <AppContext.Provider value={mockContext}>
-          <OperationNode operation={operation} />
+          <KeyboardNavigationProvider>
+            <OperationNode operation={operation} />
+          </KeyboardNavigationProvider>
         </AppContext.Provider>
       ),
       mockContext
@@ -274,8 +282,10 @@ describe('OperationNode', () => {
 
       const { rerender } = render(
         <AppContext.Provider value={mockContext}>
-          <OperationNode operation={operation1} />
-          <OperationNode operation={operation2} />
+          <KeyboardNavigationProvider>
+            <OperationNode operation={operation1} />
+            <OperationNode operation={operation2} />
+          </KeyboardNavigationProvider>
         </AppContext.Provider>
       );
 
@@ -323,6 +333,198 @@ describe('OperationNode', () => {
 
       expect(screen.getByText('GET')).toBeInTheDocument();
       expect(screen.getByText('/users')).toBeInTheDocument();
+    });
+  });
+
+  describe('Ignore state badges', () => {
+    describe('No Input Form badge', () => {
+      it('should not show "No Input Form" badge when request body is not ignored', () => {
+        renderWithContext(mockOperation);
+
+        expect(screen.queryByTestId('no-input-form-badge')).not.toBeInTheDocument();
+      });
+
+      it('should show "No Input Form" badge when request body is explicitly ignored', () => {
+        const config: ConfigFile = {
+          version: '1.0',
+          enabled: {},
+          defaults: {},
+          annotations: {
+            'paths./auth/login.post.requestBody': {
+              'x-uigen-ignore': true
+            }
+          }
+        };
+
+        renderWithContext(mockOperation, config);
+
+        expect(screen.getByTestId('no-input-form-badge')).toBeInTheDocument();
+        expect(screen.getByText('No Input Form')).toBeInTheDocument();
+      });
+
+      it('should show "No Input Form" badge when request body is inherited as ignored', () => {
+        const config: ConfigFile = {
+          version: '1.0',
+          enabled: {},
+          defaults: {},
+          annotations: {
+            'POST:/auth/login': {
+              'x-uigen-ignore': true
+            }
+          }
+        };
+
+        renderWithContext(mockOperation, config);
+
+        expect(screen.getByTestId('no-input-form-badge')).toBeInTheDocument();
+      });
+
+      it('should not show "No Input Form" badge when request body has override to false', () => {
+        const config: ConfigFile = {
+          version: '1.0',
+          enabled: {},
+          defaults: {},
+          annotations: {
+            'POST:/auth/login': {
+              'x-uigen-ignore': true
+            },
+            'paths./auth/login.post.requestBody': {
+              'x-uigen-ignore': false
+            }
+          }
+        };
+
+        renderWithContext(mockOperation, config);
+
+        expect(screen.queryByTestId('no-input-form-badge')).not.toBeInTheDocument();
+      });
+    });
+
+    describe('No Output badge', () => {
+      it('should not show "No Output" badge when no responses are ignored', () => {
+        renderWithContext(mockOperation);
+
+        expect(screen.queryByTestId('no-output-badge')).not.toBeInTheDocument();
+      });
+
+      it('should not show "No Output" badge when no response annotations exist', () => {
+        const config: ConfigFile = {
+          version: '1.0',
+          enabled: {},
+          defaults: {},
+          annotations: {}
+        };
+
+        renderWithContext(mockOperation, config);
+
+        expect(screen.queryByTestId('no-output-badge')).not.toBeInTheDocument();
+      });
+
+      it('should show "No Output" badge when all annotated responses are ignored', () => {
+        const config: ConfigFile = {
+          version: '1.0',
+          enabled: {},
+          defaults: {},
+          annotations: {
+            'paths./auth/login.post.responses.200': {
+              'x-uigen-ignore': true
+            },
+            'paths./auth/login.post.responses.401': {
+              'x-uigen-ignore': true
+            }
+          }
+        };
+
+        renderWithContext(mockOperation, config);
+
+        expect(screen.getByTestId('no-output-badge')).toBeInTheDocument();
+        expect(screen.getByText('No Output')).toBeInTheDocument();
+      });
+
+      it('should not show "No Output" badge when some responses are not ignored', () => {
+        const config: ConfigFile = {
+          version: '1.0',
+          enabled: {},
+          defaults: {},
+          annotations: {
+            'paths./auth/login.post.responses.200': {
+              'x-uigen-ignore': true
+            },
+            'paths./auth/login.post.responses.401': {
+              'x-uigen-ignore': false
+            }
+          }
+        };
+
+        renderWithContext(mockOperation, config);
+
+        expect(screen.queryByTestId('no-output-badge')).not.toBeInTheDocument();
+      });
+
+      it('should not show "No Output" badge when only one response is annotated and not ignored', () => {
+        const config: ConfigFile = {
+          version: '1.0',
+          enabled: {},
+          defaults: {},
+          annotations: {
+            'paths./auth/login.post.responses.200': {
+              'x-uigen-ignore': false
+            }
+          }
+        };
+
+        renderWithContext(mockOperation, config);
+
+        expect(screen.queryByTestId('no-output-badge')).not.toBeInTheDocument();
+      });
+    });
+
+    describe('Combined badges', () => {
+      it('should show both "No Input Form" and "No Output" badges when both are ignored', () => {
+        const config: ConfigFile = {
+          version: '1.0',
+          enabled: {},
+          defaults: {},
+          annotations: {
+            'paths./auth/login.post.requestBody': {
+              'x-uigen-ignore': true
+            },
+            'paths./auth/login.post.responses.200': {
+              'x-uigen-ignore': true
+            }
+          }
+        };
+
+        renderWithContext(mockOperation, config);
+
+        expect(screen.getByTestId('no-input-form-badge')).toBeInTheDocument();
+        expect(screen.getByTestId('no-output-badge')).toBeInTheDocument();
+      });
+
+      it('should show all badges including login badge when all are active', () => {
+        const config: ConfigFile = {
+          version: '1.0',
+          enabled: {},
+          defaults: {},
+          annotations: {
+            'POST:/auth/login': {
+              'x-uigen-login': true
+            },
+            'paths./auth/login.post.requestBody': {
+              'x-uigen-ignore': true
+            },
+            'paths./auth/login.post.responses.200': {
+              'x-uigen-ignore': true
+            }
+          }
+        };
+
+        renderWithContext(mockOperation, config);
+
+        expect(screen.getByTestId('no-input-form-badge')).toBeInTheDocument();
+        expect(screen.getByTestId('no-output-badge')).toBeInTheDocument();
+        expect(screen.getByTestId('login-badge')).toBeInTheDocument();
+      });
     });
   });
 });
