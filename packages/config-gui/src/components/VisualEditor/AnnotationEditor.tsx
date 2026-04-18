@@ -106,6 +106,7 @@ export function AnnotationEditor({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const modalInputRef = useRef<HTMLInputElement>(null);
+  const [dropdownFlipped, setDropdownFlipped] = useState(false);
   
   // Check if element is ignored
   const isIgnored = Boolean(currentAnnotations['x-uigen-ignore']);
@@ -147,6 +148,40 @@ export function AnnotationEditor({
       searchInputRef.current.focus();
     }
   }, [isDropdownOpen]);
+  
+  // Calculate dropdown position to avoid overflow
+  useEffect(() => {
+    if (isDropdownOpen && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const dropdownHeight = 300; // Approximate max height of dropdown
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      
+      // Flip upward if not enough space below and more space above
+      setDropdownFlipped(spaceBelow < dropdownHeight && spaceAbove > spaceBelow);
+    }
+  }, [isDropdownOpen]);
+  
+  // Get dropdown position for fixed positioning
+  const getDropdownStyle = (): React.CSSProperties => {
+    if (!dropdownRef.current) return {};
+    
+    const rect = dropdownRef.current.getBoundingClientRect();
+    
+    if (dropdownFlipped) {
+      return {
+        position: 'fixed',
+        bottom: `${window.innerHeight - rect.top + 4}px`,
+        right: `${window.innerWidth - rect.right}px`,
+      };
+    } else {
+      return {
+        position: 'fixed',
+        top: `${rect.bottom + 4}px`,
+        right: `${window.innerWidth - rect.right}px`,
+      };
+    }
+  };
   
   // Focus modal input when modal opens
   useEffect(() => {
@@ -286,7 +321,10 @@ export function AnnotationEditor({
         
         {/* Dropdown menu */}
         {isDropdownOpen && (
-          <div className="absolute top-full right-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+          <div 
+            style={getDropdownStyle()}
+            className="w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[9999]"
+          >
             {/* Search input */}
             <div className="p-2 border-b border-gray-200 dark:border-gray-700">
               <input

@@ -12,11 +12,11 @@ import type {
   ReconciliationWarning,
   Swagger2Document,
   Logger,
-} from './types';
-import { ElementPathResolver } from './path-resolver';
-import { AnnotationMerger } from './merger';
-import { Validator } from './validator';
-import { deepClone } from './utils';
+} from './types.js';
+import { ElementPathResolver } from './path-resolver.js';
+import { AnnotationMerger } from './merger.js';
+import { Validator } from './validator.js';
+import { deepClone } from './utils.js';
 
 /**
  * Configuration file interface

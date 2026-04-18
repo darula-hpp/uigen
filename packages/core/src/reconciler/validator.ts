@@ -6,7 +6,7 @@
  */
 
 import type { OpenAPIV3 } from 'openapi-types';
-import type { ValidationResult, ValidationError, Swagger2Document } from './types';
+import type { ValidationResult, ValidationError, Swagger2Document } from './types.js';
 
 /**
  * Spec Validator

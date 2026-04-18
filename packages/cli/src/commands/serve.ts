@@ -81,16 +81,21 @@ export async function serve(specPath: string, options: ServeOptions) {
   console.log(pc.cyan('🚀 UIGen starting...\n'));
 
   try {
+    // Resolve spec path and determine config location
+    const resolvedSpecPath = resolve(process.cwd(), specPath);
+    const specDir = dirname(resolvedSpecPath);
+    const configPath = resolve(specDir, '.uigen/config.yaml');
+    
     // Load config file if it exists
     const configLoader = new ConfigLoader({
-      configPath: '.uigen/config.yaml',
+      configPath,
       verbose: options.verbose
     });
     
     const config = configLoader.load();
     
     if (config) {
-      console.log(pc.gray('Loading annotation config from .uigen/config.yaml'));
+      console.log(pc.gray(`Loading annotation config from ${configPath}`));
       
       // Apply config to registry
       const registry = AnnotationHandlerRegistry.getInstance();

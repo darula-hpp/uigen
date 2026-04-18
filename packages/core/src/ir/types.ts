@@ -110,6 +110,7 @@ export interface Resource {
   name: string;
   slug: string;
   uigenId: string;
+  schemaName?: string; // The actual OpenAPI schema name (e.g., "Template" from components/schemas)
   description?: string;
   operations: Operation[];
   schema: SchemaNode;

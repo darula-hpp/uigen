@@ -16,10 +16,10 @@ export type {
   ValidationResult,
   ValidationError,
   Swagger2Document,
-} from './types';
+} from './types.js';
 
-export { Reconciler } from './reconciler';
-export { ElementPathResolver } from './path-resolver';
-export { AnnotationMerger } from './merger';
-export { Validator } from './validator';
-export { deepClone, levenshteinDistance } from './utils';
+export { Reconciler } from './reconciler.js';
+export { ElementPathResolver } from './path-resolver.js';
+export { AnnotationMerger } from './merger.js';
+export { Validator } from './validator.js';
+export { deepClone, levenshteinDistance } from './utils.js';
