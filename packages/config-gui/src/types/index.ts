@@ -8,6 +8,10 @@ export type { ConfigFile, ConfigValidationResult, ConfigValidationError } from '
 // Re-export spec parser types
 export type { SpecStructure, ResourceNode, OperationNode, FieldNode } from '../lib/spec-parser.js';
 
+// Re-export ignore state calculator types
+export type { ElementType, IgnoreState, SpecNode } from '../lib/ignore-state-calculator.js';
+export { IgnoreStateCalculator } from '../lib/ignore-state-calculator.js';
+
 export interface AnnotationMetadata {
   name: string;
   description: string;

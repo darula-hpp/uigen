@@ -10,3 +10,5 @@ export { RefLinkCanvas } from './RefLinkCanvas.js';
 export { VisualEditor } from './VisualEditor.js';
 export { FieldNode } from './FieldNode.js';
 export { OperationNode } from './OperationNode.js';
+export { IgnoreToggle } from './IgnoreControls/index.js';
+export type { IgnoreToggleProps } from './IgnoreControls/index.js';
