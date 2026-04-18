@@ -1,10 +1,7 @@
 import type { OperationNode } from '../../../types/index.js';
 import type { ConfigFile } from '@uigen-dev/core';
 import { useAppContext } from '../../../contexts/AppContext.js';
-import { IgnoreToggle } from '../IgnoreControls/IgnoreToggle.js';
-import { IgnoreTooltip } from '../IgnoreControls/IgnoreTooltip.js';
-import { IgnoreStateCalculator } from '../../../types/index.js';
-import { buildAnnotationsMap, buildUpdatedAnnotations } from './shared-utils.js';
+import { AnnotationEditor } from '../AnnotationEditor.js';
 
 /**
  * Props for OperationIgnoreNode component
@@ -35,28 +32,30 @@ export function OperationIgnoreNode({ operation }: OperationIgnoreNodeProps) {
 
   const operationPath = `${operation.method}:${operation.path}`;
 
-  // Build annotations map and compute ignore state
-  const annotations = buildAnnotationsMap(state.config);
-  const calculator = new IgnoreStateCalculator();
-  const ignoreState = calculator.calculateState(operationPath, 'operation', annotations);
+  // Get current annotations for this operation
+  const currentAnnotations = (state.config?.annotations?.[operationPath] as Record<string, unknown>) || {};
+  
+  // Check if element is ignored
+  const isIgnored = Boolean(currentAnnotations['x-uigen-ignore']);
 
-  const isEffectivelyIgnored = ignoreState.effective;
-
-  // Check for "No Input Form" badge: request body is ignored
-  const requestBodyPath = `${operationPath}.requestBody`;
-  const requestBodyAnnotations = getAnnotationRecord(state.config, requestBodyPath);
-  const isRequestBodyIgnored = requestBodyAnnotations['x-uigen-ignore'] === true;
-
-  // Check for "No Output" badge: all responses are ignored (placeholder check)
-  const responsesPath = `${operationPath}.responses`;
-  const responsesAnnotations = getAnnotationRecord(state.config, responsesPath);
-  const areAllResponsesIgnored = responsesAnnotations['x-uigen-ignore'] === true;
+  const elementName = `${operation.method} ${operation.path}`;
 
   // --- Handlers ---
 
-  function handleIgnoreChange(value: boolean) {
-    const newValue = value === true ? true : undefined;
-    const updated = buildUpdatedAnnotations(state.config, operationPath, 'x-uigen-ignore', newValue);
+  function handleAnnotationsChange(newAnnotations: Record<string, unknown>) {
+    const updated: ConfigFile = {
+      ...state.config!,
+      annotations: {
+        ...state.config!.annotations,
+        [operationPath]: newAnnotations
+      }
+    };
+    
+    // Remove empty annotation objects
+    if (Object.keys(newAnnotations).length === 0) {
+      delete updated.annotations[operationPath];
+    }
+    
     actions.saveConfig(updated);
   }
 
@@ -71,13 +70,11 @@ export function OperationIgnoreNode({ operation }: OperationIgnoreNodeProps) {
 
   const methodColor = methodColors[operation.method] || 'bg-gray-100 text-gray-800';
 
-  const elementName = `${operation.method} ${operation.path}`;
-
   // --- Render ---
 
   return (
     <div
-      className={`flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${isEffectivelyIgnored ? 'opacity-50' : ''}`}
+      className={`flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${isIgnored ? 'opacity-50' : ''}`}
       data-operation-path={operationPath}
       data-testid="operation-ignore-node"
     >
@@ -98,56 +95,15 @@ export function OperationIgnoreNode({ operation }: OperationIgnoreNodeProps) {
         </span>
       )}
 
-      {/* Badges and controls */}
+      {/* Annotation editor */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
-        {/* "No Input Form" badge when request body is ignored */}
-        {isRequestBodyIgnored && (
-          <span
-            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200"
-            data-testid="no-input-form-badge"
-          >
-            No Input Form
-          </span>
-        )}
-
-        {/* "No Output" badge when all responses are ignored */}
-        {areAllResponsesIgnored && (
-          <span
-            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-            data-testid="no-output-badge"
-          >
-            No Output
-          </span>
-        )}
-
-        {/* x-uigen-ignore toggle */}
-        <IgnoreTooltip
-          ignoreState={ignoreState}
-          elementName={elementName}
-          isToggleSwitch={true}
-        >
-          <IgnoreToggle
-            elementPath={operationPath}
-            elementType="operation"
-            ignoreState={ignoreState}
-            disabled={false}
-            onChange={handleIgnoreChange}
-          />
-        </IgnoreTooltip>
+        <AnnotationEditor
+          elementPath={operationPath}
+          elementType="operation"
+          currentAnnotations={currentAnnotations}
+          onAnnotationsChange={handleAnnotationsChange}
+        />
       </div>
     </div>
   );
-}
-
-// --- Helpers ---
-
-/**
- * Get annotation record for a given path from config.
- */
-function getAnnotationRecord(
-  config: ConfigFile | null,
-  path: string
-): Record<string, unknown> {
-  if (!config?.annotations) return {};
-  return (config.annotations[path] as Record<string, unknown>) ?? {};
 }

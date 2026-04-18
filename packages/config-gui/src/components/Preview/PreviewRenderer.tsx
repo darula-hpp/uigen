@@ -278,12 +278,39 @@ interface ListPreviewProps {
 }
 
 function ListPreview({ data }: ListPreviewProps) {
+  // Show "No fields to display" message when all columns are ignored
+  // Requirements: 19.5
+  const visibleColumns = data.columns.filter(col => !col.ignored);
+  
+  if (visibleColumns.length === 0) {
+    return (
+      <div className="bg-white dark:bg-gray-800 p-8 rounded border border-gray-200 dark:border-gray-700 text-center">
+        <svg
+          className="mx-auto h-10 w-10 text-gray-400 dark:text-gray-500 mb-3"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+          />
+        </svg>
+        <p className="text-sm text-gray-600 dark:text-gray-400" data-testid="no-fields-message">
+          No fields to display (all properties ignored)
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 overflow-hidden">
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-700">
           <tr>
-            {data.columns.map(col => (
+            {visibleColumns.map(col => (
               <th
                 key={col.path}
                 className="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
@@ -295,13 +322,9 @@ function ListPreview({ data }: ListPreviewProps) {
         </thead>
         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           <tr>
-            {data.columns.map(col => (
+            {visibleColumns.map(col => (
               <td key={col.path} className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
-                {col.ignored ? (
-                  <span className="text-gray-400 dark:text-gray-500 italic">Hidden</span>
-                ) : (
-                  <span>Sample {col.label}</span>
-                )}
+                <span>Sample {col.label}</span>
               </td>
             ))}
           </tr>
@@ -316,6 +339,31 @@ interface DetailPreviewProps {
 }
 
 function DetailPreview({ data }: DetailPreviewProps) {
+  // Show "No fields to display" message when all fields are ignored
+  // Requirements: 19.5
+  if (data.fields.length === 0) {
+    return (
+      <div className="bg-white dark:bg-gray-800 p-8 rounded border border-gray-200 dark:border-gray-700 text-center">
+        <svg
+          className="mx-auto h-10 w-10 text-gray-400 dark:text-gray-500 mb-3"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+        <p className="text-sm text-gray-600 dark:text-gray-400" data-testid="no-fields-message">
+          No fields to display (all properties ignored)
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded border border-gray-200 dark:border-gray-700 space-y-3">
       {data.fields.map(field => (

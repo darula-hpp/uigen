@@ -171,7 +171,7 @@ function hasSchemaReference(schema: SchemaObject | SchemaRef, schemaName: string
   }
 
   // Check in SchemaObject
-  if ('properties' in schema && schema.properties) {
+  if ('properties' in schema && schema.properties && !('$ref' in schema)) {
     for (const prop of Object.values(schema.properties)) {
       if (hasSchemaReference(prop, schemaName)) {
         return true;
@@ -189,8 +189,8 @@ function hasSchemaReference(schema: SchemaObject | SchemaRef, schemaName: string
   // Check in composition keywords
   const compositionKeys: (keyof SchemaObject)[] = ['allOf', 'oneOf', 'anyOf'];
   for (const key of compositionKeys) {
-    if (key in schema) {
-      const schemas = schema[key] as (SchemaObject | SchemaRef)[];
+    if (!('$ref' in schema) && key in schema) {
+      const schemas = (schema as SchemaObject)[key] as (SchemaObject | SchemaRef)[] | undefined;
       if (schemas) {
         for (const s of schemas) {
           if (hasSchemaReference(s, schemaName)) {
@@ -216,7 +216,7 @@ function findPropertyReferences(
 ): PropertyReference[] {
   const references: PropertyReference[] = [];
 
-  if (!schema.properties) return references;
+  if (!('properties' in schema) || !schema.properties || '$ref' in schema) return references;
 
   for (const [propName, propSchema] of Object.entries(schema.properties)) {
     const propPath = `${basePath}.properties.${propName}`;
@@ -229,7 +229,7 @@ function findPropertyReferences(
     }
 
     // Recursively check nested properties
-    if ('properties' in propSchema && propSchema.properties) {
+    if ('properties' in propSchema && propSchema.properties && !('$ref' in propSchema)) {
       const nestedRefs = findPropertyReferences(propSchema, targetSchemaName, propPath);
       references.push(...nestedRefs);
     }

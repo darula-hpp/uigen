@@ -149,8 +149,8 @@ export class ValidationEngine {
         continue;
       }
 
-      // Check if schema has properties
-      if (!schema.properties || Object.keys(schema.properties).length === 0) {
+      // Check if schema has properties (skip refs)
+      if ('$ref' in schema || !('properties' in schema) || !schema.properties || Object.keys(schema.properties).length === 0) {
         continue;
       }
 
@@ -260,7 +260,7 @@ export class ValidationEngine {
     }
 
     // Check properties
-    if ('properties' in schema && schema.properties) {
+    if ('properties' in schema && schema.properties && !('$ref' in schema)) {
       for (const propSchema of Object.values(schema.properties)) {
         if ('$ref' in propSchema) {
           const refName = this.extractSchemaName(propSchema.$ref);
@@ -280,8 +280,8 @@ export class ValidationEngine {
     // Check composition keywords
     const compositionKeys: (keyof SchemaObject)[] = ['allOf', 'oneOf', 'anyOf'];
     for (const key of compositionKeys) {
-      if (key in schema) {
-        const schemas = schema[key] as (SchemaObject | SchemaRef)[];
+      if (!('$ref' in schema) && key in schema) {
+        const schemas = (schema as SchemaObject)[key] as (SchemaObject | SchemaRef)[] | undefined;
         if (schemas) {
           for (const s of schemas) {
             if ('$ref' in s) {

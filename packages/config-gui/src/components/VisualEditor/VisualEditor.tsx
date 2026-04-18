@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { FieldNode } from './FieldNode.js';
 import { OperationNode } from './OperationNode.js';
+import { SchemaPropertyNode } from './ElementTree/SchemaPropertyNode.js';
+import { OperationIgnoreNode } from './ElementTree/OperationIgnoreNode.js';
 import { RefLinkCanvas } from './RefLinkCanvas.js';
 import { ValidationWarnings } from './ValidationWarnings.js';
 import type { SpecStructure, ResourceNode } from '../../types/index.js';
@@ -8,7 +10,6 @@ import { useKeyboardNavigation } from '../../contexts/KeyboardNavigationContext.
 import { useAppContext } from '../../contexts/AppContext.js';
 import { ValidationEngine } from '../../lib/validation-engine.js';
 import { ErrorDialog } from '../ErrorDialog.js';
-import { ConcurrentModificationDialog } from '../ConcurrentModificationDialog.js';
 
 /**
  * Props for VisualEditor component
@@ -202,25 +203,6 @@ export function VisualEditor({ structure }: VisualEditorProps) {
     }
   }, [appState.error]);
   
-  // Handle concurrent modification reload
-  // Requirements: 24.5
-  const handleReload = useCallback(async () => {
-    await appActions.reloadConfig();
-  }, [appActions]);
-  
-  // Handle concurrent modification keep changes
-  // Requirements: 24.5
-  const handleKeepChanges = useCallback(async () => {
-    if (appState.config) {
-      try {
-        await appActions.saveConfigImmediate(appState.config);
-        appActions.dismissConcurrentModification();
-      } catch (err) {
-        // Error will be set by saveConfigImmediate
-      }
-    }
-  }, [appState.config, appActions]);
-  
   // Show error dialog when error occurs
   useEffect(() => {
     if (appState.error) {
@@ -271,15 +253,6 @@ export function VisualEditor({ structure }: VisualEditorProps) {
           setShowErrorDialog(false);
           appActions.clearError();
         }}
-      />
-      
-      {/* Concurrent Modification Dialog */}
-      {/* Requirements: 24.5 */}
-      <ConcurrentModificationDialog
-        isOpen={appState.concurrentModificationDetected}
-        onReload={handleReload}
-        onKeepChanges={handleKeepChanges}
-        onClose={() => appActions.dismissConcurrentModification()}
       />
       
       {/* ARIA live region for state change announcements */}
@@ -531,7 +504,7 @@ function ResourceSection({ resource }: ResourceSectionProps) {
               <h4 id={`${resource.slug}-operations-heading`} className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Operations</h4>
               <div className="space-y-2">
                 {resource.operations.map(operation => (
-                  <OperationNode key={operation.id} operation={operation} />
+                  <OperationIgnoreNode key={operation.id} operation={operation} />
                 ))}
               </div>
             </div>
@@ -543,7 +516,7 @@ function ResourceSection({ resource }: ResourceSectionProps) {
               <h4 id={`${resource.slug}-fields-heading`} className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Fields</h4>
               <div className="space-y-1">
                 {resource.fields.map(field => (
-                  <FieldNode key={field.path} field={field} />
+                  <SchemaPropertyNode key={field.path} field={field} level={0} />
                 ))}
               </div>
             </div>

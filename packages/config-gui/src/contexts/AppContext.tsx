@@ -49,18 +49,6 @@ export interface AppState {
    * Parsed spec structure (passed from CLI)
    */
   specStructure: any | null;
-  
-  /**
-   * Concurrent modification detected
-   * Requirements: 24.5
-   */
-  concurrentModificationDetected: boolean;
-  
-  /**
-   * Last known file modification time
-   * Requirements: 24.5
-   */
-  lastModifiedTime: number | null;
 }
 
 /**
@@ -97,24 +85,6 @@ export interface AppActions {
    * Clear error message
    */
   clearError: () => void;
-  
-  /**
-   * Check for concurrent modifications
-   * Requirements: 24.5
-   */
-  checkConcurrentModification: () => Promise<boolean>;
-  
-  /**
-   * Dismiss concurrent modification warning
-   * Requirements: 24.5
-   */
-  dismissConcurrentModification: () => void;
-  
-  /**
-   * Reload config from file (discard local changes)
-   * Requirements: 24.5
-   */
-  reloadConfig: () => Promise<void>;
 }
 
 /**
@@ -166,8 +136,6 @@ export function AppProvider({ children, configPath = '.uigen/config.yaml', specP
   const [error, setError] = useState<string | null>(null);
   const [loadedSpecStructure, setLoadedSpecStructure] = useState<any>(specStructure || null);
   const [loadedHandlers, setLoadedHandlers] = useState<AnnotationHandler[]>(handlers);
-  const [concurrentModificationDetected, setConcurrentModificationDetected] = useState(false);
-  const [lastModifiedTime, setLastModifiedTime] = useState<number | null>(null);
   
   // Use refs to avoid dependency issues
   const configManagerRef = useRef(new ConfigManager({ apiBaseUrl: '' }));
@@ -181,7 +149,6 @@ export function AppProvider({ children, configPath = '.uigen/config.yaml', specP
     () => debounce(async (newConfig: ConfigFile) => {
       try {
         await configManagerRef.current.write(newConfig);
-        setLastModifiedTime(Date.now());
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);
         setError(`Failed to save config: ${errorMessage}`);
@@ -209,10 +176,8 @@ export function AppProvider({ children, configPath = '.uigen/config.yaml', specP
           annotations: {}
         };
         setConfig(defaultConfig);
-        setLastModifiedTime(Date.now());
       } else {
         setConfig(loadedConfig);
-        setLastModifiedTime(Date.now());
       }
     } catch (err) {
       // If the API is unavailable (e.g., in test environments or before server starts),
@@ -328,73 +293,28 @@ export function AppProvider({ children, configPath = '.uigen/config.yaml', specP
   }, [loadedHandlers]);
   
   /**
-   * Check for concurrent modifications
-   * Requirements: 24.5
-   */
-  const checkConcurrentModification = useCallback(async (): Promise<boolean> => {
-    if (!lastModifiedTime) {
-      return false;
-    }
-    
-    try {
-      // Check if file was modified externally by comparing timestamps
-      // In a real implementation, this would query the file system or API
-      // For now, we'll use a simple approach
-      const response = await fetch('/api/config/modified-time', {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const fileModifiedTime = data.modifiedTime;
-        
-        // If file was modified after our last known time, concurrent modification detected
-        if (fileModifiedTime > lastModifiedTime) {
-          setConcurrentModificationDetected(true);
-          return true;
-        }
-      }
-    } catch (err) {
-      // If API is unavailable, assume no concurrent modification
-      console.warn('Could not check for concurrent modifications:', err);
-    }
-    
-    return false;
-  }, [lastModifiedTime]);
-  
-  /**
    * Save config file via API with debouncing
    * 
    * Multiple rapid calls within 500ms will be batched into a single write.
    * The config state is updated immediately for responsive UI.
    * 
-   * Requirements: 23.3, 20.4, 24.5
+   * Requirements: 23.3, 20.4
    */
   const saveConfig = useCallback(async (newConfig: ConfigFile) => {
     setError(null);
-    
-    // Check for concurrent modifications before saving
-    const hasConflict = await checkConcurrentModification();
-    if (hasConflict) {
-      // Don't save, let user resolve conflict
-      return;
-    }
     
     // Update state immediately for responsive UI
     setConfig(newConfig);
     
     // Debounce the actual file write
     debouncedSaveToFile(newConfig);
-  }, [debouncedSaveToFile, checkConcurrentModification]);
+  }, [debouncedSaveToFile]);
   
   /**
    * Save config file immediately without debouncing
    * Used for retry operations after errors
    * 
-   * Requirements: 20.4, 24.5
+   * Requirements: 20.4
    */
   const saveConfigImmediate = useCallback(async (newConfig: ConfigFile) => {
     setError(null);
@@ -402,7 +322,6 @@ export function AppProvider({ children, configPath = '.uigen/config.yaml', specP
     try {
       await configManagerRef.current.write(newConfig);
       setConfig(newConfig);
-      setLastModifiedTime(Date.now());
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(`Failed to save config: ${errorMessage}`);
@@ -424,23 +343,6 @@ export function AppProvider({ children, configPath = '.uigen/config.yaml', specP
     setError(null);
   };
   
-  /**
-   * Dismiss concurrent modification warning
-   * Requirements: 24.5
-   */
-  const dismissConcurrentModification = useCallback(() => {
-    setConcurrentModificationDetected(false);
-  }, []);
-  
-  /**
-   * Reload config from file (discard local changes)
-   * Requirements: 24.5
-   */
-  const reloadConfig = useCallback(async () => {
-    setConcurrentModificationDetected(false);
-    await loadConfig();
-  }, [loadConfig]);
-  
   const state: AppState = {
     config,
     handlers: loadedHandlers,
@@ -449,9 +351,7 @@ export function AppProvider({ children, configPath = '.uigen/config.yaml', specP
     error,
     configPath,
     specPath: specPath || null,
-    specStructure: loadedSpecStructure,
-    concurrentModificationDetected,
-    lastModifiedTime
+    specStructure: loadedSpecStructure
   };
   
   const actions: AppActions = {
@@ -460,10 +360,7 @@ export function AppProvider({ children, configPath = '.uigen/config.yaml', specP
     saveConfigImmediate,
     updateConfig,
     setError,
-    clearError,
-    checkConcurrentModification,
-    dismissConcurrentModification,
-    reloadConfig
+    clearError
   };
   
   const value: AppContextValue = {
