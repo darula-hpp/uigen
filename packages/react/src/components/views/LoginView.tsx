@@ -28,6 +28,8 @@ export function LoginView({ config, appTitle }: LoginViewProps) {
 
   // Detect available auth options
   const loginEndpoints = config.loginEndpoints ?? [];
+  const passwordResetEndpoints = config.passwordResetEndpoints ?? [];
+  const signUpEndpoints = config.signUpEndpoints ?? [];
   const bearerScheme = config.schemes.find(s => s.type === 'bearer');
   const apiKeyScheme = config.schemes.find(s => s.type === 'apiKey');
   const basicScheme = config.schemes.find(s => s.type === 'basic');
@@ -36,6 +38,8 @@ export function LoginView({ config, appTitle }: LoginViewProps) {
   const hasBearer = !!bearerScheme;
   const hasApiKey = !!apiKeyScheme;
   const hasBasic = !!basicScheme;
+  const hasPasswordReset = passwordResetEndpoints.length > 0;
+  const hasSignUp = signUpEndpoints.length > 0;
 
   // Determine default tab: prefer credential > basic > bearer > apiKey
   const defaultTab: SchemeTab = hasCredential ? 'credential' : hasBasic ? 'basic' : hasBearer ? 'bearer' : 'apiKey';
@@ -295,6 +299,19 @@ export function LoginView({ config, appTitle }: LoginViewProps) {
               <Button type="submit" className="w-full" disabled={credLoading}>
                 {credLoading ? 'Signing in…' : 'Sign In'}
               </Button>
+
+              {/* Forgot password link */}
+              {hasPasswordReset && (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/password-reset')}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
             </form>
           )}
 
@@ -385,6 +402,22 @@ export function LoginView({ config, appTitle }: LoginViewProps) {
               You can explore the UI, but API calls may fail without valid credentials
             </p>
           </div>
+
+          {/* Sign up link */}
+          {hasSignUp && (
+            <div className="pt-4 border-t text-center">
+              <p className="text-sm text-muted-foreground">
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate('/signup')}
+                  className="text-primary hover:underline font-medium"
+                >
+                  Create account
+                </button>
+              </p>
+            </div>
+          )}
         </div>
 
         <p className="text-center text-xs text-muted-foreground">

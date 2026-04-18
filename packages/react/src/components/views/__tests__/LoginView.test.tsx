@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { LoginView } from '../LoginView';
 import type { AuthConfig } from '@uigen-dev/core';
@@ -165,6 +165,149 @@ describe('LoginView', () => {
     );
 
     expect(screen.getByRole('button', { name: /continue without authentication/i })).toBeInTheDocument();
+  });
+
+  it('should show "Forgot password?" link when password reset endpoints exist', () => {
+    const config: AuthConfig = {
+      schemes: [],
+      globalRequired: false,
+      loginEndpoints: [
+        {
+          path: '/user/login',
+          method: 'POST',
+          requestBodySchema: {
+            type: 'object',
+            key: 'body',
+            label: 'Body',
+            required: true,
+          },
+          tokenPath: 'token',
+        },
+      ],
+      passwordResetEndpoints: [
+        {
+          path: '/auth/reset-password',
+          method: 'POST',
+        },
+      ],
+    };
+
+    render(
+      <BrowserRouter>
+        <LoginView config={config} appTitle="Test App" />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByText('Forgot password?')).toBeInTheDocument();
+  });
+
+  it('should navigate to /password-reset when "Forgot password?" is clicked', () => {
+    const config: AuthConfig = {
+      schemes: [],
+      globalRequired: false,
+      loginEndpoints: [
+        {
+          path: '/user/login',
+          method: 'POST',
+          requestBodySchema: {
+            type: 'object',
+            key: 'body',
+            label: 'Body',
+            required: true,
+          },
+          tokenPath: 'token',
+        },
+      ],
+      passwordResetEndpoints: [
+        {
+          path: '/auth/reset-password',
+          method: 'POST',
+        },
+      ],
+    };
+
+    render(
+      <BrowserRouter>
+        <LoginView config={config} appTitle="Test App" />
+      </BrowserRouter>
+    );
+
+    const forgotPasswordLink = screen.getByText('Forgot password?');
+    fireEvent.click(forgotPasswordLink);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/password-reset');
+  });
+
+  it('should show "Create account" link when sign-up endpoints exist', () => {
+    const config: AuthConfig = {
+      schemes: [],
+      globalRequired: false,
+      loginEndpoints: [
+        {
+          path: '/user/login',
+          method: 'POST',
+          requestBodySchema: {
+            type: 'object',
+            key: 'body',
+            label: 'Body',
+            required: true,
+          },
+          tokenPath: 'token',
+        },
+      ],
+      signUpEndpoints: [
+        {
+          path: '/auth/register',
+          method: 'POST',
+        },
+      ],
+    };
+
+    render(
+      <BrowserRouter>
+        <LoginView config={config} appTitle="Test App" />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByText(/don't have an account/i)).toBeInTheDocument();
+    expect(screen.getByText('Create account')).toBeInTheDocument();
+  });
+
+  it('should navigate to /signup when "Create account" is clicked', () => {
+    const config: AuthConfig = {
+      schemes: [],
+      globalRequired: false,
+      loginEndpoints: [
+        {
+          path: '/user/login',
+          method: 'POST',
+          requestBodySchema: {
+            type: 'object',
+            key: 'body',
+            label: 'Body',
+            required: true,
+          },
+          tokenPath: 'token',
+        },
+      ],
+      signUpEndpoints: [
+        {
+          path: '/auth/register',
+          method: 'POST',
+        },
+      ],
+    };
+
+    render(
+      <BrowserRouter>
+        <LoginView config={config} appTitle="Test App" />
+      </BrowserRouter>
+    );
+
+    const createAccountLink = screen.getByText('Create account');
+    fireEvent.click(createAccountLink);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/signup');
   });
 
   /**
