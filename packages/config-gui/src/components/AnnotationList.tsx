@@ -83,14 +83,14 @@ export function AnnotationList({ onAnnotationSelect }: AnnotationListProps = {})
   return (
     <div className="space-y-6">
       {Object.entries(groupedAnnotations).map(([category, categoryAnnotations]) => (
-        <div key={category} className="bg-white shadow rounded-lg overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">
+        <div key={category} className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+          <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               {categoryNames[category] || category}
             </h3>
           </div>
           
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {categoryAnnotations.map((annotation) => {
               const isEnabled = config?.enabled?.[annotation.name] ?? true;
               
@@ -129,17 +129,17 @@ function AnnotationItem({ annotation, enabled, onToggle, onSelect }: AnnotationI
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-2">
-            <h4 className="text-base font-medium text-gray-900">
+            <h4 className="text-base font-medium text-gray-900 dark:text-white">
               {annotation.name}
             </h4>
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+              enabled ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
             }`}>
               {enabled ? 'Enabled' : 'Disabled'}
             </span>
           </div>
           
-          <p className="text-sm text-gray-600 mb-3">
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
             {annotation.description}
           </p>
           
@@ -147,7 +147,7 @@ function AnnotationItem({ annotation, enabled, onToggle, onSelect }: AnnotationI
             <div className="mt-2">
               <button
                 onClick={() => setShowExamples(!showExamples)}
-                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1"
               >
                 {showExamples ? (
                   <>
@@ -169,11 +169,11 @@ function AnnotationItem({ annotation, enabled, onToggle, onSelect }: AnnotationI
               {showExamples && (
                 <div className="mt-3 space-y-2">
                   {annotation.examples.map((example, index) => (
-                    <div key={index} className="bg-gray-50 rounded-md p-3">
-                      <p className="text-xs font-medium text-gray-700 mb-1">
+                    <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-md p-3">
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {example.description}
                       </p>
-                      <pre className="text-xs text-gray-600 overflow-x-auto">
+                      <pre className="text-xs text-gray-600 dark:text-gray-300 overflow-x-auto">
                         {JSON.stringify(example.value, null, 2)}
                       </pre>
                     </div>
@@ -190,8 +190,8 @@ function AnnotationItem({ annotation, enabled, onToggle, onSelect }: AnnotationI
             role="switch"
             aria-checked={enabled}
             onClick={() => onToggle(annotation.name, !enabled)}
-            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-              enabled ? 'bg-blue-600' : 'bg-gray-200'
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+              enabled ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-200 dark:bg-gray-600'
             }`}
           >
             <span className="sr-only">

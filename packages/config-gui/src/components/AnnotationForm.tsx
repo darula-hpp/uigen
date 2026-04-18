@@ -153,13 +153,13 @@ export function AnnotationForm({ annotation }: AnnotationFormProps) {
     
     return (
       <div key={fieldName} className="mb-4">
-        <label htmlFor={fieldName} className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={fieldName} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {control.label}
           {control.required && <span className="text-red-500 ml-1">*</span>}
         </label>
         
         {control.description && (
-          <p className="text-xs text-gray-500 mb-2">{control.description}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{control.description}</p>
         )}
         
         {control.type === 'text-input' && (
@@ -168,8 +168,8 @@ export function AnnotationForm({ annotation }: AnnotationFormProps) {
             id={fieldName}
             value={(value as string) || ''}
             onChange={(e) => handleFieldChange(fieldName, e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              error ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
             }`}
           />
         )}
@@ -180,8 +180,8 @@ export function AnnotationForm({ annotation }: AnnotationFormProps) {
             id={fieldName}
             value={(value as number) || ''}
             onChange={(e) => handleFieldChange(fieldName, parseFloat(e.target.value))}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              error ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
             }`}
           />
         )}
@@ -192,8 +192,8 @@ export function AnnotationForm({ annotation }: AnnotationFormProps) {
             role="switch"
             aria-checked={!!value}
             onClick={() => handleFieldChange(fieldName, !value)}
-            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-              value ? 'bg-blue-600' : 'bg-gray-200'
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+              value ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-200 dark:bg-gray-600'
             }`}
           >
             <span className="sr-only">{control.label}</span>
@@ -211,8 +211,8 @@ export function AnnotationForm({ annotation }: AnnotationFormProps) {
             id={fieldName}
             value={(value as string) || ''}
             onChange={(e) => handleFieldChange(fieldName, e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              error ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
             }`}
           >
             <option value="">Select an option</option>
@@ -231,8 +231,8 @@ export function AnnotationForm({ annotation }: AnnotationFormProps) {
             value={(value as string) || ''}
             onChange={(e) => handleFieldChange(fieldName, e.target.value)}
             placeholder="Enter resource name"
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              error ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
             }`}
           />
         )}
@@ -251,14 +251,14 @@ export function AnnotationForm({ annotation }: AnnotationFormProps) {
               }
             }}
             rows={4}
-            className={`w-full px-3 py-2 border rounded-md font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              error ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-3 py-2 border rounded-md font-mono text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
             }`}
           />
         )}
         
         {error && (
-          <p className="mt-1 text-sm text-red-600">{error}</p>
+          <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>
         )}
       </div>
     );
@@ -275,25 +275,25 @@ export function AnnotationForm({ annotation }: AnnotationFormProps) {
   
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Default Values for {annotation.name}
         </h3>
         
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
           Set default values that will be applied to all instances of this annotation unless overridden.
         </p>
         
         {Object.keys(controls).map(fieldName => renderControl(fieldName))}
         
-        <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
+        <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
           <button
             type="button"
             onClick={() => {
               setFormValues(config?.defaults?.[annotation.name] as Record<string, unknown> || {});
               setErrors({});
             }}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Reset
           </button>
@@ -301,7 +301,7 @@ export function AnnotationForm({ annotation }: AnnotationFormProps) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Saving...' : 'Save Defaults'}
           </button>

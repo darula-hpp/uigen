@@ -5,6 +5,7 @@ import { AnnotationForm } from './components/AnnotationForm.js';
 import { VisualEditor } from './components/VisualEditor/index.js';
 import { PreviewRenderer } from './components/Preview/PreviewRenderer.js';
 import { HelpPanel } from './components/HelpPanel.js';
+import { ThemeToggle } from './components/ThemeToggle.js';
 
 /**
  * Main application component for the Config GUI
@@ -30,27 +31,28 @@ function App() {
     : null;
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className="bg-white dark:bg-gray-800 shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 UIGen Config GUI
               </h1>
               {specPath && (
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Spec: {specPath}
                 </p>
               )}
             </div>
             <div className="flex items-center gap-4">
               {config && (
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   Config version: {config.version}
                 </span>
               )}
+              <ThemeToggle />
             </div>
           </div>
         </div>
@@ -58,21 +60,21 @@ function App() {
       
       {/* Error Banner */}
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 dark:border-red-500 p-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-5 w-5 text-red-400 dark:text-red-500" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-sm text-red-700 dark:text-red-200">{error}</p>
               </div>
             </div>
             <button
               onClick={actions.clearError}
-              className="text-red-400 hover:text-red-600"
+              className="text-red-400 dark:text-red-500 hover:text-red-600 dark:hover:text-red-400"
               aria-label="Dismiss error"
             >
               <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -89,8 +91,8 @@ function App() {
           {isLoading ? (
             <div className="flex items-center justify-center h-96">
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-                <p className="mt-4 text-gray-500">Loading configuration...</p>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100"></div>
+                <p className="mt-4 text-gray-500 dark:text-gray-400">Loading configuration...</p>
               </div>
             </div>
           ) : (
@@ -99,15 +101,15 @@ function App() {
               <HelpPanel annotations={annotations} />
               
               {/* Tab Navigation */}
-              <div className="bg-white shadow rounded-lg overflow-hidden">
-                <div className="border-b border-gray-200">
+              <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                <div className="border-b border-gray-200 dark:border-gray-700">
                   <nav className="flex -mb-px" aria-label="Main navigation tabs">
                     <button
                       onClick={() => setActiveTab('annotations')}
                       className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                         activeTab === 'annotations'
-                          ? 'border-blue-500 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                       aria-current={activeTab === 'annotations' ? 'page' : undefined}
                       data-testid="annotations-tab"
@@ -118,8 +120,8 @@ function App() {
                       onClick={() => setActiveTab('visual')}
                       className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                         activeTab === 'visual'
-                          ? 'border-blue-500 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                       aria-current={activeTab === 'visual' ? 'page' : undefined}
                       data-testid="visual-tab"
@@ -131,8 +133,8 @@ function App() {
                       onClick={() => setActiveTab('preview')}
                       className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                         activeTab === 'preview'
-                          ? 'border-blue-500 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                       aria-current={activeTab === 'preview' ? 'page' : undefined}
                       data-testid="preview-tab"
@@ -148,23 +150,23 @@ function App() {
                   {activeTab === 'annotations' && (
                     <div className="space-y-6">
                       <div>
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                           Annotation Configuration
                         </h2>
-                        <p className="text-sm text-gray-600 mb-6">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                           Enable or disable annotations and configure their default values. Changes are saved immediately.
                         </p>
                       </div>
                       
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
-                          <h3 className="text-lg font-medium text-gray-900 mb-4">Available Annotations</h3>
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Available Annotations</h3>
                           <AnnotationList onAnnotationSelect={setSelectedAnnotation} />
                         </div>
                         
                         {selectedAnnotation && selectedAnnotationMetadata && (
                           <div>
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Default Values</h3>
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Default Values</h3>
                             <AnnotationForm annotation={selectedAnnotationMetadata} />
                           </div>
                         )}
@@ -174,10 +176,10 @@ function App() {
                   
                   {activeTab === 'visual' && (
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                         Visual Editor
                       </h2>
-                      <p className="text-sm text-gray-600 mb-6">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                         Configure annotations visually on specific fields, operations, and resources.
                       </p>
                       <VisualEditor structure={specStructure} />
@@ -186,10 +188,10 @@ function App() {
                   
                   {activeTab === 'preview' && (
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                         UI Preview
                       </h2>
-                      <p className="text-sm text-gray-600 mb-6">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                         See how your annotation settings affect the generated UI.
                       </p>
                       <PreviewRenderer structure={specStructure} />
@@ -203,9 +205,9 @@ function App() {
       </main>
       
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
+      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
             UIGen Config GUI - Manage annotation configurations visually
           </p>
         </div>
