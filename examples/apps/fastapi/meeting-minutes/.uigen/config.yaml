@@ -1,0 +1,10 @@
+version: '1.0'
+enabled: {}
+defaults: {}
+annotations:
+  GET:/health:
+    x-uigen-ignore: true
+  POST:/api/v1/meetings/{meeting_id}/generate-ai-data:
+    x-uigen-ignore: true
+  Template.template.jinja_shape:
+    x-uigen-label: Jinja Shape

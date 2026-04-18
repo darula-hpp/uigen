@@ -9,7 +9,12 @@ alembic>=1.14.0
 
 # Data validation and settings
 pydantic>=2.10.0
+pydantic[email]>=2.10.0
 pydantic-settings>=2.6.0
+
+# Authentication
+PyJWT>=2.8.0
+bcrypt>=4.1.0
 
 # File handling
 python-multipart>=0.0.20
