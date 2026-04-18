@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { createServer as createViteServer, type ProxyOptions } from 'vite';
 import { createServer as createHttpServer, request as httpRequest, type IncomingMessage, type ServerResponse } from 'http';
 import { request as httpsRequest } from 'https';
-import { parseSpec } from '@uigen-dev/core';
+import { parseSpec, ConfigLoader, AnnotationHandlerRegistry } from '@uigen-dev/core';
 import pc from 'picocolors';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -80,6 +80,44 @@ export async function serve(specPath: string, options: ServeOptions) {
   console.log(pc.cyan('🚀 UIGen starting...\n'));
 
   try {
+    // Load config file if it exists
+    const configLoader = new ConfigLoader({
+      configPath: '.uigen/config.yaml',
+      verbose: options.verbose
+    });
+    
+    const config = configLoader.load();
+    
+    if (config) {
+      console.log(pc.gray('Loading annotation config from .uigen/config.yaml'));
+      
+      // Apply config to registry
+      const registry = AnnotationHandlerRegistry.getInstance();
+      configLoader.applyToRegistry(config, registry);
+      
+      // Set config loader on registry for precedence handling
+      registry.setConfigLoader(configLoader);
+      
+      // Log disabled annotations
+      const disabledAnnotations = Object.entries(config.enabled)
+        .filter(([_, enabled]) => !enabled)
+        .map(([name]) => name);
+      
+      if (disabledAnnotations.length > 0 && options.verbose) {
+        console.log(pc.gray(`  Disabled annotations: ${disabledAnnotations.join(', ')}`));
+      }
+      
+      // Log annotations with defaults
+      const annotationsWithDefaults = Object.keys(config.defaults);
+      if (annotationsWithDefaults.length > 0 && options.verbose) {
+        console.log(pc.gray(`  Annotations with defaults: ${annotationsWithDefaults.join(', ')}`));
+      }
+      
+      console.log(pc.green('✓ Config loaded\n'));
+    } else if (options.verbose) {
+      console.log(pc.gray('No config file found, using default annotation settings\n'));
+    }
+    
     console.log(pc.gray(`Reading spec: ${specPath}`));
     const specContent = readFileSync(resolve(process.cwd(), specPath), 'utf-8');
     const ir = await parseSpec(specContent);

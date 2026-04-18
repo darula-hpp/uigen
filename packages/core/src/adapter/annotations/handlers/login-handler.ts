@@ -1,6 +1,27 @@
 import type { AnnotationHandler, AnnotationContext } from '../types.js';
 
 /**
+ * Metadata interface for annotation handlers.
+ */
+interface AnnotationMetadata {
+  name: string;
+  description: string;
+  targetType: 'field' | 'operation' | 'resource';
+  parameterSchema: {
+    type: 'object' | 'string' | 'boolean' | 'number';
+    properties?: Record<string, {
+      type: 'string' | 'boolean' | 'number' | 'object' | 'array' | 'enum';
+      description?: string;
+      enum?: string[];
+      items?: any;
+      properties?: Record<string, any>;
+    }>;
+    required?: string[];
+  };
+  examples: Array<{ description: string; value: unknown }>;
+}
+
+/**
  * Handler for x-uigen-login annotation.
  * Marks operations as login endpoints or excludes them from auto-detection.
  * 
@@ -13,6 +34,25 @@ import type { AnnotationHandler, AnnotationContext } from '../types.js';
  */
 export class LoginHandler implements AnnotationHandler<boolean> {
   public readonly name = 'x-uigen-login';
+
+  public static readonly metadata: AnnotationMetadata = {
+    name: 'x-uigen-login',
+    description: 'Marks operations as login endpoints or excludes them from auto-detection',
+    targetType: 'operation',
+    parameterSchema: {
+      type: 'boolean'
+    },
+    examples: [
+      {
+        description: 'Explicitly mark as login endpoint',
+        value: true
+      },
+      {
+        description: 'Explicitly exclude from auto-detection',
+        value: false
+      }
+    ]
+  };
   
   /**
    * Extract the x-uigen-login annotation value from the spec element.

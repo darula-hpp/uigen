@@ -10,7 +10,7 @@ import { parseSpec } from '@uigen-dev/core';
  */
 describe('Serve Command Integration', () => {
   it('should parse petstore.yaml successfully', async () => {
-    const specPath = resolve(process.cwd(), 'examples/petstore.yaml');
+    const specPath = resolve(process.cwd(), '../../examples/petstore.yaml');
     const specContent = readFileSync(specPath, 'utf-8');
     
     const ir = await parseSpec(specContent);
@@ -23,7 +23,7 @@ describe('Serve Command Integration', () => {
   });
 
   it('should have valid IR structure for serving', async () => {
-    const specPath = resolve(process.cwd(), 'examples/petstore.yaml');
+    const specPath = resolve(process.cwd(), '../../examples/petstore.yaml');
     const specContent = readFileSync(specPath, 'utf-8');
     
     const ir = await parseSpec(specContent);
@@ -46,7 +46,7 @@ describe('Serve Command Integration', () => {
   });
 
   it('should serialize IR to JSON for injection', async () => {
-    const specPath = resolve(process.cwd(), 'examples/petstore.yaml');
+    const specPath = resolve(process.cwd(), '../../examples/petstore.yaml');
     const specContent = readFileSync(specPath, 'utf-8');
     
     const ir = await parseSpec(specContent);
@@ -62,7 +62,7 @@ describe('Serve Command Integration', () => {
   });
 
   it('should handle server configuration from spec', async () => {
-    const specPath = resolve(process.cwd(), 'examples/petstore.yaml');
+    const specPath = resolve(process.cwd(), '../../examples/petstore.yaml');
     const specContent = readFileSync(specPath, 'utf-8');
     
     const ir = await parseSpec(specContent);

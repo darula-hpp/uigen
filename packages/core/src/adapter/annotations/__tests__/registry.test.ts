@@ -290,6 +290,128 @@ describe('AnnotationHandlerRegistry', () => {
       expect(all).toHaveLength(0);
     });
   });
+  
+  describe('config loader integration and precedence', () => {
+    it('should skip disabled annotations even if present in spec', () => {
+      const handler = createMockHandler('x-uigen-label');
+      const applySpy = vi.spyOn(handler, 'apply');
+      
+      registry.register(handler);
+      
+      // Create mock config loader that disables the annotation
+      const mockConfigLoader = {
+        isAnnotationDisabled: vi.fn(() => true),
+        getAnnotationConfig: vi.fn(() => undefined)
+      } as any;
+      
+      registry.setConfigLoader(mockConfigLoader);
+      
+      const context = createMockContext({ 'x-uigen-label': 'Test Label' });
+      registry.processAnnotations(context);
+      
+      // Handler should not be applied
+      expect(applySpy).not.toHaveBeenCalled();
+      expect(mockConfigLoader.isAnnotationDisabled).toHaveBeenCalledWith('x-uigen-label');
+    });
+    
+    it('should use spec value when both spec and config have values', () => {
+      const handler = createMockHandler('x-uigen-label');
+      const applySpy = vi.spyOn(handler, 'apply');
+      
+      registry.register(handler);
+      
+      // Create mock config loader with default value
+      const mockConfigLoader = {
+        isAnnotationDisabled: vi.fn(() => false),
+        getAnnotationConfig: vi.fn(() => 'Config Label')
+      } as any;
+      
+      registry.setConfigLoader(mockConfigLoader);
+      
+      const context = createMockContext({ 'x-uigen-label': 'Spec Label' });
+      registry.processAnnotations(context);
+      
+      // Should use spec value (precedence)
+      expect(applySpy).toHaveBeenCalledWith('Spec Label', context);
+    });
+    
+    it('should use config value when only config has value', () => {
+      const handler = createMockHandler('x-uigen-label');
+      const applySpy = vi.spyOn(handler, 'apply');
+      
+      registry.register(handler);
+      
+      // Create mock config loader with default value
+      const mockConfigLoader = {
+        isAnnotationDisabled: vi.fn(() => false),
+        getAnnotationConfig: vi.fn(() => 'Config Label')
+      } as any;
+      
+      registry.setConfigLoader(mockConfigLoader);
+      
+      const context = createMockContext({}); // No spec value
+      registry.processAnnotations(context);
+      
+      // Should use config value
+      expect(applySpy).toHaveBeenCalledWith('Config Label', context);
+    });
+    
+    it('should use spec value when only spec has value', () => {
+      const handler = createMockHandler('x-uigen-label');
+      const applySpy = vi.spyOn(handler, 'apply');
+      
+      registry.register(handler);
+      
+      // Create mock config loader with no value
+      const mockConfigLoader = {
+        isAnnotationDisabled: vi.fn(() => false),
+        getAnnotationConfig: vi.fn(() => undefined)
+      } as any;
+      
+      registry.setConfigLoader(mockConfigLoader);
+      
+      const context = createMockContext({ 'x-uigen-label': 'Spec Label' });
+      registry.processAnnotations(context);
+      
+      // Should use spec value
+      expect(applySpy).toHaveBeenCalledWith('Spec Label', context);
+    });
+    
+    it('should not apply when neither spec nor config has value', () => {
+      const handler = createMockHandler('x-uigen-label');
+      const applySpy = vi.spyOn(handler, 'apply');
+      
+      registry.register(handler);
+      
+      // Create mock config loader with no value
+      const mockConfigLoader = {
+        isAnnotationDisabled: vi.fn(() => false),
+        getAnnotationConfig: vi.fn(() => undefined)
+      } as any;
+      
+      registry.setConfigLoader(mockConfigLoader);
+      
+      const context = createMockContext({}); // No spec value
+      registry.processAnnotations(context);
+      
+      // Should not apply
+      expect(applySpy).not.toHaveBeenCalled();
+    });
+    
+    it('should work without config loader (backward compatibility)', () => {
+      const handler = createMockHandler('x-uigen-label');
+      const applySpy = vi.spyOn(handler, 'apply');
+      
+      registry.register(handler);
+      // No config loader set
+      
+      const context = createMockContext({ 'x-uigen-label': 'Spec Label' });
+      registry.processAnnotations(context);
+      
+      // Should use spec value normally
+      expect(applySpy).toHaveBeenCalledWith('Spec Label', context);
+    });
+  });
 });
 
 // Helper functions
