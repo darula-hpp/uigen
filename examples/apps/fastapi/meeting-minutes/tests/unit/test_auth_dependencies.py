@@ -71,7 +71,7 @@ async def test_get_current_user_expired_token(db_session):
         )
     
     assert exc_info.value.status_code == 401
-    assert "Invalid authentication token" in exc_info.value.detail
+    assert "Authentication token has expired" in exc_info.value.detail
 
 
 @pytest.mark.asyncio

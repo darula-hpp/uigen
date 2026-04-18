@@ -26,6 +26,7 @@ export const nav: NavSection[] = [
       { title: 'How It Works', slug: 'how-it-works' },
       { title: 'Intermediate Representation', slug: 'intermediate-representation' },
       { title: 'Adapters', slug: 'adapters' },
+      { title: 'Config Reconciliation', slug: 'config-reconciliation' },
     ],
   },
   {

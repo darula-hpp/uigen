@@ -118,6 +118,7 @@ The IR is the contract. Everything built on top of UIGen talks to the IR - not t
 - [x] View hint classifier - detects list, detail, create, update, delete, search, wizard, action
 - [x] Relationship detector - `hasMany` from nested paths, `belongsTo` from URI fields
 - [x] Pagination detector - offset, cursor, and page-based strategies
+- [x] Config reconciliation system - runtime merging of user config annotations into specs
 - [x] Graceful degradation - malformed operations are skipped, not crashed
 
 ### Views
@@ -265,7 +266,7 @@ See [`packages/react/src/overrides/README.md`](./packages/react/src/overrides/RE
 
 ### Spec annotations (`x-uigen-*`)
 
-Annotate your OpenAPI spec directly to control how fields are rendered:
+Annotate your OpenAPI spec directly to control how fields are rendered. The config reconciliation system allows you to override these annotations at runtime via `.uigen/config.yaml` without modifying your source spec.
 
 #### `x-uigen-label` — custom field label
 
@@ -317,6 +318,35 @@ definitions:
   }
 }
 ```
+
+### Config Reconciliation
+
+The config reconciliation system allows you to override spec annotations at runtime without modifying your source files. Create a `.uigen/config.yaml` file:
+
+```yaml
+version: "1.0"
+enabled:
+  x-uigen-ignore: true
+  x-uigen-login: true
+defaults:
+  x-uigen-ignore:
+    value: false
+annotations:
+  POST:/api/v1/users:
+    x-uigen-ignore: true
+  User.email:
+    x-uigen-label: "Email Address"
+  POST:/auth/login:
+    x-uigen-login: true
+```
+
+When you run `uigen serve`, the system:
+1. Loads your config file
+2. Merges annotations into the spec (config takes precedence)
+3. Uses the reconciled spec for UI generation
+4. Never modifies your source spec file
+
+This is particularly useful with the config-gui, which saves annotation preferences to `.uigen/config.yaml` automatically.
 
 ---
 

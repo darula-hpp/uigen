@@ -36,6 +36,7 @@ UIGen is developed in phases. Here's what's been shipped and what's coming next.
 - [x] WizardView (multi-step for large forms)
 - [x] Sidebar layout + TopBar + Breadcrumbs + responsive shell
 - [x] React Router with full URL navigation and browser history
+- [x] Config reconciliation system (runtime annotation merging from `.uigen/config.yaml`)
 
 ## Phase 3: Extension & distribution 🔜 In progress
 
@@ -61,9 +62,3 @@ UIGen is developed in phases. Here's what's been shipped and what's coming next.
 - [ ] `@uigen-dev/plugin-mapbox`: map renderer for geo coordinate fields
 - [ ] GraphQL adapter
 - [ ] OpenAPI 3.1 full support
-
-## Phase 5: Cloud & enterprise
-
-- [ ] **uigen.cloud**: hosted UIGen: point at a spec URL, get a shareable live frontend
-- [ ] **GitHub Action**: auto-deploy the generated frontend when your spec changes in CI
-- [ ] **Enterprise tier**: SSO/SAML, audit logs, RBAC, on-prem deployment, SLA
