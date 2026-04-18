@@ -154,7 +154,7 @@ export function VisualEditor({ structure }: VisualEditorProps) {
           <li className="flex items-start gap-2">
             <span className="text-blue-600 mt-0.5">•</span>
             <span>
-              <strong>Ref Links:</strong> Switch to the "Ref Links" tab, then drag a field onto a resource to create a reference
+              <strong>Ref Links:</strong> Switch to the "Ref Links" tab to create references by dragging fields onto resources
             </span>
           </li>
         </ul>
@@ -270,7 +270,7 @@ function ResourceSection({ resource }: ResourceSectionProps) {
 }
 
 /**
- * RefsView displays the ref link management interface
+ * RefsView displays the ref link management interface with split view
  */
 interface RefsViewProps {
   structure: SpecStructure;
@@ -283,13 +283,60 @@ function RefsView({ structure }: RefsViewProps) {
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
           Reference Link Manager
         </h3>
-        <p className="text-sm text-gray-600">
-          Create x-uigen-ref annotations by dragging fields from the "Spec Structure" tab onto resources below.
+        <p className="text-sm text-gray-600 mb-4">
+          Create x-uigen-ref annotations by dragging fields from the left panel onto resources on the right.
           Ref links enable select/autocomplete widgets that pull data from related resources.
         </p>
       </div>
 
-      <RefLinkCanvas structure={structure} />
+      {/* Split View: Fields on left, Canvas on right */}
+      <div className="grid grid-cols-2 gap-6">
+        {/* Left: Fields to drag */}
+        <div className="border border-gray-200 rounded-lg p-4 bg-white max-h-[600px] overflow-y-auto">
+          <h4 className="text-sm font-semibold text-gray-900 mb-3">
+            Fields (Drag to create refs)
+          </h4>
+          <div className="space-y-4">
+            {structure.resources.map(resource => (
+              <div key={resource.slug} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <div className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                    />
+                  </svg>
+                  {resource.name}
+                </div>
+                <div className="space-y-1">
+                  {resource.fields.map(field => (
+                    <div
+                      key={field.path}
+                      draggable
+                      className="px-3 py-2 text-sm bg-white border border-gray-300 rounded cursor-move hover:border-blue-500 hover:bg-blue-50 transition-colors text-gray-900 font-medium"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>{field.label}</span>
+                        <span className="text-xs text-gray-500 ml-2">{field.type}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: Canvas to drop */}
+        <div className="border border-gray-200 rounded-lg p-4 bg-white">
+          <h4 className="text-sm font-semibold text-gray-900 mb-3">
+            Resources (Drop fields here)
+          </h4>
+          <RefLinkCanvas structure={structure} />
+        </div>
+      </div>
     </div>
   );
 }

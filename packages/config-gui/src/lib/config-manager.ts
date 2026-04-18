@@ -1,6 +1,3 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, unlinkSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { load as parseYaml, dump as stringifyYaml } from 'js-yaml';
 import type { ConfigFile, ConfigValidationResult, ConfigValidationError } from '@uigen-dev/core';
 
 /**
@@ -8,9 +5,9 @@ import type { ConfigFile, ConfigValidationResult, ConfigValidationError } from '
  */
 export interface ConfigManagerOptions {
   /**
-   * Path to config file (default: .uigen/config.yaml)
+   * Base URL for API endpoints (default: current origin)
    */
-  configPath?: string;
+  apiBaseUrl?: string;
   
   /**
    * Enable verbose logging
@@ -19,55 +16,60 @@ export interface ConfigManagerOptions {
 }
 
 /**
- * Manages reading and writing UIGen configuration files
+ * Manages reading and writing UIGen configuration files via backend API
  * 
  * Responsibilities:
- * - Read and parse config file
- * - Write config file atomically (temp file + rename)
+ * - Read and parse config file via API
+ * - Write config file via API
  * - Validate config schema
- * - Handle file system errors gracefully
+ * - Handle API errors gracefully
  */
 export class ConfigManager {
-  private readonly configPath: string;
+  private readonly apiBaseUrl: string;
   private readonly verbose: boolean;
   
   constructor(options: ConfigManagerOptions = {}) {
-    this.configPath = options.configPath || '.uigen/config.yaml';
+    this.apiBaseUrl = options.apiBaseUrl || '';
     this.verbose = options.verbose || false;
   }
   
   /**
-   * Read and parse config file.
+   * Read and parse config file via API.
    * Returns null if file doesn't exist (not an error).
    * 
    * @returns Parsed config or null if file doesn't exist
-   * @throws Error if file exists but cannot be parsed
+   * @throws Error if API request fails or response cannot be parsed
    */
-  public read(): ConfigFile | null {
-    const fullPath = resolve(process.cwd(), this.configPath);
-    
-    // Check if file exists
-    if (!existsSync(fullPath)) {
-      if (this.verbose) {
-        console.log(`Config file not found at ${fullPath}`);
-      }
-      return null;
-    }
-    
+  public async read(): Promise<ConfigFile | null> {
     try {
-      // Read file
-      const fileContent = readFileSync(fullPath, 'utf-8');
+      const response = await fetch(`${this.apiBaseUrl}/api/config`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
       
-      // Parse YAML
-      const parsed = parseYaml(fileContent);
-      
-      // Validate structure
-      if (!parsed || typeof parsed !== 'object') {
-        throw new Error('Config file must contain a valid YAML object');
+      if (!response.ok) {
+        if (response.status === 404) {
+          if (this.verbose) {
+            console.log('Config file not found');
+          }
+          return null;
+        }
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
       }
       
-      // Cast to ConfigFile
-      const config = parsed as ConfigFile;
+      const data = await response.json();
+      
+      // Check if API returned null (file doesn't exist)
+      if (data === null) {
+        if (this.verbose) {
+          console.log('Config file not found');
+        }
+        return null;
+      }
+      
+      const config = data as ConfigFile;
       
       // Validate required fields
       if (!config.version) {
@@ -91,7 +93,7 @@ export class ConfigManager {
       }
       
       if (this.verbose) {
-        console.log(`Loaded config from ${fullPath}`);
+        console.log('Loaded config from API');
       }
       
       return config;
@@ -102,13 +104,12 @@ export class ConfigManager {
   }
   
   /**
-   * Write config file atomically using temp file + rename strategy.
-   * Creates parent directory if it doesn't exist.
+   * Write config file via API.
    * 
    * @param config - The config to write
-   * @throws Error if validation fails or file cannot be written
+   * @throws Error if validation fails or API request fails
    */
-  public write(config: ConfigFile): void {
+  public async write(config: ConfigFile): Promise<void> {
     // Validate config before writing
     const validation = this.validate(config);
     if (!validation.valid) {
@@ -116,43 +117,24 @@ export class ConfigManager {
       throw new Error(`Config validation failed: ${errorMessages}`);
     }
     
-    const fullPath = resolve(process.cwd(), this.configPath);
-    const tempPath = `${fullPath}.tmp`;
-    
     try {
-      // Ensure parent directory exists
-      const dir = dirname(fullPath);
-      if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
-      }
-      
-      // Convert config to YAML
-      const yamlContent = stringifyYaml(config, {
-        indent: 2,
-        lineWidth: 120,
-        noRefs: true,
-        sortKeys: false
+      const response = await fetch(`${this.apiBaseUrl}/api/config`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(config)
       });
       
-      // Write to temp file
-      writeFileSync(tempPath, yamlContent, 'utf-8');
-      
-      // Atomic rename
-      renameSync(tempPath, fullPath);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(`API request failed: ${errorData.error || response.statusText}`);
+      }
       
       if (this.verbose) {
-        console.log(`Wrote config to ${fullPath}`);
+        console.log('Wrote config via API');
       }
     } catch (error) {
-      // Clean up temp file if it exists
-      try {
-        if (existsSync(tempPath)) {
-          unlinkSync(tempPath);
-        }
-      } catch {
-        // Ignore cleanup errors
-      }
-      
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to write config file: ${errorMessage}`);
     }

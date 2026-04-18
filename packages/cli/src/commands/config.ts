@@ -5,6 +5,7 @@ import { createServer as createViteServer } from 'vite';
 import pc from 'picocolors';
 import { exec } from 'child_process';
 import { platform } from 'os';
+import { createApiMiddleware } from '../middleware/config-api.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -52,6 +53,7 @@ function openBrowser(url: string): void {
 async function startServerWithRetry(
   configGuiRoot: string,
   specPath: string,
+  specDir: string,
   startPort: number,
   maxRetries: number = 10
 ): Promise<{ port: number; server: any }> {
@@ -75,6 +77,12 @@ async function startServerWithRetry(
               '</head>',
               `<script>window.__UIGEN_SPEC_PATH__ = ${JSON.stringify(specPath)};</script></head>`
             );
+          }
+        }, {
+          name: 'uigen-api-middleware',
+          configureServer(server) {
+            // Add API middleware before Vite's internal middleware
+            server.middlewares.use(createApiMiddleware(specPath, specDir));
           }
         }]
       });
@@ -119,7 +127,9 @@ export async function config(specPath: string, options: ConfigOptions) {
       process.exit(1);
     }
 
+    const specDir = dirname(resolvedSpecPath);
     console.log(pc.gray(`Spec file: ${specPath}`));
+    console.log(pc.gray(`Working directory: ${specDir}`));
 
     // Resolve config-gui package
     const configGuiRoot = resolveConfigGuiRoot();
@@ -134,6 +144,7 @@ export async function config(specPath: string, options: ConfigOptions) {
     const { port, server } = await startServerWithRetry(
       configGuiRoot,
       resolvedSpecPath,
+      specDir,
       startPort
     );
 
@@ -143,6 +154,11 @@ export async function config(specPath: string, options: ConfigOptions) {
 
     const url = `http://localhost:${port}`;
     console.log(pc.green(`✓ Config GUI running at ${pc.bold(url)}\n`));
+    console.log(pc.gray('  API endpoints available:'));
+    console.log(pc.gray(`  - GET  ${url}/api/config`));
+    console.log(pc.gray(`  - POST ${url}/api/config`));
+    console.log(pc.gray(`  - GET  ${url}/api/spec`));
+    console.log(pc.gray(`  - GET  ${url}/api/annotations\n`));
     console.log(pc.gray('Opening browser...\n'));
 
     // Open browser

@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import type { ConfigFile, AnnotationHandler } from '@uigen-dev/core';
 import type { AnnotationMetadata } from '../types/index.js';
 import { ConfigManager } from '../lib/config-manager.js';
 import { MetadataExtractor } from '../lib/metadata-extractor.js';
+import { SpecParser } from '../lib/spec-parser.js';
 
 /**
  * Global application state for the Config GUI
@@ -119,36 +120,24 @@ export function AppProvider({ children, configPath = '.uigen/config.yaml', specP
   const [annotations, setAnnotations] = useState<AnnotationMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadedSpecStructure, setLoadedSpecStructure] = useState<any>(specStructure || null);
+  const [loadedHandlers, setLoadedHandlers] = useState<AnnotationHandler[]>(handlers);
   
-  const configManager = new ConfigManager({ configPath });
-  const metadataExtractor = new MetadataExtractor();
-  
-  /**
-   * Load config file on mount
-   */
-  useEffect(() => {
-    loadConfig();
-  }, []);
+  // Use refs to avoid dependency issues
+  const configManagerRef = useRef(new ConfigManager({ apiBaseUrl: '' }));
+  const metadataExtractorRef = useRef(new MetadataExtractor());
+  const specParserRef = useRef(new SpecParser());
+  const initializedRef = useRef(false);
   
   /**
-   * Extract annotation metadata when handlers change
+   * Load config file via API
    */
-  useEffect(() => {
-    if (handlers.length > 0) {
-      const metadata = metadataExtractor.extractAll(handlers);
-      setAnnotations(metadata);
-    }
-  }, [handlers]);
-  
-  /**
-   * Load config file from disk
-   */
-  const loadConfig = async () => {
+  const loadConfig = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const loadedConfig = configManager.read();
+      const loadedConfig = await configManagerRef.current.read();
       
       // If no config file exists, create default config
       if (!loadedConfig) {
@@ -169,24 +158,115 @@ export function AppProvider({ children, configPath = '.uigen/config.yaml', specP
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
   
   /**
-   * Save config file to disk
+   * Load spec structure via API
    */
-  const saveConfig = async (newConfig: ConfigFile) => {
+  const loadSpecStructure = useCallback(async () => {
+    // If spec structure was passed as prop, use it
+    if (specStructure) {
+      setLoadedSpecStructure(specStructure);
+      return;
+    }
+    
+    // Otherwise, load from API
+    try {
+      const response = await fetch('/api/spec', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        console.warn('Failed to load spec structure from API');
+        return;
+      }
+      
+      const uigenApp = await response.json();
+      
+      // Parse the UIGenApp into the structure needed by VisualEditor
+      const parsedStructure = specParserRef.current.parse(uigenApp);
+      setLoadedSpecStructure(parsedStructure);
+    } catch (err) {
+      console.warn('Failed to load spec structure:', err);
+    }
+  }, [specStructure]);
+  
+  /**
+   * Load annotation handlers metadata via API
+   */
+  const loadAnnotationHandlers = useCallback(async () => {
+    // If handlers were passed as props, use them
+    if (handlers.length > 0) {
+      setLoadedHandlers(handlers);
+      return;
+    }
+    
+    // Otherwise, load metadata from API
+    try {
+      const response = await fetch('/api/annotations', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        console.warn('Failed to load annotation handlers from API');
+        return;
+      }
+      
+      const metadata = await response.json();
+      setAnnotations(metadata);
+    } catch (err) {
+      console.warn('Failed to load annotation handlers:', err);
+    }
+  }, [handlers.length]);
+  
+  /**
+   * Load config file, spec structure, and annotation handlers on mount ONCE
+   */
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    
+    const initialize = async () => {
+      await loadConfig();
+      await loadSpecStructure();
+      await loadAnnotationHandlers();
+    };
+    initialize();
+  }, []);
+  
+  /**
+   * Extract annotation metadata when handlers change
+   */
+  useEffect(() => {
+    if (loadedHandlers.length > 0) {
+      const metadata = metadataExtractorRef.current.extractAll(loadedHandlers);
+      setAnnotations(metadata);
+    }
+  }, [loadedHandlers]);
+  
+  /**
+   * Save config file via API
+   */
+  const saveConfig = useCallback(async (newConfig: ConfigFile) => {
     setError(null);
     
     try {
-      configManager.write(newConfig);
+      await configManagerRef.current.write(newConfig);
       setConfig(newConfig);
+      // Don't reload - just update the state
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(`Failed to save config: ${errorMessage}`);
       console.error('Failed to save config:', err);
       throw err;
     }
-  };
+  }, []);
   
   /**
    * Update config in memory without saving
@@ -204,13 +284,13 @@ export function AppProvider({ children, configPath = '.uigen/config.yaml', specP
   
   const state: AppState = {
     config,
-    handlers,
+    handlers: loadedHandlers,
     annotations,
     isLoading,
     error,
     configPath,
     specPath: specPath || null,
-    specStructure: specStructure || null
+    specStructure: loadedSpecStructure
   };
   
   const actions: AppActions = {

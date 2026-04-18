@@ -1,103 +1,118 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { existsSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ConfigManager } from '../config-manager.js';
 import type { ConfigFile } from '@uigen-dev/core';
 
+// Mock fetch globally
+global.fetch = vi.fn();
+
 describe('ConfigManager', () => {
-  const testConfigDir = resolve(process.cwd(), '.test-config');
-  const testConfigPath = resolve(testConfigDir, 'config.yaml');
-  
   beforeEach(() => {
-    // Clean up test directory before each test
-    if (existsSync(testConfigDir)) {
-      rmSync(testConfigDir, { recursive: true, force: true });
-    }
+    vi.clearAllMocks();
   });
   
   afterEach(() => {
-    // Clean up test directory after each test
-    if (existsSync(testConfigDir)) {
-      rmSync(testConfigDir, { recursive: true, force: true });
-    }
+    vi.clearAllMocks();
   });
   
   describe('read()', () => {
-    it('should return null when config file does not exist', () => {
-      const manager = new ConfigManager({ configPath: testConfigPath });
-      const result = manager.read();
+    it('should return null when config file does not exist (404)', async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found'
+      });
+      
+      const manager = new ConfigManager();
+      const result = await manager.read();
       
       expect(result).toBeNull();
+      expect(global.fetch).toHaveBeenCalledWith('/api/config', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
     });
     
-    it('should read and parse valid config file', () => {
-      mkdirSync(testConfigDir, { recursive: true });
-      const configContent = `
-version: "1.0"
-enabled:
-  x-uigen-label: true
-  x-uigen-ref: true
-defaults:
-  x-uigen-label: {}
-annotations:
-  "User.email":
-    x-uigen-label: "Email Address"
-`;
-      writeFileSync(testConfigPath, configContent, 'utf-8');
+    it('should read and parse valid config file', async () => {
+      const mockConfig: ConfigFile = {
+        version: '1.0',
+        enabled: {
+          'x-uigen-label': true,
+          'x-uigen-ref': true
+        },
+        defaults: {
+          'x-uigen-label': {}
+        },
+        annotations: {
+          'User.email': {
+            'x-uigen-label': 'Email Address'
+          }
+        }
+      };
       
-      const manager = new ConfigManager({ configPath: testConfigPath });
-      const result = manager.read();
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockConfig
+      });
+      
+      const manager = new ConfigManager();
+      const result = await manager.read();
+      
+      expect(result).toEqual(mockConfig);
+    });
+    
+    it('should handle missing version field with warning', async () => {
+      const mockConfig = {
+        enabled: {},
+        defaults: {},
+        annotations: {}
+      };
+      
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockConfig
+      });
+      
+      const manager = new ConfigManager();
+      const result = await manager.read();
       
       expect(result).not.toBeNull();
       expect(result?.version).toBe('1.0');
-      expect(result?.enabled['x-uigen-label']).toBe(true);
-      expect(result?.annotations['User.email']['x-uigen-label']).toBe('Email Address');
     });
     
-    it('should handle missing version field with warning', () => {
-      mkdirSync(testConfigDir, { recursive: true });
-      const configContent = `
-enabled: {}
-defaults: {}
-annotations: {}
-`;
-      writeFileSync(testConfigPath, configContent, 'utf-8');
+    it('should throw error for API failure', async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error'
+      });
       
-      const manager = new ConfigManager({ configPath: testConfigPath });
-      const result = manager.read();
+      const manager = new ConfigManager();
       
-      expect(result).not.toBeNull();
-      expect(result?.version).toBe('1.0');
+      await expect(manager.read()).rejects.toThrow('Failed to read config file');
     });
     
-    it('should throw error for malformed YAML', () => {
-      mkdirSync(testConfigDir, { recursive: true });
-      const configContent = `
-version: "1.0"
-enabled:
-  invalid yaml here: [unclosed bracket
-`;
-      writeFileSync(testConfigPath, configContent, 'utf-8');
+    it('should throw error for network failure', async () => {
+      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
       
-      const manager = new ConfigManager({ configPath: testConfigPath });
+      const manager = new ConfigManager();
       
-      expect(() => manager.read()).toThrow('Failed to read config file');
-    });
-    
-    it('should throw error for non-object YAML', () => {
-      mkdirSync(testConfigDir, { recursive: true });
-      const configContent = 'just a string';
-      writeFileSync(testConfigPath, configContent, 'utf-8');
-      
-      const manager = new ConfigManager({ configPath: testConfigPath });
-      
-      expect(() => manager.read()).toThrow('Config file must contain a valid YAML object');
+      await expect(manager.read()).rejects.toThrow('Failed to read config file');
     });
   });
   
   describe('write()', () => {
-    it('should write valid config file', () => {
-      const manager = new ConfigManager({ configPath: testConfigPath });
+    it('should write valid config file', async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ success: true })
+      });
+      
+      const manager = new ConfigManager();
       const config: ConfigFile = {
         version: '1.0',
         enabled: {
@@ -114,54 +129,19 @@ enabled:
         }
       };
       
-      manager.write(config);
+      await manager.write(config);
       
-      expect(existsSync(testConfigPath)).toBe(true);
-      
-      // Verify content
-      const written = manager.read();
-      expect(written).toEqual(config);
+      expect(global.fetch).toHaveBeenCalledWith('/api/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(config)
+      });
     });
     
-    it('should create parent directory if it does not exist', () => {
-      const manager = new ConfigManager({ configPath: testConfigPath });
-      const config: ConfigFile = {
-        version: '1.0',
-        enabled: {},
-        defaults: {},
-        annotations: {}
-      };
-      
-      expect(existsSync(testConfigDir)).toBe(false);
-      
-      manager.write(config);
-      
-      expect(existsSync(testConfigDir)).toBe(true);
-      expect(existsSync(testConfigPath)).toBe(true);
-    });
-    
-    it('should write atomically using temp file', () => {
-      mkdirSync(testConfigDir, { recursive: true });
-      const manager = new ConfigManager({ configPath: testConfigPath });
-      const config: ConfigFile = {
-        version: '1.0',
-        enabled: {},
-        defaults: {},
-        annotations: {}
-      };
-      
-      manager.write(config);
-      
-      // Temp file should not exist after successful write
-      const tempPath = `${testConfigPath}.tmp`;
-      expect(existsSync(tempPath)).toBe(false);
-      
-      // Config file should exist
-      expect(existsSync(testConfigPath)).toBe(true);
-    });
-    
-    it('should throw error for invalid config', () => {
-      const manager = new ConfigManager({ configPath: testConfigPath });
+    it('should throw error for invalid config', async () => {
+      const manager = new ConfigManager();
       const invalidConfig = {
         version: '1.0',
         enabled: 'not an object', // Invalid
@@ -169,34 +149,42 @@ enabled:
         annotations: {}
       } as unknown as ConfigFile;
       
-      expect(() => manager.write(invalidConfig)).toThrow('Config validation failed');
+      await expect(manager.write(invalidConfig)).rejects.toThrow('Config validation failed');
+      
+      // Should not call API for invalid config
+      expect(global.fetch).not.toHaveBeenCalled();
     });
     
-    it('should overwrite existing config file', () => {
-      mkdirSync(testConfigDir, { recursive: true });
-      const manager = new ConfigManager({ configPath: testConfigPath });
+    it('should throw error for API failure', async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: 'Internal server error' })
+      });
       
-      const config1: ConfigFile = {
+      const manager = new ConfigManager();
+      const config: ConfigFile = {
         version: '1.0',
-        enabled: { 'x-uigen-label': true },
+        enabled: {},
         defaults: {},
         annotations: {}
       };
       
-      manager.write(config1);
-      const read1 = manager.read();
-      expect(read1?.enabled['x-uigen-label']).toBe(true);
+      await expect(manager.write(config)).rejects.toThrow('Failed to write config file');
+    });
+    
+    it('should throw error for network failure', async () => {
+      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
       
-      const config2: ConfigFile = {
+      const manager = new ConfigManager();
+      const config: ConfigFile = {
         version: '1.0',
-        enabled: { 'x-uigen-label': false },
+        enabled: {},
         defaults: {},
         annotations: {}
       };
       
-      manager.write(config2);
-      const read2 = manager.read();
-      expect(read2?.enabled['x-uigen-label']).toBe(false);
+      await expect(manager.write(config)).rejects.toThrow('Failed to write config file');
     });
   });
   
@@ -382,48 +370,6 @@ enabled:
       
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThanOrEqual(2);
-    });
-  });
-  
-  describe('round-trip correctness', () => {
-    it('should preserve config structure on read-write cycle', () => {
-      const manager = new ConfigManager({ configPath: testConfigPath });
-      const originalConfig: ConfigFile = {
-        version: '1.0',
-        enabled: {
-          'x-uigen-label': true,
-          'x-uigen-ref': false,
-          'x-uigen-ignore': true
-        },
-        defaults: {
-          'x-uigen-label': {},
-          'x-uigen-ref': {
-            valueField: 'id',
-            labelField: 'name'
-          }
-        },
-        annotations: {
-          'User.email': {
-            'x-uigen-label': 'Email Address'
-          },
-          'User.role': {
-            'x-uigen-ref': {
-              resource: 'Role',
-              valueField: 'id',
-              labelField: 'name'
-            }
-          }
-        }
-      };
-      
-      // Write original config
-      manager.write(originalConfig);
-      
-      // Read it back
-      const readConfig = manager.read();
-      
-      // Should be deeply equal
-      expect(readConfig).toEqual(originalConfig);
     });
   });
 });
