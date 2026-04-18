@@ -4,7 +4,8 @@ import { fileURLToPath } from 'url';
 import { createServer as createViteServer, type ProxyOptions } from 'vite';
 import { createServer as createHttpServer, request as httpRequest, type IncomingMessage, type ServerResponse } from 'http';
 import { request as httpsRequest } from 'https';
-import { parseSpec, ConfigLoader, AnnotationHandlerRegistry } from '@uigen-dev/core';
+import { parseSpec, ConfigLoader, AnnotationHandlerRegistry, Reconciler } from '@uigen-dev/core';
+import { load as parseYaml } from 'js-yaml';
 import pc from 'picocolors';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -120,7 +121,53 @@ export async function serve(specPath: string, options: ServeOptions) {
     
     console.log(pc.gray(`Reading spec: ${specPath}`));
     const specContent = readFileSync(resolve(process.cwd(), specPath), 'utf-8');
-    const ir = await parseSpec(specContent);
+    
+    // Parse the spec as YAML/JSON to get the raw spec object
+    let rawSpec: any;
+    try {
+      rawSpec = parseYaml(specContent);
+    } catch {
+      // If YAML parsing fails, try JSON
+      rawSpec = JSON.parse(specContent);
+    }
+    
+    // Apply reconciliation if config exists
+    let reconciledSpec = rawSpec;
+    if (config) {
+      try {
+        const reconciler = new Reconciler({
+          logLevel: options.verbose ? 'debug' : 'info',
+          validateOutput: true,
+          strictMode: false,
+        });
+        
+        const reconciliationResult = reconciler.reconcile(rawSpec, config);
+        reconciledSpec = reconciliationResult.spec;
+        
+        if (options.verbose) {
+          console.log(pc.gray(`  Applied ${reconciliationResult.appliedAnnotations} annotation(s) from config`));
+          
+          if (reconciliationResult.warnings.length > 0) {
+            console.log(pc.yellow(`  Warnings: ${reconciliationResult.warnings.length}`));
+            for (const warning of reconciliationResult.warnings) {
+              console.log(pc.yellow(`    - ${warning.message}`));
+              if (warning.suggestion) {
+                console.log(pc.gray(`      ${warning.suggestion}`));
+              }
+            }
+          }
+        }
+        
+        console.log(pc.green('✓ Reconciliation complete\n'));
+      } catch (error) {
+        console.error(pc.red('✗ Reconciliation failed:'), error instanceof Error ? error.message : error);
+        process.exit(1);
+      }
+    }
+    
+    // Convert reconciled spec back to string for parseSpec
+    const reconciledSpecContent = JSON.stringify(reconciledSpec);
+    const ir = await parseSpec(reconciledSpecContent);
 
     console.log(pc.green(`✓ Parsed spec: ${ir.meta.title} v${ir.meta.version}`));
     console.log(pc.gray(`  Resources: ${ir.resources.map(r => r.name).join(', ')}\n`));
