@@ -6,8 +6,8 @@ from fastapi.exceptions import RequestValidationError
 from contextlib import asynccontextmanager
 from app.database import engine
 from app.config import get_settings
-from app.routers import templates, meetings, documents
-from app.exceptions import InvalidTemplateError, RenderError, ConversionError, MergeError
+from app.routers import templates, meetings, documents, auth
+from app.exceptions import InvalidTemplateError, RenderError, ConversionError, MergeError, AuthenticationError, TokenExpiredError
 
 
 @asynccontextmanager
@@ -126,6 +126,30 @@ async def merge_exception_handler(request: Request, exc: MergeError):
     )
 
 
+@app.exception_handler(AuthenticationError)
+async def auth_exception_handler(request: Request, exc: AuthenticationError):
+    """Handle authentication errors."""
+    return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={
+            "error": str(exc),
+            "status_code": 401
+        }
+    )
+
+
+@app.exception_handler(TokenExpiredError)
+async def token_expired_exception_handler(request: Request, exc: TokenExpiredError):
+    """Handle expired token errors."""
+    return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={
+            "error": "Authentication token has expired",
+            "status_code": 401
+        }
+    )
+
+
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
     """Handle unexpected errors."""
@@ -143,6 +167,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 app.include_router(templates.router)
 app.include_router(meetings.router)
 app.include_router(documents.router)
+app.include_router(auth.router)
 
 
 # Root Endpoints

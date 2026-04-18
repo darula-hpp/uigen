@@ -318,11 +318,6 @@ Real-world specs are messy. The system must degrade gracefully:
 - [ ] GraphQL adapter
 - [ ] OpenAPI 3.1 support
 
-### Phase 5 — Cloud & enterprise
-- [ ] **uigen.cloud** — hosted UIGen: point at a spec URL, get a shareable live frontend at a custom domain
-- [ ] **GitHub Action** — auto-deploy the generated frontend when your spec changes in CI
-- [ ] **Enterprise tier** — SSO/SAML, audit logs, RBAC, on-prem deployment, SLA
-
 ---
 
 ## Verification Plan
