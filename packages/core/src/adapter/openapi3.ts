@@ -24,6 +24,7 @@ import { Authentication_Detector } from './auth-detector.js';
 import { Resource_Extractor } from './resource-extractor.js';
 import { Parameter_Processor } from './parameter-processor.js';
 import { Body_Processor } from './body-processor.js';
+import { Operation_Processor } from './operation-processor.js';
 
 export class OpenAPI3Adapter {
   private spec: OpenAPIV3.Document;
@@ -41,6 +42,7 @@ export class OpenAPI3Adapter {
   private resourceExtractor: Resource_Extractor;
   private parameterProcessor: Parameter_Processor;
   private bodyProcessor: Body_Processor;
+  private operationProcessor: Operation_Processor;
 
   constructor(spec: OpenAPIV3.Document) {
     this.spec = spec;
@@ -104,6 +106,15 @@ export class OpenAPI3Adapter {
       this.schemaProcessor,
       this.annotationRegistry,
       this.fileMetadataVisitor
+    );
+    
+    // Instantiate Operation_Processor
+    this.operationProcessor = new Operation_Processor(
+      this.viewHintClassifier,
+      this.parameterProcessor,
+      this.bodyProcessor,
+      this.annotationRegistry,
+      this.adapterUtils
     );
   }
 
@@ -300,48 +311,10 @@ export class OpenAPI3Adapter {
     path: string,
     operation: OpenAPIV3.OperationObject,
     pathItem?: OpenAPIV3.PathItemObject
-  ): Operation {
-    const pathParams = pathItem?.parameters;
-    const parameters = this.parameterProcessor.processParameters(operation.parameters || [], pathParams);
-    const requestBody = operation.requestBody ? this.adaptRequestBody(operation.requestBody) : undefined;
-
-    let requestContentType: string | undefined;
-    if (operation.requestBody && 'content' in operation.requestBody) {
-      requestContentType = this.bodyProcessor.determineRequestContentType(
-        operation.requestBody.content,
-        requestBody
-      );
-    }
-
-    const responses = this.adaptResponses(operation.responses);
-    const viewHint = this.viewHintClassifier.classify(method, path, parameters, requestBody);
-
-    const operationId = operation.operationId || `${method.toLowerCase()}_${path.replace(/\//g, '_')}`;
-    
-    // Extract x-uigen-id vendor extension from operation if present
-    const vendorExtension = (operation as any)['x-uigen-id'];
-    const uigenId = vendorExtension || operationId;
-
-    return {
-      id: operationId,
-      uigenId: uigenId,
-      method,
-      path,
-      summary: operation.summary,
-      description: operation.description,
-      parameters,
-      requestBody,
-      requestContentType,
-      responses,
-      viewHint,
-      security: operation.security?.map(s => ({ name: Object.keys(s)[0], scopes: Object.values(s)[0] }))
-    };
+  ): Operation | undefined {
+    return this.operationProcessor.processOperation(method, path, operation, pathItem);
   }
 
-  private adaptRequestBody(body: OpenAPIV3.ReferenceObject | OpenAPIV3.RequestBodyObject): SchemaNode | undefined {
-    return this.bodyProcessor.processRequestBody(body);
-  }
-  
   private adaptRequestBody(body: OpenAPIV3.ReferenceObject | OpenAPIV3.RequestBodyObject): SchemaNode | undefined {
     return this.bodyProcessor.processRequestBody(body);
   }
