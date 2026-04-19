@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Meeting Minutes Backend
+  title: Meeting Minutes
   description: Automated meeting minutes document generation API
   version: 1.0.0
 paths:

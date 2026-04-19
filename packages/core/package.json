@@ -37,9 +37,7 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit",
     "prepack": "cp ../../README.md ./README.md",
-    "postpack": "rm -f ./README.md",
-    "test:config": "pnpm -w exec node packages/cli/dist/index.js config examples/apps/fastapi/meeting-minutes/openapi.yaml",
-    "test:serve": "pnpm -w exec node packages/cli/dist/index.js serve examples/apps/fastapi/meeting-minutes/openapi.yaml --proxy-base http://localhost:8000"
+    "postpack": "rm -f ./README.md"
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
