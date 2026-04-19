@@ -402,220 +402,347 @@ describe('x-uigen-ignore: Task 1.4 - Annotation Extraction', () => {
   });
 
   describe('shouldIgnoreParameter method behavior', () => {
-    it('should exist as a private method on OpenAPI3Adapter', () => {
+    it('should filter parameters with x-uigen-ignore: true through Parameter_Processor', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test', version: '1.0.0' },
-        paths: {}
+        paths: {
+          '/users/{userId}': {
+            get: {
+              operationId: 'getUser',
+              parameters: [
+                {
+                  name: 'userId',
+                  in: 'path',
+                  required: true,
+                  schema: { type: 'string' },
+                  'x-uigen-ignore': true
+                } as any
+              ],
+              responses: {
+                '200': {
+                  description: 'Success'
+                }
+              }
+            }
+          }
+        }
       };
 
       const adapter = new OpenAPI3Adapter(spec);
+      const result = adapter.adapt();
       
-      // Verify the method exists
-      expect(typeof (adapter as any).shouldIgnoreParameter).toBe('function');
+      // Parameter should be filtered out
+      const operation = result.resources[0]?.operations[0];
+      expect(operation?.parameters).toHaveLength(0);
     });
 
-    it('should return true when parameter has x-uigen-ignore: true', () => {
+    it('should include parameters with x-uigen-ignore: false through Parameter_Processor', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test', version: '1.0.0' },
-        paths: {}
+        paths: {
+          '/users': {
+            get: {
+              operationId: 'listUsers',
+              parameters: [
+                {
+                  name: 'limit',
+                  in: 'query',
+                  schema: { type: 'integer' },
+                  'x-uigen-ignore': false
+                } as any
+              ],
+              responses: {
+                '200': {
+                  description: 'Success'
+                }
+              }
+            }
+          }
+        }
       };
 
       const adapter = new OpenAPI3Adapter(spec);
-      const param: OpenAPIV3.ParameterObject = {
-        name: 'userId',
-        in: 'path',
-        required: true,
-        schema: { type: 'string' },
-        'x-uigen-ignore': true
-      } as any;
-
-      const result = (adapter as any).shouldIgnoreParameter(param);
-      expect(result).toBe(true);
+      const result = adapter.adapt();
+      
+      // Parameter should be included
+      const operation = result.resources[0]?.operations[0];
+      expect(operation?.parameters).toHaveLength(1);
+      expect(operation?.parameters[0].name).toBe('limit');
     });
 
-    it('should return false when parameter has x-uigen-ignore: false', () => {
+    it('should include parameters with no annotation through Parameter_Processor', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test', version: '1.0.0' },
-        paths: {}
+        paths: {
+          '/users': {
+            get: {
+              operationId: 'listUsers',
+              parameters: [
+                {
+                  name: 'offset',
+                  in: 'query',
+                  schema: { type: 'integer' }
+                }
+              ],
+              responses: {
+                '200': {
+                  description: 'Success'
+                }
+              }
+            }
+          }
+        }
       };
 
       const adapter = new OpenAPI3Adapter(spec);
-      const param: OpenAPIV3.ParameterObject = {
-        name: 'userId',
-        in: 'query',
-        schema: { type: 'string' },
-        'x-uigen-ignore': false
-      } as any;
-
-      const result = (adapter as any).shouldIgnoreParameter(param);
-      expect(result).toBe(false);
+      const result = adapter.adapt();
+      
+      // Parameter should be included by default
+      const operation = result.resources[0]?.operations[0];
+      expect(operation?.parameters).toHaveLength(1);
+      expect(operation?.parameters[0].name).toBe('offset');
     });
 
-    it('should return false when parameter has no annotation', () => {
+    it('should filter path-level parameter with x-uigen-ignore: true when operation has no annotation', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test', version: '1.0.0' },
-        paths: {}
+        paths: {
+          '/users': {
+            parameters: [
+              {
+                name: 'apiKey',
+                in: 'header',
+                schema: { type: 'string' },
+                'x-uigen-ignore': true
+              } as any
+            ],
+            get: {
+              operationId: 'listUsers',
+              responses: {
+                '200': {
+                  description: 'Success'
+                }
+              }
+            }
+          }
+        }
       };
 
       const adapter = new OpenAPI3Adapter(spec);
-      const param: OpenAPIV3.ParameterObject = {
-        name: 'userId',
-        in: 'header',
-        schema: { type: 'string' }
-      };
-
-      const result = (adapter as any).shouldIgnoreParameter(param);
-      expect(result).toBe(false);
+      const result = adapter.adapt();
+      
+      // Path-level parameter should be filtered out
+      const operation = result.resources[0]?.operations[0];
+      expect(operation?.parameters).toHaveLength(0);
     });
 
-    it('should return true when path-level parameter has x-uigen-ignore: true and operation parameter has no annotation', () => {
+    it('should include parameter when operation-level has x-uigen-ignore: false and path-level has true (operation overrides)', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test', version: '1.0.0' },
-        paths: {}
+        paths: {
+          '/users': {
+            parameters: [
+              {
+                name: 'apiKey',
+                in: 'header',
+                schema: { type: 'string' },
+                'x-uigen-ignore': true
+              } as any
+            ],
+            get: {
+              operationId: 'listUsers',
+              parameters: [
+                {
+                  name: 'apiKey',
+                  in: 'header',
+                  schema: { type: 'string' },
+                  'x-uigen-ignore': false
+                } as any
+              ],
+              responses: {
+                '200': {
+                  description: 'Success'
+                }
+              }
+            }
+          }
+        }
       };
 
       const adapter = new OpenAPI3Adapter(spec);
-      const pathParam: OpenAPIV3.ParameterObject = {
-        name: 'debug',
-        in: 'query',
-        schema: { type: 'boolean' },
-        'x-uigen-ignore': true
-      } as any;
-      const operationParam: OpenAPIV3.ParameterObject = {
-        name: 'debug',
-        in: 'query',
-        schema: { type: 'boolean' }
-      };
-
-      const result = (adapter as any).shouldIgnoreParameter(operationParam, [pathParam]);
-      expect(result).toBe(true);
+      const result = adapter.adapt();
+      
+      // Operation-level overrides path-level, so parameter should be included
+      const operation = result.resources[0]?.operations[0];
+      expect(operation?.parameters).toHaveLength(1);
+      expect(operation?.parameters[0].name).toBe('apiKey');
     });
 
-    it('should return false when operation-level parameter has x-uigen-ignore: false and path-level has x-uigen-ignore: true (operation overrides)', () => {
+    it('should filter parameter when operation-level has x-uigen-ignore: true and path-level has false (operation overrides)', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test', version: '1.0.0' },
-        paths: {}
+        paths: {
+          '/users': {
+            parameters: [
+              {
+                name: 'apiKey',
+                in: 'header',
+                schema: { type: 'string' },
+                'x-uigen-ignore': false
+              } as any
+            ],
+            get: {
+              operationId: 'listUsers',
+              parameters: [
+                {
+                  name: 'apiKey',
+                  in: 'header',
+                  schema: { type: 'string' },
+                  'x-uigen-ignore': true
+                } as any
+              ],
+              responses: {
+                '200': {
+                  description: 'Success'
+                }
+              }
+            }
+          }
+        }
       };
 
       const adapter = new OpenAPI3Adapter(spec);
-      const pathParam: OpenAPIV3.ParameterObject = {
-        name: 'debug',
-        in: 'query',
-        schema: { type: 'boolean' },
-        'x-uigen-ignore': true
-      } as any;
-      const operationParam: OpenAPIV3.ParameterObject = {
-        name: 'debug',
-        in: 'query',
-        schema: { type: 'boolean' },
-        'x-uigen-ignore': false
-      } as any;
-
-      const result = (adapter as any).shouldIgnoreParameter(operationParam, [pathParam]);
-      expect(result).toBe(false);
-    });
-
-    it('should return true when operation-level parameter has x-uigen-ignore: true and path-level has x-uigen-ignore: false (operation overrides)', () => {
-      const spec: OpenAPIV3.Document = {
-        openapi: '3.0.0',
-        info: { title: 'Test', version: '1.0.0' },
-        paths: {}
-      };
-
-      const adapter = new OpenAPI3Adapter(spec);
-      const pathParam: OpenAPIV3.ParameterObject = {
-        name: 'debug',
-        in: 'query',
-        schema: { type: 'boolean' },
-        'x-uigen-ignore': false
-      } as any;
-      const operationParam: OpenAPIV3.ParameterObject = {
-        name: 'debug',
-        in: 'query',
-        schema: { type: 'boolean' },
-        'x-uigen-ignore': true
-      } as any;
-
-      const result = (adapter as any).shouldIgnoreParameter(operationParam, [pathParam]);
-      expect(result).toBe(true);
+      const result = adapter.adapt();
+      
+      // Operation-level overrides path-level, so parameter should be filtered out
+      const operation = result.resources[0]?.operations[0];
+      expect(operation?.parameters).toHaveLength(0);
     });
 
     it('should match parameters by name and location (in)', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test', version: '1.0.0' },
-        paths: {}
+        paths: {
+          '/users/{userId}': {
+            parameters: [
+              {
+                name: 'userId',
+                in: 'path',
+                required: true,
+                schema: { type: 'string' },
+                'x-uigen-ignore': true
+              } as any
+            ],
+            get: {
+              operationId: 'getUser',
+              parameters: [
+                {
+                  name: 'userId',
+                  in: 'query',
+                  schema: { type: 'string' }
+                }
+              ],
+              responses: {
+                '200': {
+                  description: 'Success'
+                }
+              }
+            }
+          }
+        }
       };
 
       const adapter = new OpenAPI3Adapter(spec);
-      const pathParam: OpenAPIV3.ParameterObject = {
-        name: 'id',
-        in: 'path',
-        schema: { type: 'string' },
-        'x-uigen-ignore': true
-      } as any;
-      const operationParam: OpenAPIV3.ParameterObject = {
-        name: 'id',
-        in: 'query', // Different location
-        schema: { type: 'string' }
-      };
-
-      // Should not match because 'in' is different
-      const result = (adapter as any).shouldIgnoreParameter(operationParam, [pathParam]);
-      expect(result).toBe(false);
+      const result = adapter.adapt();
+      
+      // Path parameter should be filtered (x-uigen-ignore: true)
+      // Query parameter should be included (different location, no annotation)
+      const operation = result.resources[0]?.operations[0];
+      expect(operation?.parameters).toHaveLength(1);
+      expect(operation?.parameters[0].name).toBe('userId');
+      expect(operation?.parameters[0].in).toBe('query');
     });
 
-    it('should return false and log warning for string value', () => {
+    it('should log warning for string value and include parameter', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test', version: '1.0.0' },
-        paths: {}
+        paths: {
+          '/users': {
+            get: {
+              operationId: 'listUsers',
+              parameters: [
+                {
+                  name: 'filter',
+                  in: 'query',
+                  schema: { type: 'string' },
+                  'x-uigen-ignore': 'yes'
+                } as any
+              ],
+              responses: {
+                '200': {
+                  description: 'Success'
+                }
+              }
+            }
+          }
+        }
       };
 
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
       const adapter = new OpenAPI3Adapter(spec);
-      const param: OpenAPIV3.ParameterObject = {
-        name: 'userId',
-        in: 'query',
-        schema: { type: 'string' },
-        'x-uigen-ignore': 'yes'
-      } as any;
-
-      const result = (adapter as any).shouldIgnoreParameter(param);
-      expect(result).toBe(false); // Default behavior when invalid
+      const result = adapter.adapt();
+      
+      // Parameter should be included (invalid annotation treated as undefined)
+      const operation = result.resources[0]?.operations[0];
+      expect(operation?.parameters).toHaveLength(1);
       expect(consoleWarnSpy).toHaveBeenCalledWith('x-uigen-ignore must be a boolean, found string');
-
+      
       consoleWarnSpy.mockRestore();
     });
 
-    it('should return false and log warning for number value', () => {
+    it('should log warning for number value and include parameter', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test', version: '1.0.0' },
-        paths: {}
+        paths: {
+          '/users': {
+            get: {
+              operationId: 'listUsers',
+              parameters: [
+                {
+                  name: 'filter',
+                  in: 'query',
+                  schema: { type: 'string' },
+                  'x-uigen-ignore': 1
+                } as any
+              ],
+              responses: {
+                '200': {
+                  description: 'Success'
+                }
+              }
+            }
+          }
+        }
       };
 
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
       const adapter = new OpenAPI3Adapter(spec);
-      const param: OpenAPIV3.ParameterObject = {
-        name: 'userId',
-        in: 'query',
-        schema: { type: 'string' },
-        'x-uigen-ignore': 1
-      } as any;
-
-      const result = (adapter as any).shouldIgnoreParameter(param);
-      expect(result).toBe(false); // Default behavior when invalid
+      const result = adapter.adapt();
+      
+      // Parameter should be included (invalid annotation treated as undefined)
+      const operation = result.resources[0]?.operations[0];
+      expect(operation?.parameters).toHaveLength(1);
       expect(consoleWarnSpy).toHaveBeenCalledWith('x-uigen-ignore must be a boolean, found number');
-
+      
       consoleWarnSpy.mockRestore();
     });
 
@@ -623,28 +750,37 @@ describe('x-uigen-ignore: Task 1.4 - Annotation Extraction', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test', version: '1.0.0' },
-        paths: {}
+        paths: {
+          '/users': {
+            parameters: [
+              {
+                name: 'apiKey',
+                in: 'header',
+                schema: { type: 'string' },
+                'x-uigen-ignore': 'invalid'
+              } as any
+            ],
+            get: {
+              operationId: 'listUsers',
+              responses: {
+                '200': {
+                  description: 'Success'
+                }
+              }
+            }
+          }
+        }
       };
 
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
       const adapter = new OpenAPI3Adapter(spec);
-      const pathParam: OpenAPIV3.ParameterObject = {
-        name: 'debug',
-        in: 'query',
-        schema: { type: 'boolean' },
-        'x-uigen-ignore': 'invalid'
-      } as any;
-      const operationParam: OpenAPIV3.ParameterObject = {
-        name: 'debug',
-        in: 'query',
-        schema: { type: 'boolean' }
-      };
-
-      const result = (adapter as any).shouldIgnoreParameter(operationParam, [pathParam]);
-      expect(result).toBe(false); // Default behavior when invalid
+      const result = adapter.adapt();
+      
+      // Parameter should be included (invalid annotation treated as undefined)
+      const operation = result.resources[0]?.operations[0];
+      expect(operation?.parameters).toHaveLength(1);
       expect(consoleWarnSpy).toHaveBeenCalledWith('x-uigen-ignore must be a boolean, found string');
-
+      
       consoleWarnSpy.mockRestore();
     });
 
@@ -652,36 +788,69 @@ describe('x-uigen-ignore: Task 1.4 - Annotation Extraction', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test', version: '1.0.0' },
-        paths: {}
+        paths: {
+          '/users': {
+            parameters: [],
+            get: {
+              operationId: 'listUsers',
+              parameters: [
+                {
+                  name: 'limit',
+                  in: 'query',
+                  schema: { type: 'integer' }
+                }
+              ],
+              responses: {
+                '200': {
+                  description: 'Success'
+                }
+              }
+            }
+          }
+        }
       };
 
       const adapter = new OpenAPI3Adapter(spec);
-      const param: OpenAPIV3.ParameterObject = {
-        name: 'userId',
-        in: 'query',
-        schema: { type: 'string' }
-      };
-
-      const result = (adapter as any).shouldIgnoreParameter(param, []);
-      expect(result).toBe(false);
+      const result = adapter.adapt();
+      
+      // Parameter should be included
+      const operation = result.resources[0]?.operations[0];
+      expect(operation?.parameters).toHaveLength(1);
+      expect(operation?.parameters[0].name).toBe('limit');
     });
 
     it('should handle undefined pathParams', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test', version: '1.0.0' },
-        paths: {}
+        paths: {
+          '/users': {
+            get: {
+              operationId: 'listUsers',
+              parameters: [
+                {
+                  name: 'limit',
+                  in: 'query',
+                  schema: { type: 'integer' }
+                }
+              ],
+              responses: {
+                '200': {
+                  description: 'Success'
+                }
+              }
+            }
+          }
+        }
       };
 
       const adapter = new OpenAPI3Adapter(spec);
-      const param: OpenAPIV3.ParameterObject = {
-        name: 'userId',
-        in: 'query',
-        schema: { type: 'string' }
-      };
-
-      const result = (adapter as any).shouldIgnoreParameter(param, undefined);
-      expect(result).toBe(false);
+      const result = adapter.adapt();
+      
+      // Parameter should be included
+      const operation = result.resources[0]?.operations[0];
+      expect(operation?.parameters).toHaveLength(1);
+      expect(operation?.parameters[0].name).toBe('limit');
     });
   });
 });

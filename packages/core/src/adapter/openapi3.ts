@@ -22,6 +22,7 @@ import { SchemaProcessor } from './schema-processor.js';
 import { DefaultFileMetadataVisitor } from './visitors/file-metadata-visitor.js';
 import { Authentication_Detector } from './auth-detector.js';
 import { Resource_Extractor } from './resource-extractor.js';
+import { Parameter_Processor } from './parameter-processor.js';
 
 export class OpenAPI3Adapter {
   private spec: OpenAPIV3.Document;
@@ -37,6 +38,7 @@ export class OpenAPI3Adapter {
   private fileMetadataVisitor: DefaultFileMetadataVisitor;
   private authDetector: Authentication_Detector;
   private resourceExtractor: Resource_Extractor;
+  private parameterProcessor: Parameter_Processor;
 
   /**
    * Pick the best available content schema from a content map.
@@ -98,6 +100,14 @@ export class OpenAPI3Adapter {
       this.relationshipDetector,
       this.paginationDetector,
       this.schemaProcessor
+    );
+    
+    // Instantiate Parameter_Processor
+    this.parameterProcessor = new Parameter_Processor(
+      spec,
+      this.adapterUtils,
+      this.schemaProcessor,
+      this.annotationRegistry
     );
   }
 
@@ -275,56 +285,6 @@ export class OpenAPI3Adapter {
     return this.fileMetadataVisitor.hasFileFields(schema);
   }
 
-  /**
-   * Check if a parameter should be ignored based on x-uigen-ignore annotation.
-   * Handles precedence: operation-level parameter > path-level parameter.
-   * 
-   * @param param - The parameter object to check
-   * @param pathParams - Optional array of path-level parameters for precedence checking
-   * @returns true if the parameter should be ignored, false otherwise
-   */
-  private shouldIgnoreParameter(
-    param: OpenAPIV3.ParameterObject,
-    pathParams?: OpenAPIV3.ParameterObject[]
-  ): boolean {
-    // Check operation-level annotation first (most specific)
-    const paramAnnotation = (param as any)['x-uigen-ignore'];
-    
-    // Only accept boolean values
-    if (typeof paramAnnotation === 'boolean') {
-      return paramAnnotation;
-    }
-    
-    // Warn about non-boolean values
-    if (paramAnnotation !== undefined) {
-      console.warn(`x-uigen-ignore must be a boolean, found ${typeof paramAnnotation}`);
-    }
-    
-    // Check if there's a path-level parameter with the same name
-    if (pathParams) {
-      const pathParam = pathParams.find(p => p.name === param.name && p.in === param.in);
-      if (pathParam) {
-        const pathAnnotation = (pathParam as any)['x-uigen-ignore'];
-        
-        if (typeof pathAnnotation === 'boolean') {
-          return pathAnnotation;
-        }
-        
-        if (pathAnnotation !== undefined) {
-          console.warn(`x-uigen-ignore must be a boolean, found ${typeof pathAnnotation}`);
-        }
-      }
-    }
-    
-    // Default: do not ignore
-    return false;
-  }
-
-  
-  
-
- 
-
   private resolveRef(ref: string): OpenAPIV3.SchemaObject | null {
     if (!ref.startsWith('#/')) return null;
     const parts = ref.slice(2).split('/');
@@ -346,7 +306,7 @@ export class OpenAPI3Adapter {
     pathItem?: OpenAPIV3.PathItemObject
   ): Operation {
     const pathParams = pathItem?.parameters;
-    const parameters = this.adaptParameters(operation.parameters || [], pathParams);
+    const parameters = this.parameterProcessor.processParameters(operation.parameters || [], pathParams);
     const requestBody = operation.requestBody ? this.adaptRequestBody(operation.requestBody) : undefined;
 
     let requestContentType: string | undefined;
@@ -401,51 +361,6 @@ export class OpenAPI3Adapter {
       viewHint,
       security: operation.security?.map(s => ({ name: Object.keys(s)[0], scopes: Object.values(s)[0] }))
     };
-  }
-
-  private adaptParameters(
-    params: (OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject)[],
-    pathParams?: (OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject)[]
-  ): Parameter[] {
-    // Resolve all references first
-    const resolvedPathParams = (pathParams || [])
-      .filter(p => p != null)
-      .map(p => '$ref' in p ? this.resolveParameterRef(p.$ref) : p)
-      .filter((p): p is OpenAPIV3.ParameterObject => p != null);
-
-    const resolvedOperationParams = params
-      .filter(p => p != null)
-      .map(p => '$ref' in p ? this.resolveParameterRef(p.$ref) : p)
-      .filter((p): p is OpenAPIV3.ParameterObject => p != null);
-
-    // Merge path-level and operation-level parameters
-    // Operation-level parameters override path-level parameters with the same name and 'in' location
-    const mergedParams: OpenAPIV3.ParameterObject[] = [];
-    const operationParamKeys = new Set(
-      resolvedOperationParams.map(p => `${p.name}:${p.in}`)
-    );
-
-    // Add path-level parameters that are not overridden
-    for (const pathParam of resolvedPathParams) {
-      const key = `${pathParam.name}:${pathParam.in}`;
-      if (!operationParamKeys.has(key)) {
-        mergedParams.push(pathParam);
-      }
-    }
-
-    // Add all operation-level parameters
-    mergedParams.push(...resolvedOperationParams);
-
-    // Filter out ignored parameters and map to Parameter objects
-    return mergedParams
-      .filter(p => !this.shouldIgnoreParameter(p, resolvedPathParams))
-      .map(p => ({
-        name: p.name,
-        in: p.in as 'path' | 'query' | 'header' | 'cookie',
-        required: p.required || false,
-        schema: p.schema ? this.adaptSchema(p.name, p.schema as OpenAPIV3.SchemaObject) : this.createPlaceholderSchema(p.name),
-        description: p.description
-      }));
   }
 
   private adaptRequestBody(body: OpenAPIV3.ReferenceObject | OpenAPIV3.RequestBodyObject): SchemaNode | undefined {
@@ -587,10 +502,6 @@ export class OpenAPI3Adapter {
   private adaptSchema(key: string, schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject, visited: Set<string> = new Set(), parentSchema?: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject): SchemaNode {
     // Delegate to SchemaProcessor
     return this.schemaProcessor.processSchema(key, schema, visited, parentSchema);
-  }
-
-  private resolveParameterRef(_ref: string): Parameter {
-    return { name: 'unknown', in: 'query', required: false, schema: this.createPlaceholderSchema('unknown') };
   }
 
   private createPlaceholderSchema(key: string): SchemaNode {
