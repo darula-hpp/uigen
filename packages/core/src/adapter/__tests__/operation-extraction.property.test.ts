@@ -28,8 +28,10 @@ describe('Operation Extraction - Property Tests', () => {
           }),
           paths: fc.dictionary(
             // Generate valid resource paths (alphanumeric with hyphens/underscores)
+            // Exclude version-like paths (v1, v2, V1, V2, etc.)
             fc.string({ minLength: 1, maxLength: 20 })
               .filter(s => /^[a-zA-Z0-9_-]+$/.test(s))
+              .filter(s => !/^v\d+$/i.test(s))
               .map(s => `/${s}`),
             fc.record({
               get: fc.option(fc.record({

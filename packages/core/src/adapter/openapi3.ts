@@ -11,20 +11,17 @@ import type {
   Relationship,
   PaginationHint,
   ParsingError,
-  LoginEndpoint,
-  RefreshEndpoint,
-  PasswordResetEndpoint,
-  SignUpEndpoint
 } from '../ir/types.js';
 import { SchemaResolver } from './schema-resolver.js';
 import { ViewHintClassifier } from './view-hint-classifier.js';
-import { FileTypeDetector } from './file-type-detector.js';
 import { RelationshipDetector } from './relationship-detector.js';
 import { PaginationDetector } from './pagination-detector.js';
 import { AnnotationHandlerRegistry, createOperationContext, createSchemaContext, createServerContext } from './annotations/index.js';
 import type { AdapterUtils } from './annotations/index.js';
 import { SchemaProcessor } from './schema-processor.js';
 import { DefaultFileMetadataVisitor } from './visitors/file-metadata-visitor.js';
+import { Authentication_Detector } from './auth-detector.js';
+import { Resource_Extractor } from './resource-extractor.js';
 
 export class OpenAPI3Adapter {
   private spec: OpenAPIV3.Document;
@@ -38,6 +35,8 @@ export class OpenAPI3Adapter {
   private currentIR?: UIGenApp;
   private schemaProcessor: SchemaProcessor;
   private fileMetadataVisitor: DefaultFileMetadataVisitor;
+  private authDetector: Authentication_Detector;
+  private resourceExtractor: Resource_Extractor;
 
   /**
    * Pick the best available content schema from a content map.
@@ -81,6 +80,25 @@ export class OpenAPI3Adapter {
     
     // Instantiate FileMetadataVisitor for hasFileFields delegation
     this.fileMetadataVisitor = new DefaultFileMetadataVisitor();
+    
+    // Instantiate Authentication_Detector
+    this.authDetector = new Authentication_Detector(
+      spec,
+      this.adapterUtils,
+      this.annotationRegistry,
+      this.schemaProcessor
+    );
+    
+    // Instantiate Resource_Extractor
+    this.resourceExtractor = new Resource_Extractor(
+      spec,
+      this.adapterUtils,
+      this.annotationRegistry,
+      this.viewHintClassifier,
+      this.relationshipDetector,
+      this.paginationDetector,
+      this.schemaProcessor
+    );
   }
 
   adapt(): UIGenApp {
@@ -96,11 +114,16 @@ export class OpenAPI3Adapter {
     // Set currentIR on schemaProcessor so annotations can be processed
     this.schemaProcessor.setCurrentIR(this.currentIR);
     
+    // Set currentIR on resourceExtractor so annotations can be processed
+    this.resourceExtractor.setCurrentIR(this.currentIR);
+    
     // Process server annotations after IR is initialized
     this.processServerAnnotations();
     
-    // Extract resources after IR is initialized
-    this.currentIR.resources = this.extractResources();
+    // Delegate resource extraction to Resource_Extractor
+    this.currentIR.resources = this.resourceExtractor.extractResources(
+      this.adaptOperation.bind(this)
+    );
     
     return this.currentIR;
   }
@@ -159,10 +182,11 @@ export class OpenAPI3Adapter {
       }
     }
 
-    const loginEndpoints = this.detectLoginEndpoints();
-    const refreshEndpoints = this.detectRefreshEndpoints();
-    const passwordResetEndpoints = this.detectPasswordResetEndpoints();
-    const signUpEndpoints = this.detectSignUpEndpoints();
+    // Delegate to Authentication_Detector
+    const loginEndpoints = this.authDetector.detectLoginEndpoints();
+    const refreshEndpoints = this.authDetector.detectRefreshEndpoints();
+    const passwordResetEndpoints = this.authDetector.detectPasswordResetEndpoints();
+    const signUpEndpoints = this.authDetector.detectSignUpEndpoints();
 
     return {
       schemes,
@@ -174,110 +198,8 @@ export class OpenAPI3Adapter {
     };
   }
 
-  /**
-   * Extract x-uigen-login annotation from an operation.
-   * Returns true for x-uigen-login: true, false for x-uigen-login: false,
-   * and undefined for absent or non-boolean values.
-   */
-  private extractLoginAnnotation(operation: OpenAPIV3.OperationObject): boolean | undefined {
-    const annotation = (operation as any)['x-uigen-login'];
-    
-    // Only accept boolean values
-    if (typeof annotation === 'boolean') {
-      return annotation;
-    }
-    
-    // Treat non-boolean values as absent
-    return undefined;
-  }
 
-  /**
-   * Extract x-uigen-signup annotation from an operation.
-   * Returns true for x-uigen-signup: true, false for x-uigen-signup: false,
-   * and undefined for absent or non-boolean values.
-   * 
-   * Requirements: 1.4, 2.2
-   */
-  private extractSignupAnnotation(operation: OpenAPIV3.OperationObject): boolean | undefined {
-    const annotation = (operation as any)['x-uigen-signup'];
-    
-    // Validate annotation is boolean type
-    if (typeof annotation === 'boolean') {
-      return annotation;
-    }
-    
-    // Log warning if invalid (non-boolean and not undefined)
-    if (annotation !== undefined) {
-      console.warn(`x-uigen-signup must be a boolean, found ${typeof annotation}`);
-    }
-    
-    // Return undefined for absent or invalid values
-    return undefined;
-  }
 
-  /**
-   * Log warning when an endpoint matches both login and signup patterns.
-   * Suggests using explicit annotations to resolve the ambiguity.
-   * 
-   * Requirements: 7.1
-   */
-  private logAmbiguousPattern(path: string): void {
-    console.warn(
-      `Endpoint ${path} matches both login and signup patterns. ` +
-      `Consider adding explicit x-uigen-login or x-uigen-signup annotation.`
-    );
-  }
-
-  /**
-   * Check if a path and operation match signup patterns.
-   * Returns true if either the path or description matches signup patterns.
-   * 
-   * Path patterns (case-insensitive):
-   * - /register, /signup, /sign-up, /registration
-   * - /auth/register, /auth/signup, /auth/sign-up, /auth/registration
-   * 
-   * Description keywords (case-insensitive):
-   * - register, signup, sign up, registration, create account
-   * 
-   * Requirements: 1.1, 1.2
-   */
-  private matchesSignupPattern(path: string, operation: OpenAPIV3.OperationObject): boolean {
-    // Check path patterns (case-insensitive)
-    const signupPathPatterns = [
-      /\/register$/i,
-      /\/signup$/i,
-      /\/sign-up$/i,
-      /\/registration$/i,
-      /\/auth\/register$/i,
-      /\/auth\/signup$/i,
-      /\/auth\/sign-up$/i,
-      /\/auth\/registration$/i,
-    ];
-
-    for (const pattern of signupPathPatterns) {
-      if (pattern.test(path)) {
-        return true;
-      }
-    }
-
-    // Check description keywords (case-insensitive)
-    const description = (operation.summary || '' + ' ' + operation.description || '').toLowerCase();
-    const signupKeywords = [
-      'register',
-      'signup',
-      'sign up',
-      'registration',
-      'create account',
-    ];
-
-    for (const keyword of signupKeywords) {
-      if (description.includes(keyword)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
 
   /**
    * Extract x-uigen-ignore annotation from a path item or operation.
@@ -398,183 +320,10 @@ export class OpenAPI3Adapter {
     return false;
   }
 
-  /**
-   * Build a LoginEndpoint object from a path and operation.
-   * Extracts request body schema, detects token path, and captures metadata.
-   */
-  private buildLoginEndpoint(path: string, operation: OpenAPIV3.OperationObject): LoginEndpoint {
-    let requestBodySchema: SchemaNode | undefined;
-    
-    if (operation.requestBody && 'content' in operation.requestBody) {
-      const content = this.pickContent(operation.requestBody.content);
-      if (content?.schema) {
-        requestBodySchema = this.adaptSchema('credentials', content.schema);
-      }
-    }
+  
+  
 
-    const tokenPath = this.detectTokenPath(operation);
-
-    return {
-      path,
-      method: 'POST',
-      requestBodySchema: requestBodySchema!,
-      tokenPath,
-      description: operation.summary || operation.description
-    };
-  }
-
-  private detectLoginEndpoints(): LoginEndpoint[] {
-    const annotatedEndpoints: LoginEndpoint[] = [];
-    const autoDetectedEndpoints: LoginEndpoint[] = [];
-
-    for (const [path, pathItem] of Object.entries(this.spec.paths)) {
-      if (!pathItem) continue;
-
-      // Check all HTTP methods for x-uigen-login annotation
-      const methods = ['get', 'post', 'put', 'patch', 'delete'] as const;
-      for (const method of methods) {
-        const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
-        if (!operation) continue;
-
-        // Extract annotations
-        const loginAnnotation = this.extractLoginAnnotation(operation);
-        const signupAnnotation = this.extractSignupAnnotation(operation);
-
-        // Handle conflicting annotations (Requirements: 2.3, 7.2)
-        if (loginAnnotation === true && signupAnnotation === true) {
-          console.warn(
-            `Conflicting authentication annotations on ${path}: both x-uigen-login and x-uigen-signup are true. Using login annotation.`
-          );
-          const endpoint = this.buildLoginEndpoint(path, operation);
-          annotatedEndpoints.push(endpoint);
-          continue;
-        }
-
-        // Explicit exclusion: skip operations with x-uigen-login: false
-        if (loginAnnotation === false) {
-          continue;
-        }
-
-        // Skip if explicitly marked as signup (Requirements: 1.4, 2.1)
-        if (signupAnnotation === true) {
-          continue;
-        }
-
-        // Explicit inclusion: add operations with x-uigen-login: true
-        if (loginAnnotation === true) {
-          const endpoint = this.buildLoginEndpoint(path, operation);
-          annotatedEndpoints.push(endpoint);
-          continue; // Skip auto-detection for annotated endpoints
-        }
-      }
-
-      // Auto-detection only for POST operations without annotations
-      const postOp = pathItem.post as OpenAPIV3.OperationObject | undefined;
-      if (!postOp) continue;
-
-      // Skip if already processed as annotated
-      const loginAnnotation = this.extractLoginAnnotation(postOp);
-      const signupAnnotation = this.extractSignupAnnotation(postOp);
-      
-      if (loginAnnotation === true || loginAnnotation === false) {
-        continue;
-      }
-
-      // Skip if explicitly marked as signup (Requirements: 1.4, 2.1)
-      if (signupAnnotation === true) {
-        continue;
-      }
-
-      // Check signup pattern exclusion before login detection (Requirements: 1.3, 1.5, 7.1)
-      if (this.matchesSignupPattern(path, postOp)) {
-        // Check if also matches login patterns for ambiguity warning
-        const pathMatch = /\/(login|signin|auth\/login|auth\/signin)$/i.test(path);
-        const descText = (postOp.summary || postOp.description || '').toLowerCase();
-        const descMatch = descText.match(/\b(login|authenticate|sign\s*in)\b/) &&
-          !descText.match(/\b(create|generate|get|retrieve|list)\b.*\b(login link|login url)\b/);
-        
-        if (pathMatch || descMatch) {
-          this.logAmbiguousPattern(path);
-        }
-        
-        // Skip endpoint - signup exclusion takes precedence
-        continue;
-      }
-
-      // Auto-detection for operations without annotations (annotation is undefined)
-      const pathMatch = /\/(login|signin|auth\/login|auth\/signin)$/i.test(path);
-      const descText = (postOp.summary || postOp.description || '').toLowerCase();
-      const descMatch = descText.match(/\b(login|authenticate|sign\s*in)\b/) &&
-        !descText.match(/\b(create|generate|get|retrieve|list)\b.*\b(login link|login url)\b/);
-
-      let hasCredentialFields = false;
-
-      if (postOp.requestBody && 'content' in postOp.requestBody) {
-        const content = this.pickContent(postOp.requestBody.content);
-        if (content?.schema) {
-          const requestBodySchema = this.adaptSchema('credentials', content.schema);
-          const fields = this.getSchemaFieldNames(requestBodySchema);
-          hasCredentialFields =
-            (fields.includes('username') || fields.includes('email')) &&
-            fields.includes('password');
-        }
-      }
-
-      if (pathMatch || descMatch) {
-        const endpoint = this.buildLoginEndpoint(path, postOp);
-        autoDetectedEndpoints.push(endpoint);
-      } else if (hasCredentialFields) {
-        const pathLooksAuthRelated = /\/(auth|account|session|token|user|access)/.test(path);
-        if (pathLooksAuthRelated) {
-          const endpoint = this.buildLoginEndpoint(path, postOp);
-          autoDetectedEndpoints.push(endpoint);
-        }
-      }
-    }
-
-    // Return concatenated array with annotated endpoints first
-    return [...annotatedEndpoints, ...autoDetectedEndpoints];
-  }
-
-  private detectTokenPath(operation: OpenAPIV3.OperationObject): string {
-    const responses = operation.responses;
-    for (const statusCode of ['200', '201']) {
-      const response = responses[statusCode];
-      if (!response || !('content' in response)) continue;
-      const content = this.pickContent(response.content);
-      if (!content?.schema) continue;
-      const tokenPath = this.findTokenField(content.schema);
-      if (tokenPath) return tokenPath;
-    }
-    return 'token';
-  }
-
-  private findTokenField(schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject, prefix = ''): string | null {
-    if ('$ref' in schema) {
-      const resolved = this.resolveRef(schema.$ref);
-      if (resolved) return this.findTokenField(resolved, prefix);
-      return null;
-    }
-    if ('properties' in schema && schema.properties) {
-      for (const [key, value] of Object.entries(schema.properties)) {
-        const fieldName = key.toLowerCase();
-        if (['token', 'accesstoken', 'access_token', 'bearertoken'].includes(fieldName)) {
-          return prefix ? `${prefix}.${key}` : key;
-        }
-        if (!prefix && '$ref' in value) {
-          const resolved = this.resolveRef((value as OpenAPIV3.ReferenceObject).$ref);
-          if (resolved && 'properties' in resolved) {
-            const nested = this.findTokenField(resolved, key);
-            if (nested) return nested;
-          }
-        } else if (!prefix && 'properties' in value) {
-          const nested = this.findTokenField(value as OpenAPIV3.SchemaObject, key);
-          if (nested) return nested;
-        }
-      }
-    }
-    return null;
-  }
+ 
 
   private resolveRef(ref: string): OpenAPIV3.SchemaObject | null {
     if (!ref.startsWith('#/')) return null;
@@ -588,357 +337,6 @@ export class OpenAPI3Adapter {
       }
     }
     return current as OpenAPIV3.SchemaObject;
-  }
-
-  private detectRefreshEndpoints(): RefreshEndpoint[] {
-    const refreshEndpoints: RefreshEndpoint[] = [];
-
-    for (const [path, pathItem] of Object.entries(this.spec.paths)) {
-      if (!pathItem) continue;
-      const postOp = pathItem.post as OpenAPIV3.OperationObject | undefined;
-      if (!postOp) continue;
-
-      const pathMatch = /\/(refresh|auth\/refresh|token\/refresh)$/i.test(path);
-      const descMatch = (postOp.summary || postOp.description || '').toLowerCase().includes('refresh token');
-
-      let hasRefreshTokenField = false;
-      let requestBodySchema: SchemaNode | undefined;
-
-      if (postOp.requestBody && 'content' in postOp.requestBody) {
-        const content = this.pickContent(postOp.requestBody.content);
-        if (content?.schema) {
-          requestBodySchema = this.adaptSchema('refreshRequest', content.schema);
-          const fields = this.getSchemaFieldNames(requestBodySchema);
-          hasRefreshTokenField = fields.includes('refreshToken') || fields.includes('refresh_token') || fields.includes('refresh');
-        }
-      }
-
-      if (pathMatch || descMatch || hasRefreshTokenField) {
-        refreshEndpoints.push({ path, method: 'POST', requestBodySchema: requestBodySchema! });
-      }
-    }
-
-    return refreshEndpoints;
-  }
-
-  /**
-   * Detect password reset endpoints based on x-uigen-password-reset annotations.
-   * Only processes annotated endpoints (no auto-detection).
-   * 
-   * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
-   */
-  private detectPasswordResetEndpoints(): PasswordResetEndpoint[] {
-    const endpoints: PasswordResetEndpoint[] = [];
-
-    for (const [path, pathItem] of Object.entries(this.spec.paths)) {
-      if (!pathItem) continue;
-
-      // Check all HTTP methods for x-uigen-password-reset annotation
-      const methods = ['get', 'post', 'put', 'patch', 'delete'] as const;
-      for (const method of methods) {
-        const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
-        if (!operation) continue;
-
-        // Extract annotation from operation (read directly from spec)
-        const annotation = (operation as any)['x-uigen-password-reset'];
-
-        // Explicit exclusion: skip operations with x-uigen-password-reset: false
-        if (annotation === false) {
-          continue;
-        }
-
-        // Explicit inclusion: add operations with x-uigen-password-reset: true
-        if (annotation === true) {
-          const endpoint = this.buildPasswordResetEndpoint(path, operation);
-          endpoints.push(endpoint);
-        }
-      }
-    }
-
-    return endpoints;
-  }
-
-  /**
-   * Build a PasswordResetEndpoint from an operation.
-   * Extracts request body schema and description.
-   * 
-   * Requirements: 6.3, 6.4, 6.5
-   */
-  private buildPasswordResetEndpoint(path: string, operation: OpenAPIV3.OperationObject): PasswordResetEndpoint {
-    let requestBodySchema: SchemaNode | undefined;
-    
-    if (operation.requestBody && 'content' in operation.requestBody) {
-      const content = this.pickContent(operation.requestBody.content);
-      if (content?.schema) {
-        requestBodySchema = this.adaptSchema('passwordReset', content.schema);
-      }
-    }
-
-    return {
-      path,
-      method: 'POST',
-      requestBodySchema,
-      description: operation.summary || operation.description
-    };
-  }
-
-  /**
-   * Detect sign-up endpoints based on x-uigen-signup annotations and auto-detection.
-   * Processes both annotated endpoints and applies pattern matching for auto-detection.
-   * 
-   * Requirements: 1.1, 1.2, 1.4, 2.2, 8.1, 8.2, 8.3, 8.4, 8.5
-   */
-  private detectSignUpEndpoints(): SignUpEndpoint[] {
-    const annotatedEndpoints: SignUpEndpoint[] = [];
-    const autoDetectedEndpoints: SignUpEndpoint[] = [];
-
-    for (const [path, pathItem] of Object.entries(this.spec.paths)) {
-      if (!pathItem) continue;
-
-      // Check all HTTP methods for x-uigen-signup annotation
-      const methods = ['get', 'post', 'put', 'patch', 'delete'] as const;
-      for (const method of methods) {
-        const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
-        if (!operation) continue;
-
-        // Extract annotations from operation
-        const signupAnnotation = this.extractSignupAnnotation(operation);
-        const loginAnnotation = this.extractLoginAnnotation(operation);
-
-        // Handle conflicting annotations (Requirements: 2.3, 7.2)
-        // If both are true, login takes precedence - skip adding to signupEndpoints
-        if (loginAnnotation === true && signupAnnotation === true) {
-          continue; // Already handled in detectLoginEndpoints
-        }
-
-        // Explicit exclusion: skip operations with x-uigen-signup: false
-        if (signupAnnotation === false) {
-          continue;
-        }
-
-        // Explicit inclusion: add operations with x-uigen-signup: true
-        if (signupAnnotation === true) {
-          const endpoint = this.buildSignUpEndpoint(path, operation);
-          annotatedEndpoints.push(endpoint);
-          continue; // Skip auto-detection for annotated endpoints
-        }
-      }
-
-      // Auto-detection only for POST operations without annotations
-      const postOp = pathItem.post as OpenAPIV3.OperationObject | undefined;
-      if (!postOp) continue;
-
-      // Skip if already processed as annotated
-      const signupAnnotation = this.extractSignupAnnotation(postOp);
-      
-      if (signupAnnotation === true || signupAnnotation === false) {
-        continue;
-      }
-
-      // Apply signup pattern matching for auto-detection (Requirements: 1.1, 1.2)
-      if (this.matchesSignupPattern(path, postOp)) {
-        // Verify endpoint has credential fields (username/email + password)
-        let hasCredentialFields = false;
-
-        if (postOp.requestBody && 'content' in postOp.requestBody) {
-          const content = this.pickContent(postOp.requestBody.content);
-          if (content?.schema) {
-            const requestBodySchema = this.adaptSchema('credentials', content.schema);
-            const fields = this.getSchemaFieldNames(requestBodySchema);
-            hasCredentialFields =
-              (fields.includes('username') || fields.includes('email')) &&
-              fields.includes('password');
-          }
-        }
-
-        // Only add to signupEndpoints if it has credential fields
-        if (hasCredentialFields) {
-          const endpoint = this.buildSignUpEndpoint(path, postOp);
-          autoDetectedEndpoints.push(endpoint);
-        }
-      }
-    }
-
-    // Return concatenated array with annotated endpoints first
-    return [...annotatedEndpoints, ...autoDetectedEndpoints];
-  }
-
-  /**
-   * Build a SignUpEndpoint from an operation.
-   * Extracts request body schema and description.
-   * 
-   * Requirements: 8.3, 8.4, 8.5
-   */
-  private buildSignUpEndpoint(path: string, operation: OpenAPIV3.OperationObject): SignUpEndpoint {
-    let requestBodySchema: SchemaNode | undefined;
-    
-    if (operation.requestBody && 'content' in operation.requestBody) {
-      const content = this.pickContent(operation.requestBody.content);
-      if (content?.schema) {
-        requestBodySchema = this.adaptSchema('signUp', content.schema);
-      }
-    }
-
-    return {
-      path,
-      method: 'POST',
-      requestBodySchema,
-      description: operation.summary || operation.description
-    };
-  }
-
-  private getSchemaFieldNames(schema: SchemaNode): string[] {
-    if (schema.type === 'object' && schema.children) {
-      return schema.children.map(child => child.key);
-    }
-    return [];
-  }
-
-  private extractResources(): Resource[] {
-    const resourceMap = new Map<string, Resource>();
-
-    for (const [path, pathItem] of Object.entries(this.spec.paths)) {
-      if (!pathItem) continue;
-
-      const resourceName = this.inferResourceName(path);
-      if (!resourceName) continue;
-
-      if (!resourceMap.has(resourceName)) {
-        // Extract x-uigen-id vendor extension from path item if present, fall back to slug
-        const vendorExtension = (pathItem as any)['x-uigen-id'];
-        const uigenId = vendorExtension || resourceName;
-        
-        resourceMap.set(resourceName, {
-          name: this.capitalize(resourceName),
-          slug: resourceName,
-          uigenId: uigenId,
-          operations: [],
-          schema: this.createPlaceholderSchema(resourceName),
-          relationships: [],
-          pagination: undefined
-        });
-      }
-
-      const resource = resourceMap.get(resourceName)!;
-
-      for (const method of ['get', 'post', 'put', 'patch', 'delete'] as const) {
-        const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
-        if (!operation) continue;
-
-        try {
-          const op = this.adaptOperation(method.toUpperCase() as HttpMethod, path, operation, pathItem);
-          
-          // Process annotations using the registry
-          if (this.currentIR) {
-            const context = createOperationContext(
-              operation,
-              pathItem,
-              path,
-              method.toUpperCase() as HttpMethod,
-              this.adapterUtils,
-              this.currentIR,
-              resource,
-              op
-            );
-            this.annotationRegistry.processAnnotations(context);
-          }
-          
-          // Check if operation should be ignored (set by IgnoreHandler)
-          if ((op as any).__shouldIgnore) {
-            console.log(`Ignoring operation: ${method.toUpperCase()} ${path}`);
-            continue;
-          }
-
-          resource.operations.push(op);
-
-          // Extract schema name from response for deterministic path resolution
-          if (!resource.schemaName) {
-            const responseSchema = op.responses['200']?.schema || op.responses['201']?.schema;
-            if (responseSchema) {
-              const schemaName = this.extractSchemaNameFromResponse(operation, method);
-              if (schemaName) {
-                resource.schemaName = schemaName;
-              }
-            }
-          }
-
-          if (op.viewHint === 'detail' || op.viewHint === 'list') {
-            const responseSchema = op.responses['200']?.schema || op.responses['201']?.schema;
-            if (responseSchema) resource.schema = this.mergeSchemas(resource.schema, responseSchema);
-          }
-
-          if (op.viewHint === 'create' || op.viewHint === 'update') {
-            if (op.requestBody) resource.schema = this.mergeSchemas(resource.schema, op.requestBody);
-            const responseSchema = op.responses['200']?.schema || op.responses['201']?.schema;
-            if (responseSchema) resource.schema = this.mergeSchemas(resource.schema, responseSchema);
-          }
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          console.warn(`Warning: Failed to parse operation ${method.toUpperCase()} ${path}:`, errorMessage);
-          this.parsingErrors.push({ path, method: method.toUpperCase(), error: errorMessage });
-        }
-      }
-    }
-
-    // Filter out resources with no operations
-    const resourcesWithOperations = Array.from(resourceMap.values()).filter(r => r.operations.length > 0);
-    
-    // Log warning if all resources were filtered out
-    if (resourcesWithOperations.length === 0 && resourceMap.size > 0) {
-      console.warn('All operations were ignored - no resources will be generated');
-    }
-
-    // Detect relationships and pagination
-    const allRelationships: Relationship[] = [];
-    
-    for (const resource of resourcesWithOperations) {
-      resource.relationships = this.detectRelationships(resource, resourceMap);
-      
-      // Collect all relationships for library resource marking
-      allRelationships.push(...resource.relationships);
-      
-      resource.pagination = this.detectPagination(resource);
-    }
-    
-    // Detect many-to-many relationships across all resources
-    // This needs to be done separately because operations for /consumer/{id}/library
-    // are added to the library resource, not the consumer resource
-    for (const resource of resourcesWithOperations) {
-      const manyToManyRelationships = this.detectManyToManyAcrossResources(
-        resource,
-        resourcesWithOperations,
-        resourceMap
-      );
-      
-      // Merge many-to-many relationships with existing relationships
-      resource.relationships = [
-        ...resource.relationships,
-        ...manyToManyRelationships
-      ];
-      
-      // Collect all relationships for library resource marking
-      allRelationships.push(...manyToManyRelationships);
-    }
-    
-    // Mark library resources after all relationships are detected
-    this.relationshipDetector.markLibraryResources(resourceMap, allRelationships);
-
-    // Ensure operation IDs are unique
-    const usedIds = new Set<string>();
-    for (const resource of resourcesWithOperations) {
-      for (const operation of resource.operations) {
-        let uniqueId = operation.id;
-        let counter = 1;
-        while (usedIds.has(uniqueId)) {
-          uniqueId = `${operation.id}_${counter}`;
-          counter++;
-        }
-        operation.id = uniqueId;
-        usedIds.add(uniqueId);
-      }
-    }
-
-    return resourcesWithOperations;
   }
 
   private adaptOperation(
@@ -1191,228 +589,12 @@ export class OpenAPI3Adapter {
     return this.schemaProcessor.processSchema(key, schema, visited, parentSchema);
   }
 
-  private inferResourceName(path: string): string | null {
-    const segments = path.split('/').filter(s => s && !s.startsWith('{'));
-
-    // Skip version prefix (v1, v2, etc.)
-    const versionPrefixPattern = /^v\d+$/i;
-    if (segments.length > 0 && versionPrefixPattern.test(segments[0])) {
-      segments.shift();
-    }
-
-    if (segments.length === 0) return null;
-
-    // Use the deepest static segment as the resource name.
-    // This correctly separates sub-resources:
-    //   /v1/Services              -> Services
-    //   /v1/Services/{sid}        -> Services
-    //   /v1/Services/{sid}/AlphaSenders -> AlphaSenders
-    //   /v1/Services/{sid}/AlphaSenders/{sid} -> AlphaSenders
-    return segments[segments.length - 1];
-  }
-
-  private detectRelationships(resource: Resource, allResources: Map<string, Resource>): Relationship[] {
-    const relationships: Relationship[] = [];
-    const pathRelationships = this.relationshipDetector.detectFromPaths(resource, allResources);
-    relationships.push(...pathRelationships);
-    const schemaRelationships = this.relationshipDetector.detectFromSchema(resource.schema, allResources);
-    relationships.push(...schemaRelationships);
-    return relationships;
-  }
-
-  /**
-   * Detect many-to-many relationships by looking at operations across all resources.
-   * This is necessary because the OpenAPI3Adapter creates separate resources for sub-resources,
-   * so operations for /consumer/{id}/library are added to the library resource, not the consumer resource.
-   * 
-   * @param consumerResource - The potential consumer resource
-   * @param allResources - Array of all resources
-   * @param resourceMap - Map of all resources by slug
-   * @returns Array of detected many-to-many relationships
-   */
-  private detectManyToManyAcrossResources(
-    consumerResource: Resource,
-    allResources: Resource[],
-    resourceMap: Map<string, Resource>
-  ): Relationship[] {
-    const relationships: Relationship[] = [];
-    
-    // Look for operations in ANY resource that match /consumerSlug/{id}/targetSlug
-    const escapedSlug = consumerResource.slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const pattern = new RegExp(`^/${escapedSlug}/\\{[^}]+\\}/([^/]+)$`);
-    
-    for (const resource of allResources) {
-      // Group operations by path
-      const pathOperations = new Map<string, Operation[]>();
-      for (const op of resource.operations) {
-        const existing = pathOperations.get(op.path) || [];
-        existing.push(op);
-        pathOperations.set(op.path, existing);
-      }
-      
-      // Check each path for many-to-many pattern
-      for (const [path, operations] of pathOperations.entries()) {
-        const match = path.match(pattern);
-        if (!match) continue;
-        
-        const targetSlug = match[1];
-        
-        // Verify the target resource exists
-        let targetResource: Resource | undefined = resourceMap.get(targetSlug);
-        let actualTargetSlug = targetSlug;
-        
-        // If not found directly, try to find by normalized slug
-        if (!targetResource) {
-          for (const [slug, res] of resourceMap.entries()) {
-            if (this.relationshipDetector.slugsMatch(targetSlug, slug)) {
-              targetResource = res;
-              actualTargetSlug = slug;
-              break;
-            }
-          }
-        }
-        
-        if (!targetResource) continue;
-        
-        // Verify target resource has standalone collection endpoint (GET /targetSlug)
-        const hasCollectionEndpoint = targetResource.operations.some(
-          op => op.path === `/${actualTargetSlug}` && op.method === 'GET'
-        );
-        if (!hasCollectionEndpoint) continue;
-        
-        // Verify target resource has standalone creation endpoint (POST /targetSlug)
-        const hasCreationEndpoint = targetResource.operations.some(
-          op => op.path === `/${actualTargetSlug}` && op.method === 'POST'
-        );
-        if (!hasCreationEndpoint) continue;
-        
-        // Check for GET operation on association endpoint (list associations)
-        const hasGetOperation = operations.some(op => op.method === 'GET');
-        if (!hasGetOperation) continue;
-        
-        // Check for POST or DELETE operations on association endpoint
-        const hasPostOperation = operations.some(op => op.method === 'POST');
-        const hasDeleteOperation = operations.some(op => op.method === 'DELETE');
-        const isReadOnly = !hasPostOperation && !hasDeleteOperation;
-        
-        // Avoid duplicates
-        const exists = relationships.some(
-          r => r.target === actualTargetSlug && r.type === 'manyToMany'
-        );
-        
-        if (!exists) {
-          relationships.push({
-            target: actualTargetSlug,
-            type: 'manyToMany',
-            path: path,
-            isReadOnly: isReadOnly
-          });
-        }
-      }
-    }
-    
-    return relationships;
-  }
-
-  private detectPagination(resource: Resource): PaginationHint | undefined {
-    const listOp = resource.operations.find(op => op.viewHint === 'list' || op.viewHint === 'search');
-    if (!listOp) return undefined;
-    return this.paginationDetector.detect(listOp.parameters) || undefined;
-  }
-
   private resolveParameterRef(_ref: string): Parameter {
     return { name: 'unknown', in: 'query', required: false, schema: this.createPlaceholderSchema('unknown') };
   }
 
   private createPlaceholderSchema(key: string): SchemaNode {
     return { type: 'object', key, label: this.humanize(key), required: false, children: [] };
-  }
-
-  /**
-   * Extract the schema name from a response $ref
-   * e.g., "#/components/schemas/Template" -> "Template"
-   */
-  private extractSchemaNameFromResponse(operation: OpenAPIV3.OperationObject, method: string): string | null {
-    // Check 200 and 201 responses
-    const response200 = operation.responses?.['200'] as OpenAPIV3.ResponseObject | undefined;
-    const response201 = operation.responses?.['201'] as OpenAPIV3.ResponseObject | undefined;
-    const response = response200 || response201;
-    
-    if (!response) return null;
-    
-    const content = this.pickContent(response.content);
-    if (!content?.schema) return null;
-    
-    const schema = content.schema;
-    
-    // Handle direct $ref
-    if ('$ref' in schema && typeof schema.$ref === 'string') {
-      return this.extractSchemaNameFromRef(schema.$ref);
-    }
-    
-    // Handle array of $ref
-    if ('type' in schema && schema.type === 'array' && schema.items) {
-      const items = schema.items as OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject;
-      if ('$ref' in items && typeof items.$ref === 'string') {
-        return this.extractSchemaNameFromRef(items.$ref);
-      }
-    }
-    
-    return null;
-  }
-
-  /**
-   * Extract schema name from a $ref string
-   * e.g., "#/components/schemas/Template" -> "Template"
-   */
-  private extractSchemaNameFromRef(ref: string): string | null {
-    // Handle #/components/schemas/SchemaName
-    const componentsMatch = ref.match(/#\/components\/schemas\/([^/]+)$/);
-    if (componentsMatch) {
-      return componentsMatch[1];
-    }
-    
-    // Handle #/definitions/SchemaName (Swagger 2.0)
-    const definitionsMatch = ref.match(/#\/definitions\/([^/]+)$/);
-    if (definitionsMatch) {
-      return definitionsMatch[1];
-    }
-    
-    return null;
-  }
-
-  private mergeSchemas(base: SchemaNode, update: SchemaNode): SchemaNode {
-    if (update.type === 'array' && update.items) return this.mergeSchemas(base, update.items);
-    if (base.type === 'object' && (!base.children || base.children.length === 0)) return update;
-    if (update.type !== 'object' || !update.children || update.children.length === 0) return base;
-
-    const mergedChildren = [...(base.children || [])];
-    const existingKeys = new Set(mergedChildren.map(c => c.key));
-
-    for (const updateChild of update.children) {
-      if (!existingKeys.has(updateChild.key)) {
-        mergedChildren.push(updateChild);
-      } else {
-        const existingIndex = mergedChildren.findIndex(c => c.key === updateChild.key);
-        const existing = mergedChildren[existingIndex];
-        if (existing.type === 'object' && updateChild.type === 'object' && existing.children && updateChild.children) {
-          mergedChildren[existingIndex] = this.mergeSchemas(existing, updateChild);
-        } else if (this.hasMoreDetails(updateChild, existing)) {
-          mergedChildren[existingIndex] = updateChild;
-        }
-      }
-    }
-
-    return { ...base, children: mergedChildren };
-  }
-
-  private hasMoreDetails(a: SchemaNode, b: SchemaNode): boolean {
-    const score = (n: SchemaNode) => (n.validations?.length || 0) + (n.description ? 1 : 0) + (n.format ? 1 : 0) + (n.enumValues?.length || 0);
-    return score(a) > score(b);
-  }
-
-  private capitalize(str: string): string {
-    return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
   private humanize(str: string): string {
