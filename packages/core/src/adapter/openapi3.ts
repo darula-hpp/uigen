@@ -23,6 +23,7 @@ import { DefaultFileMetadataVisitor } from './visitors/file-metadata-visitor.js'
 import { Authentication_Detector } from './auth-detector.js';
 import { Resource_Extractor } from './resource-extractor.js';
 import { Parameter_Processor } from './parameter-processor.js';
+import { Body_Processor } from './body-processor.js';
 
 export class OpenAPI3Adapter {
   private spec: OpenAPIV3.Document;
@@ -39,21 +40,7 @@ export class OpenAPI3Adapter {
   private authDetector: Authentication_Detector;
   private resourceExtractor: Resource_Extractor;
   private parameterProcessor: Parameter_Processor;
-
-  /**
-   * Pick the best available content schema from a content map.
-   * Prefers JSON, then form-encoded, then multipart, then the first available.
-   */
-  private pickContent(content: Record<string, OpenAPIV3.MediaTypeObject> | undefined): OpenAPIV3.MediaTypeObject | undefined {
-    if (!content) return undefined;
-    return (
-      content['application/json'] ||
-      content['application/x-www-form-urlencoded'] ||
-      content['multipart/form-data'] ||
-      content['text/plain'] ||
-      Object.values(content)[0]
-    );
-  }
+  private bodyProcessor: Body_Processor;
 
   constructor(spec: OpenAPIV3.Document) {
     this.spec = spec;
@@ -108,6 +95,15 @@ export class OpenAPI3Adapter {
       this.adapterUtils,
       this.schemaProcessor,
       this.annotationRegistry
+    );
+    
+    // Instantiate Body_Processor
+    this.bodyProcessor = new Body_Processor(
+      spec,
+      this.adapterUtils,
+      this.schemaProcessor,
+      this.annotationRegistry,
+      this.fileMetadataVisitor
     );
   }
 
@@ -311,31 +307,10 @@ export class OpenAPI3Adapter {
 
     let requestContentType: string | undefined;
     if (operation.requestBody && 'content' in operation.requestBody) {
-      const content = operation.requestBody.content;
-      const hasFileFields = requestBody ? this.hasFileFields(requestBody) : false;
-      
-      // Prefer multipart/form-data when file fields are present
-      if (hasFileFields && content['multipart/form-data']) {
-        requestContentType = 'multipart/form-data';
-      }
-      // Preserve explicit multipart/form-data from spec
-      else if (content['multipart/form-data']) {
-        requestContentType = 'multipart/form-data';
-      }
-      // Set multipart/form-data when file fields are present but not explicitly specified
-      else if (hasFileFields) {
-        requestContentType = 'multipart/form-data';
-      }
-      // Fall back to existing logic for non-file operations
-      else if (content['application/json']) {
-        requestContentType = 'application/json';
-      }
-      else if (content['application/x-www-form-urlencoded']) {
-        requestContentType = 'application/x-www-form-urlencoded';
-      }
-      else {
-        requestContentType = Object.keys(content)[0];
-      }
+      requestContentType = this.bodyProcessor.determineRequestContentType(
+        operation.requestBody.content,
+        requestBody
+      );
     }
 
     const responses = this.adaptResponses(operation.responses);
@@ -364,139 +339,15 @@ export class OpenAPI3Adapter {
   }
 
   private adaptRequestBody(body: OpenAPIV3.ReferenceObject | OpenAPIV3.RequestBodyObject): SchemaNode | undefined {
-    // Check if the request body object itself has x-uigen-ignore: true
-    const bodyIgnoreAnnotation = (body as any)['x-uigen-ignore'];
-    
-    // Validate and apply ignore annotation on the request body object
-    if (typeof bodyIgnoreAnnotation === 'boolean') {
-      if (bodyIgnoreAnnotation) {
-        // Pruning behavior: return undefined and don't process schema
-        console.info('Request body ignored due to x-uigen-ignore annotation');
-        return undefined;
-      }
-    } else if (bodyIgnoreAnnotation !== undefined) {
-      // Warn about non-boolean values
-      console.warn(`x-uigen-ignore must be a boolean, found ${typeof bodyIgnoreAnnotation}`);
-    }
-    
-    if ('$ref' in body) {
-      // For $ref request bodies, we need to check the raw object before resolving
-      // Use resolveRef to get the raw request body object
-      const rawRequestBody = this.resolveRequestBodyRef(body.$ref);
-      
-      if (rawRequestBody) {
-        const refIgnoreAnnotation = (rawRequestBody as any)['x-uigen-ignore'];
-        
-        if (typeof refIgnoreAnnotation === 'boolean') {
-          if (refIgnoreAnnotation) {
-            // Pruning behavior: return undefined for ignored $ref target
-            console.info(`Request body $ref target ignored: ${body.$ref}`);
-            return undefined;
-          }
-        } else if (refIgnoreAnnotation !== undefined) {
-          console.warn(`x-uigen-ignore must be a boolean, found ${typeof refIgnoreAnnotation}`);
-        }
-      }
-      
-      const resolved = this.resolver.resolve(body.$ref);
-      return resolved || undefined;
-    }
-    
-    const content = this.pickContent(body.content);
-    if (!content?.schema) return undefined;
-    
-    // Process the schema - adaptSchema will handle ignore annotations and precedence
-    return this.adaptSchema('body', content.schema as OpenAPIV3.SchemaObject);
+    return this.bodyProcessor.processRequestBody(body);
   }
   
-  /**
-   * Resolves a $ref to a request body object (not a SchemaNode).
-   * Similar to resolveRef but for request bodies.
-   */
-  private resolveRequestBodyRef(ref: string): OpenAPIV3.RequestBodyObject | null {
-    if (!ref.startsWith('#/')) return null;
-    const parts = ref.slice(2).split('/');
-    let current: any = this.spec;
-    for (const part of parts) {
-      if (current && typeof current === 'object' && part in current) {
-        current = current[part];
-      } else {
-        return null;
-      }
-    }
-    return current as OpenAPIV3.RequestBodyObject;
-  }
-
-  /**
-   * Resolves a $ref to a response object (not a SchemaNode).
-   * Similar to resolveRef but for responses.
-   */
-  private resolveResponseRef(ref: string): OpenAPIV3.ResponseObject | null {
-    if (!ref.startsWith('#/')) return null;
-    const parts = ref.slice(2).split('/');
-    let current: any = this.spec;
-    for (const part of parts) {
-      if (current && typeof current === 'object' && part in current) {
-        current = current[part];
-      } else {
-        return null;
-      }
-    }
-    return current as OpenAPIV3.ResponseObject;
+  private adaptRequestBody(body: OpenAPIV3.ReferenceObject | OpenAPIV3.RequestBodyObject): SchemaNode | undefined {
+    return this.bodyProcessor.processRequestBody(body);
   }
 
   private adaptResponses(responses: OpenAPIV3.ResponsesObject): Record<string, { description?: string; schema?: SchemaNode }> {
-    const result: Record<string, { description?: string; schema?: SchemaNode }> = {};
-    if (!responses || typeof responses !== 'object') return result;
-
-    for (const [code, response] of Object.entries(responses)) {
-      // Check if the response object itself has x-uigen-ignore: true
-      const responseIgnoreAnnotation = (response as any)['x-uigen-ignore'];
-      
-      // Validate and apply ignore annotation on the response object
-      if (typeof responseIgnoreAnnotation === 'boolean') {
-        if (responseIgnoreAnnotation) {
-          // Pruning behavior: skip this response and don't process schema
-          console.info(`Response ${code} ignored due to x-uigen-ignore annotation`);
-          continue;
-        }
-      } else if (responseIgnoreAnnotation !== undefined) {
-        // Warn about non-boolean values
-        console.warn(`x-uigen-ignore must be a boolean, found ${typeof responseIgnoreAnnotation}`);
-      }
-      
-      // Handle $ref responses
-      if ('$ref' in response) {
-        // For $ref responses, we need to check the raw object before resolving
-        const rawResponse = this.resolveResponseRef(response.$ref);
-        
-        if (rawResponse) {
-          const refIgnoreAnnotation = (rawResponse as any)['x-uigen-ignore'];
-          
-          if (typeof refIgnoreAnnotation === 'boolean') {
-            if (refIgnoreAnnotation) {
-              // Pruning behavior: skip this response for ignored $ref target
-              console.info(`Response ${code} $ref target ignored: ${response.$ref}`);
-              continue;
-            }
-          } else if (refIgnoreAnnotation !== undefined) {
-            console.warn(`x-uigen-ignore must be a boolean, found ${typeof refIgnoreAnnotation}`);
-          }
-        }
-        
-        // If not ignored, skip processing for now (existing behavior)
-        continue;
-      }
-      
-      const content = this.pickContent(response.content);
-      
-      // Process the schema - adaptSchema will handle ignore annotations and precedence
-      result[code] = {
-        description: response.description,
-        schema: content?.schema ? this.adaptSchema('response', content.schema as OpenAPIV3.SchemaObject) : undefined
-      };
-    }
-    return result;
+    return this.bodyProcessor.processResponses(responses);
   }
 
   private adaptSchema(key: string, schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject, visited: Set<string> = new Set(), parentSchema?: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject): SchemaNode {
