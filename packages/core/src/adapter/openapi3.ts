@@ -11,20 +11,16 @@ import type {
   Relationship,
   PaginationHint,
   ParsingError,
-  LoginEndpoint,
-  RefreshEndpoint,
-  PasswordResetEndpoint,
-  SignUpEndpoint
 } from '../ir/types.js';
 import { SchemaResolver } from './schema-resolver.js';
 import { ViewHintClassifier } from './view-hint-classifier.js';
-import { FileTypeDetector } from './file-type-detector.js';
 import { RelationshipDetector } from './relationship-detector.js';
 import { PaginationDetector } from './pagination-detector.js';
 import { AnnotationHandlerRegistry, createOperationContext, createSchemaContext, createServerContext } from './annotations/index.js';
 import type { AdapterUtils } from './annotations/index.js';
 import { SchemaProcessor } from './schema-processor.js';
 import { DefaultFileMetadataVisitor } from './visitors/file-metadata-visitor.js';
+import { Authentication_Detector } from './auth-detector.js';
 
 export class OpenAPI3Adapter {
   private spec: OpenAPIV3.Document;
@@ -38,6 +34,7 @@ export class OpenAPI3Adapter {
   private currentIR?: UIGenApp;
   private schemaProcessor: SchemaProcessor;
   private fileMetadataVisitor: DefaultFileMetadataVisitor;
+  private authDetector: Authentication_Detector;
 
   /**
    * Pick the best available content schema from a content map.
@@ -81,6 +78,14 @@ export class OpenAPI3Adapter {
     
     // Instantiate FileMetadataVisitor for hasFileFields delegation
     this.fileMetadataVisitor = new DefaultFileMetadataVisitor();
+    
+    // Instantiate Authentication_Detector
+    this.authDetector = new Authentication_Detector(
+      spec,
+      this.adapterUtils,
+      this.annotationRegistry,
+      this.schemaProcessor
+    );
   }
 
   adapt(): UIGenApp {
@@ -159,10 +164,11 @@ export class OpenAPI3Adapter {
       }
     }
 
-    const loginEndpoints = this.detectLoginEndpoints();
-    const refreshEndpoints = this.detectRefreshEndpoints();
-    const passwordResetEndpoints = this.detectPasswordResetEndpoints();
-    const signUpEndpoints = this.detectSignUpEndpoints();
+    // Delegate to Authentication_Detector
+    const loginEndpoints = this.authDetector.detectLoginEndpoints();
+    const refreshEndpoints = this.authDetector.detectRefreshEndpoints();
+    const passwordResetEndpoints = this.authDetector.detectPasswordResetEndpoints();
+    const signUpEndpoints = this.authDetector.detectSignUpEndpoints();
 
     return {
       schemes,
@@ -174,110 +180,8 @@ export class OpenAPI3Adapter {
     };
   }
 
-  /**
-   * Extract x-uigen-login annotation from an operation.
-   * Returns true for x-uigen-login: true, false for x-uigen-login: false,
-   * and undefined for absent or non-boolean values.
-   */
-  private extractLoginAnnotation(operation: OpenAPIV3.OperationObject): boolean | undefined {
-    const annotation = (operation as any)['x-uigen-login'];
-    
-    // Only accept boolean values
-    if (typeof annotation === 'boolean') {
-      return annotation;
-    }
-    
-    // Treat non-boolean values as absent
-    return undefined;
-  }
 
-  /**
-   * Extract x-uigen-signup annotation from an operation.
-   * Returns true for x-uigen-signup: true, false for x-uigen-signup: false,
-   * and undefined for absent or non-boolean values.
-   * 
-   * Requirements: 1.4, 2.2
-   */
-  private extractSignupAnnotation(operation: OpenAPIV3.OperationObject): boolean | undefined {
-    const annotation = (operation as any)['x-uigen-signup'];
-    
-    // Validate annotation is boolean type
-    if (typeof annotation === 'boolean') {
-      return annotation;
-    }
-    
-    // Log warning if invalid (non-boolean and not undefined)
-    if (annotation !== undefined) {
-      console.warn(`x-uigen-signup must be a boolean, found ${typeof annotation}`);
-    }
-    
-    // Return undefined for absent or invalid values
-    return undefined;
-  }
 
-  /**
-   * Log warning when an endpoint matches both login and signup patterns.
-   * Suggests using explicit annotations to resolve the ambiguity.
-   * 
-   * Requirements: 7.1
-   */
-  private logAmbiguousPattern(path: string): void {
-    console.warn(
-      `Endpoint ${path} matches both login and signup patterns. ` +
-      `Consider adding explicit x-uigen-login or x-uigen-signup annotation.`
-    );
-  }
-
-  /**
-   * Check if a path and operation match signup patterns.
-   * Returns true if either the path or description matches signup patterns.
-   * 
-   * Path patterns (case-insensitive):
-   * - /register, /signup, /sign-up, /registration
-   * - /auth/register, /auth/signup, /auth/sign-up, /auth/registration
-   * 
-   * Description keywords (case-insensitive):
-   * - register, signup, sign up, registration, create account
-   * 
-   * Requirements: 1.1, 1.2
-   */
-  private matchesSignupPattern(path: string, operation: OpenAPIV3.OperationObject): boolean {
-    // Check path patterns (case-insensitive)
-    const signupPathPatterns = [
-      /\/register$/i,
-      /\/signup$/i,
-      /\/sign-up$/i,
-      /\/registration$/i,
-      /\/auth\/register$/i,
-      /\/auth\/signup$/i,
-      /\/auth\/sign-up$/i,
-      /\/auth\/registration$/i,
-    ];
-
-    for (const pattern of signupPathPatterns) {
-      if (pattern.test(path)) {
-        return true;
-      }
-    }
-
-    // Check description keywords (case-insensitive)
-    const description = (operation.summary || '' + ' ' + operation.description || '').toLowerCase();
-    const signupKeywords = [
-      'register',
-      'signup',
-      'sign up',
-      'registration',
-      'create account',
-    ];
-
-    for (const keyword of signupKeywords) {
-      if (description.includes(keyword)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
 
   /**
    * Extract x-uigen-ignore annotation from a path item or operation.
@@ -398,183 +302,10 @@ export class OpenAPI3Adapter {
     return false;
   }
 
-  /**
-   * Build a LoginEndpoint object from a path and operation.
-   * Extracts request body schema, detects token path, and captures metadata.
-   */
-  private buildLoginEndpoint(path: string, operation: OpenAPIV3.OperationObject): LoginEndpoint {
-    let requestBodySchema: SchemaNode | undefined;
-    
-    if (operation.requestBody && 'content' in operation.requestBody) {
-      const content = this.pickContent(operation.requestBody.content);
-      if (content?.schema) {
-        requestBodySchema = this.adaptSchema('credentials', content.schema);
-      }
-    }
+  
+  
 
-    const tokenPath = this.detectTokenPath(operation);
-
-    return {
-      path,
-      method: 'POST',
-      requestBodySchema: requestBodySchema!,
-      tokenPath,
-      description: operation.summary || operation.description
-    };
-  }
-
-  private detectLoginEndpoints(): LoginEndpoint[] {
-    const annotatedEndpoints: LoginEndpoint[] = [];
-    const autoDetectedEndpoints: LoginEndpoint[] = [];
-
-    for (const [path, pathItem] of Object.entries(this.spec.paths)) {
-      if (!pathItem) continue;
-
-      // Check all HTTP methods for x-uigen-login annotation
-      const methods = ['get', 'post', 'put', 'patch', 'delete'] as const;
-      for (const method of methods) {
-        const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
-        if (!operation) continue;
-
-        // Extract annotations
-        const loginAnnotation = this.extractLoginAnnotation(operation);
-        const signupAnnotation = this.extractSignupAnnotation(operation);
-
-        // Handle conflicting annotations (Requirements: 2.3, 7.2)
-        if (loginAnnotation === true && signupAnnotation === true) {
-          console.warn(
-            `Conflicting authentication annotations on ${path}: both x-uigen-login and x-uigen-signup are true. Using login annotation.`
-          );
-          const endpoint = this.buildLoginEndpoint(path, operation);
-          annotatedEndpoints.push(endpoint);
-          continue;
-        }
-
-        // Explicit exclusion: skip operations with x-uigen-login: false
-        if (loginAnnotation === false) {
-          continue;
-        }
-
-        // Skip if explicitly marked as signup (Requirements: 1.4, 2.1)
-        if (signupAnnotation === true) {
-          continue;
-        }
-
-        // Explicit inclusion: add operations with x-uigen-login: true
-        if (loginAnnotation === true) {
-          const endpoint = this.buildLoginEndpoint(path, operation);
-          annotatedEndpoints.push(endpoint);
-          continue; // Skip auto-detection for annotated endpoints
-        }
-      }
-
-      // Auto-detection only for POST operations without annotations
-      const postOp = pathItem.post as OpenAPIV3.OperationObject | undefined;
-      if (!postOp) continue;
-
-      // Skip if already processed as annotated
-      const loginAnnotation = this.extractLoginAnnotation(postOp);
-      const signupAnnotation = this.extractSignupAnnotation(postOp);
-      
-      if (loginAnnotation === true || loginAnnotation === false) {
-        continue;
-      }
-
-      // Skip if explicitly marked as signup (Requirements: 1.4, 2.1)
-      if (signupAnnotation === true) {
-        continue;
-      }
-
-      // Check signup pattern exclusion before login detection (Requirements: 1.3, 1.5, 7.1)
-      if (this.matchesSignupPattern(path, postOp)) {
-        // Check if also matches login patterns for ambiguity warning
-        const pathMatch = /\/(login|signin|auth\/login|auth\/signin)$/i.test(path);
-        const descText = (postOp.summary || postOp.description || '').toLowerCase();
-        const descMatch = descText.match(/\b(login|authenticate|sign\s*in)\b/) &&
-          !descText.match(/\b(create|generate|get|retrieve|list)\b.*\b(login link|login url)\b/);
-        
-        if (pathMatch || descMatch) {
-          this.logAmbiguousPattern(path);
-        }
-        
-        // Skip endpoint - signup exclusion takes precedence
-        continue;
-      }
-
-      // Auto-detection for operations without annotations (annotation is undefined)
-      const pathMatch = /\/(login|signin|auth\/login|auth\/signin)$/i.test(path);
-      const descText = (postOp.summary || postOp.description || '').toLowerCase();
-      const descMatch = descText.match(/\b(login|authenticate|sign\s*in)\b/) &&
-        !descText.match(/\b(create|generate|get|retrieve|list)\b.*\b(login link|login url)\b/);
-
-      let hasCredentialFields = false;
-
-      if (postOp.requestBody && 'content' in postOp.requestBody) {
-        const content = this.pickContent(postOp.requestBody.content);
-        if (content?.schema) {
-          const requestBodySchema = this.adaptSchema('credentials', content.schema);
-          const fields = this.getSchemaFieldNames(requestBodySchema);
-          hasCredentialFields =
-            (fields.includes('username') || fields.includes('email')) &&
-            fields.includes('password');
-        }
-      }
-
-      if (pathMatch || descMatch) {
-        const endpoint = this.buildLoginEndpoint(path, postOp);
-        autoDetectedEndpoints.push(endpoint);
-      } else if (hasCredentialFields) {
-        const pathLooksAuthRelated = /\/(auth|account|session|token|user|access)/.test(path);
-        if (pathLooksAuthRelated) {
-          const endpoint = this.buildLoginEndpoint(path, postOp);
-          autoDetectedEndpoints.push(endpoint);
-        }
-      }
-    }
-
-    // Return concatenated array with annotated endpoints first
-    return [...annotatedEndpoints, ...autoDetectedEndpoints];
-  }
-
-  private detectTokenPath(operation: OpenAPIV3.OperationObject): string {
-    const responses = operation.responses;
-    for (const statusCode of ['200', '201']) {
-      const response = responses[statusCode];
-      if (!response || !('content' in response)) continue;
-      const content = this.pickContent(response.content);
-      if (!content?.schema) continue;
-      const tokenPath = this.findTokenField(content.schema);
-      if (tokenPath) return tokenPath;
-    }
-    return 'token';
-  }
-
-  private findTokenField(schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject, prefix = ''): string | null {
-    if ('$ref' in schema) {
-      const resolved = this.resolveRef(schema.$ref);
-      if (resolved) return this.findTokenField(resolved, prefix);
-      return null;
-    }
-    if ('properties' in schema && schema.properties) {
-      for (const [key, value] of Object.entries(schema.properties)) {
-        const fieldName = key.toLowerCase();
-        if (['token', 'accesstoken', 'access_token', 'bearertoken'].includes(fieldName)) {
-          return prefix ? `${prefix}.${key}` : key;
-        }
-        if (!prefix && '$ref' in value) {
-          const resolved = this.resolveRef((value as OpenAPIV3.ReferenceObject).$ref);
-          if (resolved && 'properties' in resolved) {
-            const nested = this.findTokenField(resolved, key);
-            if (nested) return nested;
-          }
-        } else if (!prefix && 'properties' in value) {
-          const nested = this.findTokenField(value as OpenAPIV3.SchemaObject, key);
-          if (nested) return nested;
-        }
-      }
-    }
-    return null;
-  }
+ 
 
   private resolveRef(ref: string): OpenAPIV3.SchemaObject | null {
     if (!ref.startsWith('#/')) return null;
@@ -588,210 +319,6 @@ export class OpenAPI3Adapter {
       }
     }
     return current as OpenAPIV3.SchemaObject;
-  }
-
-  private detectRefreshEndpoints(): RefreshEndpoint[] {
-    const refreshEndpoints: RefreshEndpoint[] = [];
-
-    for (const [path, pathItem] of Object.entries(this.spec.paths)) {
-      if (!pathItem) continue;
-      const postOp = pathItem.post as OpenAPIV3.OperationObject | undefined;
-      if (!postOp) continue;
-
-      const pathMatch = /\/(refresh|auth\/refresh|token\/refresh)$/i.test(path);
-      const descMatch = (postOp.summary || postOp.description || '').toLowerCase().includes('refresh token');
-
-      let hasRefreshTokenField = false;
-      let requestBodySchema: SchemaNode | undefined;
-
-      if (postOp.requestBody && 'content' in postOp.requestBody) {
-        const content = this.pickContent(postOp.requestBody.content);
-        if (content?.schema) {
-          requestBodySchema = this.adaptSchema('refreshRequest', content.schema);
-          const fields = this.getSchemaFieldNames(requestBodySchema);
-          hasRefreshTokenField = fields.includes('refreshToken') || fields.includes('refresh_token') || fields.includes('refresh');
-        }
-      }
-
-      if (pathMatch || descMatch || hasRefreshTokenField) {
-        refreshEndpoints.push({ path, method: 'POST', requestBodySchema: requestBodySchema! });
-      }
-    }
-
-    return refreshEndpoints;
-  }
-
-  /**
-   * Detect password reset endpoints based on x-uigen-password-reset annotations.
-   * Only processes annotated endpoints (no auto-detection).
-   * 
-   * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
-   */
-  private detectPasswordResetEndpoints(): PasswordResetEndpoint[] {
-    const endpoints: PasswordResetEndpoint[] = [];
-
-    for (const [path, pathItem] of Object.entries(this.spec.paths)) {
-      if (!pathItem) continue;
-
-      // Check all HTTP methods for x-uigen-password-reset annotation
-      const methods = ['get', 'post', 'put', 'patch', 'delete'] as const;
-      for (const method of methods) {
-        const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
-        if (!operation) continue;
-
-        // Extract annotation from operation (read directly from spec)
-        const annotation = (operation as any)['x-uigen-password-reset'];
-
-        // Explicit exclusion: skip operations with x-uigen-password-reset: false
-        if (annotation === false) {
-          continue;
-        }
-
-        // Explicit inclusion: add operations with x-uigen-password-reset: true
-        if (annotation === true) {
-          const endpoint = this.buildPasswordResetEndpoint(path, operation);
-          endpoints.push(endpoint);
-        }
-      }
-    }
-
-    return endpoints;
-  }
-
-  /**
-   * Build a PasswordResetEndpoint from an operation.
-   * Extracts request body schema and description.
-   * 
-   * Requirements: 6.3, 6.4, 6.5
-   */
-  private buildPasswordResetEndpoint(path: string, operation: OpenAPIV3.OperationObject): PasswordResetEndpoint {
-    let requestBodySchema: SchemaNode | undefined;
-    
-    if (operation.requestBody && 'content' in operation.requestBody) {
-      const content = this.pickContent(operation.requestBody.content);
-      if (content?.schema) {
-        requestBodySchema = this.adaptSchema('passwordReset', content.schema);
-      }
-    }
-
-    return {
-      path,
-      method: 'POST',
-      requestBodySchema,
-      description: operation.summary || operation.description
-    };
-  }
-
-  /**
-   * Detect sign-up endpoints based on x-uigen-signup annotations and auto-detection.
-   * Processes both annotated endpoints and applies pattern matching for auto-detection.
-   * 
-   * Requirements: 1.1, 1.2, 1.4, 2.2, 8.1, 8.2, 8.3, 8.4, 8.5
-   */
-  private detectSignUpEndpoints(): SignUpEndpoint[] {
-    const annotatedEndpoints: SignUpEndpoint[] = [];
-    const autoDetectedEndpoints: SignUpEndpoint[] = [];
-
-    for (const [path, pathItem] of Object.entries(this.spec.paths)) {
-      if (!pathItem) continue;
-
-      // Check all HTTP methods for x-uigen-signup annotation
-      const methods = ['get', 'post', 'put', 'patch', 'delete'] as const;
-      for (const method of methods) {
-        const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
-        if (!operation) continue;
-
-        // Extract annotations from operation
-        const signupAnnotation = this.extractSignupAnnotation(operation);
-        const loginAnnotation = this.extractLoginAnnotation(operation);
-
-        // Handle conflicting annotations (Requirements: 2.3, 7.2)
-        // If both are true, login takes precedence - skip adding to signupEndpoints
-        if (loginAnnotation === true && signupAnnotation === true) {
-          continue; // Already handled in detectLoginEndpoints
-        }
-
-        // Explicit exclusion: skip operations with x-uigen-signup: false
-        if (signupAnnotation === false) {
-          continue;
-        }
-
-        // Explicit inclusion: add operations with x-uigen-signup: true
-        if (signupAnnotation === true) {
-          const endpoint = this.buildSignUpEndpoint(path, operation);
-          annotatedEndpoints.push(endpoint);
-          continue; // Skip auto-detection for annotated endpoints
-        }
-      }
-
-      // Auto-detection only for POST operations without annotations
-      const postOp = pathItem.post as OpenAPIV3.OperationObject | undefined;
-      if (!postOp) continue;
-
-      // Skip if already processed as annotated
-      const signupAnnotation = this.extractSignupAnnotation(postOp);
-      
-      if (signupAnnotation === true || signupAnnotation === false) {
-        continue;
-      }
-
-      // Apply signup pattern matching for auto-detection (Requirements: 1.1, 1.2)
-      if (this.matchesSignupPattern(path, postOp)) {
-        // Verify endpoint has credential fields (username/email + password)
-        let hasCredentialFields = false;
-
-        if (postOp.requestBody && 'content' in postOp.requestBody) {
-          const content = this.pickContent(postOp.requestBody.content);
-          if (content?.schema) {
-            const requestBodySchema = this.adaptSchema('credentials', content.schema);
-            const fields = this.getSchemaFieldNames(requestBodySchema);
-            hasCredentialFields =
-              (fields.includes('username') || fields.includes('email')) &&
-              fields.includes('password');
-          }
-        }
-
-        // Only add to signupEndpoints if it has credential fields
-        if (hasCredentialFields) {
-          const endpoint = this.buildSignUpEndpoint(path, postOp);
-          autoDetectedEndpoints.push(endpoint);
-        }
-      }
-    }
-
-    // Return concatenated array with annotated endpoints first
-    return [...annotatedEndpoints, ...autoDetectedEndpoints];
-  }
-
-  /**
-   * Build a SignUpEndpoint from an operation.
-   * Extracts request body schema and description.
-   * 
-   * Requirements: 8.3, 8.4, 8.5
-   */
-  private buildSignUpEndpoint(path: string, operation: OpenAPIV3.OperationObject): SignUpEndpoint {
-    let requestBodySchema: SchemaNode | undefined;
-    
-    if (operation.requestBody && 'content' in operation.requestBody) {
-      const content = this.pickContent(operation.requestBody.content);
-      if (content?.schema) {
-        requestBodySchema = this.adaptSchema('signUp', content.schema);
-      }
-    }
-
-    return {
-      path,
-      method: 'POST',
-      requestBodySchema,
-      description: operation.summary || operation.description
-    };
-  }
-
-  private getSchemaFieldNames(schema: SchemaNode): string[] {
-    if (schema.type === 'object' && schema.children) {
-      return schema.children.map(child => child.key);
-    }
-    return [];
   }
 
   private extractResources(): Resource[] {
