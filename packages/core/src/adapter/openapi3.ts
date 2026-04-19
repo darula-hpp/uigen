@@ -23,6 +23,8 @@ import { RelationshipDetector } from './relationship-detector.js';
 import { PaginationDetector } from './pagination-detector.js';
 import { AnnotationHandlerRegistry, createOperationContext, createSchemaContext, createServerContext } from './annotations/index.js';
 import type { AdapterUtils } from './annotations/index.js';
+import { SchemaProcessor } from './schema-processor.js';
+import { DefaultFileMetadataVisitor } from './visitors/file-metadata-visitor.js';
 
 export class OpenAPI3Adapter {
   private spec: OpenAPIV3.Document;
@@ -34,6 +36,8 @@ export class OpenAPI3Adapter {
   private annotationRegistry: AnnotationHandlerRegistry;
   private adapterUtils: AdapterUtils;
   private currentIR?: UIGenApp;
+  private schemaProcessor: SchemaProcessor;
+  private fileMetadataVisitor: DefaultFileMetadataVisitor;
 
   /**
    * Pick the best available content schema from a content map.
@@ -52,7 +56,6 @@ export class OpenAPI3Adapter {
 
   constructor(spec: OpenAPIV3.Document) {
     this.spec = spec;
-    this.resolver = new SchemaResolver(spec, this.adaptSchema.bind(this));
     this.viewHintClassifier = new ViewHintClassifier();
     this.relationshipDetector = new RelationshipDetector();
     this.paginationDetector = new PaginationDetector();
@@ -65,6 +68,19 @@ export class OpenAPI3Adapter {
       logError: (error: ParsingError) => this.parsingErrors.push(error),
       logWarning: (message: string) => console.warn(message)
     };
+    
+    // Instantiate SchemaProcessor
+    this.schemaProcessor = new SchemaProcessor(
+      spec,
+      this.adapterUtils,
+      this.annotationRegistry
+    );
+    
+    // Create SchemaResolver with schemaProcessor.processSchema as the callback
+    this.resolver = new SchemaResolver(spec, this.schemaProcessor.processSchema.bind(this.schemaProcessor));
+    
+    // Instantiate FileMetadataVisitor for hasFileFields delegation
+    this.fileMetadataVisitor = new DefaultFileMetadataVisitor();
   }
 
   adapt(): UIGenApp {
@@ -76,6 +92,9 @@ export class OpenAPI3Adapter {
       servers: this.extractServers(),
       parsingErrors: this.parsingErrors.length > 0 ? this.parsingErrors : undefined
     };
+    
+    // Set currentIR on schemaProcessor so annotations can be processed
+    this.schemaProcessor.setCurrentIR(this.currentIR);
     
     // Process server annotations after IR is initialized
     this.processServerAnnotations();
@@ -314,62 +333,24 @@ export class OpenAPI3Adapter {
   }
 
   /**
-   * Determine if a schema should be ignored based on element-level and parent-level annotations.
-   * Element-level annotation takes precedence over parent-level annotation.
-   * 
-   * Precedence rules:
-   * - Schema has x-uigen-ignore: true → ignore
-   * - Schema has x-uigen-ignore: false → include (overrides parent-level)
-   * - Parent has x-uigen-ignore: true → ignore
-   * - Parent has x-uigen-ignore: false → include
-   * - Neither has annotation → include (default behavior)
-   * 
-   * @param schema - The schema object to check
-   * @param parent - Optional parent schema object for precedence checking
-   * @returns true if the schema should be ignored, false otherwise
-   */
-  private shouldIgnoreSchema(
-    schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject,
-    parent?: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject
-  ): boolean {
-    // Check element-level annotation first
-    const schemaAnnotation = (schema as any)['x-uigen-ignore'];
-    
-    // Only accept boolean values
-    if (typeof schemaAnnotation === 'boolean') {
-      return schemaAnnotation;
-    }
-    
-    // Warn about non-boolean values
-    if (schemaAnnotation !== undefined) {
-      console.warn(`x-uigen-ignore must be a boolean, found ${typeof schemaAnnotation}`);
-    }
-    
-    // Check parent-level annotation if present
-    if (parent) {
-      const parentAnnotation = (parent as any)['x-uigen-ignore'];
-      
-      if (typeof parentAnnotation === 'boolean') {
-        return parentAnnotation;
-      }
-      
-      if (parentAnnotation !== undefined) {
-        console.warn(`x-uigen-ignore must be a boolean, found ${typeof parentAnnotation}`);
-      }
-    }
-    
-    // Default: do not ignore
-    return false;
-  }
-
-  /**
    * Check if a schema property should be ignored based on x-uigen-ignore annotation.
-   * This is a convenience wrapper around shouldIgnoreSchema() for property checking.
+   * This is a convenience wrapper for property checking.
+   * Delegates to SchemaProcessor.shouldIgnoreSchema().
    */
   private shouldIgnoreProperty(
     property: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject
   ): boolean {
-    return this.shouldIgnoreSchema(property);
+    return this.schemaProcessor.shouldIgnoreSchema(property);
+  }
+
+  /**
+   * Check if a schema contains file fields (including nested objects and arrays).
+   * Delegates to FileMetadataVisitor.hasFileFields().
+   * @param schema - The schema node to check
+   * @returns True if the schema contains any file fields
+   */
+  private hasFileFields(schema: SchemaNode): boolean {
+    return this.fileMetadataVisitor.hasFileFields(schema);
   }
 
   /**
@@ -1205,245 +1186,9 @@ export class OpenAPI3Adapter {
     return result;
   }
 
-  private resolveLabel(key: string, schema: object, resolvedTarget?: SchemaNode): string {
-    const ext = (schema as Record<string, unknown>)['x-uigen-label'];
-    if (typeof ext === 'string' && ext.trim() !== '') return ext;
-    if (resolvedTarget && resolvedTarget.label !== this.humanize(resolvedTarget.key)) {
-      return resolvedTarget.label;
-    }
-    return this.humanize(key);
-  }
-
   private adaptSchema(key: string, schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject, visited: Set<string> = new Set(), parentSchema?: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject): SchemaNode {
-    if (!schema) return this.createPlaceholderSchema(key);
-
-    // Don't do early pruning here - we need to process properties to allow child overrides
-    // The ignore annotation will be applied after processing children
-
-    if ('$ref' in schema) {
-      const resolved = this.resolver.resolve(schema.$ref, visited);
-      if (!resolved) return this.createPlaceholderSchema(key);
-      
-      // Check if the $ref itself has x-uigen-ignore annotation
-      // Note: We check the schema (the $ref object), not the resolved schema
-      if (this.shouldIgnoreSchema(schema)) {
-        const placeholder = this.createPlaceholderSchema(key);
-        (placeholder as any).__shouldIgnore = true;
-        return placeholder;
-      }
-      
-      const node = { ...resolved, key, label: this.resolveLabel(key, schema, resolved) };
-      
-      // Process annotations using the registry for $ref properties
-      if (this.currentIR) {
-        const context = createSchemaContext(
-          schema,
-          key,
-          this.adapterUtils,
-          this.currentIR,
-          parentSchema,
-          node
-        );
-        this.annotationRegistry.processAnnotations(context);
-      }
-      
-      return node;
-    }
-
-    const type = this.mapType(schema.type, schema.format, schema);
-    const node: SchemaNode = {
-      type,
-      key,
-      label: this.resolveLabel(key, schema),
-      required: false,
-      description: schema.description,
-      default: schema.default
-    };
-
-    if (schema.enum) {
-      node.type = 'enum';
-      node.enumValues = schema.enum as string[];
-    }
-
-    if (type === 'object' && schema.properties) {
-      // Process all properties (including ignored ones) so annotations can mark them
-      node.children = Object.entries(schema.properties)
-        .map(([k, v]) =>
-          this.adaptSchema(k, v as OpenAPIV3.SchemaObject, visited, schema)
-        );
-      
-      // Check if this schema has x-uigen-ignore: true
-      // If so, mark all children without explicit annotations as ignored
-      const schemaIgnoreAnnotation = (schema as any)['x-uigen-ignore'];
-      if (schemaIgnoreAnnotation === true && node.children) {
-        for (const child of node.children) {
-          const childSchema = (schema.properties as any)[child.key];
-          const childIgnoreAnnotation = (childSchema as any)?.['x-uigen-ignore'];
-          
-          // If child doesn't have an explicit annotation, it inherits from parent
-          if (childIgnoreAnnotation === undefined) {
-            (child as any).__shouldIgnore = true;
-          }
-        }
-      }
-      
-      if (schema.required) {
-        schema.required.forEach(reqKey => {
-          const child = node.children?.find(c => c.key === reqKey);
-          if (child) child.required = true;
-        });
-      }
-    }
-
-    if (type === 'array' && 'items' in schema && schema.items) {
-      node.items = this.adaptSchema('item', schema.items as OpenAPIV3.SchemaObject, visited, schema);
-      
-      // Detect array of binary files for multiple file upload
-      const itemsSchema = schema.items as OpenAPIV3.SchemaObject;
-      if (itemsSchema && itemsSchema.format === 'binary' && node.items) {
-        const itemFileMetadata = this.extractFileMetadata(itemsSchema);
-        if (itemFileMetadata) {
-          node.items.fileMetadata = { ...itemFileMetadata, multiple: true };
-        }
-      }
-    }
-
-    // Extract file metadata for binary format fields
-    if (type === 'file') {
-      node.fileMetadata = this.extractFileMetadata(schema);
-    }
-
-    node.validations = this.extractValidations(schema);
-    node.format = schema.format;
-    node.readOnly = schema.readOnly;
-    node.writeOnly = schema.writeOnly;
-    node.nullable = schema.nullable;
-    node.deprecated = schema.deprecated;
-
-    // Process annotations using the registry
-    if (this.currentIR) {
-      const context = createSchemaContext(
-        schema,
-        key,
-        this.adapterUtils,
-        this.currentIR,
-        parentSchema,
-        node
-      );
-      this.annotationRegistry.processAnnotations(context);
-    }
-
-    return node;
-  }
-
-  private mapType(type: string | undefined, format: string | undefined, schema?: OpenAPIV3.SchemaObject): SchemaNode['type'] {
-    if (format === 'date' || format === 'date-time') return 'date';
-    if (format === 'binary') return 'file';
-    
-    // Also detect file type from contentMediaType for octet-stream
-    if (schema && (schema as any).contentMediaType === 'application/octet-stream') {
-      return 'file';
-    }
-    
-    switch (type) {
-      case 'string': return 'string';
-      case 'number': return 'number';
-      case 'integer': return 'integer';
-      case 'boolean': return 'boolean';
-      case 'object': return 'object';
-      case 'array': return 'array';
-      default: return 'string';
-    }
-  }
-
-  private extractValidations(schema: OpenAPIV3.SchemaObject) {
-    const rules = [];
-    if (schema.minLength !== undefined) rules.push({ type: 'minLength' as const, value: schema.minLength, message: `Must be at least ${schema.minLength} characters` });
-    if (schema.maxLength !== undefined) rules.push({ type: 'maxLength' as const, value: schema.maxLength, message: `Must be at most ${schema.maxLength} characters` });
-    if (schema.pattern) rules.push({ type: 'pattern' as const, value: schema.pattern, message: `Must match pattern: ${schema.pattern}` });
-    if (schema.minimum !== undefined) rules.push({ type: 'minimum' as const, value: schema.minimum, message: `Must be at least ${schema.minimum}` });
-    if (schema.maximum !== undefined) rules.push({ type: 'maximum' as const, value: schema.maximum, message: `Must be at most ${schema.maximum}` });
-    if (schema.minItems !== undefined) rules.push({ type: 'minItems' as const, value: schema.minItems, message: `Must have at least ${schema.minItems} item${schema.minItems !== 1 ? 's' : ''}` });
-    if (schema.maxItems !== undefined) rules.push({ type: 'maxItems' as const, value: schema.maxItems, message: `Must have at most ${schema.maxItems} item${schema.maxItems !== 1 ? 's' : ''}` });
-    if (schema.format === 'email') rules.push({ type: 'email' as const, value: '', message: 'Must be a valid email address' });
-    if (schema.format === 'uri') rules.push({ type: 'url' as const, value: '', message: 'Must be a valid URL' });
-    return rules;
-  }
-
-  /**
-   * Extract file metadata from a schema with format: binary
-   * Extracts contentMediaType, x-uigen-file-types, and x-uigen-max-file-size
-   */
-  /**
-   * Check if a schema contains file fields (including nested objects and arrays)
-   * @param schema - The schema node to check
-   * @returns True if the schema contains any file fields
-   */
-  private hasFileFields(schema: SchemaNode): boolean {
-    // Direct file field
-    if (schema.type === 'file') {
-      return true;
-    }
-    
-    // Check children in object schemas
-    if (schema.type === 'object' && schema.children) {
-      return schema.children.some(child => this.hasFileFields(child));
-    }
-    
-    // Check items in array schemas
-    if (schema.type === 'array' && schema.items) {
-      return this.hasFileFields(schema.items);
-    }
-    
-    return false;
-  }
-
-  private extractFileMetadata(schema: OpenAPIV3.SchemaObject): import('../ir/types.js').FileMetadata | undefined {
-    // Only extract metadata for binary format fields
-    if (schema.format !== 'binary') {
-      return undefined;
-    }
-
-    const allowedMimeTypes: string[] = [];
-    
-    // Extract from x-uigen-file-types extension
-    const xUigenFileTypes = (schema as any)['x-uigen-file-types'];
-    if (Array.isArray(xUigenFileTypes)) {
-      allowedMimeTypes.push(...xUigenFileTypes.filter((t: any) => typeof t === 'string'));
-    }
-    
-    // Extract from contentMediaType property
-    const contentMediaType = (schema as any).contentMediaType;
-    if (typeof contentMediaType === 'string' && contentMediaType.trim() !== '') {
-      if (!allowedMimeTypes.includes(contentMediaType)) {
-        allowedMimeTypes.push(contentMediaType);
-      }
-    }
-    
-    // Default to accepting all files if no MIME types specified
-    if (allowedMimeTypes.length === 0) {
-      allowedMimeTypes.push('*/*');
-    }
-    
-    // Detect file type category
-    const fileType = FileTypeDetector.detectFileType(allowedMimeTypes);
-    
-    // Extract max file size from x-uigen-max-file-size extension
-    const xUigenMaxFileSize = (schema as any)['x-uigen-max-file-size'];
-    const maxSizeBytes = typeof xUigenMaxFileSize === 'number' && xUigenMaxFileSize > 0
-      ? xUigenMaxFileSize
-      : 10 * 1024 * 1024; // Default 10MB
-    
-    // Generate HTML accept attribute from allowed MIME types
-    const accept = allowedMimeTypes.join(',');
-    
-    return {
-      allowedMimeTypes,
-      maxSizeBytes,
-      multiple: false, // Will be set to true for array schemas
-      accept,
-      fileType
-    };
+    // Delegate to SchemaProcessor
+    return this.schemaProcessor.processSchema(key, schema, visited, parentSchema);
   }
 
   private inferResourceName(path: string): string | null {

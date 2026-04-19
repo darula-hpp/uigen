@@ -1,6 +1,6 @@
 ---
 title: "Config Reconciliation: Runtime Annotation Merging Without Touching Your Spec"
-author: "UIGen Team"
+author: "Olebogeng"
 date: "2026-04-19"
 excerpt: "A deep dive into UIGen's Config Reconciliation System: how it merges user annotations at runtime, why it is non-destructive and deterministic, and how it enables customization without spec modification."
 tags: ["architecture", "config", "technical", "reconciliation"]
