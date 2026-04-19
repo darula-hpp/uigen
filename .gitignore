@@ -11,5 +11,6 @@ coverage
 # Kiro IDE files
 .kiro
 AGENTS.md
+implementation_plan.md
 apps/docs/AGENTS.md
 apps/docs/CLAUDE.md
