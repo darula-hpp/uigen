@@ -24,6 +24,20 @@ function resolveConfigGuiRoot(): string {
   return resolve(__dirname, '../../../config-gui'); // last resort
 }
 
+/** Resolve the React package root from node_modules */
+function resolveReactPackageRoot(): string {
+  const pkgName = '@uigen-dev/react';
+  const candidates = [
+    resolve(__dirname, '../../..', pkgName),               // npm/npx sibling
+    resolve(__dirname, '../../../../node_modules', pkgName), // monorepo hoisted
+    resolve(__dirname, '../node_modules', pkgName),          // cli-local
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(resolve(candidate, 'package.json'))) return candidate;
+  }
+  return resolve(__dirname, '../../../react'); // last resort
+}
+
 /** Open URL in default browser (platform-specific) */
 function openBrowser(url: string): void {
   const os = platform();
@@ -54,6 +68,7 @@ async function startServerWithRetry(
   configGuiRoot: string,
   specPath: string,
   specDir: string,
+  reactPackageRoot: string,
   startPort: number,
   maxRetries: number = 10
 ): Promise<{ port: number; server: any }> {
@@ -86,7 +101,7 @@ async function startServerWithRetry(
           name: 'uigen-api-middleware',
           configureServer(server) {
             // Add API middleware before Vite's internal middleware
-            server.middlewares.use(createApiMiddleware(specPath, specDir));
+            server.middlewares.use(createApiMiddleware(specPath, specDir, reactPackageRoot));
           }
         }]
       });
@@ -137,8 +152,10 @@ export async function config(specPath: string, options: ConfigOptions) {
 
     // Resolve config-gui package
     const configGuiRoot = resolveConfigGuiRoot();
+    const reactPackageRoot = resolveReactPackageRoot();
     if (options.verbose) {
-      console.log(pc.gray(`Config GUI root: ${configGuiRoot}\n`));
+      console.log(pc.gray(`Config GUI root: ${configGuiRoot}`));
+      console.log(pc.gray(`React package root: ${reactPackageRoot}\n`));
     }
 
     // Start Vite server with retry logic for port conflicts
@@ -149,6 +166,7 @@ export async function config(specPath: string, options: ConfigOptions) {
       configGuiRoot,
       resolvedSpecPath,
       specDir,
+      reactPackageRoot,
       startPort
     );
 
@@ -162,7 +180,8 @@ export async function config(specPath: string, options: ConfigOptions) {
     console.log(pc.gray(`  - GET  ${url}/api/config`));
     console.log(pc.gray(`  - POST ${url}/api/config`));
     console.log(pc.gray(`  - GET  ${url}/api/spec`));
-    console.log(pc.gray(`  - GET  ${url}/api/annotations\n`));
+    console.log(pc.gray(`  - GET  ${url}/api/annotations`));
+    console.log(pc.gray(`  - GET  ${url}/api/css\n`));
     console.log(pc.gray('Opening browser...\n'));
 
     // Open browser

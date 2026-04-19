@@ -9,7 +9,7 @@ describe('Sign-Up Annotation - Property Tests', () => {
    * 
    * **Feature: auth-flow-annotations, Property 7**
    * 
-   * For any POST operation annotated with `x-uigen-sign-up: true`, the parser 
+   * For any POST operation annotated with `x-uigen-signup: true`, the parser 
    * SHALL append a SignUpEndpoint entry to AuthConfig.signUpEndpoints containing 
    * the operation's path, method (always 'POST'), requestBodySchema (if present), 
    * and description (preferring summary over description).
@@ -119,7 +119,7 @@ describe('Sign-Up Annotation - Property Tests', () => {
         // Create the annotated operation
         paths[config.path] = {
           post: {
-            'x-uigen-sign-up': true,
+            'x-uigen-signup': true,
             ...(config.summary && { summary: config.summary }),
             ...(config.description && { description: config.description }),
             ...(requestBody && { requestBody }),
@@ -189,7 +189,7 @@ describe('Sign-Up Annotation - Property Tests', () => {
    * 
    * **Feature: auth-flow-annotations, Property 8**
    * 
-   * For any POST operation annotated with `x-uigen-sign-up: false`, the parser 
+   * For any POST operation annotated with `x-uigen-signup: false`, the parser 
    * SHALL exclude that operation from AuthConfig.signUpEndpoints, regardless of 
    * whether heuristic detection would otherwise include it.
    * 
@@ -230,7 +230,7 @@ describe('Sign-Up Annotation - Property Tests', () => {
         // Create the excluded endpoint with annotation false
         paths[config.excludedPath] = {
           post: {
-            'x-uigen-sign-up': false,
+            'x-uigen-signup': false,
             summary: config.excludedDescription,
             requestBody: {
               content: {
@@ -257,7 +257,7 @@ describe('Sign-Up Annotation - Property Tests', () => {
         if (config.hasValidEndpoint) {
           paths[config.validPath] = {
             post: {
-              'x-uigen-sign-up': true,
+              'x-uigen-signup': true,
               summary: 'Valid sign-up',
               requestBody: {
                 content: {
@@ -318,7 +318,7 @@ describe('Sign-Up Annotation - Property Tests', () => {
    * 
    * **Feature: auth-flow-annotations, Property 9**
    * 
-   * For any OpenAPI spec with N POST operations where M have `x-uigen-sign-up: true`, 
+   * For any OpenAPI spec with N POST operations where M have `x-uigen-signup: true`, 
    * the parser SHALL produce exactly M entries in AuthConfig.signUpEndpoints, one 
    * for each annotated operation.
    * 
@@ -364,7 +364,7 @@ describe('Sign-Up Annotation - Property Tests', () => {
         for (let i = 0; i < config.annotatedCount; i++) {
           paths[config.paths[i]] = {
             post: {
-              'x-uigen-sign-up': true,
+              'x-uigen-signup': true,
               summary: `Sign up ${i}`,
               requestBody: {
                 content: {

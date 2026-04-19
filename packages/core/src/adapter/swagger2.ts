@@ -310,10 +310,10 @@ export class Swagger2Adapter {
       (result as any)['x-uigen-password-reset'] = passwordResetAnnotation;
     }
 
-    // Preserve x-uigen-sign-up vendor extension from Swagger 2 operation
-    const signUpAnnotation = (operation as any)['x-uigen-sign-up'];
+    // Preserve x-uigen-signup vendor extension from Swagger 2 operation
+    const signUpAnnotation = (operation as any)['x-uigen-signup'];
     if (signUpAnnotation !== undefined) {
-      (result as any)['x-uigen-sign-up'] = signUpAnnotation;
+      (result as any)['x-uigen-signup'] = signUpAnnotation;
     }
 
     return result;

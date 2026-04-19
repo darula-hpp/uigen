@@ -23,7 +23,7 @@ interface AnnotationMetadata {
 }
 
 /**
- * Handler for x-uigen-sign-up annotation.
+ * Handler for x-uigen-signup annotation.
  * Marks operations as sign-up/registration endpoints or excludes them from auto-detection.
  * 
  * Values:
@@ -34,10 +34,10 @@ interface AnnotationMetadata {
  * Requirements: 7.1, 9.1
  */
 export class SignUpHandler implements AnnotationHandler<boolean> {
-  public readonly name = 'x-uigen-sign-up';
+  public readonly name = 'x-uigen-signup';
 
   public static readonly metadata: AnnotationMetadata = {
-    name: 'x-uigen-sign-up',
+    name: 'x-uigen-signup',
     description: 'Marks operations as sign-up/registration endpoints or excludes them from auto-detection',
     targetType: 'operation',
     parameterSchema: {
@@ -56,7 +56,7 @@ export class SignUpHandler implements AnnotationHandler<boolean> {
   };
   
   /**
-   * Extract the x-uigen-sign-up annotation value from the operation object.
+   * Extract the x-uigen-signup annotation value from the operation object.
    * Only accepts boolean values.
    * 
    * Requirements: 7.1, 7.2
@@ -66,7 +66,7 @@ export class SignUpHandler implements AnnotationHandler<boolean> {
    */
   extract(context: AnnotationContext): boolean | undefined {
     const element = context.element as any;
-    const annotation = element['x-uigen-sign-up'];
+    const annotation = element['x-uigen-signup'];
     
     // Only accept boolean values
     if (typeof annotation === 'boolean') {
@@ -76,7 +76,7 @@ export class SignUpHandler implements AnnotationHandler<boolean> {
     // Log warning for non-boolean values (Requirement 7.3)
     if (annotation !== undefined) {
       context.utils.logWarning(
-        `x-uigen-sign-up annotation must be a boolean, got ${typeof annotation} at ${context.method?.toUpperCase()} ${context.path}`
+        `x-uigen-signup annotation must be a boolean, got ${typeof annotation} at ${context.method?.toUpperCase()} ${context.path}`
       );
     }
     

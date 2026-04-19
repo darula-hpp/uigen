@@ -8,3 +8,9 @@ annotations:
     x-uigen-ignore: true
   Template.template.jinja_shape:
     x-uigen-label: Jinja Shape
+  POST:/api/v1/auth/login:
+    x-uigen-login: true
+  POST:/api/v1/auth/password-reset:
+    x-uigen-password-reset: true
+  POST:/api/v1/auth/sign-up:
+    x-uigen-signup: true

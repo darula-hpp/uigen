@@ -47,7 +47,7 @@ describe('Auth Annotations - Integration Tests', () => {
           },
           '/auth/register': {
             post: {
-              'x-uigen-sign-up': true,
+              'x-uigen-signup': true,
               summary: 'Register user',
               requestBody: {
                 content: {
@@ -117,14 +117,14 @@ describe('Auth Annotations - Integration Tests', () => {
           },
           '/auth/signup': {
             post: {
-              'x-uigen-sign-up': true,
+              'x-uigen-signup': true,
               summary: 'Sign up',
               responses: { '201': { description: 'Created' } }
             } as any
           },
           '/auth/register': {
             post: {
-              'x-uigen-sign-up': true,
+              'x-uigen-signup': true,
               summary: 'Register',
               responses: { '201': { description: 'Created' } }
             } as any
@@ -256,7 +256,7 @@ describe('Auth Annotations - Integration Tests', () => {
           },
           '/auth/register': {
             post: {
-              'x-uigen-sign-up': true,
+              'x-uigen-signup': true,
               summary: 'Register new user',
               description: 'Create a new user account',
               requestBody: {
@@ -355,7 +355,7 @@ describe('Auth Annotations - Integration Tests', () => {
           '/test': {
             post: {
               'x-uigen-password-reset': 123, // Invalid type
-              'x-uigen-sign-up': null, // Invalid type
+              'x-uigen-signup': null, // Invalid type
               summary: 'Test',
               responses: { '200': { description: 'Success' } }
             } as any
@@ -429,7 +429,7 @@ describe('Auth Annotations - Integration Tests', () => {
           },
           '/auth/register': {
             post: {
-              'x-uigen-sign-up': true,
+              'x-uigen-signup': true,
               summary: 'Register',
               responses: { '201': { description: 'Created' } }
             } as any
@@ -551,7 +551,7 @@ describe('Auth Annotations - Integration Tests', () => {
           },
           '/user/register': {
             post: {
-              'x-uigen-sign-up': true,
+              'x-uigen-signup': true,
               summary: 'Create user',
               operationId: 'createUser',
               requestBody: {

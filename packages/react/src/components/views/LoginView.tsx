@@ -163,11 +163,6 @@ export function LoginView({ config, appTitle }: LoginViewProps) {
     }
   };
 
-  // ── Skip ───────────────────────────────────────────────────────────────────
-  const handleSkipAuth = () => {
-    navigate('/', { replace: true });
-  };
-
   const tabCount = [hasCredential, hasBasic, hasBearer, hasApiKey].filter(Boolean).length;
 
   return (
@@ -392,16 +387,6 @@ export function LoginView({ config, appTitle }: LoginViewProps) {
               </Button>
             </form>
           )}
-
-          {/* Skip */}
-          <div className="pt-4 border-t space-y-2">
-            <Button variant="ghost" className="w-full" onClick={handleSkipAuth}>
-              Continue without authentication
-            </Button>
-            <p className="text-xs text-muted-foreground text-center">
-              You can explore the UI, but API calls may fail without valid credentials
-            </p>
-          </div>
 
           {/* Sign up link */}
           {hasSignUp && (

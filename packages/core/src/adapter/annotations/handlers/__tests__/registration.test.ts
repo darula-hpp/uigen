@@ -34,17 +34,17 @@ describe('Handler Registration Tests', () => {
       const registry = AnnotationHandlerRegistry.getInstance();
       const handlers = (registry as any).handlers;
       
-      const signUpHandler = handlers.get('x-uigen-sign-up');
+      const signUpHandler = handlers.get('x-uigen-signup');
       expect(signUpHandler).toBeDefined();
       expect(signUpHandler).toBeInstanceOf(SignUpHandler);
-      expect(signUpHandler.name).toBe('x-uigen-sign-up');
+      expect(signUpHandler.name).toBe('x-uigen-signup');
     });
 
     it('should have all handlers implement the AnnotationHandler interface', () => {
       const registry = AnnotationHandlerRegistry.getInstance();
       const handlers = (registry as any).handlers;
       
-      const handlerNames = ['x-uigen-active-server', 'x-uigen-password-reset', 'x-uigen-sign-up'];
+      const handlerNames = ['x-uigen-active-server', 'x-uigen-password-reset', 'x-uigen-signup'];
       
       handlerNames.forEach(name => {
         const handler = handlers.get(name);
@@ -174,7 +174,7 @@ describe('Placement Validation Tests', () => {
   });
 
   /**
-   * Test that x-uigen-password-reset and x-uigen-sign-up are recognized
+   * Test that x-uigen-password-reset and x-uigen-signup are recognized
    * on operation objects and ignored on other element types.
    * Requirements: 9.1, 9.2, 9.3, 9.4
    */
@@ -217,14 +217,14 @@ describe('Placement Validation Tests', () => {
       expect(app.auth.passwordResetEndpoints?.[0].path).toBe('/reset-password');
     });
 
-    it('should recognize x-uigen-sign-up on operations', () => {
+    it('should recognize x-uigen-signup on operations', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test API', version: '1.0.0' },
         paths: {
           '/register': {
             post: {
-              'x-uigen-sign-up': true,
+              'x-uigen-signup': true,
               summary: 'Register user',
               requestBody: {
                 content: {
@@ -263,7 +263,7 @@ describe('Placement Validation Tests', () => {
         paths: {
           '/test': {
             'x-uigen-password-reset': true,
-            'x-uigen-sign-up': true,
+            'x-uigen-signup': true,
             post: {
               summary: 'Test operation',
               responses: {
@@ -295,7 +295,7 @@ describe('Placement Validation Tests', () => {
                   'application/json': {
                     schema: {
                       'x-uigen-password-reset': true,
-                      'x-uigen-sign-up': true,
+                      'x-uigen-signup': true,
                       type: 'object',
                       properties: {
                         name: { type: 'string' }
@@ -335,7 +335,7 @@ describe('Placement Validation Tests', () => {
                     'application/json': {
                       schema: {
                         'x-uigen-password-reset': true,
-                        'x-uigen-sign-up': true,
+                        'x-uigen-signup': true,
                         type: 'object',
                         properties: {
                           id: { type: 'string' }

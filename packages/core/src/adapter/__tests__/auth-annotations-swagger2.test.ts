@@ -3,7 +3,7 @@ import { Swagger2Adapter } from '../swagger2.js';
 
 describe('Auth Annotations - Swagger 2.0 Compatibility', () => {
   /**
-   * Test that x-uigen-password-reset and x-uigen-sign-up are recognized
+   * Test that x-uigen-password-reset and x-uigen-signup are recognized
    * in Swagger 2.0 operations.
    * Requirements: 12.1, 12.2
    */
@@ -48,7 +48,7 @@ describe('Auth Annotations - Swagger 2.0 Compatibility', () => {
       expect(app.auth.passwordResetEndpoints?.[0].path).toBe('/reset-password');
     });
 
-    it('should recognize x-uigen-sign-up in Swagger 2.0', () => {
+    it('should recognize x-uigen-signup in Swagger 2.0', () => {
       const spec = {
         swagger: '2.0',
         info: { title: 'Test API', version: '1.0.0' },
@@ -58,7 +58,7 @@ describe('Auth Annotations - Swagger 2.0 Compatibility', () => {
         paths: {
           '/register': {
             post: {
-              'x-uigen-sign-up': true,
+              'x-uigen-signup': true,
               summary: 'Register user',
               parameters: [
                 {
@@ -120,7 +120,7 @@ describe('Auth Annotations - Swagger 2.0 Compatibility', () => {
       expect(app.auth.passwordResetEndpoints?.length).toBe(1);
     });
 
-    it('should preserve x-uigen-sign-up through conversion', () => {
+    it('should preserve x-uigen-signup through conversion', () => {
       const spec = {
         swagger: '2.0',
         info: { title: 'Test API', version: '1.0.0' },
@@ -128,7 +128,7 @@ describe('Auth Annotations - Swagger 2.0 Compatibility', () => {
         paths: {
           '/signup': {
             post: {
-              'x-uigen-sign-up': true,
+              'x-uigen-signup': true,
               summary: 'Sign up',
               responses: {
                 '201': { description: 'Created' }

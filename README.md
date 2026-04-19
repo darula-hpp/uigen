@@ -7,7 +7,7 @@ npx @uigen-dev/cli serve ./openapi.yaml
 # → Your UI is live at http://localhost:4400
 ```
 
-Disclaimer: This is still in very active development and not production ready.
+- Disclaimer: This is still in very active development and not production ready.
 **Documentation:** <a href="https://uigen-docs.vercel.app" target="_blank">Access Full Docs</a>
 
 ![UIGen Demo](https://github.com/darula-hpp/uigen/raw/main/examples/output.gif)
@@ -138,7 +138,7 @@ The IR is the contract. Everything built on top of UIGen talks to the IR - not t
 - [x] CheckboxField
 - [x] SelectField (enum values, `x-enumNames` support)
 - [x] DatePicker / DateTimePicker
-- [x] FileUpload (drag-and-drop, progress display)
+- [x] FileUpload (drag-and-drop, progress display, type-aware validation and preview)
 - [x] ArrayField (add/remove items, length validation)
 - [x] ObjectField (nested fieldsets, collapsible)
 
@@ -300,6 +300,118 @@ definitions:
 ```
 
 **Precedence for `$ref` properties:** a label on the referencing property wins over a label on the `$ref` target, which wins over the auto-humanized key.
+
+#### File Upload Extensions
+
+UIGen provides OpenAPI extensions to control file upload behavior, validation, and preview rendering.
+
+##### `x-uigen-file-types` — allowed MIME types
+
+Specify which file types are accepted. The FileUpload component validates against these types and displays appropriate error messages.
+
+```yaml
+# OpenAPI 3.x
+requestBody:
+  content:
+    multipart/form-data:
+      schema:
+        type: object
+        properties:
+          avatar:
+            type: string
+            format: binary
+            x-uigen-file-types: ["image/jpeg", "image/png", "image/webp"]
+          document:
+            type: string
+            format: binary
+            x-uigen-file-types: ["application/pdf", "application/msword"]
+```
+
+##### `x-uigen-max-file-size` — size limit in bytes
+
+Set the maximum allowed file size. The FileUpload component validates file size and displays human-readable error messages.
+
+```yaml
+properties:
+  video:
+    type: string
+    format: binary
+    x-uigen-max-file-size: 104857600  # 100MB
+  thumbnail:
+    type: string
+    format: binary
+    x-uigen-max-file-size: 5242880    # 5MB
+```
+
+##### `contentMediaType` — expected MIME type
+
+Use the standard OpenAPI `contentMediaType` property to indicate the expected file type. UIGen uses this for validation and preview selection.
+
+```yaml
+properties:
+  profile_picture:
+    type: string
+    format: binary
+    contentMediaType: image/png
+```
+
+##### Multiple file uploads
+
+Use an array schema with binary items to enable multiple file selection.
+
+```yaml
+properties:
+  attachments:
+    type: array
+    items:
+      type: string
+      format: binary
+      x-uigen-file-types: ["application/pdf", "image/*"]
+      x-uigen-max-file-size: 10485760  # 10MB per file
+```
+
+**Built-in file type strategies:**
+- **Image** - JPEG, PNG, GIF, WebP, SVG - generates image preview, 5MB default limit
+- **Document** - PDF, Word, Plain Text, RTF - shows document icon with metadata, 10MB default limit
+- **Video** - MP4, WebM, OGG, QuickTime - displays video icon with duration, 100MB default limit
+- **Generic** - Any file type - fallback with file icon and metadata, 10MB default limit
+
+The system automatically detects `multipart/form-data` content type when file fields are present and handles FormData submission.
+
+##### Custom file upload strategies
+
+Register custom strategies for specialized file types:
+
+```typescript
+import { StrategyRegistry, FileUploadStrategy } from '@uigen-dev/react';
+
+class AudioUploadStrategy implements FileUploadStrategy {
+  getSupportedMimeTypes() {
+    return ['audio/mpeg', 'audio/wav', 'audio/ogg'];
+  }
+  
+  getMaxFileSize() {
+    return 50 * 1024 * 1024; // 50MB
+  }
+  
+  validate(file: File) {
+    // Custom validation logic
+    return { success: true, errors: [], warnings: [] };
+  }
+  
+  getPreviewComponent() {
+    return AudioPreview; // Your custom preview component
+  }
+  
+  formatFileSize(bytes: number) {
+    // Human-readable size formatting
+    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  }
+}
+
+// Register before rendering
+StrategyRegistry.getInstance().register('audio/*', new AudioUploadStrategy());
+```
 
 > Coming in the next release: `x-uigen-widget`, `x-uigen-hidden`, `x-uigen-order`
 

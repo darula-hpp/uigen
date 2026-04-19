@@ -61,7 +61,8 @@ export class CredentialStrategy implements IAuthStrategy {
     
     try {
       // Requirement 4.2: POST credentials to login endpoint
-      const response = await fetch(loginEndpoint, {
+      // Prepend /api to match the proxy routing convention (useApiCall does the same)
+      const response = await fetch(`/api${loginEndpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

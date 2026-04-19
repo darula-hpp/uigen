@@ -24,6 +24,9 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:${DB_PASSWORD:-postgres}@db:5432/meeting_minutes
       UPLOAD_DIR: /data/uploads
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
+      JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS:-24}
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
     volumes:
       - upload_data:/data/uploads
     depends_on:

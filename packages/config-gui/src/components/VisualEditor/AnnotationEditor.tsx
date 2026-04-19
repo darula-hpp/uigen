@@ -45,7 +45,7 @@ const AVAILABLE_ANNOTATIONS: AnnotationMeta[] = [
     applicableTo: ['operation']
   },
   {
-    name: 'x-uigen-sign-up',
+    name: 'x-uigen-signup',
     label: 'Sign Up',
     description: 'Mark as sign-up endpoint',
     valueType: 'boolean',
