@@ -19,13 +19,14 @@
     "dist/**/*.js",
     "dist/**/*.d.ts",
     "dist/renderer/**/*",
+    "dist/assets/base-styles.css",
     "!dist/**/__tests__/**",
     "!dist/**/*.test.js",
     "!dist/**/*.test.d.ts",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && mkdir -p dist/renderer && cp -r ../react/dist/* dist/renderer/",
+    "build": "tsc && mkdir -p dist/renderer && cp -r ../react/dist/* dist/renderer/ && mkdir -p dist/assets && cp ../react/src/index.css dist/assets/base-styles.css",
     "dev": "tsc --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit",

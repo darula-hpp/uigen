@@ -27,7 +27,8 @@ function App() {
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
   
   // CSS content state
-  const [cssContent, setCssContent] = useState<string>('');
+  const [baseStyles, setBaseStyles] = useState<string>('');
+  const [theme, setTheme] = useState<string>('');
   const [cssLoading, setCssLoading] = useState<boolean>(false);
   const [cssError, setCssError] = useState<string | null>(null);
   
@@ -41,7 +42,7 @@ function App() {
    * Requirements: 3.1, 3.2, 3.3, 3.4, 10.1
    */
   useEffect(() => {
-    if (activeTab === 'css' && !cssContent && !cssLoading) {
+    if (activeTab === 'css' && !theme && !cssLoading) {
       loadCSSContent();
     }
   }, [activeTab]);
@@ -59,7 +60,8 @@ function App() {
       }
       
       const data = await response.json();
-      setCssContent(data.content || '');
+      setBaseStyles(data.baseStyles || '');
+      setTheme(data.theme || '');
     } catch (error) {
       console.error('Failed to load CSS content:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to load CSS content';
@@ -74,11 +76,11 @@ function App() {
    * Save CSS content to API
    * Requirements: 4.2, 10.2
    */
-  const handleCssSave = async (content: string) => {
+  const handleCssSave = async (themeContent: string) => {
     const response = await fetch('/api/css', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content })
+      body: JSON.stringify({ content: themeContent })
     });
     
     if (!response.ok) {
@@ -86,8 +88,8 @@ function App() {
       throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
     }
     
-    // Update local state with saved content
-    setCssContent(content);
+    // Update local state with saved theme content
+    setTheme(themeContent);
   };
   
   return (
@@ -212,7 +214,7 @@ function App() {
                       aria-current={activeTab === 'css' ? 'page' : undefined}
                       data-testid="css-tab"
                     >
-                      CSS
+                      Theme
                     </button>
                   </nav>
                 </div>
@@ -273,10 +275,10 @@ function App() {
                   {activeTab === 'css' && (
                     <div>
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                        CSS Editor
+                        Theme Editor
                       </h2>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                        Customize the appearance of your generated UI with custom CSS.
+                        Customize the appearance of your generated UI with custom theme styles.
                       </p>
                       
                       {cssLoading ? (
@@ -310,7 +312,8 @@ function App() {
                         </div>
                       ) : (
                         <CSSEditor 
-                          initialContent={cssContent}
+                          baseStyles={baseStyles}
+                          theme={theme}
                           onSave={handleCssSave}
                         />
                       )}

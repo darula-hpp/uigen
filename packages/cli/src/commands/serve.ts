@@ -41,32 +41,24 @@ function resolveRendererRoot(renderer: Renderer): string {
 }
 
 /**
- * Load CSS content from custom or default location
+ * Load theme CSS content from .uigen/theme.css
+ * Base styles are already in the SPA, we only inject custom theme
  * Requirements: 6.1, 6.2, 6.3, 10.1
  */
 function loadCSS(specDir: string, rendererRoot: string, verbose: boolean): string {
-  const customCSSPath = resolve(specDir, '.uigen/index.css');
-  const defaultCSSPath = resolve(rendererRoot, 'src/index.css');
+  const themePath = resolve(specDir, '.uigen/theme.css');
   
-  // Try custom CSS first
-  if (existsSync(customCSSPath)) {
+  // Load theme.css (custom overrides)
+  if (existsSync(themePath)) {
     if (verbose) {
-      console.log(pc.gray(`Loading custom CSS from ${customCSSPath}`));
+      console.log(pc.gray(`Loading custom theme from ${themePath}`));
     }
-    return readFileSync(customCSSPath, 'utf-8');
+    return readFileSync(themePath, 'utf-8');
   }
   
-  // Fallback to default CSS
-  if (existsSync(defaultCSSPath)) {
-    if (verbose) {
-      console.log(pc.gray(`Loading default CSS from ${defaultCSSPath}`));
-    }
-    return readFileSync(defaultCSSPath, 'utf-8');
-  }
-  
-  // No CSS found
+  // No custom theme found - that's okay, base styles are in SPA
   if (verbose) {
-    console.log(pc.yellow('⚠ No CSS file found, proceeding without custom styles'));
+    console.log(pc.gray('No custom theme found, using base styles only'));
   }
   return '';
 }
