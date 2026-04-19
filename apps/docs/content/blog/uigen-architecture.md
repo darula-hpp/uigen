@@ -59,7 +59,7 @@ The key insight is that each stage has a single responsibility and communicates 
 
 ## Design Patterns
 
-UIGen uses six design patterns, each chosen to solve a specific problem in the architecture.
+UIGen uses eight design patterns, each chosen to solve a specific problem in the architecture.
 
 ### Adapter Pattern
 
@@ -77,8 +77,8 @@ class OpenAPI3Adapter implements SpecAdapter {
     // Normalize OpenAPI 3.x into IR
     return {
       meta: this.extractMeta(spec),
-      resources: this.extractResources(spec),
-      auth: this.extractAuth(spec),
+      resources: this.resourceExtractor.extractResources(),
+      auth: this.authDetector.detectAuthConfig(),
       dashboard: this.buildDashboard(spec),
       servers: this.extractServers(spec),
     };
@@ -94,6 +94,194 @@ class Swagger2Adapter implements SpecAdapter {
 ```
 
 The adapter registry selects the right adapter based on the spec version, so the rest of the pipeline never needs a conditional.
+
+### Visitor Pattern
+
+**Problem:** Schema processing involves multiple independent operations (type mapping, validation extraction, file metadata extraction, reference resolution) that should not be tightly coupled to the schema structure.
+
+**Solution:** The Visitor pattern separates algorithms from the objects they operate on. Each visitor implements a specific schema processing operation.
+
+```typescript
+interface SchemaVisitor {
+  visit(schema: OpenAPISchema, context: VisitorContext): any;
+}
+
+class TypeMappingVisitor implements SchemaVisitor {
+  visit(schema: OpenAPISchema): FieldType {
+    if (schema.type === 'string' && schema.format === 'date') return 'date';
+    if (schema.type === 'string' && schema.format === 'binary') return 'file';
+    if (schema.enum) return 'enum';
+    return schema.type as FieldType;
+  }
+}
+
+class ValidationExtractionVisitor implements SchemaVisitor {
+  visit(schema: OpenAPISchema): ValidationRule[] {
+    const rules: ValidationRule[] = [];
+    if (schema.minLength) rules.push({ type: 'minLength', value: schema.minLength });
+    if (schema.pattern) rules.push({ type: 'pattern', value: schema.pattern });
+    if (schema.minimum) rules.push({ type: 'minimum', value: schema.minimum });
+    return rules;
+  }
+}
+
+// SchemaProcessor orchestrates visitors
+class SchemaProcessor {
+  processSchema(key: string, schema: OpenAPISchema): SchemaNode {
+    const type = this.typeMappingVisitor.visit(schema);
+    const validations = this.validationExtractionVisitor.visit(schema);
+    const fileMetadata = this.fileMetadataVisitor.visit(schema);
+    
+    return this.schemaNodeFactory.create(key, type, validations, fileMetadata);
+  }
+}
+```
+
+This makes it trivial to add new schema processing operations without modifying existing code.
+
+### Factory Pattern
+
+**Problem:** Different field types (string, number, date, file, enum, array, object) need different React components and different schema node structures. The mapping from type to component should be centralized and extensible.
+
+**Solution:** A Factory creates schema nodes with appropriate defaults and structure based on the field type.
+
+```typescript
+class SchemaNodeFactory {
+  createObjectNode(key: string, schema: OpenAPISchema): SchemaNode {
+    return {
+      type: 'object',
+      key,
+      label: this.resolveLabel(key, schema),
+      required: false,
+      children: this.processProperties(schema.properties),
+    };
+  }
+
+  createArrayNode(key: string, schema: OpenAPISchema): SchemaNode {
+    return {
+      type: 'array',
+      key,
+      label: this.resolveLabel(key, schema),
+      required: false,
+      items: this.processSchema(key, schema.items),
+    };
+  }
+
+  createEnumNode(key: string, schema: OpenAPISchema): SchemaNode {
+    return {
+      type: 'enum',
+      key,
+      label: this.resolveLabel(key, schema),
+      required: false,
+      enumValues: schema.enum,
+    };
+  }
+}
+```
+
+### Strategy Pattern
+
+**Problem:** Different authentication endpoints (login, signup, password reset, token refresh) need different detection logic. The detection strategies should be swappable and extensible.
+
+**Solution:** Each authentication type has its own detection strategy that implements a common interface.
+
+```typescript
+interface AuthDetectionStrategy {
+  detect(operation: OpenAPIOperation, path: string): boolean;
+  build(operation: OpenAPIOperation, path: string): AuthEndpoint;
+}
+
+class LoginDetectionStrategy implements AuthDetectionStrategy {
+  detect(operation: OpenAPIOperation, path: string): boolean {
+    // Check explicit annotation
+    if (operation['x-uigen-login'] === true) return true;
+    if (operation['x-uigen-login'] === false) return false;
+    
+    // Check path patterns
+    if (/\/(login|signin|auth\/login|auth\/signin)$/i.test(path)) {
+      return this.hasCredentialFields(operation);
+    }
+    
+    // Check description keywords
+    if (operation.description?.match(/\b(login|authenticate|sign in)\b/i)) {
+      return this.hasCredentialFields(operation);
+    }
+    
+    return false;
+  }
+
+  build(operation: OpenAPIOperation, path: string): LoginEndpoint {
+    return {
+      type: 'login',
+      path,
+      method: 'POST',
+      requestBody: this.extractRequestBody(operation),
+      tokenPath: this.detectTokenPath(operation.responses),
+    };
+  }
+}
+
+// AuthDetector coordinates strategies
+class AuthDetector {
+  detectLoginEndpoints(): LoginEndpoint[] {
+    return this.operations
+      .filter(op => this.loginStrategy.detect(op.operation, op.path))
+      .map(op => this.loginStrategy.build(op.operation, op.path));
+  }
+}
+```
+
+### Facade Pattern
+
+**Problem:** The adapter coordinates many specialized components (SchemaProcessor, AuthDetector, ResourceExtractor, ParameterProcessor, BodyProcessor, OperationProcessor). The complexity should be hidden behind a simple interface.
+
+**Solution:** OpenAPI3Adapter acts as a facade that orchestrates component interactions and provides a single `adapt()` method.
+
+```typescript
+class OpenAPI3Adapter {
+  private schemaProcessor: SchemaProcessor;
+  private authDetector: AuthDetector;
+  private resourceExtractor: ResourceExtractor;
+  private parameterProcessor: ParameterProcessor;
+  private bodyProcessor: BodyProcessor;
+  private operationProcessor: OperationProcessor;
+
+  constructor(spec: OpenAPI3Document, utils: AdapterUtils) {
+    // Initialize all components
+    this.schemaProcessor = new SchemaProcessor(spec, utils, annotationRegistry);
+    this.authDetector = new AuthDetector(spec, utils);
+    this.parameterProcessor = new ParameterProcessor(spec, utils, this.schemaProcessor);
+    this.bodyProcessor = new BodyProcessor(spec, utils, this.schemaProcessor, annotationRegistry);
+    this.operationProcessor = new OperationProcessor(
+      viewHintClassifier,
+      this.parameterProcessor,
+      this.bodyProcessor,
+      annotationRegistry
+    );
+    this.resourceExtractor = new ResourceExtractor(
+      spec,
+      utils,
+      this.schemaProcessor,
+      this.operationProcessor,
+      relationshipDetector,
+      paginationDetector
+    );
+  }
+
+  adapt(): UIGenApp {
+    // Simple facade method that coordinates all components
+    return {
+      meta: this.extractMeta(),
+      resources: this.resourceExtractor.extractResources(),
+      auth: this.authDetector.detectAuthConfig(),
+      dashboard: this.buildDashboard(),
+      servers: this.extractServers(),
+    };
+  }
+}
+```
+
+The facade reduces the adapter from ~1400 lines to ~250-300 lines of pure orchestration logic.
 
 ### Reconciler Pattern
 
@@ -113,55 +301,6 @@ function reconcile(spec: AnySpec, config: ConfigFile): AnySpec {
   }
 
   return reconciled;
-}
-```
-
-### Factory Pattern
-
-**Problem:** Different field types (string, number, date, file, enum, array, object) need different React components. The mapping from type to component should be centralized and extensible.
-
-**Solution:** A Factory function takes a `SchemaNode` and returns the appropriate component descriptor.
-
-```typescript
-function createFieldComponent(node: SchemaNode): ComponentDescriptor {
-  switch (node.type) {
-    case 'string':
-      return node.format === 'date'
-        ? { component: 'DatePicker', props: { ... } }
-        : { component: 'TextField', props: { ... } };
-    case 'enum':
-      return { component: 'SelectField', props: { options: node.enumValues } };
-    case 'boolean':
-      return { component: 'CheckboxField', props: { ... } };
-    case 'array':
-      return { component: 'ArrayField', props: { itemSchema: node.items } };
-    default:
-      return { component: 'TextField', props: { ... } };
-  }
-}
-```
-
-### Strategy Pattern
-
-**Problem:** Different operations need different view layouts. A `GET /users` needs a table. A `POST /users` needs a form. A `GET /users/{id}` needs a detail view. The view selection logic should be swappable.
-
-**Solution:** Each view type is a strategy that implements a common rendering interface. The Engine selects the right strategy based on the `viewHint` in the IR.
-
-```typescript
-const viewStrategies: Record<ViewHint, ViewStrategy> = {
-  list: new ListViewStrategy(),
-  detail: new DetailViewStrategy(),
-  create: new FormViewStrategy({ mode: 'create' }),
-  update: new FormViewStrategy({ mode: 'update' }),
-  search: new SearchViewStrategy(),
-  dashboard: new DashboardViewStrategy(),
-  wizard: new WizardViewStrategy(),
-  action: new ActionViewStrategy(),
-};
-
-function renderView(operation: Operation): ReactNode {
-  const strategy = viewStrategies[operation.viewHint];
-  return strategy.render(operation);
 }
 ```
 
@@ -442,7 +581,16 @@ Static mode keeps the runtime footprint minimal. The only runtime dependencies a
 
 UIGen's architecture is built around a few core ideas: clear separation of concerns, framework-agnostic data structures, and extensibility through well-known design patterns.
 
-The Adapter pattern means adding support for a new spec format (GraphQL, gRPC, AsyncAPI) is a matter of writing a new adapter that produces the same IR. The Strategy pattern means adding a new view type is a matter of writing a new strategy. The Registry pattern means overriding any component is a matter of registering a replacement.
+The six-phase adapter refactoring transformed a monolithic ~1400-line "God class" into a clean facade (~250-300 lines) that orchestrates specialized components:
+
+1. **SchemaProcessor** with Visitor and Factory patterns for schema processing
+2. **AuthDetector** with Strategy pattern for authentication endpoint detection
+3. **ResourceExtractor** for resource inference and extraction
+4. **ParameterProcessor** for parameter processing and merging
+5. **BodyProcessor** for request/response body processing
+6. **OperationProcessor** for operation-level coordination
+
+Each component has a single responsibility and communicates through well-defined interfaces. The Adapter pattern means adding support for a new spec format (GraphQL, gRPC, AsyncAPI) is a matter of writing a new adapter that produces the same IR. The Strategy pattern means adding a new authentication detection strategy or view type is a matter of implementing the strategy interface. The Visitor pattern means adding new schema processing operations requires only a new visitor. The Facade pattern means the adapter remains a simple orchestrator.
 
 The Config Reconciliation System solves the real-world problem of customization without spec modification. The generic annotation handling means the system is open for extension without requiring code changes.
 

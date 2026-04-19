@@ -19,6 +19,8 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
+    "test:config": "node packages/cli/dist/index.js config examples/apps/fastapi/meeting-minutes/openapi.yaml",
+    "test:serve": "node packages/cli/dist/index.js serve examples/apps/fastapi/meeting-minutes/openapi.yaml --proxy-base http://localhost:8000",
     "typecheck": "pnpm -r typecheck",
     "changeset": "changeset",
     "version": "changeset version",

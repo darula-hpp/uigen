@@ -6,6 +6,156 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.5] - 2026-04-19
+
+### Added
+
+**Core engine (`@uigen-dev/core`)**
+- **Config Reconciliation System** - Runtime annotation merging without modifying source specs
+  - Non-destructive, idempotent, and deterministic reconciliation of `.uigen/config.yaml` with OpenAPI/Swagger specs
+  - Generic annotation handling - all `x-uigen-*` annotations work automatically without hardcoded support
+  - Element path resolution for operations (`METHOD:/path`), schema properties (`Schema.property`), and parameters
+  - Config precedence - config annotations override spec annotations
+  - Null annotation removal - set annotation to `null` to remove it from reconciled spec
+  - 20 property-based tests with 100+ iterations each verifying correctness properties
+  - Path resolution caching for performance
+  - Helpful error messages with Levenshtein distance-based suggestions for invalid paths
+- **x-uigen-ref annotation** - Explicit field-to-resource relationship declarations
+  - Declare that a field references another resource with full control over resolution and display
+  - Specify `resource` (endpoint path), `valueField` (stored value), and `labelField` (display value)
+  - Overrides auto-detected relationship heuristics
+  - Renders as select/autocomplete widgets in forms
+  - Graceful fallback when referenced resource is unavailable
+- **Many-to-many relationship detection** - Automatic detection and UI generation for library patterns
+  - Detects `/resourceA/{id}/resourceB` patterns where resourceB has standalone CRUD endpoints
+  - Marks target resources with `isLibrary: true` flag
+  - Supports read-only associations (GET-only endpoints)
+  - Handles slug normalization (singular/plural matching)
+  - 64 unit tests + 14 E2E tests covering detection, marking, and edge cases
+- **Major adapter refactoring** - Decomposed monolithic adapter classes into focused components
+  - Extracted `SchemaProcessor` (~400 lines) with Visitor pattern for schema traversal
+    - `TypeMappingVisitor` - converts OpenAPI types to IR types
+    - `ValidationExtractionVisitor` - extracts validation rules
+    - `FileMetadataVisitor` - extracts file upload metadata
+    - `ReferenceResolutionVisitor` - resolves $ref references
+    - `SchemaNodeFactory` - creates schema nodes with Factory pattern
+  - Extracted `ParameterProcessor` (~150 lines) for parameter handling
+    - Parameter reference resolution
+    - Path-level and operation-level parameter merging
+    - Parameter filtering based on x-uigen-ignore
+    - Parameter precedence rules (operation-level overrides path-level)
+  - Extracted `BodyProcessor` for request/response body processing
+  - Extracted `OperationProcessor` for operation construction
+  - Extracted `ResourceExtractor` for resource inference from paths
+  - Extracted `AuthDetector` for authentication endpoint detection
+  - OpenAPI3Adapter reduced from ~1400 lines to ~500 lines
+  - All 1,275+ core tests pass with identical IR output
+
+**CLI (`@uigen-dev/cli`)**
+- **`uigen config` command** - Launches visual config GUI for managing annotations
+  - Opens browser-based GUI at `http://localhost:4401`
+  - Provides API middleware with endpoints: `/api/config`, `/api/spec`, `/api/annotations`, `/api/css`
+  - Config file auto-loading - `uigen serve` automatically loads and applies `.uigen/config.yaml`
+  - CSS customization endpoints - Read/write `.uigen/base-styles.css` and `.uigen/theme.css`
+  - Cross-platform browser opening (Windows, macOS, Linux)
+  - Port conflict handling with automatic retry
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- **New standalone package** - Visual interface for managing x-uigen annotations without editing specs
+  - React-based GUI with Vite build system
+  - Reads and writes `.uigen/config.yaml` for annotation customization
+  - Auto-discovery of registered annotations via AnnotationHandlerRegistry
+  - Live preview showing how annotation changes affect generated UI
+  - Dark mode support with theme persistence in localStorage
+- **Annotation management UI**
+  - Toggle switches for x-uigen-ignore on all element types (operations, schemas, properties, parameters, request bodies, responses)
+  - Inline text editing for x-uigen-label annotations
+  - Visual feedback with dimming for ignored elements
+  - Badges showing annotation source (Explicit, Inherited, Override)
+  - Precedence panel displaying annotation hierarchy
+- **Tree view with virtualization**
+  - React-window for efficient rendering of large specs (100+ operations)
+  - Expand/collapse sections
+  - Show/hide pruned elements toggle
+  - Search and filter by element name or path
+- **Bulk operations**
+  - Multi-select elements (Ctrl+Click, Shift+Click)
+  - Bulk actions: "Ignore All", "Include All"
+  - Undo/redo stack with keyboard shortcuts (Ctrl+Z, Ctrl+Y)
+- **Performance optimizations**
+  - Debounced config writes (500ms) to avoid excessive disk I/O
+  - Memoization to avoid re-rendering unchanged elements
+  - Loads specs with 100+ operations in under 2 seconds
+- **Accessibility**
+  - ARIA labels on all interactive elements
+  - ARIA live regions for state change announcements
+  - Keyboard navigation (arrow keys, Enter, Space, Escape)
+  - Proper heading hierarchy and landmark regions
+  - 3:1 minimum contrast ratio for dimmed elements
+- **Export functionality**
+  - "Export Ignore Summary" generates markdown or JSON
+  - Lists all ignored elements grouped by type
+  - Timestamped output files
+
+**React renderer (`@uigen-dev/react`)**
+- **LibrarySelector component** - Selection UI for many-to-many library resources
+  - Search with 300ms debounce
+  - Filter inputs for query parameters
+  - Paginated list rendering
+  - Visual selection feedback
+  - "Create New" and "View All" links
+  - Empty state with "Clear Filters" action
+  - 19 accessibility tests (keyboard navigation, ARIA labels, screen reader announcements)
+- **LibraryAssociationManager component** - Manage many-to-many associations in DetailView
+  - Fetch and display currently associated resources
+  - Add associations via LibrarySelector
+  - Remove associations with DELETE requests
+  - Read-only mode for GET-only associations
+  - Loading states and error handling
+- **DetailView enhancements** - Renders LibraryAssociationManager for manyToMany relationships
+
+**Documentation site (`apps/docs`)**
+- Added blog post: "Introducing the UIGen Config Command: Visual Annotation Management"
+- Added blog post: "Config Reconciliation: Runtime Annotation Merging Without Touching Your Spec"
+- Added documentation page: `/docs/spec-annotations/x-uigen-ref`
+- Updated architecture documentation with refactoring details
+
+**Examples**
+- Added FastAPI Meeting Minutes example app with authentication
+- Improved example specs with real-world patterns
+
+### Changed
+
+**Core engine (`@uigen-dev/core`)**
+- Improved file type detection with better MIME type handling
+- Enhanced x-uigen-ignore annotation processing with better precedence rules
+- Refactored adapter architecture for better maintainability and extensibility
+
+**CLI (`@uigen-dev/cli`)**
+- Config GUI now uses separate base-styles.css (read-only) and theme.css (editable)
+- Improved error messages with actionable suggestions
+
+### Fixed
+
+**Core engine (`@uigen-dev/core`)**
+- Fixed circular reference detection in schema processing
+- Fixed parameter merging when operation-level parameters override path-level parameters
+- Fixed $ref resolution for nested schema references
+
+**React renderer (`@uigen-dev/react`)**
+- Fixed duplicate key warnings in array field rendering
+- Fixed image upload detection for binary format fields
+
+### Tests
+- 1,275+ core tests passing (all existing tests + new refactoring tests)
+- 881 React tests passing (excluding 19 pre-existing failures)
+- 64 many-to-many relationship tests (unit + integration)
+- 14 E2E tests for library pattern
+- 19 accessibility tests for LibrarySelector
+- 20 property-based tests for config reconciliation (100+ iterations each)
+
+---
+
 ## [0.2.4] - 2026-04-16
 
 ### Added
@@ -277,6 +427,7 @@ This is the first release of UIGen — point it at an OpenAPI spec, get a fully 
 
 ---
 
+[0.2.5]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.5
 [0.2.4]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.4
 [0.2.3]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.3
 [0.2.2]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.2
