@@ -509,6 +509,11 @@ export class Swagger2Adapter {
       pattern: param.pattern
     };
 
+    // Preserve file metadata extensions for file parameters
+    if (param.type === 'file') {
+      this.preserveFileMetadataExtensions(param as any, schema);
+    }
+
     return schema;
   }
 
@@ -667,8 +672,11 @@ export class Swagger2Adapter {
     swagger2Schema: Swagger2Schema,
     openapi3Schema: OpenAPIV3.SchemaObject
   ): void {
-    // Only preserve extensions for binary format fields
-    if (swagger2Schema.format !== 'binary') {
+    // Check for binary format fields OR file type parameters
+    const isBinaryField = swagger2Schema.format === 'binary';
+    const isFileParameter = (swagger2Schema as any).type === 'file';
+    
+    if (!isBinaryField && !isFileParameter) {
       return;
     }
 

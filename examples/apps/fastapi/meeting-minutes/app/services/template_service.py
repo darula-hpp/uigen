@@ -57,14 +57,15 @@ class TemplateService:
         
         # Create temporary template to get ID (we'll update file_path after saving)
         temp_template = await self.repository.create(
-            template_data=template_data,
+            name=template_data.name,
+            population_type=template_data.population_type,
             file_path="",  # Temporary, will update
             jinja_shape={}  # Temporary, will update
         )
         
         try:
             # Save file to storage
-            storage_dir = self.repository.get_storage_path(temp_template.id)
+            storage_dir = self.repository.get_template_storage_path(temp_template.id)
             storage_dir.mkdir(parents=True, exist_ok=True)
             
             file_path = storage_dir / f"{temp_template.id}_original.docx"

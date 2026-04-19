@@ -1,11 +1,12 @@
 /**
  * Strategy Registry
  * 
- * Singleton registry that maps MIME types to file upload strategies.
- * Supports exact matching, wildcard matching, and fallback to generic strategy.
+ * Singleton registry that maps file type categories and MIME types to file upload strategies.
+ * Supports category-based matching, exact MIME type matching, wildcard matching, and fallback to generic strategy.
  */
 
 import type { FileUploadStrategy } from './types';
+import type { FileTypeCategory } from '@uigen/core';
 
 export class StrategyRegistry {
   private strategies: Map<string, FileUploadStrategy>;
@@ -42,35 +43,40 @@ export class StrategyRegistry {
   }
 
   /**
-   * Get strategy for a MIME type
+   * Register a strategy for a file type category
+   * 
+   * @param fileType - File type category (image, document, video, audio, generic)
+   * @param strategy - Strategy instance to register
+   */
+  registerForCategory(fileType: FileTypeCategory, strategy: FileUploadStrategy): void {
+    const key = `category:${fileType}`;
+    this.strategies.set(key, strategy);
+  }
+
+  /**
+   * Get strategy for a file type category
    * 
    * Lookup order:
-   * 1. Exact match (e.g., "image/png")
-   * 2. Wildcard match (e.g., "image/*")
-   * 3. Generic fallback ("*\/*")
+   * 1. Exact file type category match
+   * 2. Generic fallback
    * 
-   * @param mimeType - MIME type to match
+   * @param fileType - File type category from IR
+   * @param mimeType - Optional MIME type for backward compatibility
    * @returns Matching strategy or generic fallback
    * @throws Error if no generic fallback strategy is registered
    */
-  getStrategy(mimeType: string): FileUploadStrategy {
-    // 1. Exact match
-    if (this.strategies.has(mimeType)) {
-      return this.strategies.get(mimeType)!;
+  getStrategy(fileType: FileTypeCategory, mimeType?: string): FileUploadStrategy {
+    // Primary lookup: file type category
+    const categoryKey = `category:${fileType}`;
+    if (this.strategies.has(categoryKey)) {
+      return this.strategies.get(categoryKey)!;
     }
 
-    // 2. Wildcard match (e.g., "image/*")
-    const category = mimeType.split('/')[0];
-    const wildcardKey = `${category}/*`;
-    if (this.strategies.has(wildcardKey)) {
-      return this.strategies.get(wildcardKey)!;
-    }
-
-    // 3. Generic fallback
-    const fallback = this.strategies.get('*/*');
+    // Fallback: generic strategy
+    const fallback = this.strategies.get('category:generic');
     if (!fallback) {
       throw new Error(
-        'No generic fallback strategy registered. Register a strategy with MIME type "*/*"'
+        'No generic fallback strategy registered. Register a strategy for "generic" file type.'
       );
     }
     return fallback;

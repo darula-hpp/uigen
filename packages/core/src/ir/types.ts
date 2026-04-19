@@ -22,6 +22,8 @@ export type FieldType =
   | 'date' 
   | 'file';
 
+export type FileTypeCategory = 'image' | 'document' | 'video' | 'audio' | 'generic';
+
 export interface UIGenApp {
   meta: AppMeta;
   resources: Resource[];
@@ -116,12 +118,14 @@ export interface Resource {
   schema: SchemaNode;
   relationships: Relationship[];
   pagination?: PaginationHint;
+  isLibrary?: boolean; // Marks resources as reusable libraries that can be referenced by multiple consumer resources
 }
 
 export interface Relationship {
   target: string;
-  type: 'hasMany' | 'belongsTo';
+  type: 'hasMany' | 'belongsTo' | 'manyToMany';
   path: string;
+  isReadOnly?: boolean;
 }
 
 export interface PaginationHint {
@@ -200,6 +204,7 @@ export interface FileMetadata {
   maxSizeBytes: number;
   multiple: boolean;
   accept: string;
+  fileType: FileTypeCategory;
 }
 
 export interface RefConfig {

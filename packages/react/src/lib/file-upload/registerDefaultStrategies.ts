@@ -34,15 +34,10 @@ import { GenericUploadStrategy } from './strategies/GenericUploadStrategy';
 export function registerDefaultStrategies(): void {
   const registry = StrategyRegistry.getInstance();
 
-  // Register image strategy
-  registry.register('image', new ImageUploadStrategy());
-
-  // Register document strategy
-  registry.register('document', new DocumentUploadStrategy());
-
-  // Register video strategy
-  registry.register('video', new VideoUploadStrategy());
-
-  // Register generic strategy as fallback
-  registry.register('generic', new GenericUploadStrategy());
+  // Register strategies for file type categories
+  registry.registerForCategory('image', new ImageUploadStrategy());
+  registry.registerForCategory('document', new DocumentUploadStrategy());
+  registry.registerForCategory('video', new VideoUploadStrategy());
+  registry.registerForCategory('audio', new GenericUploadStrategy()); // Use generic for audio
+  registry.registerForCategory('generic', new GenericUploadStrategy());
 }
