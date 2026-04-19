@@ -59,38 +59,59 @@ The CLI:
 | Pattern | Where | Why |
 |---|---|---|
 | **Adapter** | Document ingestion | Normalizes OpenAPI 3.x / Swagger 2.0 into IR |
-| **Visitor** | Schema processing | Separates schema traversal algorithms from schema structures |
-| **Factory** | Schema node creation | Encapsulates creation logic for different schema node types |
-| **Strategy** | View rendering | Swaps between table, form, detail, dashboard, wizard |
-| **Registry** | Component lookup | Central `type → Component` map |
+| **Visitor** | Schema processing | Separates schema traversal algorithms from schema structures (TypeMappingVisitor, ValidationExtractionVisitor, FileMetadataVisitor, ReferenceResolutionVisitor) |
+| **Factory** | Schema node creation | Encapsulates creation logic for different schema node types (SchemaNodeFactory) |
+| **Strategy** | Authentication detection, View rendering | Swaps between different detection/rendering strategies (LoginDetectionStrategy, SignUpDetectionStrategy, PasswordResetDetectionStrategy, RefreshTokenDetectionStrategy) |
+| **Facade** | OpenAPI3Adapter | Provides simplified interface to complex subsystem of processors and detectors |
+| **Registry** | Component lookup, Annotations | Central `type → Component` map, annotation handler registry |
 | **Proxy** | API calls | CLI proxies requests to avoid CORS issues |
 | **Reconciler** | Config merging | Merges user config annotations into spec at runtime |
 
-### Schema Processing Architecture
-
-The schema processing logic has been extracted from OpenAPI3Adapter into a dedicated **SchemaProcessor** component using Visitor and Factory patterns. This creates a reusable, extensible architecture that can be shared between OpenAPI3Adapter and Swagger2Adapter.
-
-**Components**:
-- **SchemaProcessor**: Orchestrates schema processing by delegating to visitors and factories
-- **TypeMappingVisitor**: Maps OpenAPI types to IR types (string, number, date, file, etc.)
-- **ValidationExtractionVisitor**: Extracts validation rules (minLength, pattern, minimum, etc.)
-- **FileMetadataVisitor**: Extracts file upload metadata (MIME types, max size, file type categories)
-- **ReferenceResolutionVisitor**: Resolves $ref references with circular reference detection
-- **SchemaNodeFactory**: Creates typed schema nodes (object, array, primitive, enum, file, date)
-
-**Benefits**:
-- **Separation of concerns**: Each visitor handles one specific aspect of schema processing
-- **Reusability**: SchemaProcessor can be used by both OpenAPI3Adapter and Swagger2Adapter
-- **Extensibility**: New visitors can be added without modifying existing code
-- **Testability**: Each component can be tested independently
 
 **Integration**:
 ```typescript
-// OpenAPI3Adapter instantiates SchemaProcessor
-this.schemaProcessor = new SchemaProcessor(spec, adapterUtils, annotationRegistry);
+// OpenAPI3Adapter acts as a facade that orchestrates components
+class OpenAPI3Adapter {
+  private schemaProcessor: SchemaProcessor;
+  private authDetector: AuthDetector;
+  private resourceExtractor: ResourceExtractor;
+  private parameterProcessor: ParameterProcessor;
+  private bodyProcessor: BodyProcessor;
+  private operationProcessor: OperationProcessor;
 
-// Delegates schema processing
-const schemaNode = this.schemaProcessor.processSchema(key, schema);
+  constructor(spec: OpenAPI3Document, utils: AdapterUtils) {
+    // Initialize all components
+    this.schemaProcessor = new SchemaProcessor(spec, utils, annotationRegistry);
+    this.authDetector = new AuthDetector(spec, utils);
+    this.parameterProcessor = new ParameterProcessor(spec, utils, this.schemaProcessor);
+    this.bodyProcessor = new BodyProcessor(spec, utils, this.schemaProcessor, annotationRegistry);
+    this.operationProcessor = new OperationProcessor(
+      viewHintClassifier,
+      this.parameterProcessor,
+      this.bodyProcessor,
+      annotationRegistry
+    );
+    this.resourceExtractor = new ResourceExtractor(
+      spec,
+      utils,
+      this.schemaProcessor,
+      this.operationProcessor,
+      relationshipDetector,
+      paginationDetector
+    );
+  }
+
+  adapt(): UIGenApp {
+    // Delegate to components and aggregate results
+    return {
+      meta: this.extractMeta(),
+      resources: this.resourceExtractor.extractResources(),
+      auth: this.authDetector.detectAuthConfig(),
+      dashboard: this.buildDashboard(),
+      servers: this.extractServers(),
+    };
+  }
+}
 ```
 
 ---
@@ -354,14 +375,26 @@ uigen/
 │   ├── core/                      # Framework-agnostic: adapters, IR, engine
 │   │   └── src/
 │   │       ├── adapter/           # OpenAPI3Adapter, Swagger2Adapter
-│   │       │   ├── schema-processor.ts      # Schema processing orchestrator
-│   │       │   ├── visitors/                # Visitor pattern implementations
+│   │       │   ├── openapi3.ts                  # Main adapter facade (~250-300 lines)
+│   │       │   ├── swagger2.ts                  # Swagger 2.0 adapter
+│   │       │   ├── schema-processor.ts          # Schema processing orchestrator
+│   │       │   ├── auth-detector.ts             # Authentication endpoint detection
+│   │       │   ├── resource-extractor.ts        # Resource inference and extraction
+│   │       │   ├── parameter-processor.ts       # Parameter processing and merging
+│   │       │   ├── body-processor.ts            # Request/response body processing
+│   │       │   ├── operation-processor.ts       # Operation-level processing coordinator
+│   │       │   ├── view-hint-classifier.ts      # View type classification
+│   │       │   ├── schema-resolver.ts           # $ref resolution
+│   │       │   ├── file-type-detector.ts        # File type detection
+│   │       │   ├── visitors/                    # Visitor pattern implementations
 │   │       │   │   ├── type-mapping-visitor.ts
 │   │       │   │   ├── validation-extraction-visitor.ts
 │   │       │   │   ├── file-metadata-visitor.ts
 │   │       │   │   └── reference-resolution-visitor.ts
-│   │       │   └── factories/               # Factory pattern implementations
-│   │       │       └── schema-node-factory.ts
+│   │       │   ├── factories/                   # Factory pattern implementations
+│   │       │   │   └── schema-node-factory.ts
+│   │       │   └── annotations/                 # Annotation handling
+│   │       │       └── registry.ts
 │   │       ├── ir/                # IR types & utilities
 │   │       └── engine/            # IR → ComponentDescriptor mapping
 │   │
