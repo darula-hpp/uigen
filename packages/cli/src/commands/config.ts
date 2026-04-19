@@ -1,7 +1,8 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, createReadStream } from 'fs';
+import { resolve, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
+import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'http';
 import pc from 'picocolors';
 import { exec } from 'child_process';
 import { platform } from 'os';
@@ -9,6 +10,18 @@ import { createApiMiddleware } from '../middleware/config-api.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+const MIME: Record<string, string> = {
+  '.html':  'text/html',
+  '.js':    'application/javascript',
+  '.css':   'text/css',
+  '.svg':   'image/svg+xml',
+  '.png':   'image/png',
+  '.ico':   'image/x-icon',
+  '.json':  'application/json',
+  '.woff':  'font/woff',
+  '.woff2': 'font/woff2',
+};
 
 /** Resolve the config-gui package root from node_modules */
 function resolveConfigGuiRoot(): string {
@@ -22,6 +35,11 @@ function resolveConfigGuiRoot(): string {
     if (existsSync(resolve(candidate, 'package.json'))) return candidate;
   }
   return resolve(__dirname, '../../../config-gui'); // last resort
+}
+
+/** Check if config-gui is installed (vs running from monorepo) */
+function isConfigGuiInstalled(configGuiRoot: string): boolean {
+  return configGuiRoot.includes('node_modules');
 }
 
 /** Resolve the React package root from node_modules */
@@ -247,57 +265,141 @@ export async function config(specPath: string, options: ConfigOptions) {
     // Resolve config-gui package
     const configGuiRoot = resolveConfigGuiRoot();
     const reactPackageRoot = resolveReactPackageRoot();
+    const isInstalled = isConfigGuiInstalled(configGuiRoot);
+    
     if (options.verbose) {
       console.log(pc.gray(`Config GUI root: ${configGuiRoot}`));
-      console.log(pc.gray(`React package root: ${reactPackageRoot}\n`));
+      console.log(pc.gray(`React package root: ${reactPackageRoot}`));
+      console.log(pc.gray(`Mode: ${isInstalled ? 'static' : 'dev'}\n`));
     }
 
     // Initialize CSS file if it doesn't exist
     initializeCSS(specDir, reactPackageRoot, options.verbose ?? false);
 
-    // Start Vite server with retry logic for port conflicts
     const startPort = options.port || 4401;
-    console.log(pc.gray(`Starting server on port ${startPort}...\n`));
 
-    const { port, server } = await startServerWithRetry(
-      configGuiRoot,
-      resolvedSpecPath,
-      specDir,
-      reactPackageRoot,
-      startPort
-    );
+    if (!isInstalled) {
+      // --- Dev mode: Vite dev server (monorepo) ---
+      console.log(pc.gray(`Starting dev server on port ${startPort}...\n`));
 
-    if (port !== startPort) {
-      console.log(pc.yellow(`⚠ Port ${startPort} was in use, using port ${port} instead\n`));
+      const { port, server } = await startServerWithRetry(
+        configGuiRoot,
+        resolvedSpecPath,
+        specDir,
+        reactPackageRoot,
+        startPort
+      );
+
+      if (port !== startPort) {
+        console.log(pc.yellow(`⚠ Port ${startPort} was in use, using port ${port} instead\n`));
+      }
+
+      const url = `http://localhost:${port}`;
+      console.log(pc.green(`✓ Config GUI running at ${pc.bold(url)}\n`));
+      console.log(pc.gray('  API endpoints available:'));
+      console.log(pc.gray(`  - GET  ${url}/api/config`));
+      console.log(pc.gray(`  - POST ${url}/api/config`));
+      console.log(pc.gray(`  - GET  ${url}/api/spec`));
+      console.log(pc.gray(`  - GET  ${url}/api/annotations`));
+      console.log(pc.gray(`  - GET  ${url}/api/css\n`));
+      console.log(pc.gray('Opening browser...\n'));
+
+      // Open browser
+      openBrowser(url);
+
+      console.log(pc.gray('Press Ctrl+C to stop\n'));
+
+      // Keep process alive
+      process.on('SIGINT', () => {
+        console.log(pc.gray('\n\nShutting down...'));
+        server.close();
+        process.exit(0);
+      });
+
+      process.on('SIGTERM', () => {
+        console.log(pc.gray('\n\nShutting down...'));
+        server.close();
+        process.exit(0);
+      });
+    } else {
+      // --- Static mode: serve pre-built dist (npm/npx install) ---
+      console.log(pc.gray(`Starting static server on port ${startPort}...\n`));
+      
+      const distDir = resolve(configGuiRoot, 'dist');
+      const apiMiddleware = createApiMiddleware(resolvedSpecPath, specDir, reactPackageRoot);
+
+      const httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
+        const url = req.url || '/';
+
+        // Handle API requests
+        if (url.startsWith('/api')) {
+          apiMiddleware(req, res, () => {
+            res.writeHead(404);
+            res.end('API endpoint not found');
+          });
+          return;
+        }
+
+        // Serve static files
+        const ext = extname(url);
+        const filePath = ext ? resolve(distDir, url.slice(1)) : resolve(distDir, 'index.html');
+
+        if (!existsSync(filePath)) {
+          // Fallback to index.html for client-side routing
+          const indexPath = resolve(distDir, 'index.html');
+          if (existsSync(indexPath)) {
+            let html = readFileSync(indexPath, 'utf-8');
+            html = html.replace('</head>', `<script>window.__UIGEN_SPEC_PATH__ = ${JSON.stringify(resolvedSpecPath)};</script></head>`);
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(html);
+          } else {
+            res.writeHead(404);
+            res.end('Not found');
+          }
+          return;
+        }
+
+        if (filePath.endsWith('index.html')) {
+          let html = readFileSync(filePath, 'utf-8');
+          html = html.replace('</head>', `<script>window.__UIGEN_SPEC_PATH__ = ${JSON.stringify(resolvedSpecPath)};</script></head>`);
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(html);
+        } else {
+          res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+          createReadStream(filePath).pipe(res);
+        }
+      });
+
+      httpServer.listen(startPort, () => {
+        const url = `http://localhost:${startPort}`;
+        console.log(pc.green(`✓ Config GUI running at ${pc.bold(url)}\n`));
+        console.log(pc.gray('  API endpoints available:'));
+        console.log(pc.gray(`  - GET  ${url}/api/config`));
+        console.log(pc.gray(`  - POST ${url}/api/config`));
+        console.log(pc.gray(`  - GET  ${url}/api/spec`));
+        console.log(pc.gray(`  - GET  ${url}/api/annotations`));
+        console.log(pc.gray(`  - GET  ${url}/api/css\n`));
+        console.log(pc.gray('Opening browser...\n'));
+
+        // Open browser
+        openBrowser(url);
+
+        console.log(pc.gray('Press Ctrl+C to stop\n'));
+      });
+
+      // Keep process alive
+      process.on('SIGINT', () => {
+        console.log(pc.gray('\n\nShutting down...'));
+        httpServer.close();
+        process.exit(0);
+      });
+
+      process.on('SIGTERM', () => {
+        console.log(pc.gray('\n\nShutting down...'));
+        httpServer.close();
+        process.exit(0);
+      });
     }
-
-    const url = `http://localhost:${port}`;
-    console.log(pc.green(`✓ Config GUI running at ${pc.bold(url)}\n`));
-    console.log(pc.gray('  API endpoints available:'));
-    console.log(pc.gray(`  - GET  ${url}/api/config`));
-    console.log(pc.gray(`  - POST ${url}/api/config`));
-    console.log(pc.gray(`  - GET  ${url}/api/spec`));
-    console.log(pc.gray(`  - GET  ${url}/api/annotations`));
-    console.log(pc.gray(`  - GET  ${url}/api/css\n`));
-    console.log(pc.gray('Opening browser...\n'));
-
-    // Open browser
-    openBrowser(url);
-
-    console.log(pc.gray('Press Ctrl+C to stop\n'));
-
-    // Keep process alive
-    process.on('SIGINT', () => {
-      console.log(pc.gray('\n\nShutting down...'));
-      server.close();
-      process.exit(0);
-    });
-
-    process.on('SIGTERM', () => {
-      console.log(pc.gray('\n\nShutting down...'));
-      server.close();
-      process.exit(0);
-    });
 
   } catch (error) {
     console.error(pc.red('✗ Error:'), error instanceof Error ? error.message : error);

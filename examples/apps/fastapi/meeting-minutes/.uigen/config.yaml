@@ -14,3 +14,5 @@ annotations:
     x-uigen-password-reset: true
   POST:/api/v1/auth/sign-up:
     x-uigen-signup: true
+  GET:/api/v1/auth/me:
+    x-uigen-ignore: true

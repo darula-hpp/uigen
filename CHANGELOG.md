@@ -6,7 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.2.5] - 2026-04-19
+## [0.3.1] - 2026-04-19
+
+### Fixed
+
+**CLI (`@uigen-dev/cli`)**
+- Fixed config GUI CSS not loading when running from npm/npx
+  - Added static server mode for serving pre-built config-gui dist files
+  - Config GUI now properly serves CSS files (`index-C1RXF-Wi.css`) in production
+  - Matches the serve command's dual-mode architecture (dev server for monorepo, static server for npm)
+  - API middleware now works correctly in both dev and static modes
+
+---
+
+## [0.3.0] - 2026-04-19
 
 ### Added
 
@@ -427,6 +440,8 @@ This is the first release of UIGen — point it at an OpenAPI spec, get a fully 
 
 ---
 
+[0.3.1]: https://github.com/darula-hpp/uigen/releases/tag/v0.3.1
+[0.3.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.3.0
 [0.2.5]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.5
 [0.2.4]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.4
 [0.2.3]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.3
