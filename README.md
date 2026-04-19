@@ -90,7 +90,6 @@ Because the IR is framework-agnostic, you can swap renderers. The same spec work
 
 - **[Full Documentation](https://uigen-docs.vercel.app)** - Complete guides, API reference, and examples
 - **[Architecture](./ARCHITECTURE.md)** - Deep dive into the IR, adapters, and rendering pipeline
-- **[Contributing](./CONTRIBUTING.md)** - How to contribute to UIGen
 
 ---
 
