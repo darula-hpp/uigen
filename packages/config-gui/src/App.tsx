@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppContext } from './contexts/AppContext.js';
 import { AnnotationList } from './components/AnnotationList.js';
 import { AnnotationForm } from './components/AnnotationForm.js';
@@ -6,6 +6,7 @@ import { VisualEditor } from './components/VisualEditor/index.js';
 import { PreviewRenderer } from './components/Preview/PreviewRenderer.js';
 import { HelpPanel } from './components/HelpPanel.js';
 import { ThemeToggle } from './components/ThemeToggle.js';
+import { CSSEditor } from './components/CSSEditor.js';
 
 /**
  * Main application component for the Config GUI
@@ -22,13 +23,72 @@ import { ThemeToggle } from './components/ThemeToggle.js';
 function App() {
   const { state, actions } = useAppContext();
   const { isLoading, error, config, specPath, specStructure, annotations } = state;
-  const [activeTab, setActiveTab] = useState<'annotations' | 'visual' | 'preview'>('annotations');
+  const [activeTab, setActiveTab] = useState<'annotations' | 'visual' | 'preview' | 'css'>('annotations');
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
+  
+  // CSS content state
+  const [cssContent, setCssContent] = useState<string>('');
+  const [cssLoading, setCssLoading] = useState<boolean>(false);
+  const [cssError, setCssError] = useState<string | null>(null);
   
   // Find the selected annotation metadata
   const selectedAnnotationMetadata = selectedAnnotation 
     ? annotations.find(a => a.name === selectedAnnotation)
     : null;
+  
+  /**
+   * Load CSS content from API when CSS tab is opened
+   * Requirements: 3.1, 3.2, 3.3, 3.4, 10.1
+   */
+  useEffect(() => {
+    if (activeTab === 'css' && !cssContent && !cssLoading) {
+      loadCSSContent();
+    }
+  }, [activeTab]);
+  
+  const loadCSSContent = async () => {
+    setCssLoading(true);
+    setCssError(null);
+    
+    try {
+      const response = await fetch('/api/css');
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to load CSS' }));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      setCssContent(data.content || '');
+    } catch (error) {
+      console.error('Failed to load CSS content:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load CSS content';
+      setCssError(errorMessage);
+      actions.setError(errorMessage);
+    } finally {
+      setCssLoading(false);
+    }
+  };
+  
+  /**
+   * Save CSS content to API
+   * Requirements: 4.2, 10.2
+   */
+  const handleCssSave = async (content: string) => {
+    const response = await fetch('/api/css', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Failed to save CSS' }));
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    // Update local state with saved content
+    setCssContent(content);
+  };
   
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -142,6 +202,18 @@ function App() {
                     >
                       Preview
                     </button>
+                    <button
+                      onClick={() => setActiveTab('css')}
+                      className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'css'
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                      aria-current={activeTab === 'css' ? 'page' : undefined}
+                      data-testid="css-tab"
+                    >
+                      CSS
+                    </button>
                   </nav>
                 </div>
                 
@@ -195,6 +267,53 @@ function App() {
                         See how your annotation settings affect the generated UI.
                       </p>
                       <PreviewRenderer structure={specStructure} />
+                    </div>
+                  )}
+                  
+                  {activeTab === 'css' && (
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        CSS Editor
+                      </h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                        Customize the appearance of your generated UI with custom CSS.
+                      </p>
+                      
+                      {cssLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <div className="text-center">
+                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100"></div>
+                            <p className="mt-4 text-gray-500 dark:text-gray-400">Loading CSS content...</p>
+                          </div>
+                        </div>
+                      ) : cssError ? (
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+                          <div className="flex items-start">
+                            <svg className="h-5 w-5 text-red-400 dark:text-red-500 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                            <div className="ml-3 flex-1">
+                              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                                Failed to load CSS content
+                              </h3>
+                              <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+                                {cssError}
+                              </p>
+                              <button
+                                onClick={loadCSSContent}
+                                className="mt-3 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300"
+                              >
+                                Try again
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <CSSEditor 
+                          initialContent={cssContent}
+                          onSave={handleCssSave}
+                        />
+                      )}
                     </div>
                   )}
                 </div>

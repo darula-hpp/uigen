@@ -14,6 +14,129 @@ import { parseSpec, AnnotationHandlerRegistry } from '@uigen-dev/core';
  */
 
 const CONFIG_PATH = '.uigen/config.yaml';
+const CUSTOM_CSS_PATH = '.uigen/index.css';
+
+/**
+ * Resolve custom CSS path relative to spec directory
+ * Requirements: 9.1, 9.3
+ * 
+ * @param specDir - The directory containing the spec file
+ * @returns Absolute path to .uigen/index.css
+ */
+export function resolveCustomCSSPath(specDir: string): string {
+  // Normalize the spec directory path first
+  const normalizedSpecDir = resolve(specDir);
+  const cssPath = resolve(normalizedSpecDir, CUSTOM_CSS_PATH);
+  
+  // Validate that resolved path is within spec directory to prevent path traversal
+  if (!cssPath.startsWith(normalizedSpecDir)) {
+    throw new Error('Invalid CSS file path: path traversal detected');
+  }
+  
+  return cssPath;
+}
+
+/**
+ * Resolve default CSS path relative to React package location
+ * Requirements: 9.2, 9.3
+ * 
+ * @param reactPackageRoot - The root directory of the React package
+ * @returns Absolute path to packages/react/src/index.css
+ */
+export function resolveDefaultCSSPath(reactPackageRoot: string): string {
+  // Normalize the React package root path first
+  const normalizedReactRoot = resolve(reactPackageRoot);
+  const cssPath = resolve(normalizedReactRoot, 'src/index.css');
+  
+  // Validate that resolved path is within React package to prevent path traversal
+  if (!cssPath.startsWith(normalizedReactRoot)) {
+    throw new Error('Invalid CSS file path: path traversal detected');
+  }
+  
+  return cssPath;
+}
+
+/**
+ * GET /api/css
+ * Read CSS content from custom or default CSS file
+ * Requirements: 5.1, 5.2, 5.3, 10.1
+ * 
+ * @param specDir - The directory containing the spec file
+ * @param reactPackageRoot - The root directory of the React package
+ * @returns Object with CSS content and isCustom flag
+ * @throws Error if no CSS file is found or read fails
+ */
+export function handleGetCSS(specDir: string, reactPackageRoot: string): {
+  content: string;
+  isCustom: boolean;
+} {
+  const customCSSPath = resolveCustomCSSPath(specDir);
+  const defaultCSSPath = resolveDefaultCSSPath(reactPackageRoot);
+  
+  // Try custom CSS first
+  if (existsSync(customCSSPath)) {
+    try {
+      const content = readFileSync(customCSSPath, 'utf-8');
+      return { content, isCustom: true };
+    } catch (error) {
+      console.error(`Failed to read custom CSS file at ${customCSSPath}:`, error);
+      throw new Error(
+        `Failed to read custom CSS file: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+  
+  // Fallback to default CSS
+  if (existsSync(defaultCSSPath)) {
+    try {
+      const content = readFileSync(defaultCSSPath, 'utf-8');
+      return { content, isCustom: false };
+    } catch (error) {
+      console.error(`Failed to read default CSS file at ${defaultCSSPath}:`, error);
+      throw new Error(
+        `Failed to read default CSS file: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+  
+  throw new Error('No CSS file found. Expected custom CSS at .uigen/index.css or default CSS at packages/react/src/index.css');
+}
+
+/**
+ * POST /api/css
+ * Write CSS content to .uigen/index.css
+ * Requirements: 5.4, 5.5, 5.6, 10.2
+ * 
+ * @param specDir - The directory containing the spec file
+ * @param content - The CSS content to save
+ * @throws Error if content exceeds size limit or write fails
+ */
+export function handleSaveCSS(specDir: string, content: string): void {
+  const MAX_CSS_SIZE = 1024 * 1024; // 1MB
+  
+  // Validate content size to prevent DoS
+  if (content.length > MAX_CSS_SIZE) {
+    throw new Error(`CSS content exceeds maximum size of ${MAX_CSS_SIZE} bytes`);
+  }
+  
+  const cssPath = resolveCustomCSSPath(specDir);
+  const cssDir = dirname(cssPath);
+  
+  try {
+    // Ensure .uigen directory exists
+    if (!existsSync(cssDir)) {
+      mkdirSync(cssDir, { recursive: true });
+    }
+    
+    // Write CSS content
+    writeFileSync(cssPath, content, 'utf-8');
+  } catch (error) {
+    console.error(`Failed to write CSS file at ${cssPath}:`, error);
+    throw new Error(
+      `Failed to write CSS file: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
 
 /**
  * GET /api/config
@@ -206,7 +329,7 @@ export function handleGetAnnotations(): any[] {
 /**
  * Create API middleware for Vite dev server
  */
-export function createApiMiddleware(specPath: string, specDir: string) {
+export function createApiMiddleware(specPath: string, specDir: string, reactPackageRoot: string) {
   return async (req: any, res: any, next: any) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
     
@@ -278,6 +401,38 @@ export function createApiMiddleware(specPath: string, specDir: string) {
         res.setHeader('Content-Type', 'application/json');
         res.statusCode = 200;
         res.end(JSON.stringify(annotations));
+        return;
+      }
+      
+      // GET /api/css
+      if (url.pathname === '/api/css' && req.method === 'GET') {
+        const cssData = handleGetCSS(specDir, reactPackageRoot);
+        res.setHeader('Content-Type', 'application/json');
+        res.statusCode = 200;
+        res.end(JSON.stringify(cssData));
+        return;
+      }
+      
+      // POST /api/css
+      if (url.pathname === '/api/css' && req.method === 'POST') {
+        let body = '';
+        req.on('data', (chunk: Buffer) => {
+          body += chunk.toString();
+        });
+        req.on('end', () => {
+          try {
+            const { content } = JSON.parse(body) as { content: string };
+            handleSaveCSS(specDir, content);
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify({ success: true }));
+          } catch (error) {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ 
+              error: error instanceof Error ? error.message : String(error) 
+            }));
+          }
+        });
         return;
       }
       

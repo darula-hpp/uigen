@@ -338,21 +338,6 @@ export function AuthUI({ config }: AuthUIProps) {
               </Button>
             </form>
           )}
-
-          {/* Skip */}
-          <div className="pt-2 border-t">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full text-xs"
-              onClick={() => setAuthenticated(true)}
-            >
-              Continue without authentication
-            </Button>
-            <p className="text-xs text-muted-foreground text-center mt-1">
-              You can explore the UI, but API calls will fail
-            </p>
-          </div>
         </>
       )}
     </div>

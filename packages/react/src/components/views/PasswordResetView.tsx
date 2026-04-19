@@ -55,7 +55,8 @@ export function PasswordResetView({ config, appTitle }: PasswordResetViewProps) 
 
     setLoading(true);
     try {
-      const response = await fetch(selectedEndpoint.path, {
+      // Prepend /api to match the proxy routing convention (same as useApiCall)
+      const response = await fetch(`/api${selectedEndpoint.path}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

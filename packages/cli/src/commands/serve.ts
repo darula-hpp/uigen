@@ -40,6 +40,37 @@ function resolveRendererRoot(renderer: Renderer): string {
   return resolve(__dirname, '../../../' + renderer); // last resort
 }
 
+/**
+ * Load CSS content from custom or default location
+ * Requirements: 6.1, 6.2, 6.3, 10.1
+ */
+function loadCSS(specDir: string, rendererRoot: string, verbose: boolean): string {
+  const customCSSPath = resolve(specDir, '.uigen/index.css');
+  const defaultCSSPath = resolve(rendererRoot, 'src/index.css');
+  
+  // Try custom CSS first
+  if (existsSync(customCSSPath)) {
+    if (verbose) {
+      console.log(pc.gray(`Loading custom CSS from ${customCSSPath}`));
+    }
+    return readFileSync(customCSSPath, 'utf-8');
+  }
+  
+  // Fallback to default CSS
+  if (existsSync(defaultCSSPath)) {
+    if (verbose) {
+      console.log(pc.gray(`Loading default CSS from ${defaultCSSPath}`));
+    }
+    return readFileSync(defaultCSSPath, 'utf-8');
+  }
+  
+  // No CSS found
+  if (verbose) {
+    console.log(pc.yellow('⚠ No CSS file found, proceeding without custom styles'));
+  }
+  return '';
+}
+
 /** Inject auth headers and strip uigen-specific ones. Mutates the headers object in place. */
 function injectAuthHeaders(
   headers: Record<string, string | string[]>,
@@ -196,6 +227,10 @@ export async function serve(specPath: string, options: ServeOptions) {
 
     if (!isInstalled) {
       // --- Dev mode: Vite dev server (monorepo) ---
+      
+      // Load CSS content
+      const cssContent = loadCSS(specDir, rendererRoot, options.verbose ?? false);
+      
       const proxyConfig: ProxyOptions = {
         target: proxyTarget,
         changeOrigin: true,
@@ -235,7 +270,15 @@ export async function serve(specPath: string, options: ServeOptions) {
         plugins: [{
           name: 'uigen-config-injection',
           transformIndexHtml(html) {
-            return html.replace('</head>', `<script>window.__UIGEN_CONFIG__ = ${JSON.stringify(ir)};</script></head>`);
+            // Inject config
+            let injectedHtml = html.replace('</head>', `<script>window.__UIGEN_CONFIG__ = ${JSON.stringify(ir)};</script></head>`);
+            
+            // Inject CSS if available (Requirements: 6.4, 6.5)
+            if (cssContent) {
+              injectedHtml = injectedHtml.replace('</head>', `<script>window.__UIGEN_CSS__ = ${JSON.stringify(cssContent)};</script></head>`);
+            }
+            
+            return injectedHtml;
           }
         }]
       });
@@ -247,6 +290,9 @@ export async function serve(specPath: string, options: ServeOptions) {
       // --- Static mode: serve pre-built dist (npm/npx install) ---
       const distDir = resolve(rendererRoot, 'dist');
       const port = options.port || 4400;
+      
+      // Load CSS content
+      const cssContent = loadCSS(specDir, rendererRoot, options.verbose ?? false);
 
       const httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
         const url = req.url || '/';
@@ -292,7 +338,15 @@ export async function serve(specPath: string, options: ServeOptions) {
 
         if (filePath.endsWith('index.html')) {
           let html = readFileSync(filePath, 'utf-8');
+          
+          // Inject config
           html = html.replace('</head>', `<script>window.__UIGEN_CONFIG__ = ${JSON.stringify(ir)};</script></head>`);
+          
+          // Inject CSS if available (Requirements: 6.4, 6.5)
+          if (cssContent) {
+            html = html.replace('</head>', `<script>window.__UIGEN_CSS__ = ${JSON.stringify(cssContent)};</script></head>`);
+          }
+          
           res.writeHead(200, { 'Content-Type': 'text/html' });
           res.end(html);
         } else {

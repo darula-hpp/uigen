@@ -1,10 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useApiCall } from '@/hooks/useApiCall';
 import { Button } from '@/components/ui/button';
-import { getAuthCredentials } from '@/lib/auth';
-import { getSelectedServer } from '@/lib/server';
 import type { UIGenApp, Resource } from '@uigen-dev/core';
-import { Database, ArrowRight, CheckCircle2, XCircle, Server } from 'lucide-react';
+import { Database, ArrowRight } from 'lucide-react';
 
 interface DashboardViewProps {
   config: UIGenApp;
@@ -16,68 +14,19 @@ interface DashboardViewProps {
  */
 export function DashboardView({ config }: DashboardViewProps) {
   const navigate = useNavigate();
-  
-  // Requirement 13.5: Display authentication status
-  const authCredentials = getAuthCredentials();
-  const isAuthenticated = !!authCredentials;
-  
-  // Requirement 13.6: Display current server environment
-  const selectedServer = getSelectedServer();
-  const currentServer = config.servers.find(s => s.url === selectedServer) || config.servers[0];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header - Simplified for user-facing app */}
       <div>
-        <h1 className="text-3xl font-bold">{config.meta.title}</h1>
-        {config.meta.description && (
-          <p className="text-muted-foreground mt-2">{config.meta.description}</p>
-        )}
-        <p className="text-sm text-muted-foreground mt-1">Version {config.meta.version}</p>
+        <h1 className="text-3xl font-bold">Resources</h1>
       </div>
 
-      {/* Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Requirement 13.5: Display authentication status */}
-        <div className="p-4 border rounded-lg bg-card">
-          <div className="flex items-center gap-3">
-            {isAuthenticated ? (
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-            ) : (
-              <XCircle className="h-5 w-5 text-amber-600" />
-            )}
-            <div>
-              <h3 className="font-semibold text-sm">Authentication</h3>
-              <p className="text-sm text-muted-foreground">
-                {isAuthenticated ? (
-                  <span className="text-green-600">Authenticated</span>
-                ) : (
-                  <span className="text-amber-600">Not authenticated</span>
-                )}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Requirement 13.6: Display current server environment */}
-        {currentServer && (
-          <div className="p-4 border rounded-lg bg-card">
-            <div className="flex items-center gap-3">
-              <Server className="h-5 w-5 text-primary" />
-              <div>
-                <h3 className="font-semibold text-sm">Server Environment</h3>
-                <p className="text-sm text-muted-foreground">
-                  {currentServer.description || currentServer.url}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Status Cards - Hidden for user-facing apps */}
+      {/* Authentication and Server status removed as they give a docs/developer vibe */}
 
       {/* Resource Cards */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Resources</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Requirement 13.1, 13.2: Display card for each resource with name and description */}
           {config.resources.map((resource) => (

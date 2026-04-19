@@ -172,6 +172,94 @@ export class OpenAPI3Adapter {
   }
 
   /**
+   * Extract x-uigen-signup annotation from an operation.
+   * Returns true for x-uigen-signup: true, false for x-uigen-signup: false,
+   * and undefined for absent or non-boolean values.
+   * 
+   * Requirements: 1.4, 2.2
+   */
+  private extractSignupAnnotation(operation: OpenAPIV3.OperationObject): boolean | undefined {
+    const annotation = (operation as any)['x-uigen-signup'];
+    
+    // Validate annotation is boolean type
+    if (typeof annotation === 'boolean') {
+      return annotation;
+    }
+    
+    // Log warning if invalid (non-boolean and not undefined)
+    if (annotation !== undefined) {
+      console.warn(`x-uigen-signup must be a boolean, found ${typeof annotation}`);
+    }
+    
+    // Return undefined for absent or invalid values
+    return undefined;
+  }
+
+  /**
+   * Log warning when an endpoint matches both login and signup patterns.
+   * Suggests using explicit annotations to resolve the ambiguity.
+   * 
+   * Requirements: 7.1
+   */
+  private logAmbiguousPattern(path: string): void {
+    console.warn(
+      `Endpoint ${path} matches both login and signup patterns. ` +
+      `Consider adding explicit x-uigen-login or x-uigen-signup annotation.`
+    );
+  }
+
+  /**
+   * Check if a path and operation match signup patterns.
+   * Returns true if either the path or description matches signup patterns.
+   * 
+   * Path patterns (case-insensitive):
+   * - /register, /signup, /sign-up, /registration
+   * - /auth/register, /auth/signup, /auth/sign-up, /auth/registration
+   * 
+   * Description keywords (case-insensitive):
+   * - register, signup, sign up, registration, create account
+   * 
+   * Requirements: 1.1, 1.2
+   */
+  private matchesSignupPattern(path: string, operation: OpenAPIV3.OperationObject): boolean {
+    // Check path patterns (case-insensitive)
+    const signupPathPatterns = [
+      /\/register$/i,
+      /\/signup$/i,
+      /\/sign-up$/i,
+      /\/registration$/i,
+      /\/auth\/register$/i,
+      /\/auth\/signup$/i,
+      /\/auth\/sign-up$/i,
+      /\/auth\/registration$/i,
+    ];
+
+    for (const pattern of signupPathPatterns) {
+      if (pattern.test(path)) {
+        return true;
+      }
+    }
+
+    // Check description keywords (case-insensitive)
+    const description = (operation.summary || '' + ' ' + operation.description || '').toLowerCase();
+    const signupKeywords = [
+      'register',
+      'signup',
+      'sign up',
+      'registration',
+      'create account',
+    ];
+
+    for (const keyword of signupKeywords) {
+      if (description.includes(keyword)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Extract x-uigen-ignore annotation from a path item or operation.
    * Returns true for x-uigen-ignore: true, false for x-uigen-ignore: false,
    * and undefined for absent or non-boolean values.
@@ -366,16 +454,32 @@ export class OpenAPI3Adapter {
         const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
         if (!operation) continue;
 
-        // Extract annotation
-        const annotation = this.extractLoginAnnotation(operation);
+        // Extract annotations
+        const loginAnnotation = this.extractLoginAnnotation(operation);
+        const signupAnnotation = this.extractSignupAnnotation(operation);
+
+        // Handle conflicting annotations (Requirements: 2.3, 7.2)
+        if (loginAnnotation === true && signupAnnotation === true) {
+          console.warn(
+            `Conflicting authentication annotations on ${path}: both x-uigen-login and x-uigen-signup are true. Using login annotation.`
+          );
+          const endpoint = this.buildLoginEndpoint(path, operation);
+          annotatedEndpoints.push(endpoint);
+          continue;
+        }
 
         // Explicit exclusion: skip operations with x-uigen-login: false
-        if (annotation === false) {
+        if (loginAnnotation === false) {
+          continue;
+        }
+
+        // Skip if explicitly marked as signup (Requirements: 1.4, 2.1)
+        if (signupAnnotation === true) {
           continue;
         }
 
         // Explicit inclusion: add operations with x-uigen-login: true
-        if (annotation === true) {
+        if (loginAnnotation === true) {
           const endpoint = this.buildLoginEndpoint(path, operation);
           annotatedEndpoints.push(endpoint);
           continue; // Skip auto-detection for annotated endpoints
@@ -387,8 +491,31 @@ export class OpenAPI3Adapter {
       if (!postOp) continue;
 
       // Skip if already processed as annotated
-      const annotation = this.extractLoginAnnotation(postOp);
-      if (annotation === true || annotation === false) {
+      const loginAnnotation = this.extractLoginAnnotation(postOp);
+      const signupAnnotation = this.extractSignupAnnotation(postOp);
+      
+      if (loginAnnotation === true || loginAnnotation === false) {
+        continue;
+      }
+
+      // Skip if explicitly marked as signup (Requirements: 1.4, 2.1)
+      if (signupAnnotation === true) {
+        continue;
+      }
+
+      // Check signup pattern exclusion before login detection (Requirements: 1.3, 1.5, 7.1)
+      if (this.matchesSignupPattern(path, postOp)) {
+        // Check if also matches login patterns for ambiguity warning
+        const pathMatch = /\/(login|signin|auth\/login|auth\/signin)$/i.test(path);
+        const descText = (postOp.summary || postOp.description || '').toLowerCase();
+        const descMatch = descText.match(/\b(login|authenticate|sign\s*in)\b/) &&
+          !descText.match(/\b(create|generate|get|retrieve|list)\b.*\b(login link|login url)\b/);
+        
+        if (pathMatch || descMatch) {
+          this.logAmbiguousPattern(path);
+        }
+        
+        // Skip endpoint - signup exclusion takes precedence
         continue;
       }
 
@@ -574,40 +701,84 @@ export class OpenAPI3Adapter {
   }
 
   /**
-   * Detect sign-up endpoints based on x-uigen-sign-up annotations.
-   * Only processes annotated endpoints (no auto-detection).
+   * Detect sign-up endpoints based on x-uigen-signup annotations and auto-detection.
+   * Processes both annotated endpoints and applies pattern matching for auto-detection.
    * 
-   * Requirements: 8.1, 8.2, 8.3, 8.4, 8.5
+   * Requirements: 1.1, 1.2, 1.4, 2.2, 8.1, 8.2, 8.3, 8.4, 8.5
    */
   private detectSignUpEndpoints(): SignUpEndpoint[] {
-    const endpoints: SignUpEndpoint[] = [];
+    const annotatedEndpoints: SignUpEndpoint[] = [];
+    const autoDetectedEndpoints: SignUpEndpoint[] = [];
 
     for (const [path, pathItem] of Object.entries(this.spec.paths)) {
       if (!pathItem) continue;
 
-      // Check all HTTP methods for x-uigen-sign-up annotation
+      // Check all HTTP methods for x-uigen-signup annotation
       const methods = ['get', 'post', 'put', 'patch', 'delete'] as const;
       for (const method of methods) {
         const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
         if (!operation) continue;
 
-        // Extract annotation from operation (read directly from spec)
-        const annotation = (operation as any)['x-uigen-sign-up'];
+        // Extract annotations from operation
+        const signupAnnotation = this.extractSignupAnnotation(operation);
+        const loginAnnotation = this.extractLoginAnnotation(operation);
 
-        // Explicit exclusion: skip operations with x-uigen-sign-up: false
-        if (annotation === false) {
+        // Handle conflicting annotations (Requirements: 2.3, 7.2)
+        // If both are true, login takes precedence - skip adding to signupEndpoints
+        if (loginAnnotation === true && signupAnnotation === true) {
+          continue; // Already handled in detectLoginEndpoints
+        }
+
+        // Explicit exclusion: skip operations with x-uigen-signup: false
+        if (signupAnnotation === false) {
           continue;
         }
 
-        // Explicit inclusion: add operations with x-uigen-sign-up: true
-        if (annotation === true) {
+        // Explicit inclusion: add operations with x-uigen-signup: true
+        if (signupAnnotation === true) {
           const endpoint = this.buildSignUpEndpoint(path, operation);
-          endpoints.push(endpoint);
+          annotatedEndpoints.push(endpoint);
+          continue; // Skip auto-detection for annotated endpoints
+        }
+      }
+
+      // Auto-detection only for POST operations without annotations
+      const postOp = pathItem.post as OpenAPIV3.OperationObject | undefined;
+      if (!postOp) continue;
+
+      // Skip if already processed as annotated
+      const signupAnnotation = this.extractSignupAnnotation(postOp);
+      
+      if (signupAnnotation === true || signupAnnotation === false) {
+        continue;
+      }
+
+      // Apply signup pattern matching for auto-detection (Requirements: 1.1, 1.2)
+      if (this.matchesSignupPattern(path, postOp)) {
+        // Verify endpoint has credential fields (username/email + password)
+        let hasCredentialFields = false;
+
+        if (postOp.requestBody && 'content' in postOp.requestBody) {
+          const content = this.pickContent(postOp.requestBody.content);
+          if (content?.schema) {
+            const requestBodySchema = this.adaptSchema('credentials', content.schema);
+            const fields = this.getSchemaFieldNames(requestBodySchema);
+            hasCredentialFields =
+              (fields.includes('username') || fields.includes('email')) &&
+              fields.includes('password');
+          }
+        }
+
+        // Only add to signupEndpoints if it has credential fields
+        if (hasCredentialFields) {
+          const endpoint = this.buildSignUpEndpoint(path, postOp);
+          autoDetectedEndpoints.push(endpoint);
         }
       }
     }
 
-    return endpoints;
+    // Return concatenated array with annotated endpoints first
+    return [...annotatedEndpoints, ...autoDetectedEndpoints];
   }
 
   /**
@@ -1049,7 +1220,7 @@ export class OpenAPI3Adapter {
       return node;
     }
 
-    const type = this.mapType(schema.type, schema.format);
+    const type = this.mapType(schema.type, schema.format, schema);
     const node: SchemaNode = {
       type,
       key,
@@ -1135,9 +1306,15 @@ export class OpenAPI3Adapter {
     return node;
   }
 
-  private mapType(type: string | undefined, format: string | undefined): SchemaNode['type'] {
+  private mapType(type: string | undefined, format: string | undefined, schema?: OpenAPIV3.SchemaObject): SchemaNode['type'] {
     if (format === 'date' || format === 'date-time') return 'date';
     if (format === 'binary') return 'file';
+    
+    // Also detect file type from contentMediaType for octet-stream
+    if (schema && (schema as any).contentMediaType === 'application/octet-stream') {
+      return 'file';
+    }
+    
     switch (type) {
       case 'string': return 'string';
       case 'number': return 'number';
