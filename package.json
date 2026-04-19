@@ -1,6 +1,6 @@
 {
   "name": "uigen",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Auto-generate frontends from OpenAPI specs",
   "license": "MIT",
