@@ -908,10 +908,39 @@ export class OpenAPI3Adapter {
     }
 
     // Detect relationships and pagination
+    const allRelationships: Relationship[] = [];
+    
     for (const resource of resourcesWithOperations) {
       resource.relationships = this.detectRelationships(resource, resourceMap);
+      
+      // Collect all relationships for library resource marking
+      allRelationships.push(...resource.relationships);
+      
       resource.pagination = this.detectPagination(resource);
     }
+    
+    // Detect many-to-many relationships across all resources
+    // This needs to be done separately because operations for /consumer/{id}/library
+    // are added to the library resource, not the consumer resource
+    for (const resource of resourcesWithOperations) {
+      const manyToManyRelationships = this.detectManyToManyAcrossResources(
+        resource,
+        resourcesWithOperations,
+        resourceMap
+      );
+      
+      // Merge many-to-many relationships with existing relationships
+      resource.relationships = [
+        ...resource.relationships,
+        ...manyToManyRelationships
+      ];
+      
+      // Collect all relationships for library resource marking
+      allRelationships.push(...manyToManyRelationships);
+    }
+    
+    // Mark library resources after all relationships are detected
+    this.relationshipDetector.markLibraryResources(resourceMap, allRelationships);
 
     // Ensure operation IDs are unique
     const usedIds = new Set<string>();
@@ -1443,6 +1472,100 @@ export class OpenAPI3Adapter {
     relationships.push(...pathRelationships);
     const schemaRelationships = this.relationshipDetector.detectFromSchema(resource.schema, allResources);
     relationships.push(...schemaRelationships);
+    return relationships;
+  }
+
+  /**
+   * Detect many-to-many relationships by looking at operations across all resources.
+   * This is necessary because the OpenAPI3Adapter creates separate resources for sub-resources,
+   * so operations for /consumer/{id}/library are added to the library resource, not the consumer resource.
+   * 
+   * @param consumerResource - The potential consumer resource
+   * @param allResources - Array of all resources
+   * @param resourceMap - Map of all resources by slug
+   * @returns Array of detected many-to-many relationships
+   */
+  private detectManyToManyAcrossResources(
+    consumerResource: Resource,
+    allResources: Resource[],
+    resourceMap: Map<string, Resource>
+  ): Relationship[] {
+    const relationships: Relationship[] = [];
+    
+    // Look for operations in ANY resource that match /consumerSlug/{id}/targetSlug
+    const escapedSlug = consumerResource.slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`^/${escapedSlug}/\\{[^}]+\\}/([^/]+)$`);
+    
+    for (const resource of allResources) {
+      // Group operations by path
+      const pathOperations = new Map<string, Operation[]>();
+      for (const op of resource.operations) {
+        const existing = pathOperations.get(op.path) || [];
+        existing.push(op);
+        pathOperations.set(op.path, existing);
+      }
+      
+      // Check each path for many-to-many pattern
+      for (const [path, operations] of pathOperations.entries()) {
+        const match = path.match(pattern);
+        if (!match) continue;
+        
+        const targetSlug = match[1];
+        
+        // Verify the target resource exists
+        let targetResource: Resource | undefined = resourceMap.get(targetSlug);
+        let actualTargetSlug = targetSlug;
+        
+        // If not found directly, try to find by normalized slug
+        if (!targetResource) {
+          for (const [slug, res] of resourceMap.entries()) {
+            if (this.relationshipDetector.slugsMatch(targetSlug, slug)) {
+              targetResource = res;
+              actualTargetSlug = slug;
+              break;
+            }
+          }
+        }
+        
+        if (!targetResource) continue;
+        
+        // Verify target resource has standalone collection endpoint (GET /targetSlug)
+        const hasCollectionEndpoint = targetResource.operations.some(
+          op => op.path === `/${actualTargetSlug}` && op.method === 'GET'
+        );
+        if (!hasCollectionEndpoint) continue;
+        
+        // Verify target resource has standalone creation endpoint (POST /targetSlug)
+        const hasCreationEndpoint = targetResource.operations.some(
+          op => op.path === `/${actualTargetSlug}` && op.method === 'POST'
+        );
+        if (!hasCreationEndpoint) continue;
+        
+        // Check for GET operation on association endpoint (list associations)
+        const hasGetOperation = operations.some(op => op.method === 'GET');
+        if (!hasGetOperation) continue;
+        
+        // Check for POST or DELETE operations on association endpoint
+        const hasPostOperation = operations.some(op => op.method === 'POST');
+        const hasDeleteOperation = operations.some(op => op.method === 'DELETE');
+        const isReadOnly = !hasPostOperation && !hasDeleteOperation;
+        
+        // Avoid duplicates
+        const exists = relationships.some(
+          r => r.target === actualTargetSlug && r.type === 'manyToMany'
+        );
+        
+        if (!exists) {
+          relationships.push({
+            target: actualTargetSlug,
+            type: 'manyToMany',
+            path: path,
+            isReadOnly: isReadOnly
+          });
+        }
+      }
+    }
+    
     return relationships;
   }
 

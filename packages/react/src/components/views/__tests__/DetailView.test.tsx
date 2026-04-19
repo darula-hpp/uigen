@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { DetailView } from '../DetailView';
-import type { Resource } from '@uigen-dev/core';
+import type { Resource, UIGenApp } from '@uigen-dev/core';
 import { BrowserRouter } from 'react-router-dom';
 import { ToastProvider } from '@/components/Toast';
+import { AppProvider } from '@/contexts/AppContext';
 
 // Mock the hooks
 vi.mock('@/hooks/useApiCall', () => ({
@@ -76,6 +77,37 @@ const mockResource: Resource = {
   relationships: [],
 };
 
+// Mock UIGenApp config
+const mockConfig: UIGenApp = {
+  meta: {
+    title: 'Test App',
+    version: '1.0.0',
+  },
+  resources: [mockResource],
+  auth: {
+    schemes: [],
+    globalRequired: false,
+  },
+  dashboard: {
+    enabled: false,
+    widgets: [],
+  },
+  servers: [],
+};
+
+// Helper function to render with all required providers
+function renderWithProviders(ui: React.ReactElement) {
+  return render(
+    <BrowserRouter>
+      <AppProvider config={mockConfig}>
+        <ToastProvider>
+          {ui}
+        </ToastProvider>
+      </AppProvider>
+    </BrowserRouter>
+  );
+}
+
 describe('DetailView - Delete Functionality', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -103,13 +135,7 @@ describe('DetailView - Delete Functionality', () => {
       isPending: false,
     } as any);
 
-    render(
-      <BrowserRouter>
-        <ToastProvider>
-          <DetailView resource={mockResource} />
-        </ToastProvider>
-      </BrowserRouter>
-    );
+    renderWithProviders(<DetailView resource={mockResource} />);
 
     // Wait for data to load
     await waitFor(() => {
@@ -152,13 +178,7 @@ describe('DetailView - Delete Functionality', () => {
       isPending: false,
     } as any);
 
-    render(
-      <BrowserRouter>
-        <ToastProvider>
-          <DetailView resource={mockResource} />
-        </ToastProvider>
-      </BrowserRouter>
-    );
+    renderWithProviders(<DetailView resource={mockResource} />);
 
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
@@ -206,13 +226,7 @@ describe('DetailView - Delete Functionality', () => {
       isPending: false,
     } as any);
 
-    render(
-      <BrowserRouter>
-        <ToastProvider>
-          <DetailView resource={mockResource} />
-        </ToastProvider>
-      </BrowserRouter>
-    );
+    renderWithProviders(<DetailView resource={mockResource} />);
 
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
@@ -272,13 +286,7 @@ describe('DetailView - Delete Functionality', () => {
       isPending: false,
     } as any);
 
-    render(
-      <BrowserRouter>
-        <ToastProvider>
-          <DetailView resource={mockResource} />
-        </ToastProvider>
-      </BrowserRouter>
-    );
+    renderWithProviders(<DetailView resource={mockResource} />);
 
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
@@ -334,13 +342,7 @@ describe('DetailView - Delete Functionality', () => {
       isPending: false,
     } as any);
 
-    render(
-      <BrowserRouter>
-        <ToastProvider>
-          <DetailView resource={mockResource} />
-        </ToastProvider>
-      </BrowserRouter>
-    );
+    renderWithProviders(<DetailView resource={mockResource} />);
 
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
@@ -392,13 +394,7 @@ describe('DetailView - Delete Functionality', () => {
       isPending: false,
     } as any);
 
-    const { container } = render(
-      <BrowserRouter>
-        <ToastProvider>
-          <DetailView resource={mockResource} />
-        </ToastProvider>
-      </BrowserRouter>
-    );
+    const { container } = renderWithProviders(<DetailView resource={mockResource} />);
 
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
@@ -453,13 +449,7 @@ describe('DetailView - Delete Functionality', () => {
       operations: mockResource.operations.filter(op => op.viewHint !== 'delete'),
     };
 
-    render(
-      <BrowserRouter>
-        <ToastProvider>
-          <DetailView resource={resourceWithoutDelete} />
-        </ToastProvider>
-      </BrowserRouter>
-    );
+    renderWithProviders(<DetailView resource={resourceWithoutDelete} />);
 
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
@@ -493,13 +483,7 @@ describe('DetailView - Delete Functionality', () => {
       isPending: true, // Simulating loading state
     } as any);
 
-    render(
-      <BrowserRouter>
-        <ToastProvider>
-          <DetailView resource={mockResource} />
-        </ToastProvider>
-      </BrowserRouter>
-    );
+    renderWithProviders(<DetailView resource={mockResource} />);
 
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
