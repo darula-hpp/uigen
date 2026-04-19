@@ -59,11 +59,39 @@ The CLI:
 | Pattern | Where | Why |
 |---|---|---|
 | **Adapter** | Document ingestion | Normalizes OpenAPI 3.x / Swagger 2.0 into IR |
-| **Reconciler** | Config merging | Merges user config annotations into spec at runtime |
-| **Factory** | Component creation | Produces the right widget for a field type |
+| **Visitor** | Schema processing | Separates schema traversal algorithms from schema structures |
+| **Factory** | Schema node creation | Encapsulates creation logic for different schema node types |
 | **Strategy** | View rendering | Swaps between table, form, detail, dashboard, wizard |
 | **Registry** | Component lookup | Central `type → Component` map |
 | **Proxy** | API calls | CLI proxies requests to avoid CORS issues |
+| **Reconciler** | Config merging | Merges user config annotations into spec at runtime |
+
+### Schema Processing Architecture
+
+The schema processing logic has been extracted from OpenAPI3Adapter into a dedicated **SchemaProcessor** component using Visitor and Factory patterns. This creates a reusable, extensible architecture that can be shared between OpenAPI3Adapter and Swagger2Adapter.
+
+**Components**:
+- **SchemaProcessor**: Orchestrates schema processing by delegating to visitors and factories
+- **TypeMappingVisitor**: Maps OpenAPI types to IR types (string, number, date, file, etc.)
+- **ValidationExtractionVisitor**: Extracts validation rules (minLength, pattern, minimum, etc.)
+- **FileMetadataVisitor**: Extracts file upload metadata (MIME types, max size, file type categories)
+- **ReferenceResolutionVisitor**: Resolves $ref references with circular reference detection
+- **SchemaNodeFactory**: Creates typed schema nodes (object, array, primitive, enum, file, date)
+
+**Benefits**:
+- **Separation of concerns**: Each visitor handles one specific aspect of schema processing
+- **Reusability**: SchemaProcessor can be used by both OpenAPI3Adapter and Swagger2Adapter
+- **Extensibility**: New visitors can be added without modifying existing code
+- **Testability**: Each component can be tested independently
+
+**Integration**:
+```typescript
+// OpenAPI3Adapter instantiates SchemaProcessor
+this.schemaProcessor = new SchemaProcessor(spec, adapterUtils, annotationRegistry);
+
+// Delegates schema processing
+const schemaNode = this.schemaProcessor.processSchema(key, schema);
+```
 
 ---
 
@@ -326,6 +354,14 @@ uigen/
 │   ├── core/                      # Framework-agnostic: adapters, IR, engine
 │   │   └── src/
 │   │       ├── adapter/           # OpenAPI3Adapter, Swagger2Adapter
+│   │       │   ├── schema-processor.ts      # Schema processing orchestrator
+│   │       │   ├── visitors/                # Visitor pattern implementations
+│   │       │   │   ├── type-mapping-visitor.ts
+│   │       │   │   ├── validation-extraction-visitor.ts
+│   │       │   │   ├── file-metadata-visitor.ts
+│   │       │   │   └── reference-resolution-visitor.ts
+│   │       │   └── factories/               # Factory pattern implementations
+│   │       │       └── schema-node-factory.ts
 │   │       ├── ir/                # IR types & utilities
 │   │       └── engine/            # IR → ComponentDescriptor mapping
 │   │
