@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import type { FieldProps } from './ComponentRegistry';
 import { StrategyRegistry } from '../../lib/file-upload/StrategyRegistry';
@@ -20,10 +21,12 @@ export function FileUpload({ schema, register, errors }: FieldProps) {
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const registry = StrategyRegistry.getInstance();
+  const { setValue } = useFormContext();
 
   const fileMetadata = schema.fileMetadata;
   const allowMultiple = fileMetadata?.multiple ?? false;
   const acceptAttr = fileMetadata?.accept ?? '*/*';
+  const fileType = fileMetadata?.fileType ?? 'generic';
 
   const validateAndSetFiles = async (fileList: FileList) => {
     setIsLoading(true);
@@ -32,7 +35,8 @@ export function FileUpload({ schema, register, errors }: FieldProps) {
 
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
-      const strategy = registry.getStrategy(file.type);
+      // Use file type category for strategy selection
+      const strategy = registry.getStrategy(fileType, file.type);
       const result = strategy.validate(file, fileMetadata?.maxSizeBytes);
 
       if (result.success) {
@@ -46,13 +50,24 @@ export function FileUpload({ schema, register, errors }: FieldProps) {
       }
     }
 
-    setFiles(allowMultiple ? [...files, ...newFiles] : newFiles);
+    const updatedFiles = allowMultiple ? [...files, ...newFiles] : newFiles;
+    setFiles(updatedFiles);
     setValidationErrors(errors);
     setIsLoading(false);
 
     // Clear errors when new valid file is selected
     if (errors.length === 0 && newFiles.length > 0) {
       setValidationErrors([]);
+    }
+
+    // Update form value with validated files
+    // For single file, set the File object directly
+    // For multiple files, set as array or FileList
+    if (updatedFiles.length > 0) {
+      setValue(schema.key, allowMultiple ? updatedFiles : updatedFiles[0], {
+        shouldValidate: true,
+        shouldDirty: true
+      });
     }
   };
 
@@ -82,6 +97,20 @@ export function FileUpload({ schema, register, errors }: FieldProps) {
     const newFiles = files.filter((_, i) => i !== index);
     setFiles(newFiles);
     setValidationErrors([]);
+    
+    // Update form value after removing file
+    if (newFiles.length > 0) {
+      setValue(schema.key, allowMultiple ? newFiles : newFiles[0], {
+        shouldValidate: true,
+        shouldDirty: true
+      });
+    } else {
+      // Clear the form value if no files remain
+      setValue(schema.key, allowMultiple ? [] : null, {
+        shouldValidate: true,
+        shouldDirty: true
+      });
+    }
   };
 
   const { ref, ...registerProps } = register(schema.key);
@@ -145,7 +174,8 @@ export function FileUpload({ schema, register, errors }: FieldProps) {
       {files.length > 0 && (
         <div className="space-y-2">
           {files.map((file, index) => {
-            const strategy = registry.getStrategy(file.type);
+            // Use file type category for strategy selection
+            const strategy = registry.getStrategy(fileType, file.type);
             const PreviewComponent = strategy.getPreviewComponent();
             return (
               <PreviewComponent

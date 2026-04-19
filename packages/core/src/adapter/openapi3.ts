@@ -18,6 +18,7 @@ import type {
 } from '../ir/types.js';
 import { SchemaResolver } from './schema-resolver.js';
 import { ViewHintClassifier } from './view-hint-classifier.js';
+import { FileTypeDetector } from './file-type-detector.js';
 import { RelationshipDetector } from './relationship-detector.js';
 import { PaginationDetector } from './pagination-detector.js';
 import { AnnotationHandlerRegistry, createOperationContext, createSchemaContext, createServerContext } from './annotations/index.js';
@@ -1395,6 +1396,9 @@ export class OpenAPI3Adapter {
       allowedMimeTypes.push('*/*');
     }
     
+    // Detect file type category
+    const fileType = FileTypeDetector.detectFileType(allowedMimeTypes);
+    
     // Extract max file size from x-uigen-max-file-size extension
     const xUigenMaxFileSize = (schema as any)['x-uigen-max-file-size'];
     const maxSizeBytes = typeof xUigenMaxFileSize === 'number' && xUigenMaxFileSize > 0
@@ -1408,7 +1412,8 @@ export class OpenAPI3Adapter {
       allowedMimeTypes,
       maxSizeBytes,
       multiple: false, // Will be set to true for array schemas
-      accept
+      accept,
+      fileType
     };
   }
 
