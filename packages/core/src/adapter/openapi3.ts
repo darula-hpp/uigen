@@ -21,6 +21,7 @@ import type { AdapterUtils } from './annotations/index.js';
 import { SchemaProcessor } from './schema-processor.js';
 import { DefaultFileMetadataVisitor } from './visitors/file-metadata-visitor.js';
 import { Authentication_Detector } from './auth-detector.js';
+import { Resource_Extractor } from './resource-extractor.js';
 
 export class OpenAPI3Adapter {
   private spec: OpenAPIV3.Document;
@@ -35,6 +36,7 @@ export class OpenAPI3Adapter {
   private schemaProcessor: SchemaProcessor;
   private fileMetadataVisitor: DefaultFileMetadataVisitor;
   private authDetector: Authentication_Detector;
+  private resourceExtractor: Resource_Extractor;
 
   /**
    * Pick the best available content schema from a content map.
@@ -86,6 +88,17 @@ export class OpenAPI3Adapter {
       this.annotationRegistry,
       this.schemaProcessor
     );
+    
+    // Instantiate Resource_Extractor
+    this.resourceExtractor = new Resource_Extractor(
+      spec,
+      this.adapterUtils,
+      this.annotationRegistry,
+      this.viewHintClassifier,
+      this.relationshipDetector,
+      this.paginationDetector,
+      this.schemaProcessor
+    );
   }
 
   adapt(): UIGenApp {
@@ -101,11 +114,16 @@ export class OpenAPI3Adapter {
     // Set currentIR on schemaProcessor so annotations can be processed
     this.schemaProcessor.setCurrentIR(this.currentIR);
     
+    // Set currentIR on resourceExtractor so annotations can be processed
+    this.resourceExtractor.setCurrentIR(this.currentIR);
+    
     // Process server annotations after IR is initialized
     this.processServerAnnotations();
     
-    // Extract resources after IR is initialized
-    this.currentIR.resources = this.extractResources();
+    // Delegate resource extraction to Resource_Extractor
+    this.currentIR.resources = this.resourceExtractor.extractResources(
+      this.adaptOperation.bind(this)
+    );
     
     return this.currentIR;
   }
@@ -319,153 +337,6 @@ export class OpenAPI3Adapter {
       }
     }
     return current as OpenAPIV3.SchemaObject;
-  }
-
-  private extractResources(): Resource[] {
-    const resourceMap = new Map<string, Resource>();
-
-    for (const [path, pathItem] of Object.entries(this.spec.paths)) {
-      if (!pathItem) continue;
-
-      const resourceName = this.inferResourceName(path);
-      if (!resourceName) continue;
-
-      if (!resourceMap.has(resourceName)) {
-        // Extract x-uigen-id vendor extension from path item if present, fall back to slug
-        const vendorExtension = (pathItem as any)['x-uigen-id'];
-        const uigenId = vendorExtension || resourceName;
-        
-        resourceMap.set(resourceName, {
-          name: this.capitalize(resourceName),
-          slug: resourceName,
-          uigenId: uigenId,
-          operations: [],
-          schema: this.createPlaceholderSchema(resourceName),
-          relationships: [],
-          pagination: undefined
-        });
-      }
-
-      const resource = resourceMap.get(resourceName)!;
-
-      for (const method of ['get', 'post', 'put', 'patch', 'delete'] as const) {
-        const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
-        if (!operation) continue;
-
-        try {
-          const op = this.adaptOperation(method.toUpperCase() as HttpMethod, path, operation, pathItem);
-          
-          // Process annotations using the registry
-          if (this.currentIR) {
-            const context = createOperationContext(
-              operation,
-              pathItem,
-              path,
-              method.toUpperCase() as HttpMethod,
-              this.adapterUtils,
-              this.currentIR,
-              resource,
-              op
-            );
-            this.annotationRegistry.processAnnotations(context);
-          }
-          
-          // Check if operation should be ignored (set by IgnoreHandler)
-          if ((op as any).__shouldIgnore) {
-            console.log(`Ignoring operation: ${method.toUpperCase()} ${path}`);
-            continue;
-          }
-
-          resource.operations.push(op);
-
-          // Extract schema name from response for deterministic path resolution
-          if (!resource.schemaName) {
-            const responseSchema = op.responses['200']?.schema || op.responses['201']?.schema;
-            if (responseSchema) {
-              const schemaName = this.extractSchemaNameFromResponse(operation, method);
-              if (schemaName) {
-                resource.schemaName = schemaName;
-              }
-            }
-          }
-
-          if (op.viewHint === 'detail' || op.viewHint === 'list') {
-            const responseSchema = op.responses['200']?.schema || op.responses['201']?.schema;
-            if (responseSchema) resource.schema = this.mergeSchemas(resource.schema, responseSchema);
-          }
-
-          if (op.viewHint === 'create' || op.viewHint === 'update') {
-            if (op.requestBody) resource.schema = this.mergeSchemas(resource.schema, op.requestBody);
-            const responseSchema = op.responses['200']?.schema || op.responses['201']?.schema;
-            if (responseSchema) resource.schema = this.mergeSchemas(resource.schema, responseSchema);
-          }
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          console.warn(`Warning: Failed to parse operation ${method.toUpperCase()} ${path}:`, errorMessage);
-          this.parsingErrors.push({ path, method: method.toUpperCase(), error: errorMessage });
-        }
-      }
-    }
-
-    // Filter out resources with no operations
-    const resourcesWithOperations = Array.from(resourceMap.values()).filter(r => r.operations.length > 0);
-    
-    // Log warning if all resources were filtered out
-    if (resourcesWithOperations.length === 0 && resourceMap.size > 0) {
-      console.warn('All operations were ignored - no resources will be generated');
-    }
-
-    // Detect relationships and pagination
-    const allRelationships: Relationship[] = [];
-    
-    for (const resource of resourcesWithOperations) {
-      resource.relationships = this.detectRelationships(resource, resourceMap);
-      
-      // Collect all relationships for library resource marking
-      allRelationships.push(...resource.relationships);
-      
-      resource.pagination = this.detectPagination(resource);
-    }
-    
-    // Detect many-to-many relationships across all resources
-    // This needs to be done separately because operations for /consumer/{id}/library
-    // are added to the library resource, not the consumer resource
-    for (const resource of resourcesWithOperations) {
-      const manyToManyRelationships = this.detectManyToManyAcrossResources(
-        resource,
-        resourcesWithOperations,
-        resourceMap
-      );
-      
-      // Merge many-to-many relationships with existing relationships
-      resource.relationships = [
-        ...resource.relationships,
-        ...manyToManyRelationships
-      ];
-      
-      // Collect all relationships for library resource marking
-      allRelationships.push(...manyToManyRelationships);
-    }
-    
-    // Mark library resources after all relationships are detected
-    this.relationshipDetector.markLibraryResources(resourceMap, allRelationships);
-
-    // Ensure operation IDs are unique
-    const usedIds = new Set<string>();
-    for (const resource of resourcesWithOperations) {
-      for (const operation of resource.operations) {
-        let uniqueId = operation.id;
-        let counter = 1;
-        while (usedIds.has(uniqueId)) {
-          uniqueId = `${operation.id}_${counter}`;
-          counter++;
-        }
-        operation.id = uniqueId;
-        usedIds.add(uniqueId);
-      }
-    }
-
-    return resourcesWithOperations;
   }
 
   private adaptOperation(
@@ -718,228 +589,12 @@ export class OpenAPI3Adapter {
     return this.schemaProcessor.processSchema(key, schema, visited, parentSchema);
   }
 
-  private inferResourceName(path: string): string | null {
-    const segments = path.split('/').filter(s => s && !s.startsWith('{'));
-
-    // Skip version prefix (v1, v2, etc.)
-    const versionPrefixPattern = /^v\d+$/i;
-    if (segments.length > 0 && versionPrefixPattern.test(segments[0])) {
-      segments.shift();
-    }
-
-    if (segments.length === 0) return null;
-
-    // Use the deepest static segment as the resource name.
-    // This correctly separates sub-resources:
-    //   /v1/Services              -> Services
-    //   /v1/Services/{sid}        -> Services
-    //   /v1/Services/{sid}/AlphaSenders -> AlphaSenders
-    //   /v1/Services/{sid}/AlphaSenders/{sid} -> AlphaSenders
-    return segments[segments.length - 1];
-  }
-
-  private detectRelationships(resource: Resource, allResources: Map<string, Resource>): Relationship[] {
-    const relationships: Relationship[] = [];
-    const pathRelationships = this.relationshipDetector.detectFromPaths(resource, allResources);
-    relationships.push(...pathRelationships);
-    const schemaRelationships = this.relationshipDetector.detectFromSchema(resource.schema, allResources);
-    relationships.push(...schemaRelationships);
-    return relationships;
-  }
-
-  /**
-   * Detect many-to-many relationships by looking at operations across all resources.
-   * This is necessary because the OpenAPI3Adapter creates separate resources for sub-resources,
-   * so operations for /consumer/{id}/library are added to the library resource, not the consumer resource.
-   * 
-   * @param consumerResource - The potential consumer resource
-   * @param allResources - Array of all resources
-   * @param resourceMap - Map of all resources by slug
-   * @returns Array of detected many-to-many relationships
-   */
-  private detectManyToManyAcrossResources(
-    consumerResource: Resource,
-    allResources: Resource[],
-    resourceMap: Map<string, Resource>
-  ): Relationship[] {
-    const relationships: Relationship[] = [];
-    
-    // Look for operations in ANY resource that match /consumerSlug/{id}/targetSlug
-    const escapedSlug = consumerResource.slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const pattern = new RegExp(`^/${escapedSlug}/\\{[^}]+\\}/([^/]+)$`);
-    
-    for (const resource of allResources) {
-      // Group operations by path
-      const pathOperations = new Map<string, Operation[]>();
-      for (const op of resource.operations) {
-        const existing = pathOperations.get(op.path) || [];
-        existing.push(op);
-        pathOperations.set(op.path, existing);
-      }
-      
-      // Check each path for many-to-many pattern
-      for (const [path, operations] of pathOperations.entries()) {
-        const match = path.match(pattern);
-        if (!match) continue;
-        
-        const targetSlug = match[1];
-        
-        // Verify the target resource exists
-        let targetResource: Resource | undefined = resourceMap.get(targetSlug);
-        let actualTargetSlug = targetSlug;
-        
-        // If not found directly, try to find by normalized slug
-        if (!targetResource) {
-          for (const [slug, res] of resourceMap.entries()) {
-            if (this.relationshipDetector.slugsMatch(targetSlug, slug)) {
-              targetResource = res;
-              actualTargetSlug = slug;
-              break;
-            }
-          }
-        }
-        
-        if (!targetResource) continue;
-        
-        // Verify target resource has standalone collection endpoint (GET /targetSlug)
-        const hasCollectionEndpoint = targetResource.operations.some(
-          op => op.path === `/${actualTargetSlug}` && op.method === 'GET'
-        );
-        if (!hasCollectionEndpoint) continue;
-        
-        // Verify target resource has standalone creation endpoint (POST /targetSlug)
-        const hasCreationEndpoint = targetResource.operations.some(
-          op => op.path === `/${actualTargetSlug}` && op.method === 'POST'
-        );
-        if (!hasCreationEndpoint) continue;
-        
-        // Check for GET operation on association endpoint (list associations)
-        const hasGetOperation = operations.some(op => op.method === 'GET');
-        if (!hasGetOperation) continue;
-        
-        // Check for POST or DELETE operations on association endpoint
-        const hasPostOperation = operations.some(op => op.method === 'POST');
-        const hasDeleteOperation = operations.some(op => op.method === 'DELETE');
-        const isReadOnly = !hasPostOperation && !hasDeleteOperation;
-        
-        // Avoid duplicates
-        const exists = relationships.some(
-          r => r.target === actualTargetSlug && r.type === 'manyToMany'
-        );
-        
-        if (!exists) {
-          relationships.push({
-            target: actualTargetSlug,
-            type: 'manyToMany',
-            path: path,
-            isReadOnly: isReadOnly
-          });
-        }
-      }
-    }
-    
-    return relationships;
-  }
-
-  private detectPagination(resource: Resource): PaginationHint | undefined {
-    const listOp = resource.operations.find(op => op.viewHint === 'list' || op.viewHint === 'search');
-    if (!listOp) return undefined;
-    return this.paginationDetector.detect(listOp.parameters) || undefined;
-  }
-
   private resolveParameterRef(_ref: string): Parameter {
     return { name: 'unknown', in: 'query', required: false, schema: this.createPlaceholderSchema('unknown') };
   }
 
   private createPlaceholderSchema(key: string): SchemaNode {
     return { type: 'object', key, label: this.humanize(key), required: false, children: [] };
-  }
-
-  /**
-   * Extract the schema name from a response $ref
-   * e.g., "#/components/schemas/Template" -> "Template"
-   */
-  private extractSchemaNameFromResponse(operation: OpenAPIV3.OperationObject, method: string): string | null {
-    // Check 200 and 201 responses
-    const response200 = operation.responses?.['200'] as OpenAPIV3.ResponseObject | undefined;
-    const response201 = operation.responses?.['201'] as OpenAPIV3.ResponseObject | undefined;
-    const response = response200 || response201;
-    
-    if (!response) return null;
-    
-    const content = this.pickContent(response.content);
-    if (!content?.schema) return null;
-    
-    const schema = content.schema;
-    
-    // Handle direct $ref
-    if ('$ref' in schema && typeof schema.$ref === 'string') {
-      return this.extractSchemaNameFromRef(schema.$ref);
-    }
-    
-    // Handle array of $ref
-    if ('type' in schema && schema.type === 'array' && schema.items) {
-      const items = schema.items as OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject;
-      if ('$ref' in items && typeof items.$ref === 'string') {
-        return this.extractSchemaNameFromRef(items.$ref);
-      }
-    }
-    
-    return null;
-  }
-
-  /**
-   * Extract schema name from a $ref string
-   * e.g., "#/components/schemas/Template" -> "Template"
-   */
-  private extractSchemaNameFromRef(ref: string): string | null {
-    // Handle #/components/schemas/SchemaName
-    const componentsMatch = ref.match(/#\/components\/schemas\/([^/]+)$/);
-    if (componentsMatch) {
-      return componentsMatch[1];
-    }
-    
-    // Handle #/definitions/SchemaName (Swagger 2.0)
-    const definitionsMatch = ref.match(/#\/definitions\/([^/]+)$/);
-    if (definitionsMatch) {
-      return definitionsMatch[1];
-    }
-    
-    return null;
-  }
-
-  private mergeSchemas(base: SchemaNode, update: SchemaNode): SchemaNode {
-    if (update.type === 'array' && update.items) return this.mergeSchemas(base, update.items);
-    if (base.type === 'object' && (!base.children || base.children.length === 0)) return update;
-    if (update.type !== 'object' || !update.children || update.children.length === 0) return base;
-
-    const mergedChildren = [...(base.children || [])];
-    const existingKeys = new Set(mergedChildren.map(c => c.key));
-
-    for (const updateChild of update.children) {
-      if (!existingKeys.has(updateChild.key)) {
-        mergedChildren.push(updateChild);
-      } else {
-        const existingIndex = mergedChildren.findIndex(c => c.key === updateChild.key);
-        const existing = mergedChildren[existingIndex];
-        if (existing.type === 'object' && updateChild.type === 'object' && existing.children && updateChild.children) {
-          mergedChildren[existingIndex] = this.mergeSchemas(existing, updateChild);
-        } else if (this.hasMoreDetails(updateChild, existing)) {
-          mergedChildren[existingIndex] = updateChild;
-        }
-      }
-    }
-
-    return { ...base, children: mergedChildren };
-  }
-
-  private hasMoreDetails(a: SchemaNode, b: SchemaNode): boolean {
-    const score = (n: SchemaNode) => (n.validations?.length || 0) + (n.description ? 1 : 0) + (n.format ? 1 : 0) + (n.enumValues?.length || 0);
-    return score(a) > score(b);
-  }
-
-  private capitalize(str: string): string {
-    return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
   private humanize(str: string): string {

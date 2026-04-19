@@ -10,6 +10,8 @@ export { Swagger2Adapter } from './swagger2.js';
 export { ViewHintClassifier } from './view-hint-classifier.js';
 export { RelationshipDetector } from './relationship-detector.js';
 export { PaginationDetector } from './pagination-detector.js';
+export { Resource_Extractor } from './resource-extractor.js';
+export type { OperationAdapter } from './resource-extractor.js';
 export { IgnoreHandler, LabelHandler, RefHandler } from './annotations/handlers/index.js';
 export { AnnotationHandlerRegistry } from './annotations/index.js';
 export type { AnnotationHandler } from './annotations/index.js';
