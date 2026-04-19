@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Swagger2Adapter } from '../swagger2.js';
+import { OpenAPI3Adapter } from '../openapi3.js';
 import type { UIGenApp } from '../../ir/types.js';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -676,6 +677,324 @@ describe('Swagger2Adapter', () => {
       // We just verify it doesn't crash
       
       consoleSpy.mockRestore();
+    });
+  });
+
+  /**
+   * Integration tests for many-to-many library pattern detection in Swagger2Adapter
+   * 
+   * **Validates: Requirements 5.2, 5.4, 5.5**
+   */
+  describe('Many-to-Many Integration', () => {
+    it('should detect manyToMany relationships and mark library resources', () => {
+      const spec = {
+        swagger: '2.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/meetings': {
+            get: {
+              summary: 'List meetings',
+              responses: { '200': { description: 'Success' } }
+            },
+            post: {
+              summary: 'Create meeting',
+              responses: { '201': { description: 'Created' } }
+            }
+          },
+          '/meetings/{id}': {
+            get: {
+              summary: 'Get meeting',
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '200': { description: 'Success' } }
+            }
+          },
+          '/meetings/{id}/templates': {
+            get: {
+              summary: 'List meeting templates',
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '200': { description: 'Success' } }
+            },
+            post: {
+              summary: 'Add template to meeting',
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '201': { description: 'Created' } }
+            }
+          },
+          '/templates': {
+            get: {
+              summary: 'List templates',
+              responses: { '200': { description: 'Success' } }
+            },
+            post: {
+              summary: 'Create template',
+              responses: { '201': { description: 'Created' } }
+            }
+          },
+          '/templates/{id}': {
+            get: {
+              summary: 'Get template',
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '200': { description: 'Success' } }
+            }
+          }
+        }
+      };
+
+      const adapter = new Swagger2Adapter(spec as any);
+      const result = adapter.adapt();
+
+      // Find meetings and templates resources
+      const meetings = result.resources.find(r => r.slug === 'meetings');
+      const templates = result.resources.find(r => r.slug === 'templates');
+
+      expect(meetings).toBeDefined();
+      expect(templates).toBeDefined();
+
+      // Verify manyToMany relationship is detected
+      const manyToManyRel = meetings?.relationships.find(
+        r => r.type === 'manyToMany' && r.target === 'templates'
+      );
+      expect(manyToManyRel).toBeDefined();
+      expect(manyToManyRel?.path).toBe('/meetings/{id}/templates');
+      expect(manyToManyRel?.isReadOnly).toBe(false);
+
+      // Verify templates is marked as a library resource
+      expect(templates?.isLibrary).toBe(true);
+    });
+
+    it('should produce identical IR to OpenAPI3Adapter for same spec', () => {
+      // Swagger 2.0 spec
+      const swagger2Spec = {
+        swagger: '2.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/meetings': {
+            get: { responses: { '200': { description: 'Success' } } },
+            post: { responses: { '201': { description: 'Created' } } }
+          },
+          '/meetings/{id}': {
+            get: {
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '200': { description: 'Success' } }
+            }
+          },
+          '/meetings/{id}/templates': {
+            get: {
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '200': { description: 'Success' } }
+            },
+            post: {
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '201': { description: 'Created' } }
+            }
+          },
+          '/templates': {
+            get: { responses: { '200': { description: 'Success' } } },
+            post: { responses: { '201': { description: 'Created' } } }
+          },
+          '/templates/{id}': {
+            get: {
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '200': { description: 'Success' } }
+            }
+          }
+        }
+      };
+
+      // Equivalent OpenAPI 3.x spec
+      const openapi3Spec = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/meetings': {
+            get: { responses: { '200': { description: 'Success' } } },
+            post: { responses: { '201': { description: 'Created' } } }
+          },
+          '/meetings/{id}': {
+            get: {
+              parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+              responses: { '200': { description: 'Success' } }
+            }
+          },
+          '/meetings/{id}/templates': {
+            get: {
+              parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+              responses: { '200': { description: 'Success' } }
+            },
+            post: {
+              parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+              responses: { '201': { description: 'Created' } }
+            }
+          },
+          '/templates': {
+            get: { responses: { '200': { description: 'Success' } } },
+            post: { responses: { '201': { description: 'Created' } } }
+          },
+          '/templates/{id}': {
+            get: {
+              parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+              responses: { '200': { description: 'Success' } }
+            }
+          }
+        }
+      };
+
+      const swagger2Adapter = new Swagger2Adapter(swagger2Spec as any);
+      const swagger2Result = swagger2Adapter.adapt();
+
+      const openapi3Adapter = new OpenAPI3Adapter(openapi3Spec as any);
+      const openapi3Result = openapi3Adapter.adapt();
+
+      // Compare resources
+      expect(swagger2Result.resources.length).toBe(openapi3Result.resources.length);
+
+      // Find meetings resource in both results
+      const swagger2Meetings = swagger2Result.resources.find(r => r.slug === 'meetings');
+      const openapi3Meetings = openapi3Result.resources.find(r => r.slug === 'meetings');
+
+      expect(swagger2Meetings).toBeDefined();
+      expect(openapi3Meetings).toBeDefined();
+
+      // Compare manyToMany relationships
+      const swagger2ManyToMany = swagger2Meetings?.relationships.filter(r => r.type === 'manyToMany');
+      const openapi3ManyToMany = openapi3Meetings?.relationships.filter(r => r.type === 'manyToMany');
+
+      expect(swagger2ManyToMany?.length).toBe(openapi3ManyToMany?.length);
+      expect(swagger2ManyToMany?.[0]?.target).toBe(openapi3ManyToMany?.[0]?.target);
+      expect(swagger2ManyToMany?.[0]?.path).toBe(openapi3ManyToMany?.[0]?.path);
+      expect(swagger2ManyToMany?.[0]?.isReadOnly).toBe(openapi3ManyToMany?.[0]?.isReadOnly);
+
+      // Find templates resource in both results
+      const swagger2Templates = swagger2Result.resources.find(r => r.slug === 'templates');
+      const openapi3Templates = openapi3Result.resources.find(r => r.slug === 'templates');
+
+      expect(swagger2Templates).toBeDefined();
+      expect(openapi3Templates).toBeDefined();
+
+      // Compare isLibrary flag
+      expect(swagger2Templates?.isLibrary).toBe(openapi3Templates?.isLibrary);
+      expect(swagger2Templates?.isLibrary).toBe(true);
+    });
+
+    it('should mark relationship as read-only when only GET operation exists', () => {
+      const spec = {
+        swagger: '2.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/orders': {
+            get: { responses: { '200': { description: 'Success' } } },
+            post: { responses: { '201': { description: 'Created' } } }
+          },
+          '/orders/{id}/products': {
+            get: {
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '200': { description: 'Success' } }
+            }
+          },
+          '/products': {
+            get: { responses: { '200': { description: 'Success' } } },
+            post: { responses: { '201': { description: 'Created' } } }
+          }
+        }
+      };
+
+      const adapter = new Swagger2Adapter(spec as any);
+      const result = adapter.adapt();
+
+      const orders = result.resources.find(r => r.slug === 'orders');
+      const manyToManyRel = orders?.relationships.find(
+        r => r.type === 'manyToMany' && r.target === 'products'
+      );
+
+      expect(manyToManyRel).toBeDefined();
+      expect(manyToManyRel?.isReadOnly).toBe(true);
+    });
+
+    it('should handle multiple library resources', () => {
+      const spec = {
+        swagger: '2.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/articles': {
+            get: { responses: { '200': { description: 'Success' } } },
+            post: { responses: { '201': { description: 'Created' } } }
+          },
+          '/articles/{id}/tags': {
+            get: {
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '200': { description: 'Success' } }
+            },
+            post: {
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '201': { description: 'Created' } }
+            }
+          },
+          '/articles/{id}/categories': {
+            get: {
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '200': { description: 'Success' } }
+            },
+            post: {
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '201': { description: 'Created' } }
+            }
+          },
+          '/tags': {
+            get: { responses: { '200': { description: 'Success' } } },
+            post: { responses: { '201': { description: 'Created' } } }
+          },
+          '/categories': {
+            get: { responses: { '200': { description: 'Success' } } },
+            post: { responses: { '201': { description: 'Created' } } }
+          }
+        }
+      };
+
+      const adapter = new Swagger2Adapter(spec as any);
+      const result = adapter.adapt();
+
+      const articles = result.resources.find(r => r.slug === 'articles');
+      const tags = result.resources.find(r => r.slug === 'tags');
+      const categories = result.resources.find(r => r.slug === 'categories');
+
+      // Verify both manyToMany relationships are detected
+      expect(articles?.relationships.filter(r => r.type === 'manyToMany')).toHaveLength(2);
+      
+      // Verify both library resources are marked
+      expect(tags?.isLibrary).toBe(true);
+      expect(categories?.isLibrary).toBe(true);
+    });
+
+    it('should not mark resource as library if it lacks standalone endpoints', () => {
+      const spec = {
+        swagger: '2.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/meetings': {
+            get: { responses: { '200': { description: 'Success' } } },
+            post: { responses: { '201': { description: 'Created' } } }
+          },
+          '/meetings/{id}/notes': {
+            get: {
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '200': { description: 'Success' } }
+            },
+            post: {
+              parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+              responses: { '201': { description: 'Created' } }
+            }
+          }
+        }
+      };
+
+      const adapter = new Swagger2Adapter(spec as any);
+      const result = adapter.adapt();
+
+      const meetings = result.resources.find(r => r.slug === 'meetings');
+      
+      // Should not detect manyToMany because notes resource doesn't have standalone endpoints
+      const manyToManyRel = meetings?.relationships.find(r => r.type === 'manyToMany');
+      expect(manyToManyRel).toBeUndefined();
     });
   });
 });

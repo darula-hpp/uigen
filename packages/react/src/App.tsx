@@ -14,6 +14,7 @@ import { LoginView } from './components/views/LoginView';
 import { SignUpView } from './components/views/SignUpView';
 import { PasswordResetView } from './components/views/PasswordResetView';
 import { ToastProvider } from './components/Toast';
+import { AppProvider } from './contexts/AppContext';
 import { isAuthenticated } from './lib/auth';
 import { registerDefaultStrategies } from './lib/file-upload';
 import type { UIGenApp } from '@uigen-dev/core';
@@ -114,8 +115,9 @@ export function App({ config }: AppProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <BrowserRouter>
+      <AppProvider config={config}>
+        <ToastProvider>
+          <BrowserRouter>
           <Routes>
             {/* Public routes - no protection */}
             <Route path="/login" element={<LoginRoute config={config} />} />
@@ -298,6 +300,7 @@ export function App({ config }: AppProps) {
           </Routes>
         </BrowserRouter>
       </ToastProvider>
+    </AppProvider>
     </QueryClientProvider>
   );
 }

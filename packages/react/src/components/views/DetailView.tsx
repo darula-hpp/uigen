@@ -5,7 +5,9 @@ import { reconcile, OverrideHooksHost } from '@/overrides';
 import { Button } from '@/components/ui/button';
 import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 import { ActionButton } from '@/components/ActionButton';
+import { LibraryAssociationManager } from '@/components/LibraryAssociationManager';
 import { useToast } from '@/components/Toast';
+import { useOptionalApp } from '@/contexts/AppContext';
 import { useState } from 'react';
 
 /**
@@ -103,6 +105,8 @@ export function DetailView({ resource }: DetailViewProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const appContext = useOptionalApp();
+  const config = appContext?.config;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   // Construct view-specific uigenId
@@ -294,28 +298,59 @@ export function DetailView({ resource }: DetailViewProps) {
       )}
 
       {/* Related Resources - Requirements 8.4, 40.1-40.5 */}
-      {!isLoading && !error && data && resource.relationships.length > 0 && (
+      {!isLoading && !error && data && resource.relationships.filter(rel => rel.type !== 'manyToMany').length > 0 && (
         <div className="mt-8 space-y-4">
           <h3 className="text-lg font-semibold">Related Resources</h3>
           <div className="space-y-2">
-            {resource.relationships.map((relationship) => (
-              <div key={relationship.target} className="flex items-center gap-2">
-                <Link
-                  to={
-                    relationship.type === 'hasMany'
-                      ? `/${relationship.target}`
-                      : `/${relationship.target}/${data[relationship.target + 'Id'] || ''}`
-                  }
-                  className="text-primary hover:underline"
-                >
-                  {relationship.type === 'hasMany' ? '→' : '←'} {relationship.target}
-                </Link>
-                <span className="text-xs text-muted-foreground">
-                  ({relationship.type === 'hasMany' ? 'has many' : 'belongs to'})
-                </span>
-              </div>
-            ))}
+            {resource.relationships
+              .filter(rel => rel.type !== 'manyToMany')
+              .map((relationship) => (
+                <div key={relationship.target} className="flex items-center gap-2">
+                  <Link
+                    to={
+                      relationship.type === 'hasMany'
+                        ? `/${relationship.target}`
+                        : `/${relationship.target}/${data[relationship.target + 'Id'] || ''}`
+                    }
+                    className="text-primary hover:underline"
+                  >
+                    {relationship.type === 'hasMany' ? '→' : '←'} {relationship.target}
+                  </Link>
+                  <span className="text-xs text-muted-foreground">
+                    ({relationship.type === 'hasMany' ? 'has many' : 'belongs to'})
+                  </span>
+                </div>
+              ))}
           </div>
+        </div>
+      )}
+
+      {/* Manage Associations Section - Requirements 4.1, 8.1, 8.2, 8.3, 8.4, 8.5 */}
+      {!isLoading && !error && data && id && resource.relationships.some(rel => rel.type === 'manyToMany') && (
+        <div className="mt-8 space-y-6">
+          <h3 className="text-xl font-semibold">Manage Associations</h3>
+          {resource.relationships
+            .filter(rel => rel.type === 'manyToMany')
+            .map((relationship) => {
+              // Find the library resource by slug
+              const libraryResource = config?.resources.find(
+                r => r.slug === relationship.target
+              );
+              
+              if (!libraryResource) {
+                return null;
+              }
+
+              return (
+                <LibraryAssociationManager
+                  key={relationship.target}
+                  consumerResource={resource}
+                  consumerId={id}
+                  relationship={relationship}
+                  libraryResource={libraryResource}
+                />
+              );
+            })}
         </div>
       )}
 
