@@ -20,13 +20,15 @@ import { SchemaProcessor } from './schema-processor.js';
  * Callback type for adapting OpenAPI operations to IR operations.
  * This allows Resource_Extractor to delegate operation construction
  * back to OpenAPI3Adapter without creating circular dependencies.
+ * 
+ * Returns undefined if the operation should be ignored (e.g., due to x-uigen-ignore annotation).
  */
 export type OperationAdapter = (
   method: HttpMethod,
   path: string,
   operation: OpenAPIV3.OperationObject,
   pathItem?: OpenAPIV3.PathItemObject
-) => Operation;
+) => Operation | undefined;
 
 /**
  * Resource_Extractor handles resource inference and extraction from OpenAPI specifications.
@@ -250,7 +252,14 @@ export class Resource_Extractor {
       if (!resourceMap.has(resourceName)) {
         // Extract x-uigen-id vendor extension from path item if present, fall back to slug
         const vendorExtension = (pathItem as any)['x-uigen-id'];
-        const uigenId = vendorExtension || resourceName;
+        
+        // Handle numeric x-uigen-id by converting to string
+        let uigenId: string;
+        if (typeof vendorExtension === 'number') {
+          uigenId = String(vendorExtension);
+        } else {
+          uigenId = vendorExtension || resourceName;
+        }
         
         resourceMap.set(resourceName, {
           name: this.capitalize(resourceName),
@@ -274,6 +283,12 @@ export class Resource_Extractor {
           // Adapt the operation using the callback
           const op = adaptOperation(method.toUpperCase() as HttpMethod, path, operation, pathItem);
           
+          // Skip if operation should be ignored (returns undefined)
+          if (!op) {
+            console.log(`Ignoring operation: ${method.toUpperCase()} ${path}`);
+            continue;
+          }
+          
           // Process annotations using the registry
           if (this.currentIR) {
             const context = createOperationContext(
@@ -287,12 +302,6 @@ export class Resource_Extractor {
               op
             );
             this.annotationRegistry.processAnnotations(context);
-          }
-          
-          // Check if operation should be ignored (set by IgnoreHandler)
-          if ((op as any).__shouldIgnore) {
-            console.log(`Ignoring operation: ${method.toUpperCase()} ${path}`);
-            continue;
           }
 
           // Add operation to resource

@@ -557,8 +557,8 @@ describe('Swagger2Adapter - uigenId Population', () => {
 
       expect(result.resources).toHaveLength(1);
       // Numeric values should be converted to strings
-      expect(result.resources[0].uigenId).toBe(123);
-      expect(result.resources[0].operations[0].uigenId).toBe(456);
+      expect(result.resources[0].uigenId).toBe('123');
+      expect(result.resources[0].operations[0].uigenId).toBe('456');
     });
   });
 });
