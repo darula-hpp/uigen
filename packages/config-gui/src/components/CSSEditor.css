@@ -1,0 +1,68 @@
+/* Dark mode syntax highlighting for CSS editor */
+
+/* Override Prism.js colors for dark mode */
+.dark .language-css {
+  color: #e4e4e7; /* Light gray for base text */
+}
+
+/* CSS selectors */
+.dark .token.selector {
+  color: #fbbf24; /* Amber for selectors */
+}
+
+/* CSS properties */
+.dark .token.property {
+  color: #60a5fa; /* Blue for properties */
+}
+
+/* CSS values */
+.dark .token.string,
+.dark .token.attr-value {
+  color: #86efac; /* Green for strings/values */
+}
+
+/* CSS units and numbers */
+.dark .token.number,
+.dark .token.unit {
+  color: #f0abfc; /* Purple for numbers */
+}
+
+/* CSS functions */
+.dark .token.function {
+  color: #fbbf24; /* Amber for functions */
+}
+
+/* CSS important, keywords */
+.dark .token.important,
+.dark .token.keyword {
+  color: #fb7185; /* Pink for important/keywords */
+}
+
+/* CSS comments */
+.dark .token.comment {
+  color: #6b7280; /* Gray for comments */
+  font-style: italic;
+}
+
+/* CSS punctuation */
+.dark .token.punctuation {
+  color: #9ca3af; /* Light gray for punctuation */
+}
+
+/* CSS at-rules (@media, @keyframes, etc) */
+.dark .token.atrule,
+.dark .token.at-rule {
+  color: #c084fc; /* Purple for at-rules */
+}
+
+/* Ensure good contrast for all tokens in dark mode */
+.dark pre[class*="language-"] {
+  background: transparent;
+  color: #e4e4e7;
+}
+
+.dark code[class*="language-"] {
+  background: transparent;
+  color: #e4e4e7;
+  text-shadow: none;
+}

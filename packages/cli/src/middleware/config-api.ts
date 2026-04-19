@@ -14,21 +14,38 @@ import { parseSpec, AnnotationHandlerRegistry } from '@uigen-dev/core';
  */
 
 const CONFIG_PATH = '.uigen/config.yaml';
-const CUSTOM_CSS_PATH = '.uigen/index.css';
+const BASE_STYLES_PATH = '.uigen/base-styles.css';
+const THEME_PATH = '.uigen/theme.css';
 
 /**
- * Resolve custom CSS path relative to spec directory
+ * Resolve base styles CSS path relative to spec directory
  * Requirements: 9.1, 9.3
  * 
  * @param specDir - The directory containing the spec file
- * @returns Absolute path to .uigen/index.css
+ * @returns Absolute path to .uigen/base-styles.css
  */
-export function resolveCustomCSSPath(specDir: string): string {
-  // Normalize the spec directory path first
+export function resolveBaseStylesPath(specDir: string): string {
   const normalizedSpecDir = resolve(specDir);
-  const cssPath = resolve(normalizedSpecDir, CUSTOM_CSS_PATH);
+  const cssPath = resolve(normalizedSpecDir, BASE_STYLES_PATH);
   
-  // Validate that resolved path is within spec directory to prevent path traversal
+  if (!cssPath.startsWith(normalizedSpecDir)) {
+    throw new Error('Invalid CSS file path: path traversal detected');
+  }
+  
+  return cssPath;
+}
+
+/**
+ * Resolve theme CSS path relative to spec directory
+ * Requirements: 9.1, 9.3
+ * 
+ * @param specDir - The directory containing the spec file
+ * @returns Absolute path to .uigen/theme.css
+ */
+export function resolveThemePath(specDir: string): string {
+  const normalizedSpecDir = resolve(specDir);
+  const cssPath = resolve(normalizedSpecDir, THEME_PATH);
+  
   if (!cssPath.startsWith(normalizedSpecDir)) {
     throw new Error('Invalid CSS file path: path traversal detected');
   }
@@ -58,57 +75,57 @@ export function resolveDefaultCSSPath(reactPackageRoot: string): string {
 
 /**
  * GET /api/css
- * Read CSS content from custom or default CSS file
+ * Read CSS content from base-styles.css and theme.css
  * Requirements: 5.1, 5.2, 5.3, 10.1
  * 
  * @param specDir - The directory containing the spec file
- * @param reactPackageRoot - The root directory of the React package
- * @returns Object with CSS content and isCustom flag
- * @throws Error if no CSS file is found or read fails
+ * @param reactPackageRoot - The root directory of the React package (unused now, kept for compatibility)
+ * @returns Object with base styles and theme content
+ * @throws Error if files cannot be read
  */
 export function handleGetCSS(specDir: string, reactPackageRoot: string): {
-  content: string;
-  isCustom: boolean;
+  baseStyles: string;
+  theme: string;
 } {
-  const customCSSPath = resolveCustomCSSPath(specDir);
-  const defaultCSSPath = resolveDefaultCSSPath(reactPackageRoot);
+  const baseStylesPath = resolveBaseStylesPath(specDir);
+  const themePath = resolveThemePath(specDir);
   
-  // Try custom CSS first
-  if (existsSync(customCSSPath)) {
+  let baseStyles = '';
+  let theme = '';
+  
+  // Read base-styles.css (reference only)
+  if (existsSync(baseStylesPath)) {
     try {
-      const content = readFileSync(customCSSPath, 'utf-8');
-      return { content, isCustom: true };
+      baseStyles = readFileSync(baseStylesPath, 'utf-8');
     } catch (error) {
-      console.error(`Failed to read custom CSS file at ${customCSSPath}:`, error);
+      console.error(`Failed to read base-styles.css at ${baseStylesPath}:`, error);
+      // Non-fatal - base styles are just for reference
+    }
+  }
+  
+  // Read theme.css (editable custom styles)
+  if (existsSync(themePath)) {
+    try {
+      theme = readFileSync(themePath, 'utf-8');
+    } catch (error) {
+      console.error(`Failed to read theme.css at ${themePath}:`, error);
       throw new Error(
-        `Failed to read custom CSS file: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to read theme.css: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }
   
-  // Fallback to default CSS
-  if (existsSync(defaultCSSPath)) {
-    try {
-      const content = readFileSync(defaultCSSPath, 'utf-8');
-      return { content, isCustom: false };
-    } catch (error) {
-      console.error(`Failed to read default CSS file at ${defaultCSSPath}:`, error);
-      throw new Error(
-        `Failed to read default CSS file: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-  
-  throw new Error('No CSS file found. Expected custom CSS at .uigen/index.css or default CSS at packages/react/src/index.css');
+  return { baseStyles, theme };
 }
 
 /**
  * POST /api/css
- * Write CSS content to .uigen/index.css
+ * Write CSS content to .uigen/theme.css only
+ * Base styles are read-only and not saved
  * Requirements: 5.4, 5.5, 5.6, 10.2
  * 
  * @param specDir - The directory containing the spec file
- * @param content - The CSS content to save
+ * @param content - The theme CSS content to save
  * @throws Error if content exceeds size limit or write fails
  */
 export function handleSaveCSS(specDir: string, content: string): void {
@@ -119,8 +136,8 @@ export function handleSaveCSS(specDir: string, content: string): void {
     throw new Error(`CSS content exceeds maximum size of ${MAX_CSS_SIZE} bytes`);
   }
   
-  const cssPath = resolveCustomCSSPath(specDir);
-  const cssDir = dirname(cssPath);
+  const themePath = resolveThemePath(specDir);
+  const cssDir = dirname(themePath);
   
   try {
     // Ensure .uigen directory exists
@@ -128,12 +145,12 @@ export function handleSaveCSS(specDir: string, content: string): void {
       mkdirSync(cssDir, { recursive: true });
     }
     
-    // Write CSS content
-    writeFileSync(cssPath, content, 'utf-8');
+    // Write theme CSS content only
+    writeFileSync(themePath, content, 'utf-8');
   } catch (error) {
-    console.error(`Failed to write CSS file at ${cssPath}:`, error);
+    console.error(`Failed to write theme.css at ${themePath}:`, error);
     throw new Error(
-      `Failed to write CSS file: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to write theme.css: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }

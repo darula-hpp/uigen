@@ -64,28 +64,29 @@ describe('App', () => {
     expect(screen.getByText('Annotation Configuration')).toBeDefined();
   });
   
-  it('should render CSS tab in navigation', () => {
+  it('should render Theme tab in navigation', () => {
     render(
       <AppProvider>
         <App />
       </AppProvider>
     );
     
-    // Check CSS tab is present
+    // Check Theme tab is present
     const cssTab = screen.getByTestId('css-tab');
     expect(cssTab).toBeDefined();
-    expect(cssTab.textContent).toBe('CSS');
+    expect(cssTab.textContent).toBe('Theme');
   });
   
   it('should load CSS content when CSS tab is clicked', async () => {
-    const mockCssContent = '/* Test CSS */\nbody { color: red; }';
+    const mockBaseStyles = '/* Base Styles */\nbody { margin: 0; }';
+    const mockTheme = '/* Custom Theme */\n.custom { color: red; }';
     
     // Mock all API responses
     mockFetch.mockImplementation((url) => {
       if (url === '/api/css') {
         return Promise.resolve({
           ok: true,
-          json: async () => ({ content: mockCssContent, isCustom: true })
+          json: async () => ({ baseStyles: mockBaseStyles, theme: mockTheme })
         });
       }
       if (url === '/api/config') {
@@ -143,7 +144,7 @@ describe('App', () => {
     mockFetch.mockImplementation(() => 
       new Promise(resolve => setTimeout(() => resolve({
         ok: true,
-        json: async () => ({ content: '/* CSS */', isCustom: true })
+        json: async () => ({ baseStyles: '/* Base */', theme: '/* Theme */' })
       }), 100))
     );
     
@@ -164,14 +165,15 @@ describe('App', () => {
   });
   
   it('should pass save handler to CSSEditor and call POST /api/css', async () => {
-    const mockCssContent = '/* Test CSS */\nbody { color: red; }';
+    const mockBaseStyles = '/* Base Styles */';
+    const mockTheme = '/* Test Theme */\n.custom { color: red; }';
     
     // Mock GET request for loading CSS
     mockFetch.mockImplementation((url, options) => {
       if (url === '/api/css' && (!options || options.method === 'GET' || !options.method)) {
         return Promise.resolve({
           ok: true,
-          json: async () => ({ content: mockCssContent, isCustom: true })
+          json: async () => ({ baseStyles: mockBaseStyles, theme: mockTheme })
         });
       }
       // Mock POST request for saving CSS
@@ -204,7 +206,7 @@ describe('App', () => {
     // Get the textarea and modify content
     const textarea = screen.getByTestId('css-editor-textarea') as HTMLTextAreaElement;
     await user.clear(textarea);
-    await user.type(textarea, '/* Updated CSS */');
+    await user.type(textarea, '/* Updated Theme */');
     
     // Wait for debounced save to trigger (500ms + buffer)
     await waitFor(() => {
@@ -223,14 +225,15 @@ describe('App', () => {
   });
   
   it('should maintain tab state when switching between tabs', async () => {
-    const mockCssContent = '/* Test CSS */';
+    const mockBaseStyles = '/* Base Styles */';
+    const mockTheme = '/* Test Theme */';
     
     // Mock all API responses
     mockFetch.mockImplementation((url) => {
       if (url === '/api/css') {
         return Promise.resolve({
           ok: true,
-          json: async () => ({ content: mockCssContent, isCustom: true })
+          json: async () => ({ baseStyles: mockBaseStyles, theme: mockTheme })
         });
       }
       if (url === '/api/config') {
@@ -372,7 +375,8 @@ describe('App', () => {
   
   it('should retry loading CSS when retry button is clicked', async () => {
     const errorMessage = 'Failed to read CSS file';
-    const mockCssContent = '/* Test CSS */';
+    const mockBaseStyles = '/* Base Styles */';
+    const mockTheme = '/* Test Theme */';
     let callCount = 0;
     
     // Mock all API responses - first call fails, second succeeds
@@ -389,7 +393,7 @@ describe('App', () => {
         }
         return Promise.resolve({
           ok: true,
-          json: async () => ({ content: mockCssContent, isCustom: true })
+          json: async () => ({ baseStyles: mockBaseStyles, theme: mockTheme })
         });
       }
       if (url === '/api/config') {
