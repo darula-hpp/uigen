@@ -1,4 +1,4 @@
-import type { UIGenApp, Resource, Operation, SchemaNode, HttpMethod, FieldType } from '@uigen-dev/core';
+import type { UIGenApp, Resource, Operation, SchemaNode, HttpMethod, FieldType, FileMetadata } from '@uigen-dev/core';
 
 /**
  * Represents the hierarchical structure of a spec for the visual editor
@@ -40,9 +40,11 @@ export interface FieldNode {
   key: string;
   label: string;
   type: FieldType;
+  format?: string;
   path: string; // e.g., "User.email"
   required: boolean;
   description?: string;
+  fileMetadata?: FileMetadata;
   children?: FieldNode[];
   annotations: Record<string, unknown>;
 }
@@ -210,9 +212,11 @@ export class SpecParser {
       key: schema.key,
       label: schema.label,
       type: schema.type,
+      format: schema.format,
       path,
       required: schema.required,
       description: schema.description,
+      fileMetadata: schema.fileMetadata,
       children,
       annotations
     };

@@ -6,6 +6,8 @@ import { LoginHandler } from './login-handler.js';
 import { PasswordResetHandler } from './password-reset-handler.js';
 import { SignUpHandler } from './sign-up-handler.js';
 import { ActiveServerHandler } from './active-server-handler.js';
+import { FileTypesHandler } from './file-types-handler.js';
+import { MaxFileSizeHandler } from './max-file-size-handler.js';
 
 /**
  * Initialize and register all annotation handlers.
@@ -14,6 +16,7 @@ import { ActiveServerHandler } from './active-server-handler.js';
  * Registration order matters:
  * - Priority handlers (ignore, login, label, ref) are processed first
  * - Operation-level handlers (password-reset, sign-up) are processed next
+ * - Field-level handlers (file-types) are processed next
  * - Server-level handlers (active-server) are processed last
  * 
  * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5
@@ -31,6 +34,10 @@ function registerHandlers(): void {
   registry.register(new PasswordResetHandler());
   registry.register(new SignUpHandler());
   
+  // Register field-level handlers
+  registry.register(new FileTypesHandler());
+  registry.register(new MaxFileSizeHandler());
+  
   // Register server-level handlers (Requirement 1.5)
   registry.register(new ActiveServerHandler());
 }
@@ -46,3 +53,5 @@ export { LoginHandler } from './login-handler.js';
 export { PasswordResetHandler } from './password-reset-handler.js';
 export { SignUpHandler } from './sign-up-handler.js';
 export { ActiveServerHandler } from './active-server-handler.js';
+export { FileTypesHandler } from './file-types-handler.js';
+export { MaxFileSizeHandler } from './max-file-size-handler.js';

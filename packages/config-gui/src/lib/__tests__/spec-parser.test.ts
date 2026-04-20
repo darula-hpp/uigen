@@ -457,5 +457,128 @@ describe('SpecParser', () => {
       
       expect(result.resources[0].fields[0].description).toBe('User email address');
     });
+    
+    it('should capture format for fields', () => {
+      const app: UIGenApp = {
+        meta: { title: 'Test API', version: '1.0' },
+        resources: [
+          {
+            name: 'User',
+            slug: 'user',
+            uigenId: 'user',
+            operations: [],
+            schema: {
+              type: 'object',
+              key: 'User',
+              label: 'User',
+              required: false,
+              children: [
+                {
+                  type: 'string',
+                  key: 'avatar',
+                  label: 'Avatar',
+                  required: false,
+                  format: 'binary'
+                }
+              ]
+            },
+            relationships: []
+          }
+        ],
+        auth: { schemes: [], globalRequired: false },
+        dashboard: { enabled: false, widgets: [] },
+        servers: []
+      };
+      
+      const result = parser.parse(app);
+      
+      expect(result.resources[0].fields[0].format).toBe('binary');
+    });
+    
+    it('should capture fileMetadata when present', () => {
+      const app: UIGenApp = {
+        meta: { title: 'Test API', version: '1.0' },
+        resources: [
+          {
+            name: 'User',
+            slug: 'user',
+            uigenId: 'user',
+            operations: [],
+            schema: {
+              type: 'object',
+              key: 'User',
+              label: 'User',
+              required: false,
+              children: [
+                {
+                  type: 'file',
+                  key: 'avatar',
+                  label: 'Avatar',
+                  required: false,
+                  fileMetadata: {
+                    allowedMimeTypes: ['image/jpeg', 'image/png'],
+                    maxSizeBytes: 5242880,
+                    multiple: false,
+                    accept: 'image/jpeg,image/png',
+                    fileType: 'image'
+                  }
+                }
+              ]
+            },
+            relationships: []
+          }
+        ],
+        auth: { schemes: [], globalRequired: false },
+        dashboard: { enabled: false, widgets: [] },
+        servers: []
+      };
+      
+      const result = parser.parse(app);
+      
+      expect(result.resources[0].fields[0].fileMetadata).toEqual({
+        allowedMimeTypes: ['image/jpeg', 'image/png'],
+        maxSizeBytes: 5242880,
+        multiple: false,
+        accept: 'image/jpeg,image/png',
+        fileType: 'image'
+      });
+    });
+    
+    it('should handle fields without format or fileMetadata', () => {
+      const app: UIGenApp = {
+        meta: { title: 'Test API', version: '1.0' },
+        resources: [
+          {
+            name: 'User',
+            slug: 'user',
+            uigenId: 'user',
+            operations: [],
+            schema: {
+              type: 'object',
+              key: 'User',
+              label: 'User',
+              required: false,
+              children: [
+                {
+                  type: 'string',
+                  key: 'name',
+                  label: 'Name',
+                  required: true
+                }
+              ]
+            },
+            relationships: []
+          }
+        ],
+        auth: { schemes: [], globalRequired: false },
+        dashboard: { enabled: false, widgets: [] },
+        servers: []
+      };
+      
+      const result = parser.parse(app);
+      
+      expect(result.resources[0].fields[0].format).toBeUndefined();
+      expect(result.resources[0].fields[0].fileMetadata).toBeUndefined();
+    });
   });
 });

@@ -1,4 +1,5 @@
 import type { AnnotationMetadata, PropertySchema } from '../types/index.js';
+import { MIME_TYPE_OPTIONS } from './mime-types.js';
 
 /**
  * Types of visual controls that can be generated for annotation parameters
@@ -11,7 +12,9 @@ export type ControlType =
   | 'resource-selector'
   | 'field-selector'
   | 'drag-drop-link'
-  | 'object-editor';
+  | 'object-editor'
+  | 'multi-select'
+  | 'file-size-input';
 
 /**
  * Validation rule for a control
@@ -80,6 +83,25 @@ export class ControlFactory {
       };
     }
 
+    // Handle file metadata annotations
+    if (annotationName === 'x-uigen-file-types') {
+      return {
+        ...baseConfig,
+        type: 'multi-select',
+        options: MIME_TYPE_OPTIONS.map(opt => ({
+          label: opt.label,
+          value: opt.value,
+        })),
+      };
+    }
+
+    if (annotationName === 'x-uigen-max-file-size') {
+      return {
+        ...baseConfig,
+        type: 'file-size-input',
+      };
+    }
+
     // Handle schema-based control generation
     switch (paramSchema.type) {
       case 'string':
@@ -134,7 +156,18 @@ export class ControlFactory {
         };
 
       case 'array':
-        // For arrays, we'll use object-editor as a generic fallback
+        // Check if array has enum items (multi-select case)
+        if (paramSchema.items?.enum) {
+          return {
+            ...baseConfig,
+            type: 'multi-select',
+            options: paramSchema.items.enum.map((value) => ({
+              label: this.formatLabel(value),
+              value,
+            })),
+          };
+        }
+        // For arrays without enum, use object-editor as a generic fallback
         return {
           ...baseConfig,
           type: 'object-editor',

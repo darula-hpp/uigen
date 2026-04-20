@@ -3,7 +3,7 @@
  */
 
 // Re-export config file types from core package
-export type { ConfigFile, ConfigValidationResult, ConfigValidationError } from '@uigen-dev/core';
+export type { ConfigFile, ConfigValidationResult, ConfigValidationError, FieldType } from '@uigen-dev/core';
 
 // Re-export spec parser types
 export type { SpecStructure, ResourceNode, OperationNode, FieldNode } from '../lib/spec-parser.js';
@@ -12,6 +12,12 @@ export type { SpecStructure, ResourceNode, OperationNode, FieldNode } from '../l
 export type { ElementType, IgnoreState, SpecNode } from '../lib/ignore-state-calculator.js';
 export { IgnoreStateCalculator } from '../lib/ignore-state-calculator.js';
 
+// Re-export annotation filter utilities
+export { getApplicableAnnotations } from '../lib/annotation-filter.js';
+
+// Import FieldType for use in AnnotationMetadata
+import type { FieldType } from '@uigen-dev/core';
+
 export interface AnnotationMetadata {
   name: string;
   description: string;
@@ -19,6 +25,10 @@ export interface AnnotationMetadata {
   parameterSchema: ParameterSchema;
   examples: Array<{ description: string; value: unknown }>;
   defaultValues?: Record<string, unknown>;
+  applicableWhen?: {
+    type?: FieldType;
+    format?: string;
+  };
 }
 
 export interface ParameterSchema {

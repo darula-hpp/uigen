@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ControlFactory } from '../control-factory.js';
 import type { AnnotationMetadata, PropertySchema } from '../../types/index.js';
+import { MIME_TYPE_OPTIONS } from '../mime-types.js';
 
 describe('ControlFactory', () => {
   const factory = new ControlFactory();
@@ -158,6 +159,68 @@ describe('ControlFactory', () => {
       const control = factory.generateControl('my_parameter_name', schema, 'x-uigen-test');
 
       expect(control.label).toBe('My Parameter Name');
+    });
+
+    it('should generate multi-select for x-uigen-file-types annotation', () => {
+      const schema: PropertySchema = {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Allowed MIME types',
+      };
+
+      const control = factory.generateControl('fileTypes', schema, 'x-uigen-file-types');
+
+      expect(control.type).toBe('multi-select');
+      expect(control.label).toBe('File Types');
+      expect(control.description).toBe('Allowed MIME types');
+      expect(control.options).toBeDefined();
+      expect(control.options?.length).toBe(MIME_TYPE_OPTIONS.length);
+      expect(control.options?.[0]).toHaveProperty('label');
+      expect(control.options?.[0]).toHaveProperty('value');
+    });
+
+    it('should generate file-size-input for x-uigen-max-file-size annotation', () => {
+      const schema: PropertySchema = {
+        type: 'number',
+        description: 'Maximum file size in bytes',
+      };
+
+      const control = factory.generateControl('maxSize', schema, 'x-uigen-max-file-size');
+
+      expect(control.type).toBe('file-size-input');
+      expect(control.label).toBe('Max Size');
+      expect(control.description).toBe('Maximum file size in bytes');
+    });
+
+    it('should generate multi-select for array with enum items', () => {
+      const schema: PropertySchema = {
+        type: 'array',
+        items: {
+          type: 'string',
+          enum: ['red', 'green', 'blue'],
+        },
+        description: 'Select colors',
+      };
+
+      const control = factory.generateControl('colors', schema, 'x-uigen-test');
+
+      expect(control.type).toBe('multi-select');
+      expect(control.options).toHaveLength(3);
+      expect(control.options?.[0]).toEqual({ label: 'Red', value: 'red' });
+      expect(control.options?.[1]).toEqual({ label: 'Green', value: 'green' });
+      expect(control.options?.[2]).toEqual({ label: 'Blue', value: 'blue' });
+    });
+
+    it('should generate object-editor for array without enum items', () => {
+      const schema: PropertySchema = {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'List of values',
+      };
+
+      const control = factory.generateControl('items', schema, 'x-uigen-test');
+
+      expect(control.type).toBe('object-editor');
     });
   });
 
