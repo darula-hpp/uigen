@@ -32,9 +32,14 @@ export interface AnnotationMetadata {
 }
 
 export interface ParameterSchema {
-  type: 'object' | 'string' | 'boolean' | 'number';
+  type: 'object' | 'string' | 'boolean' | 'number' | 'array';
   properties?: Record<string, PropertySchema>;
   required?: string[];
+  items?: PropertySchema;
+  description?: string;
+  minimum?: number;
+  maximum?: number;
+  pattern?: string;
 }
 
 export interface PropertySchema {

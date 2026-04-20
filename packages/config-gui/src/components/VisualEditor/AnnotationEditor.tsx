@@ -1,5 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { ConfigFile } from '@uigen-dev/core';
+import { useAppContext } from '../../contexts/AppContext.js';
+import type { AnnotationMetadata } from '../../types/index.js';
+import { MultiSelect } from '../controls/MultiSelect.js';
+import { FileSizeInput } from '../controls/FileSizeInput.js';
+import { MIME_TYPE_OPTIONS } from '../../lib/mime-types.js';
 
 /**
  * Annotation metadata describing available annotations
@@ -13,61 +18,6 @@ interface AnnotationMeta {
 }
 
 /**
- * Available annotations (excluding x-uigen-ref which has its own section)
- */
-const AVAILABLE_ANNOTATIONS: AnnotationMeta[] = [
-  {
-    name: 'x-uigen-ignore',
-    label: 'Ignore',
-    description: 'Exclude from generated UI',
-    valueType: 'boolean',
-    applicableTo: ['field', 'operation', 'resource']
-  },
-  {
-    name: 'x-uigen-label',
-    label: 'Label',
-    description: 'Override display label',
-    valueType: 'string',
-    applicableTo: ['field', 'operation', 'resource']
-  },
-  {
-    name: 'x-uigen-id',
-    label: 'ID',
-    description: 'Stable identifier for overrides',
-    valueType: 'string',
-    applicableTo: ['operation', 'resource']
-  },
-  {
-    name: 'x-uigen-login',
-    label: 'Login',
-    description: 'Mark as login endpoint',
-    valueType: 'boolean',
-    applicableTo: ['operation']
-  },
-  {
-    name: 'x-uigen-signup',
-    label: 'Sign Up',
-    description: 'Mark as sign-up endpoint',
-    valueType: 'boolean',
-    applicableTo: ['operation']
-  },
-  {
-    name: 'x-uigen-password-reset',
-    label: 'Password Reset',
-    description: 'Mark as password reset endpoint',
-    valueType: 'boolean',
-    applicableTo: ['operation']
-  },
-  {
-    name: 'x-uigen-token-path',
-    label: 'Token Path',
-    description: 'Path to token in login response',
-    valueType: 'string',
-    applicableTo: ['operation']
-  }
-];
-
-/**
  * Props for AnnotationEditor
  */
 export interface AnnotationEditorProps {
@@ -79,6 +29,11 @@ export interface AnnotationEditorProps {
   currentAnnotations: Record<string, unknown>;
   /** Callback when annotations change */
   onAnnotationsChange: (annotations: Record<string, unknown>) => void;
+  /** Field information for applicability filtering (optional, for fields only) */
+  fieldInfo?: {
+    type: string;
+    format?: string;
+  };
 }
 
 /**
@@ -90,28 +45,97 @@ export interface AnnotationEditorProps {
  * - Click badge to edit (string) or remove (boolean)
  * - Disables add button when x-uigen-ignore is set
  * - Filters dropdown to show only applicable and not-yet-added annotations
+ * - Uses dynamic annotation metadata from AppContext
+ * - Filters annotations based on field type using applicableWhen rules
  */
 export function AnnotationEditor({
   elementPath,
   elementType,
   currentAnnotations,
-  onAnnotationsChange
+  onAnnotationsChange,
+  fieldInfo
 }: AnnotationEditorProps) {
+  const { state } = useAppContext();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingAnnotation, setEditingAnnotation] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [showStringModal, setShowStringModal] = useState(false);
   const [pendingStringAnnotation, setPendingStringAnnotation] = useState<AnnotationMeta | null>(null);
+  const [showObjectModal, setShowObjectModal] = useState(false);
+  const [pendingObjectAnnotation, setPendingObjectAnnotation] = useState<AnnotationMeta | null>(null);
+  const [objectValue, setObjectValue] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const modalInputRef = useRef<HTMLInputElement>(null);
   const [dropdownFlipped, setDropdownFlipped] = useState(false);
   
+  // Convert AnnotationMetadata to AnnotationMeta format
+  const convertToAnnotationMeta = (metadata: AnnotationMetadata): AnnotationMeta => {
+    // Determine value type from parameterSchema
+    let valueType: 'boolean' | 'string' | 'object' = 'boolean';
+    if (metadata.parameterSchema) {
+      const schemaType = metadata.parameterSchema.type;
+      if (schemaType === 'string') {
+        valueType = 'string';
+      } else if (schemaType === 'object' || schemaType === 'array' || schemaType === 'number') {
+        valueType = 'object'; // Treat array and number as object (needs custom modal)
+      } else if (schemaType === 'boolean') {
+        valueType = 'boolean';
+      }
+    }
+    
+    // Map targetType to applicableTo array
+    const applicableTo: ('field' | 'operation' | 'resource')[] = [];
+    if (metadata.targetType === 'field') applicableTo.push('field');
+    if (metadata.targetType === 'operation') applicableTo.push('operation');
+    if (metadata.targetType === 'resource') applicableTo.push('resource');
+    
+    return {
+      name: metadata.name,
+      label: metadata.name.replace('x-uigen-', '').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+      description: metadata.description,
+      valueType,
+      applicableTo
+    };
+  };
+  
+  // Get all available annotations from AppContext
+  const allAnnotations = state.annotations
+    .filter(ann => ann.name !== 'x-uigen-ref'); // Exclude x-uigen-ref (has its own section)
+  
+  // Filter annotations based on field type if fieldInfo is provided
+  const fieldTypeFilteredAnnotations = fieldInfo && elementType === 'field'
+    ? allAnnotations.filter(ann => {
+        // If annotation has no applicability rules, it applies to all fields
+        if (!ann.applicableWhen) {
+          return true;
+        }
+        
+        const { type, format } = ann.applicableWhen;
+        
+        // Check type match (if specified)
+        if (type !== undefined && fieldInfo.type !== type) {
+          return false;
+        }
+        
+        // Check format match (if specified)
+        if (format !== undefined && fieldInfo.format !== format) {
+          return false;
+        }
+        
+        // All specified rules matched
+        return true;
+      })
+    : allAnnotations;
+  
+  // Convert to AnnotationMeta format
+  const AVAILABLE_ANNOTATIONS = fieldTypeFilteredAnnotations.map(convertToAnnotationMeta);
+  
   // Check if element is ignored
   const isIgnored = Boolean(currentAnnotations['x-uigen-ignore']);
   
-  // Get applicable annotations for this element type
+  // Get applicable annotations for this element type (field/operation/resource)
   const applicableAnnotations = AVAILABLE_ANNOTATIONS.filter(
     ann => ann.applicableTo.includes(elementType)
   );
@@ -205,8 +229,32 @@ export function AnnotationEditor({
       setShowStringModal(true);
       setIsDropdownOpen(false);
       setSearchQuery('');
+    } else if (annotation.valueType === 'object') {
+      // For object/array/number annotations, show custom modal
+      setPendingObjectAnnotation(annotation);
+      
+      // Get the annotation metadata to determine the type
+      const metadata = state.annotations.find(ann => ann.name === annotation.name);
+      
+      // Initialize with default value based on type
+      if (metadata?.parameterSchema) {
+        const schemaType = metadata.parameterSchema.type;
+        if (schemaType === 'array') {
+          setObjectValue([]);
+        } else if (schemaType === 'number') {
+          setObjectValue(5242880); // Default 5MB
+        } else {
+          setObjectValue({});
+        }
+      } else {
+        setObjectValue({});
+      }
+      
+      setShowObjectModal(true);
+      setIsDropdownOpen(false);
+      setSearchQuery('');
     }
-  }, [currentAnnotations, onAnnotationsChange]);
+  }, [currentAnnotations, onAnnotationsChange, state.annotations]);
   
   // Handle removing an annotation
   const handleRemoveAnnotation = useCallback((annotationName: string) => {
@@ -222,6 +270,16 @@ export function AnnotationEditor({
       setPendingStringAnnotation(meta);
       setEditValue(currentValue);
       setShowStringModal(true);
+    }
+  }, []);
+  
+  // Handle editing an object annotation
+  const handleEditObjectAnnotation = useCallback((annotationName: string, currentValue: any) => {
+    const meta = getAnnotationMeta(annotationName);
+    if (meta) {
+      setPendingObjectAnnotation(meta);
+      setObjectValue(currentValue);
+      setShowObjectModal(true);
     }
   }, []);
   
@@ -249,6 +307,32 @@ export function AnnotationEditor({
     setShowStringModal(false);
     setPendingStringAnnotation(null);
     setEditValue('');
+  }, []);
+  
+  // Handle saving object annotation from modal
+  const handleSaveObjectAnnotation = useCallback(() => {
+    if (!pendingObjectAnnotation) return;
+    
+    const newAnnotations = { ...currentAnnotations };
+    
+    // Validate and save based on type
+    if (objectValue !== null && objectValue !== undefined) {
+      newAnnotations[pendingObjectAnnotation.name] = objectValue;
+    } else {
+      delete newAnnotations[pendingObjectAnnotation.name];
+    }
+    
+    onAnnotationsChange(newAnnotations);
+    setShowObjectModal(false);
+    setPendingObjectAnnotation(null);
+    setObjectValue(null);
+  }, [currentAnnotations, pendingObjectAnnotation, objectValue, onAnnotationsChange]);
+  
+  // Handle canceling object annotation modal
+  const handleCancelObjectAnnotation = useCallback(() => {
+    setShowObjectModal(false);
+    setPendingObjectAnnotation(null);
+    setObjectValue(null);
   }, []);
   
   // Get annotation metadata by name
@@ -293,6 +377,41 @@ export function AnnotationEditor({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
               {meta.label}: {String(value)}
+            </button>
+          );
+        }
+        
+        if (meta.valueType === 'object') {
+          // Format display value based on type
+          let displayValue = '';
+          if (Array.isArray(value)) {
+            displayValue = `${value.length} selected`;
+          } else if (typeof value === 'number') {
+            // Format bytes for file size
+            const formatBytes = (bytes: number) => {
+              if (bytes >= 1073741824) return `${(bytes / 1073741824).toFixed(1)} GB`;
+              if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB`;
+              if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+              return `${bytes} B`;
+            };
+            displayValue = formatBytes(value);
+          } else {
+            displayValue = 'configured';
+          }
+          
+          return (
+            <button
+              key={name}
+              onClick={() => handleEditObjectAnnotation(name, value)}
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
+              title={`${meta.description} (click to edit)`}
+              aria-label={`Edit ${meta.label}`}
+            >
+              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              {meta.label}: {displayValue}
             </button>
           );
         }
@@ -398,6 +517,79 @@ export function AnnotationEditor({
               </button>
               <button
                 onClick={handleSaveStringAnnotation}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Object annotation modal (for array/number types) */}
+      {showObjectModal && pendingObjectAnnotation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[500px] max-w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              {pendingObjectAnnotation.label}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {pendingObjectAnnotation.description}
+            </p>
+            
+            {/* Render appropriate control based on annotation type */}
+            {(() => {
+              const metadata = state.annotations.find(ann => ann.name === pendingObjectAnnotation.name);
+              
+              if (!metadata) return null;
+              
+              const schemaType = metadata.parameterSchema?.type;
+              
+              // File types (array of MIME types)
+              if (schemaType === 'array' && pendingObjectAnnotation.name === 'x-uigen-file-types') {
+                return (
+                  <MultiSelect
+                    value={objectValue || []}
+                    onChange={setObjectValue}
+                    options={MIME_TYPE_OPTIONS}
+                    label="Allowed MIME Types"
+                    description="Select the file types that users can upload"
+                    placeholder="Select MIME types..."
+                  />
+                );
+              }
+              
+              // Max file size (number in bytes)
+              if (schemaType === 'number' && pendingObjectAnnotation.name === 'x-uigen-max-file-size') {
+                return (
+                  <FileSizeInput
+                    value={objectValue || 5242880}
+                    onChange={setObjectValue}
+                    label="Maximum File Size"
+                    description="Set the maximum allowed file size for uploads"
+                    min={1}
+                    max={1073741824} // 1 GB
+                  />
+                );
+              }
+              
+              // Generic fallback for other object types
+              return (
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Custom editor not available for this annotation type.
+                </div>
+              );
+            })()}
+            
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={handleCancelObjectAnnotation}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveObjectAnnotation}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
               >
                 Save

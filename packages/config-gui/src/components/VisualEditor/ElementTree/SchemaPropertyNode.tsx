@@ -121,6 +121,10 @@ export function SchemaPropertyNode({
             elementType="field"
             currentAnnotations={currentAnnotations}
             onAnnotationsChange={handleAnnotationsChange}
+            fieldInfo={{
+              type: field.type,
+              format: field.format
+            }}
           />
         </div>
       </div>

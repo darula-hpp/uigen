@@ -65,7 +65,7 @@ export interface TypeMappingVisitor {
    * Type mapping rules:
    * - format: 'date' | 'date-time' → 'date'
    * - format: 'binary' → 'file'
-   * - contentMediaType: 'application/octet-stream' → 'file'
+   * - contentMediaType: any non-empty value → 'file'
    * - type: 'string' → 'string'
    * - type: 'number' → 'number'
    * - type: 'integer' → 'integer'
@@ -102,9 +102,9 @@ export class DefaultTypeMappingVisitor implements TypeMappingVisitor {
       return 'file';
     }
 
-    // Check contentMediaType for file types
+    // Check contentMediaType for file types (any non-empty contentMediaType indicates a file)
     const contentMediaType = (schema as any).contentMediaType;
-    if (contentMediaType === 'application/octet-stream') {
+    if (contentMediaType && typeof contentMediaType === 'string' && contentMediaType.trim() !== '') {
       return 'file';
     }
 
@@ -145,9 +145,12 @@ export class DefaultTypeMappingVisitor implements TypeMappingVisitor {
       return 'file';
     }
 
-    // Check contentMediaType for file types
-    if (schema && (schema as any).contentMediaType === 'application/octet-stream') {
-      return 'file';
+    // Check contentMediaType for file types (any non-empty contentMediaType indicates a file)
+    if (schema) {
+      const contentMediaType = (schema as any).contentMediaType;
+      if (contentMediaType && typeof contentMediaType === 'string' && contentMediaType.trim() !== '') {
+        return 'file';
+      }
     }
 
     // Map OpenAPI types to IR types

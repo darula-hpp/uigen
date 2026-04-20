@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { MultiSelectOption } from '../../lib/mime-types.js';
 
 /**
@@ -51,7 +52,9 @@ export function MultiSelect({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Group options by category
@@ -83,7 +86,8 @@ export function MultiSelect({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+          triggerRef.current && !triggerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setSearchQuery('');
         setFocusedIndex(-1);
@@ -93,6 +97,31 @@ export function MultiSelect({
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
+  
+  // Calculate dropdown position when opened
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      const updatePosition = () => {
+        if (triggerRef.current) {
+          const rect = triggerRef.current.getBoundingClientRect();
+          setDropdownPosition({
+            top: rect.bottom + 4,
+            left: rect.left,
+            width: rect.width
+          });
+        }
+      };
+      
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
     }
   }, [isOpen]);
   
@@ -200,7 +229,7 @@ export function MultiSelect({
   };
   
   return (
-    <div className="space-y-2" ref={dropdownRef}>
+    <div className="space-y-2">
       {label && (
         <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           {label}
@@ -215,6 +244,7 @@ export function MultiSelect({
       <div className="relative">
         {/* Selected items display / trigger */}
         <div
+          ref={triggerRef}
           id={id}
           role="combobox"
           aria-expanded={isOpen}
@@ -274,13 +304,21 @@ export function MultiSelect({
           </div>
         </div>
         
-        {/* Dropdown */}
-        {isOpen && (
+        {/* Dropdown - rendered via portal */}
+        {isOpen && createPortal(
           <div
+            ref={dropdownRef}
             id={`${id}-listbox`}
             role="listbox"
             aria-multiselectable="true"
-            className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-80 overflow-hidden"
+            style={{
+              position: 'fixed',
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              width: `${dropdownPosition.width}px`,
+              zIndex: 9999
+            }}
+            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-80 overflow-hidden"
           >
             {/* Search input */}
             <div className="p-2 border-b border-gray-200 dark:border-gray-700">
@@ -377,7 +415,8 @@ export function MultiSelect({
                 ))
               )}
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>

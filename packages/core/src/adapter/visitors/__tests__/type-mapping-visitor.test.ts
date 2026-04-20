@@ -435,11 +435,67 @@ describe('DefaultTypeMappingVisitor', () => {
       expect(visitor.mapType('string', undefined, schema)).toBe('file');
     });
 
-    it('should handle non-octet-stream contentMediaType', () => {
+    it('should detect contentMediaType image/png as file', () => {
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        contentMediaType: 'image/png'
+      } as any;
+      expect(visitor.mapType('string', undefined, schema)).toBe('file');
+    });
+
+    it('should detect contentMediaType application/pdf as file', () => {
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        contentMediaType: 'application/pdf'
+      } as any;
+      expect(visitor.mapType('string', undefined, schema)).toBe('file');
+    });
+
+    it('should detect contentMediaType video/mp4 as file', () => {
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        contentMediaType: 'video/mp4'
+      } as any;
+      expect(visitor.mapType('string', undefined, schema)).toBe('file');
+    });
+
+    it('should detect contentMediaType audio/mpeg as file', () => {
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        contentMediaType: 'audio/mpeg'
+      } as any;
+      expect(visitor.mapType('string', undefined, schema)).toBe('file');
+    });
+
+    it('should detect contentMediaType text/plain as file', () => {
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        contentMediaType: 'text/plain'
+      } as any;
+      expect(visitor.mapType('string', undefined, schema)).toBe('file');
+    });
+
+    it('should detect contentMediaType application/json as file', () => {
       const schema: OpenAPIV3.SchemaObject = {
         type: 'string',
         contentMediaType: 'application/json'
-      };
+      } as any;
+      expect(visitor.mapType('string', undefined, schema)).toBe('file');
+    });
+
+    it('should handle empty contentMediaType', () => {
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        contentMediaType: ''
+      } as any;
+      expect(visitor.mapType('string', undefined, schema)).toBe('string');
+    });
+
+    it('should handle whitespace-only contentMediaType', () => {
+      const schema: OpenAPIV3.SchemaObject = {
+        type: 'string',
+        contentMediaType: '   '
+      } as any;
       expect(visitor.mapType('string', undefined, schema)).toBe('string');
     });
   });
