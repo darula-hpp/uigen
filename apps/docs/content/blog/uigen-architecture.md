@@ -8,7 +8,7 @@ tags: ["architecture", "technical", "deep-dive"]
 
 ## Introduction
 
-UIGen is a CLI tool that turns any OpenAPI or Swagger specification into a fully functional, interactive frontend -- no code required, no boilerplate, no configuration. You point it at a spec file, and within seconds you have a working UI with tables, forms, authentication, pagination, and live API calls.
+UIGen is a CLI tool that turns any OpenAPI or Swagger specification into a fully functional, interactive frontend -- no code required, no boilerplate, no configuration (But you get way better results when you use the config command). You point it at a spec file, and within seconds you have a working UI with tables, forms, authentication, pagination, and live API calls.
 
 But building something that works reliably across thousands of different API shapes requires more than a clever script. It requires a thoughtful architecture that can handle the full spectrum of real-world API designs: inconsistent naming conventions, nested schemas, complex authentication flows, and edge cases that no spec author anticipated.
 
