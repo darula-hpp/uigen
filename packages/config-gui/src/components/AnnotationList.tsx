@@ -1,5 +1,6 @@
 import { useAppContext } from '../hooks/useAppContext.js';
-import type { AnnotationMetadata } from '../types/index.js';
+import type { AnnotationMetadata, FieldNode } from '../types/index.js';
+import { getApplicableAnnotations } from '../lib/annotation-filter.js';
 
 /**
  * Props for AnnotationList component
@@ -7,6 +8,8 @@ import type { AnnotationMetadata } from '../types/index.js';
 export interface AnnotationListProps {
   /** Called when an annotation is selected */
   onAnnotationSelect?: (annotationName: string) => void;
+  /** Optional field to filter annotations by applicability */
+  selectedField?: FieldNode;
 }
 
 /**
@@ -18,12 +21,18 @@ export interface AnnotationListProps {
  * - Toggle switches to enable/disable annotations
  * - Persists state immediately on toggle
  * - Supports annotation selection for configuration
+ * - Filters annotations based on selected field applicability
  * 
- * Requirements: 4.1, 4.2, 4.3, 4.5, 3.5
+ * Requirements: 4.1, 4.2, 4.3, 4.5, 3.5, 5.4
  */
-export function AnnotationList({ onAnnotationSelect }: AnnotationListProps = {}) {
+export function AnnotationList({ onAnnotationSelect, selectedField }: AnnotationListProps = {}) {
   const { state, actions } = useAppContext();
   const { annotations, config, isLoading } = state;
+  
+  // Filter annotations based on selected field if provided
+  const displayedAnnotations = selectedField 
+    ? getApplicableAnnotations(selectedField, annotations)
+    : annotations;
   
   if (isLoading) {
     return (
@@ -33,7 +42,19 @@ export function AnnotationList({ onAnnotationSelect }: AnnotationListProps = {})
     );
   }
   
-  if (annotations.length === 0) {
+  if (displayedAnnotations.length === 0) {
+    // Show different messages based on whether filtering is active
+    if (selectedField && annotations.length > 0) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-gray-500">No annotations applicable to this field</p>
+          <p className="text-sm text-gray-400 mt-2">
+            Some annotations are only available for specific field types
+          </p>
+        </div>
+      );
+    }
+    
     return (
       <div className="text-center py-8">
         <p className="text-gray-500">No annotations registered</p>
@@ -42,7 +63,7 @@ export function AnnotationList({ onAnnotationSelect }: AnnotationListProps = {})
   }
   
   // Group annotations by target type
-  const groupedAnnotations = annotations.reduce((acc, annotation) => {
+  const groupedAnnotations = displayedAnnotations.reduce((acc, annotation) => {
     const category = annotation.targetType;
     if (!acc[category]) {
       acc[category] = [];

@@ -6,6 +6,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased]
+
+### Added
+
+**Core engine (`@uigen-dev/core`)**
+- **File metadata annotation handlers** - Config GUI support for file upload restrictions
+  - `FileTypesHandler` - validates and applies `x-uigen-file-types` annotation (allowed MIME types)
+  - `MaxFileSizeHandler` - validates and applies `x-uigen-max-file-size` annotation (max file size in bytes)
+  - Both handlers registered in `AnnotationHandlerRegistry` for automatic processing
+  - Validation-only approach - handlers validate annotations while `FileMetadataVisitor` handles extraction
+  - 50 unit tests covering extraction, validation, and integration
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- **File field detection** - Automatic identification of file upload fields
+  - Extended `FieldNode` interface with `format` and `fileMetadata` properties
+  - `SpecParser` now captures format and file metadata from schema nodes
+  - `isFileField()` utility detects file fields by checking `type === 'file'` OR `format === 'binary'`
+  - 10 unit tests covering all field type detection scenarios
+- **File size utilities** - Unit conversion and formatting for file sizes
+  - `toBytes()` and `fromBytes()` for converting between B, KB, MB, GB
+  - `formatBytes()` for human-readable display (e.g., "5.00 MB")
+  - `selectDefaultUnit()` for intelligent unit selection based on byte value
+  - 30 unit tests including round-trip conversions and integration scenarios
+- **FileSizeInput component** - User-friendly file size configuration
+  - Number input with decimal support
+  - Unit selector dropdown (B, KB, MB, GB)
+  - Automatic conversion between display value and bytes
+  - Real-time formatted byte display
+  - Comprehensive validation (positive, finite, min/max bounds)
+  - Full accessibility support (ARIA labels, error associations)
+  - 28 unit tests covering rendering, conversion, validation, and accessibility
+- **MIME type options** - Predefined list of common MIME types
+  - 60+ MIME types organized into 6 categories (Images, Documents, Video, Audio, Archives, Other)
+  - Includes wildcards (`image/*`, `video/*`, `*/*`) with descriptions
+  - Ready for MultiSelect component integration
+  - 12 unit tests verifying structure and completeness
+
+---
+
 ## [0.3.1] - 2026-04-19
 
 ### Fixed

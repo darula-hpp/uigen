@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AnnotationList } from '../AnnotationList.js';
 import { AppProvider, AppContext } from '../../contexts/AppContext.js';
-import type { AnnotationMetadata } from '../../types/index.js';
+import type { AnnotationMetadata, FieldNode } from '../../types/index.js';
 import type { ConfigFile, AnnotationHandler } from '@uigen-dev/core';
 import React from 'react';
 
 /**
  * Tests for AnnotationList component
  * 
- * Requirements: 4.1, 4.2, 4.3, 4.5, 3.5
+ * Requirements: 4.1, 4.2, 4.3, 4.5, 3.5, 5.4
  */
 
 // Mock annotation metadata
@@ -49,6 +49,40 @@ const mockAnnotations: AnnotationMetadata[] = [
     ]
   },
   {
+    name: 'x-uigen-file-types',
+    description: 'Array of allowed MIME types for file uploads',
+    targetType: 'field',
+    applicableWhen: {
+      type: 'file'
+    },
+    parameterSchema: {
+      type: 'array'
+    },
+    examples: [
+      {
+        description: 'Accept only images',
+        value: ['image/jpeg', 'image/png']
+      }
+    ]
+  },
+  {
+    name: 'x-uigen-max-file-size',
+    description: 'Maximum file size in bytes',
+    targetType: 'field',
+    applicableWhen: {
+      type: 'file'
+    },
+    parameterSchema: {
+      type: 'number'
+    },
+    examples: [
+      {
+        description: '5MB',
+        value: 5242880
+      }
+    ]
+  },
+  {
     name: 'x-uigen-login',
     description: 'Mark an operation as the login endpoint',
     targetType: 'operation',
@@ -78,11 +112,28 @@ const mockConfig: ConfigFile = {
   enabled: {
     'x-uigen-label': true,
     'x-uigen-ref': true,
+    'x-uigen-file-types': true,
+    'x-uigen-max-file-size': true,
     'x-uigen-login': false,
     'x-uigen-ignore': true
   },
   defaults: {},
   annotations: {}
+};
+
+// Mock field nodes
+const mockFileField: FieldNode = {
+  name: 'avatar',
+  type: 'file',
+  required: false,
+  description: 'User avatar image'
+};
+
+const mockStringField: FieldNode = {
+  name: 'email',
+  type: 'string',
+  required: true,
+  description: 'User email address'
 };
 
 describe('AnnotationList', () => {
@@ -103,7 +154,8 @@ describe('AnnotationList', () => {
   const renderWithMockContext = (
     annotations: AnnotationMetadata[] = [],
     config: ConfigFile | null = mockConfig,
-    isLoading = false
+    isLoading = false,
+    selectedField?: FieldNode
   ) => {
     const mockContextValue = {
       state: {
@@ -112,11 +164,14 @@ describe('AnnotationList', () => {
         annotations,
         isLoading,
         error: null,
-        configPath: '.uigen/config.yaml'
+        configPath: '.uigen/config.yaml',
+        specPath: null,
+        specStructure: null
       },
       actions: {
         loadConfig: mockLoadConfig,
         saveConfig: mockSaveConfig,
+        saveConfigImmediate: vi.fn(),
         updateConfig: mockUpdateConfig,
         setError: mockSetError,
         clearError: mockClearError
@@ -125,7 +180,7 @@ describe('AnnotationList', () => {
     
     return render(
       <AppContext.Provider value={mockContextValue}>
-        <AnnotationList />
+        <AnnotationList selectedField={selectedField} />
       </AppContext.Provider>
     );
   };
@@ -266,6 +321,81 @@ describe('AnnotationList', () => {
     // Should not call saveConfig when config is null
     await waitFor(() => {
       expect(mockSaveConfig).not.toHaveBeenCalled();
+    });
+  });
+  
+  describe('Field-based filtering', () => {
+    it('should show all annotations when no field is selected', () => {
+      renderWithMockContext(mockAnnotations, mockConfig, false);
+      
+      // Should show all field-level annotations
+      expect(screen.getByText('x-uigen-label')).toBeInTheDocument();
+      expect(screen.getByText('x-uigen-ref')).toBeInTheDocument();
+      expect(screen.getByText('x-uigen-file-types')).toBeInTheDocument();
+      expect(screen.getByText('x-uigen-max-file-size')).toBeInTheDocument();
+    });
+    
+    it('should filter annotations when file field is selected', () => {
+      renderWithMockContext(mockAnnotations, mockConfig, false, mockFileField);
+      
+      // Should show file-specific annotations
+      expect(screen.getByText('x-uigen-file-types')).toBeInTheDocument();
+      expect(screen.getByText('x-uigen-max-file-size')).toBeInTheDocument();
+      
+      // Should also show annotations without applicability rules
+      expect(screen.getByText('x-uigen-label')).toBeInTheDocument();
+      expect(screen.getByText('x-uigen-ref')).toBeInTheDocument();
+    });
+    
+    it('should hide file-specific annotations for non-file fields', () => {
+      renderWithMockContext(mockAnnotations, mockConfig, false, mockStringField);
+      
+      // Should show general annotations
+      expect(screen.getByText('x-uigen-label')).toBeInTheDocument();
+      expect(screen.getByText('x-uigen-ref')).toBeInTheDocument();
+      
+      // Should NOT show file-specific annotations
+      expect(screen.queryByText('x-uigen-file-types')).not.toBeInTheDocument();
+      expect(screen.queryByText('x-uigen-max-file-size')).not.toBeInTheDocument();
+    });
+    
+    it('should show message when no annotations are applicable to selected field', () => {
+      // Create a field with no applicable annotations
+      const specialField: FieldNode = {
+        name: 'special',
+        type: 'number',
+        required: false
+      };
+      
+      // Create annotations that only apply to file fields
+      const fileOnlyAnnotations: AnnotationMetadata[] = [
+        {
+          name: 'x-uigen-file-types',
+          description: 'Array of allowed MIME types for file uploads',
+          targetType: 'field',
+          applicableWhen: {
+            type: 'file'
+          },
+          parameterSchema: {
+            type: 'array'
+          },
+          examples: []
+        }
+      ];
+      
+      renderWithMockContext(fileOnlyAnnotations, mockConfig, false, specialField);
+      
+      // Should show the "no applicable annotations" message
+      expect(screen.getByText('No annotations applicable to this field')).toBeInTheDocument();
+      expect(screen.getByText('Some annotations are only available for specific field types')).toBeInTheDocument();
+    });
+    
+    it('should show different message when no annotations are registered at all', () => {
+      renderWithMockContext([], mockConfig, false);
+      
+      // Should show the "no annotations registered" message
+      expect(screen.getByText('No annotations registered')).toBeInTheDocument();
+      expect(screen.queryByText('Some annotations are only available for specific field types')).not.toBeInTheDocument();
     });
   });
 });

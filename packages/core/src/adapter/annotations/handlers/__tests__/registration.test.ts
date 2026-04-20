@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { AnnotationHandlerRegistry } from '../../registry.js';
-import { ActiveServerHandler, PasswordResetHandler, SignUpHandler } from '../index.js';
+import { ActiveServerHandler, PasswordResetHandler, SignUpHandler, FileTypesHandler, MaxFileSizeHandler } from '../index.js';
 import { OpenAPI3Adapter } from '../../../openapi3.js';
 import type { OpenAPIV3 } from 'openapi-types';
 
@@ -38,6 +38,26 @@ describe('Handler Registration Tests', () => {
       expect(signUpHandler).toBeDefined();
       expect(signUpHandler).toBeInstanceOf(SignUpHandler);
       expect(signUpHandler.name).toBe('x-uigen-signup');
+    });
+
+    it('should register FileTypesHandler', () => {
+      const registry = AnnotationHandlerRegistry.getInstance();
+      const handlers = (registry as any).handlers;
+      
+      const fileTypesHandler = handlers.get('x-uigen-file-types');
+      expect(fileTypesHandler).toBeDefined();
+      expect(fileTypesHandler).toBeInstanceOf(FileTypesHandler);
+      expect(fileTypesHandler.name).toBe('x-uigen-file-types');
+    });
+
+    it('should register MaxFileSizeHandler', () => {
+      const registry = AnnotationHandlerRegistry.getInstance();
+      const handlers = (registry as any).handlers;
+      
+      const maxFileSizeHandler = handlers.get('x-uigen-max-file-size');
+      expect(maxFileSizeHandler).toBeDefined();
+      expect(maxFileSizeHandler).toBeInstanceOf(MaxFileSizeHandler);
+      expect(maxFileSizeHandler.name).toBe('x-uigen-max-file-size');
     });
 
     it('should have all handlers implement the AnnotationHandler interface', () => {
