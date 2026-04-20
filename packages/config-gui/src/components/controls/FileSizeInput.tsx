@@ -182,7 +182,6 @@ export function FileSizeInput({
           aria-label="Size unit"
           className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="B">B</option>
           <option value="KB">KB</option>
           <option value="MB">MB</option>
           <option value="GB">GB</option>

@@ -244,6 +244,79 @@ File extension does not match MIME type
 
 The file type restrictions use the HTML `accept` attribute, which is supported in all modern browsers. However, users can still attempt to select invalid files, so server-side validation is still required.
 
+## Config Reconciliation
+
+You can override file metadata annotations using the [Config Reconciliation](/docs/core-concepts/config-reconciliation) system without modifying your OpenAPI spec.
+
+### Example config file
+
+Create a `.uigen/config.yaml` file in your project root:
+
+```yaml
+version: "1.0"
+enabled:
+  x-uigen-file-types: true
+  x-uigen-max-file-size: true
+defaults:
+  x-uigen-file-types:
+    - '*/*'
+  x-uigen-max-file-size: 10485760
+annotations:
+  # Restrict avatar uploads to images only
+  User.avatar:
+    x-uigen-file-types:
+      - image/jpeg
+      - image/png
+      - image/webp
+    x-uigen-max-file-size: 5242880  # 5MB
+  
+  # Allow PDF documents up to 10MB
+  Document.file:
+    x-uigen-file-types:
+      - application/pdf
+    x-uigen-max-file-size: 10485760  # 10MB
+  
+  # Accept all video types up to 100MB
+  Media.video:
+    x-uigen-file-types:
+      - video/*
+    x-uigen-max-file-size: 104857600  # 100MB
+```
+
+### Config precedence
+
+When the same annotation exists in both your spec and config file, the config value takes precedence:
+
+```yaml
+# In your OpenAPI spec:
+User.avatar:
+  type: string
+  format: binary
+  x-uigen-file-types:
+    - '*/*'  # Accept all files
+
+# In .uigen/config.yaml:
+annotations:
+  User.avatar:
+    x-uigen-file-types:
+      - image/jpeg
+      - image/png
+
+# Result: Only JPEG and PNG images are accepted (config wins)
+```
+
+### Using the Config GUI
+
+The [Config GUI](/docs/tools/config-gui) provides a visual interface for managing file metadata annotations:
+
+1. Start the config GUI: `npx @uigen-dev/cli config openapi.yaml`
+2. Select a file field in the visual editor
+3. Configure `x-uigen-file-types` using the multi-select dropdown
+4. Set `x-uigen-max-file-size` using the file size input with unit selector
+5. Save your changes to `.uigen/config.yaml`
+
+The config GUI automatically filters annotations to show only those applicable to file fields.
+
 ## See also
 
 - [Field Components](/docs/views-and-components/field-components) - File upload component behavior

@@ -16,3 +16,9 @@ annotations:
     x-uigen-signup: true
   GET:/api/v1/auth/me:
     x-uigen-ignore: true
+  Meeting.recording:
+    x-uigen-max-file-size: 6291456
+    x-uigen-file-types:
+      - text/yaml
+      - image/jpeg
+      - image/png

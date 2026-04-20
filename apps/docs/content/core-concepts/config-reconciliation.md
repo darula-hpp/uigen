@@ -115,16 +115,53 @@ The reconciler treats **all** `x-uigen-*` annotations generically. This means:
 - No hardcoded annotation names
 - Future annotations are supported out of the box
 
-Example with a custom annotation:
+### File Upload Configuration
+
+Configure file upload restrictions using `x-uigen-file-types` and `x-uigen-max-file-size`:
 
 ```yaml
 annotations:
   User.avatar:
-    x-uigen-widget: "image-upload"
-    x-uigen-max-size: 5242880
+    x-uigen-file-types:
+      - image/jpeg
+      - image/png
+      - image/webp
+    x-uigen-max-file-size: 5242880  # 5MB in bytes
+  
+  Document.attachment:
+    x-uigen-file-types:
+      - application/pdf
+      - application/msword
+      - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+    x-uigen-max-file-size: 10485760  # 10MB in bytes
+  
+  Media.video:
+    x-uigen-file-types:
+      - video/*  # Accept all video types
+    x-uigen-max-file-size: 104857600  # 100MB in bytes
 ```
 
-Even if `x-uigen-widget` and `x-uigen-max-size` are new annotations, the reconciler will apply them correctly.
+**Array Syntax**: `x-uigen-file-types` accepts an array of MIME types. You can use:
+- Specific types: `image/jpeg`, `application/pdf`
+- Wildcards: `image/*`, `video/*`, `*/*`
+- Multiple types: Mix and match as needed
+
+**File Size**: `x-uigen-max-file-size` accepts a number in bytes:
+- 1MB = 1048576 bytes
+- 5MB = 5242880 bytes
+- 10MB = 10485760 bytes
+- 100MB = 104857600 bytes
+
+### Custom Annotations
+
+Even if you create custom annotations, the reconciler will apply them correctly:
+
+```yaml
+annotations:
+  User.profile:
+    x-uigen-widget: "rich-text-editor"
+    x-uigen-custom-validation: "email-domain-check"
+```
 
 ## Removing Annotations
 

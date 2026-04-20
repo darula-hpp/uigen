@@ -155,8 +155,11 @@ export class SchemaProcessor {
       return node;
     }
 
+    // Handle anyOf schemas - unwrap and use first non-null option
+    const unwrappedSchema = this.unwrapAnyOf(schema as OpenAPIV3.SchemaObject);
+
     // Determine the IR type using the type mapping visitor
-    const type = this.typeMappingVisitor.mapType(schema.type, schema.format, schema);
+    const type = this.typeMappingVisitor.mapType(unwrappedSchema.type, unwrappedSchema.format, unwrappedSchema);
 
     // Resolve the label (checks x-uigen-label first, then humanized key)
     const label = this.resolveLabel(key, schema);
@@ -165,11 +168,11 @@ export class SchemaProcessor {
     let node: SchemaNode;
 
     // Enum takes precedence over type-based routing
-    if (schema.enum) {
-      node = this.factory.createEnumNode(key, schema);
+    if (unwrappedSchema.enum) {
+      node = this.factory.createEnumNode(key, unwrappedSchema);
     } else {
       // Route based on type
-      node = this.createNodeByType(key, schema, type, visited);
+      node = this.createNodeByType(key, unwrappedSchema, type, visited);
     }
 
     // Override label with resolved label
@@ -259,6 +262,57 @@ export class SchemaProcessor {
       return resolvedTarget.label;
     }
     return this.adapterUtils.humanize(key);
+  }
+
+  /**
+   * Unwrap anyOf schemas by selecting the first non-null option.
+   * 
+   * This handles nullable fields defined with anyOf:
+   * ```yaml
+   * anyOf:
+   *   - type: string
+   *     contentMediaType: application/octet-stream
+   *   - type: 'null'
+   * ```
+   * 
+   * Returns the first schema that is not a null type.
+   * If no anyOf is present, returns the original schema.
+   * 
+   * @param schema - The OpenAPI schema object
+   * @returns The unwrapped schema or original schema
+   */
+  private unwrapAnyOf(schema: OpenAPIV3.SchemaObject): OpenAPIV3.SchemaObject {
+    // Check if schema has anyOf
+    if (!schema.anyOf || !Array.isArray(schema.anyOf)) {
+      return schema;
+    }
+
+    // Find the first non-null schema in anyOf
+    for (const option of schema.anyOf) {
+      // Skip $ref options for now (would need resolution)
+      if ('$ref' in option) {
+        continue;
+      }
+
+      const schemaOption = option as OpenAPIV3.SchemaObject;
+      
+      // Skip null types (check as any since TypeScript doesn't recognize 'null' as valid type)
+      if ((schemaOption as any).type === 'null') {
+        continue;
+      }
+
+      // Found a non-null option - merge it with parent schema properties
+      // This preserves any properties defined at the parent level
+      return {
+        ...schema,
+        ...schemaOption,
+        // Remove anyOf from the merged schema to avoid infinite recursion
+        anyOf: undefined
+      };
+    }
+
+    // If all options were null or $ref, return original schema
+    return schema;
   }
 
   /**

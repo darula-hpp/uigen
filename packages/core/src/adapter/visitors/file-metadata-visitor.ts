@@ -9,7 +9,7 @@ import { FileTypeDetector } from '../file-type-detector.js';
  * Preserves all existing file metadata extraction behavior from OpenAPI3Adapter.
  * 
  * Extraction rules:
- * - Only process schemas with format: 'binary'
+ * - Process schemas with format: 'binary' OR contentMediaType property
  * - Extract contentMediaType property
  * - Extract x-uigen-file-types vendor extension
  * - Default to ['*\/*'] if no MIME types specified
@@ -23,7 +23,7 @@ import { FileTypeDetector } from '../file-type-detector.js';
  */
 export interface FileMetadataVisitor {
   /**
-   * Extract file metadata from a binary format schema.
+   * Extract file metadata from a binary format schema or schema with contentMediaType.
    * 
    * Processes:
    * - contentMediaType property
@@ -31,7 +31,7 @@ export interface FileMetadataVisitor {
    * - x-uigen-max-file-size vendor extension
    * 
    * @param schema - OpenAPI schema object
-   * @returns FileMetadata if schema has format: 'binary', undefined otherwise
+   * @returns FileMetadata if schema has format: 'binary' or contentMediaType, undefined otherwise
    */
   extractFileMetadata(schema: OpenAPIV3.SchemaObject): FileMetadata | undefined;
 
@@ -55,8 +55,11 @@ export interface FileMetadataVisitor {
  */
 export class DefaultFileMetadataVisitor implements FileMetadataVisitor {
   extractFileMetadata(schema: OpenAPIV3.SchemaObject): FileMetadata | undefined {
-    // Only extract metadata for binary format fields
-    if (schema.format !== 'binary') {
+    // Extract metadata for binary format fields OR fields with contentMediaType
+    const contentMediaType = (schema as any).contentMediaType;
+    const hasContentMediaType = contentMediaType && typeof contentMediaType === 'string' && contentMediaType.trim() !== '';
+    
+    if (schema.format !== 'binary' && !hasContentMediaType) {
       return undefined;
     }
 
@@ -69,7 +72,6 @@ export class DefaultFileMetadataVisitor implements FileMetadataVisitor {
     }
     
     // Extract from contentMediaType property
-    const contentMediaType = (schema as any).contentMediaType;
     if (typeof contentMediaType === 'string' && contentMediaType.trim() !== '') {
       if (!allowedMimeTypes.includes(contentMediaType)) {
         allowedMimeTypes.push(contentMediaType);
@@ -86,7 +88,7 @@ export class DefaultFileMetadataVisitor implements FileMetadataVisitor {
     
     // Extract max file size from x-uigen-max-file-size extension
     const xUigenMaxFileSize = (schema as any)['x-uigen-max-file-size'];
-    const maxSizeBytes = typeof xUigenMaxFileSize === 'number' && xUigenMaxFileSize > 0
+    const maxSizeBytes = typeof xUigenMaxFileSize === 'number' && xUigenMaxFileSize > 0 && Number.isFinite(xUigenMaxFileSize)
       ? xUigenMaxFileSize
       : 10 * 1024 * 1024; // Default 10MB
     
