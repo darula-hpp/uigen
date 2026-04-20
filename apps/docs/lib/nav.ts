@@ -71,6 +71,8 @@ export const nav: NavSection[] = [
       { title: 'x-uigen-label', slug: 'x-uigen-label' },
       { title: 'x-uigen-id', slug: 'x-uigen-id' },
       { title: 'x-uigen-ignore', slug: 'x-uigen-ignore' },
+      { title: 'x-uigen-ref', slug: 'x-uigen-ref' },
+      { title: 'File Upload Metadata', slug: 'x-uigen-file-metadata' },
       { title: 'Planned Annotations', slug: 'planned-annotations' },
     ],
   },
