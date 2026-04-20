@@ -46,22 +46,22 @@ pnpm run test:serve
 UIGen transforms your OpenAPI spec into a complete, interactive frontend in seconds. Here's the flow:
 
 ```
-OpenAPI Spec (YAML/JSON)
-        │
-        ▼
-Config Reconciliation (.uigen/config.yaml merged in)
-        │
-        ▼
-    Adapter (parser)
-        │
-        ▼
-    IR (Intermediate Representation)
-        │
-        ▼
-    React SPA (renderer)
-        │
-        ▼  live API calls via proxy
-    Your API
+CLI Command
+    |
+    v
++----------------+     +----------------+     +----------+     +------+     +--------+     +--------------+
+| API Document   |---->| Reconciler     |---->| Adapter  |---->|  IR  |---->| Engine |---->|  React SPA   |
+| (YAML/JSON)    |     | (Config Merge) |     | (Parser) |     |      |     |        |     | (served)     |
++----------------+     +----------------+     +----------+     +------+     +--------+     +--------------+
+       |                      ^                                                                    |
+       |                      |                                                          +---------+
+       |               +----------------+                                                v
+       |               | Config File    |                                          +-----------+
+       |               | (.uigen/       |                                          | API Proxy |---> Real API
+       |               |  config.yaml)  |                                          +-----------+
+       |               +----------------+
+       |
+       +---> (Source spec unchanged on disk)
 ```
 
 UIGen reconciles your config with the spec, then parses it into a framework-agnostic Intermediate Representation containing:
