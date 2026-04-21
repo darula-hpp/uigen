@@ -273,6 +273,7 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
           relationships={relationships}
           nodeRefsRef={nodeRefsRef}
           containerRef={worldRef}
+          positions={positions}
           pendingLine={pending ? { x1: pending.x1, y1: pending.y1, x2: pending.x2, y2: pending.y2 } : null}
           onEdgeSelect={onEdgeSelect}
         />

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useState, useCallback } from 'react';
 import type { RelationshipConfig } from '@uigen-dev/core';
 
 interface EdgeLine {
@@ -7,10 +7,13 @@ interface EdgeLine {
   x2: number; y2: number;
 }
 
+interface NodePosition { x: number; y: number; }
+
 export interface EdgeOverlayProps {
   relationships: RelationshipConfig[];
   nodeRefsRef: React.MutableRefObject<Map<string, HTMLElement>>;
   containerRef: React.RefObject<HTMLElement | null>;
+  positions: Map<string, NodePosition>;
   /** Live rubber-band line while the user is dragging a connector */
   pendingLine: { x1: number; y1: number; x2: number; y2: number } | null;
   onEdgeSelect: (rel: RelationshipConfig) => void;
@@ -35,7 +38,7 @@ function shortenLine(x1: number, y1: number, x2: number, y2: number, pad: number
   return { x1: x1 + ux * pad, y1: y1 + uy * pad, x2: x2 - ux * pad, y2: y2 - uy * pad };
 }
 
-export function EdgeOverlay({ relationships, nodeRefsRef, containerRef, pendingLine, onEdgeSelect }: EdgeOverlayProps) {
+export function EdgeOverlay({ relationships, nodeRefsRef, containerRef, positions, pendingLine, onEdgeSelect }: EdgeOverlayProps) {
   const [lines, setLines] = useState<EdgeLine[]>([]);
   const [dims, setDims] = useState({ width: 0, height: 0 });
 
@@ -55,7 +58,7 @@ export function EdgeOverlay({ relationships, nodeRefsRef, containerRef, pendingL
       computed.push({ rel, x1: src.x, y1: src.y, x2: tgt.x, y2: tgt.y });
     }
     setLines(computed);
-  }, [relationships, nodeRefsRef, containerRef]);
+  }, [relationships, nodeRefsRef, containerRef, positions]);
 
   useLayoutEffect(() => { recalculate(); }, [recalculate]);
 
