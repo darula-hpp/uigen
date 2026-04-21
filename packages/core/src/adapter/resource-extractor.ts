@@ -211,12 +211,25 @@ export class Resource_Extractor {
             continue;
           }
 
-          const type = deriveRelationshipType(
-            entry.path,
-            entry.source,
-            entry.target,
-            configRelationships!
-          );
+          // Use explicit type if present, otherwise derive from path
+          let type: 'hasMany' | 'belongsTo' | 'manyToMany';
+          
+          if (entry.type) {
+            // Explicit type provided - use directly
+            type = entry.type;
+          } else {
+            // Fallback to path-based derivation for backward compatibility
+            console.warn(
+              `[Resource_Extractor] Relationship ${entry.source} -> ${entry.target} missing explicit type. ` +
+              `Deriving from path. Consider adding an explicit type field.`
+            );
+            type = deriveRelationshipType(
+              entry.path,
+              entry.source,
+              entry.target,
+              configRelationships!
+            );
+          }
 
           // isReadOnly: true when no write operations exist on the path
           const hasWriteOp = resourcesWithOperations.some((r) =>

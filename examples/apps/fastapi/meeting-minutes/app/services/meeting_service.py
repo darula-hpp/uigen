@@ -40,6 +40,7 @@ class MeetingService:
     
     async def create_meeting(
         self,
+        user_id: int,
         title: str,
         meeting_datetime: datetime,
         recording: Optional[UploadFile] = None
@@ -48,6 +49,7 @@ class MeetingService:
         Create a new meeting.
         
         Args:
+            user_id: User identifier who owns the meeting
             title: Meeting title
             meeting_datetime: Meeting date and time
             recording: Optional recording file
@@ -58,7 +60,7 @@ class MeetingService:
         meeting_data = MeetingCreate(title=title, datetime=meeting_datetime)
         
         # Create meeting record first to get ID
-        meeting = await self.meeting_repo.create(meeting_data)
+        meeting = await self.meeting_repo.create(user_id, meeting_data)
         
         # Save recording if provided
         if recording:
@@ -88,12 +90,13 @@ class MeetingService:
         
         return meeting
     
-    async def get_meeting(self, meeting_id: int) -> Meeting:
+    async def get_meeting(self, meeting_id: int, user_id: Optional[int] = None) -> Meeting:
         """
         Retrieve meeting by ID.
         
         Args:
             meeting_id: Meeting identifier
+            user_id: Optional user identifier to verify ownership
             
         Returns:
             Meeting instance
@@ -101,26 +104,30 @@ class MeetingService:
         Raises:
             HTTPException: If meeting not found
         """
-        meeting = await self.meeting_repo.get_by_id(meeting_id)
+        meeting = await self.meeting_repo.get_by_id(meeting_id, user_id=user_id)
         
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
         
         return meeting
     
-    async def list_meetings(self) -> List[Meeting]:
+    async def list_meetings(self, user_id: Optional[int] = None) -> List[Meeting]:
         """
         List all meetings.
+        
+        Args:
+            user_id: Optional user identifier to filter by ownership
         
         Returns:
             List of all meetings
         """
-        return await self.meeting_repo.list_all()
+        return await self.meeting_repo.list_all(user_id)
     
     async def update_meeting(
         self,
         meeting_id: int,
-        meeting_data: MeetingUpdate
+        meeting_data: MeetingUpdate,
+        user_id: Optional[int] = None
     ) -> Meeting:
         """
         Update meeting metadata.
@@ -128,6 +135,7 @@ class MeetingService:
         Args:
             meeting_id: Meeting identifier
             meeting_data: Updated meeting data
+            user_id: Optional user identifier to verify ownership
             
         Returns:
             Updated meeting instance
@@ -135,24 +143,25 @@ class MeetingService:
         Raises:
             HTTPException: If meeting not found
         """
-        meeting = await self.meeting_repo.update(meeting_id, meeting_data)
+        meeting = await self.meeting_repo.update(meeting_id, meeting_data, user_id)
         
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
         
         return meeting
     
-    async def delete_meeting(self, meeting_id: int) -> None:
+    async def delete_meeting(self, meeting_id: int, user_id: Optional[int] = None) -> None:
         """
         Delete meeting and associated files.
         
         Args:
             meeting_id: Meeting identifier
+            user_id: Optional user identifier to verify ownership
             
         Raises:
             HTTPException: If meeting not found
         """
-        deleted = await self.meeting_repo.delete(meeting_id)
+        deleted = await self.meeting_repo.delete(meeting_id, user_id)
         
         if not deleted:
             raise HTTPException(status_code=404, detail="Meeting not found")

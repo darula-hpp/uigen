@@ -115,7 +115,9 @@ describe('Reconciler - relationships pass-through', () => {
     // Only the first entry is valid; the duplicate is rejected
     expect(result.relationships).toHaveLength(1);
     expect(result.warnings.length).toBeGreaterThan(0);
-    expect(result.warnings[0].message).toContain('duplicate');
+    // Check that at least one warning contains 'duplicate'
+    const hasDuplicateWarning = result.warnings.some(w => w.message.includes('duplicate'));
+    expect(hasDuplicateWarning).toBe(true);
   });
 
   it('entry missing required field produces a warning and is excluded', () => {

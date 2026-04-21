@@ -20,6 +20,7 @@ import { ResourceNodeCard } from '../ResourceNode.js';
 import { RelationshipForm } from '../RelationshipForm.js';
 import { RelationshipList } from '../RelationshipList.js';
 import { EdgeDetail } from '../EdgeDetail.js';
+import { RelationshipEditor } from '../RelationshipEditor.js';
 import type { ResourceNode } from '../../../types/index.js';
 import type { RelationshipConfig } from '@uigen-dev/core';
 
@@ -322,6 +323,7 @@ describe('RelationshipForm', () => {
       source: 'users',
       target: 'orders',
       path: '/users/{id}/orders',
+      type: 'hasMany', // Auto-derived from path
       label: 'User Orders'
     });
   });
@@ -380,8 +382,109 @@ describe('RelationshipForm', () => {
     fireEvent.click(screen.getByTestId('rel-form-confirm'));
 
     expect(onConfirm).toHaveBeenCalledWith(
-      expect.objectContaining({ path: '/users/{id}/orders' })
+      expect.objectContaining({ 
+        path: '/users/{id}/orders',
+        type: 'hasMany' // Auto-derived from path
+      })
     );
+  });
+
+  it('includes TypeSelector component in the form', () => {
+    render(
+      <RelationshipForm
+        sourceSlug="users"
+        targetSlug="orders"
+        existingRelationships={[]}
+        specOperationPaths={[]}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('type-selector')).toBeInTheDocument();
+    expect(screen.getByTestId('type-selector-dropdown')).toBeInTheDocument();
+  });
+
+  it('auto-recommends type based on path input', () => {
+    render(
+      <RelationshipForm
+        sourceSlug="users"
+        targetSlug="orders"
+        existingRelationships={[]}
+        specOperationPaths={[]}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    // Enter a hasMany path pattern
+    fireEvent.change(screen.getByTestId('rel-path-input'), {
+      target: { value: '/users/{id}/orders' }
+    });
+
+    // Type selector should auto-select hasMany
+    const dropdown = screen.getByTestId('type-selector-dropdown') as HTMLSelectElement;
+    expect(dropdown.value).toBe('hasMany');
+  });
+
+  it('allows user to override recommended type', () => {
+    const onConfirm = vi.fn();
+
+    render(
+      <RelationshipForm
+        sourceSlug="users"
+        targetSlug="orders"
+        existingRelationships={[]}
+        specOperationPaths={[]}
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />
+    );
+
+    // Enter a hasMany path pattern
+    fireEvent.change(screen.getByTestId('rel-path-input'), {
+      target: { value: '/users/{id}/orders' }
+    });
+
+    // Override to belongsTo
+    fireEvent.change(screen.getByTestId('type-selector-dropdown'), {
+      target: { value: 'belongsTo' }
+    });
+
+    fireEvent.click(screen.getByTestId('rel-form-confirm'));
+
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ 
+        type: 'belongsTo' // User override
+      })
+    );
+  });
+
+  it('shows warning when type does not match path pattern', () => {
+    render(
+      <RelationshipForm
+        sourceSlug="users"
+        targetSlug="orders"
+        existingRelationships={[]}
+        specOperationPaths={[]}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    // Enter a hasMany path pattern
+    fireEvent.change(screen.getByTestId('rel-path-input'), {
+      target: { value: '/users/{id}/orders' }
+    });
+
+    // Override to belongsTo
+    fireEvent.change(screen.getByTestId('type-selector-dropdown'), {
+      target: { value: 'belongsTo' }
+    });
+
+    // Warning should appear
+    expect(screen.getByTestId('type-warning')).toBeInTheDocument();
+    expect(screen.getByText(/doesn't match path pattern/i)).toBeInTheDocument();
   });
 });
 
@@ -507,6 +610,7 @@ describe('EdgeDetail', () => {
       source: 'users',
       target: 'orders',
       path: '/users/{id}/orders/new',
+      type: 'hasMany', // Type is auto-derived from path
       label: 'User Orders'
     });
   });
@@ -567,5 +671,173 @@ describe('EdgeDetail', () => {
 
     fireEvent.click(screen.getByTestId('edge-detail-close'));
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+// --- Migration tests (Task 11) ---
+
+describe('Migration functionality', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('shows migration banner when relationships have no type field', () => {
+    const implicitRels: RelationshipConfig[] = [
+      { source: 'users', target: 'orders', path: '/users/{id}/orders' },
+      { source: 'projects', target: 'tags', path: '/projects/{id}/tags' }
+    ];
+
+    render(
+      <RelationshipEditor
+        resources={[usersResource, ordersResource]}
+        relationships={implicitRels}
+        specOperationPaths={[]}
+        onSave={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('migration-banner')).toBeInTheDocument();
+    expect(screen.getByTestId('migration-count')).toHaveTextContent('2');
+  });
+
+  it('does not show migration banner when all relationships have explicit types', () => {
+    const explicitRels: RelationshipConfig[] = [
+      { source: 'users', target: 'orders', path: '/users/{id}/orders', type: 'hasMany' },
+      { source: 'projects', target: 'tags', path: '/projects/{id}/tags', type: 'manyToMany' }
+    ];
+
+    render(
+      <RelationshipEditor
+        resources={[usersResource, ordersResource]}
+        relationships={explicitRels}
+        specOperationPaths={[]}
+        onSave={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByTestId('migration-banner')).not.toBeInTheDocument();
+  });
+
+  it('shows migration banner when some relationships have no type', () => {
+    const mixedRels: RelationshipConfig[] = [
+      { source: 'users', target: 'orders', path: '/users/{id}/orders', type: 'hasMany' },
+      { source: 'projects', target: 'tags', path: '/projects/{id}/tags' } // No type
+    ];
+
+    render(
+      <RelationshipEditor
+        resources={[usersResource, ordersResource]}
+        relationships={mixedRels}
+        specOperationPaths={[]}
+        onSave={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('migration-banner')).toBeInTheDocument();
+    expect(screen.getByTestId('migration-count')).toHaveTextContent('1');
+  });
+
+  it('migrates relationships when "Migrate Now" is clicked', () => {
+    const onSave = vi.fn();
+    const implicitRels: RelationshipConfig[] = [
+      { source: 'users', target: 'orders', path: '/users/{id}/orders' },
+      { source: 'orders', target: 'users', path: '/users/{id}/orders' }
+    ];
+
+    render(
+      <RelationshipEditor
+        resources={[usersResource, ordersResource]}
+        relationships={implicitRels}
+        specOperationPaths={[]}
+        onSave={onSave}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('migration-migrate-button'));
+
+    expect(onSave).toHaveBeenCalledWith([
+      { source: 'users', target: 'orders', path: '/users/{id}/orders', type: 'hasMany' },
+      { source: 'orders', target: 'users', path: '/users/{id}/orders', type: 'belongsTo' }
+    ]);
+  });
+
+  it('preserves existing types during migration', () => {
+    const onSave = vi.fn();
+    const mixedRels: RelationshipConfig[] = [
+      { source: 'users', target: 'orders', path: '/users/{id}/orders', type: 'manyToMany' }, // Already has type
+      { source: 'projects', target: 'tags', path: '/projects/{id}/tags' } // No type
+    ];
+
+    render(
+      <RelationshipEditor
+        resources={[usersResource, ordersResource]}
+        relationships={mixedRels}
+        specOperationPaths={[]}
+        onSave={onSave}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('migration-migrate-button'));
+
+    expect(onSave).toHaveBeenCalledWith([
+      { source: 'users', target: 'orders', path: '/users/{id}/orders', type: 'manyToMany' }, // Preserved
+      { source: 'projects', target: 'tags', path: '/projects/{id}/tags', type: 'hasMany' } // Derived
+    ]);
+  });
+
+  it('preserves all other relationship fields during migration', () => {
+    const onSave = vi.fn();
+    const implicitRels: RelationshipConfig[] = [
+      { 
+        source: 'users', 
+        target: 'orders', 
+        path: '/users/{id}/orders',
+        label: 'User Orders',
+        description: 'All orders for a user'
+      }
+    ];
+
+    render(
+      <RelationshipEditor
+        resources={[usersResource, ordersResource]}
+        relationships={implicitRels}
+        specOperationPaths={[]}
+        onSave={onSave}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('migration-migrate-button'));
+
+    expect(onSave).toHaveBeenCalledWith([
+      { 
+        source: 'users', 
+        target: 'orders', 
+        path: '/users/{id}/orders',
+        type: 'hasMany',
+        label: 'User Orders',
+        description: 'All orders for a user'
+      }
+    ]);
+  });
+
+  it('hides banner after dismissal', () => {
+    const implicitRels: RelationshipConfig[] = [
+      { source: 'users', target: 'orders', path: '/users/{id}/orders' }
+    ];
+
+    render(
+      <RelationshipEditor
+        resources={[usersResource, ordersResource]}
+        relationships={implicitRels}
+        specOperationPaths={[]}
+        onSave={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('migration-banner')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('migration-dismiss-button'));
+
+    expect(screen.queryByTestId('migration-banner')).not.toBeInTheDocument();
   });
 });

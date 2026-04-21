@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { RelationshipConfig } from '@uigen-dev/core';
 import type { ResourceNode } from '../../types/index.js';
 import { GraphCanvas } from './GraphCanvas.js';
 import { RelationshipList } from './RelationshipList.js';
 import { RelationshipForm } from './RelationshipForm.js';
 import { EdgeDetail } from './EdgeDetail.js';
+import { MigrationBanner } from './MigrationBanner.js';
+import { deriveTypeFromPath } from '../../lib/relationship-type-deriver.js';
 
 /**
  * Panel state for the right column overlay
@@ -43,7 +45,47 @@ export function RelationshipEditor({
 }: RelationshipEditorProps) {
   const [panel, setPanel] = useState<PanelState>({ type: 'none' });
 
+  // --- Migration detection ---
+
+  /**
+   * Detect relationships without explicit type field
+   * Requirement: 11.1
+   */
+  const implicitRelationships = useMemo(() => {
+    return relationships.filter(rel => !rel.type);
+  }, [relationships]);
+
+  const hasImplicitTypes = implicitRelationships.length > 0;
+
   // --- Callbacks ---
+
+  /**
+   * Migrate all relationships without explicit types by deriving types from paths
+   * Requirement: 11.2
+   */
+  function handleMigrate() {
+    const migrated = relationships.map(rel => {
+      // If type already exists, keep it
+      if (rel.type) {
+        return rel;
+      }
+
+      // Derive type from path
+      const derivedType = deriveTypeFromPath(rel.path, rel.source, rel.target);
+
+      return {
+        ...rel,
+        type: derivedType
+      };
+    });
+
+    onSave(migrated);
+  }
+
+  function handleDismissBanner() {
+    // Banner handles localStorage persistence internally
+    // No additional action needed
+  }
 
   function handleEdgeInitiated(sourceSlug: string, targetSlug: string) {
     setPanel({ type: 'form', sourceSlug, targetSlug });
@@ -150,6 +192,15 @@ export function RelationshipEditor({
 
       {/* Right side panel — fixed width, scrollable */}
       <div className="w-72 flex-shrink-0 flex flex-col gap-3 p-3 border-l border-gray-200 dark:border-gray-700 overflow-y-auto" style={{ height: '100vh' }}>
+        {/* Migration banner - shown when implicit types detected */}
+        {hasImplicitTypes && (
+          <MigrationBanner
+            relationshipCount={implicitRelationships.length}
+            onMigrate={handleMigrate}
+            onDismiss={handleDismissBanner}
+          />
+        )}
+
         {/* Overlay panel */}
         {panel.type === 'form' && (
           <RelationshipForm

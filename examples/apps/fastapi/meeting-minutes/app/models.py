@@ -13,6 +13,12 @@ class Template(Base):
     __tablename__ = "templates"
     
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
     name = Column(String(255), nullable=False)
     file_path = Column(String(512), nullable=False)
     population_type = Column(String(20), nullable=False)
@@ -28,6 +34,7 @@ class Template(Base):
     )
     
     # Relationships
+    user = relationship("User", back_populates="templates")
     associations = relationship(
         "MeetingTemplateAssociation",
         back_populates="template",
@@ -41,6 +48,12 @@ class Meeting(Base):
     __tablename__ = "meetings"
     
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
     title = Column(String(255), nullable=False)
     datetime = Column(DateTime(timezone=True), nullable=False)
     recording_path = Column(String(512), nullable=True)
@@ -48,6 +61,7 @@ class Meeting(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
+    user = relationship("User", back_populates="meetings")
     associations = relationship(
         "MeetingTemplateAssociation",
         back_populates="meeting",
@@ -140,3 +154,7 @@ class User(Base):
     __table_args__ = (
         UniqueConstraint("email", name="uq_users_email"),
     )
+
+    # Relationships
+    templates = relationship("Template", back_populates="user", cascade="all, delete-orphan")
+    meetings = relationship("Meeting", back_populates="user", cascade="all, delete-orphan")

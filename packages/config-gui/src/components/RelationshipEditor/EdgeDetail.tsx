@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { RelationshipConfig } from '@uigen-dev/core';
+import { TypeSelector } from './TypeSelector.js';
+import { deriveTypeFromPath } from '../../lib/relationship-type-deriver.js';
 
 /**
  * Props for EdgeDetail component
@@ -28,8 +30,25 @@ export function EdgeDetail({
 }: EdgeDetailProps) {
   const [path, setPath] = useState(relationship.path);
   const [label, setLabel] = useState(relationship.label ?? '');
+  const [type, setType] = useState<'hasMany' | 'belongsTo' | 'manyToMany'>(
+    relationship.type ?? 'hasMany'
+  );
   const [pathError, setPathError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  // Calculate recommended type based on current path
+  const recommendedType = path.trim() 
+    ? deriveTypeFromPath(path.trim(), relationship.source, relationship.target)
+    : undefined;
+
+  // Update type when path changes (but allow user override)
+  useEffect(() => {
+    if (path.trim() && !relationship.type) {
+      // Only auto-update if the relationship didn't have an explicit type before
+      const derived = deriveTypeFromPath(path.trim(), relationship.source, relationship.target);
+      setType(derived);
+    }
+  }, [path, relationship.source, relationship.target, relationship.type]);
 
   function validate(): string | null {
     const trimmed = path.trim();
@@ -69,10 +88,18 @@ export function EdgeDetail({
       source: relationship.source,
       target: relationship.target,
       path: path.trim(),
+      type: type,
       ...(label.trim() ? { label: label.trim() } : {})
     };
 
     onUpdate(updated);
+  }
+
+  function handleDetectType() {
+    if (path.trim()) {
+      const derived = deriveTypeFromPath(path.trim(), relationship.source, relationship.target);
+      setType(derived);
+    }
   }
 
   function handlePathChange(value: string) {
@@ -138,6 +165,23 @@ export function EdgeDetail({
             {pathError}
           </p>
         )}
+      </div>
+
+      {/* Type selector */}
+      <div className="mb-3">
+        <TypeSelector
+          value={type}
+          onChange={setType}
+          recommendedType={recommendedType}
+        />
+        <button
+          type="button"
+          onClick={handleDetectType}
+          className="mt-2 text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 underline"
+          data-testid="edge-detect-type"
+        >
+          Detect Type from Path
+        </button>
       </div>
 
       {/* Label input */}

@@ -1,5 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { RelationshipConfig } from '@uigen-dev/core';
+import { TypeSelector } from './TypeSelector.js';
+import { deriveTypeFromPath } from '../../lib/relationship-type-deriver.js';
 
 export interface RelationshipFormProps {
   sourceSlug: string;
@@ -61,13 +63,28 @@ export function RelationshipForm({
   const [useCustom, setUseCustom] = useState(candidates.length === 0);
   const [label, setLabel] = useState('');
   const [pathError, setPathError] = useState<string | null>(null);
+  
+  // Type selection state
+  const [selectedType, setSelectedType] = useState<'hasMany' | 'belongsTo' | 'manyToMany'>('hasMany');
 
   const activePath = useCustom ? customPath.trim() : selectedPath;
+
+  // Auto-recommend type based on path input
+  useEffect(() => {
+    if (activePath) {
+      const recommendedType = deriveTypeFromPath(activePath, sourceSlug, targetSlug);
+      setSelectedType(recommendedType);
+    }
+  }, [activePath, sourceSlug, targetSlug]);
+
+  // Calculate recommended type for TypeSelector
+  const recommendedType = activePath ? deriveTypeFromPath(activePath, sourceSlug, targetSlug) : undefined;
 
   function validate(): string | null {
     if (!activePath) return 'Select or enter a path';
     if (!activePath.startsWith('/')) return 'Path must start with /';
     if (sourceSlug === targetSlug) return 'Source and target must be different resources';
+    if (!selectedType) return 'Select a relationship type';
 
     const isDuplicate = existingRelationships.some(
       r => r.source === sourceSlug && r.target === targetSlug && r.path === activePath
@@ -85,6 +102,7 @@ export function RelationshipForm({
       source: sourceSlug,
       target: targetSlug,
       path: activePath,
+      type: selectedType,
       ...(label.trim() ? { label: label.trim() } : {}),
     });
   }
@@ -175,6 +193,15 @@ export function RelationshipForm({
             {pathError}
           </p>
         )}
+      </div>
+
+      {/* Type selector */}
+      <div className="mb-3">
+        <TypeSelector
+          value={selectedType}
+          onChange={setSelectedType}
+          recommendedType={recommendedType}
+        />
       </div>
 
       {/* Optional label */}

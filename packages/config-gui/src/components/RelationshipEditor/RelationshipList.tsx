@@ -2,6 +2,30 @@ import { useState } from 'react';
 import type { RelationshipConfig } from '@uigen-dev/core';
 
 /**
+ * Type metadata for display
+ */
+const TYPE_INFO = {
+  hasMany: {
+    icon: '→*',
+    label: 'Has Many',
+    description: 'Source resource has multiple target resources (one-to-many)',
+    color: 'text-blue-600 dark:text-blue-400'
+  },
+  belongsTo: {
+    icon: '*→',
+    label: 'Belongs To',
+    description: 'Source resource belongs to a single target resource (many-to-one)',
+    color: 'text-green-600 dark:text-green-400'
+  },
+  manyToMany: {
+    icon: '↔',
+    label: 'Many to Many',
+    description: 'Source and target resources can have multiple of each other',
+    color: 'text-purple-600 dark:text-purple-400'
+  }
+} as const;
+
+/**
  * Props for RelationshipList component
  */
 export interface RelationshipListProps {
@@ -113,11 +137,42 @@ interface RelationshipRowProps {
 }
 
 function RelationshipRow({ relationship, onSelect, onDelete }: RelationshipRowProps) {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const relType = relationship.type ?? 'hasMany'; // Default to hasMany for backward compatibility
+  const typeInfo = TYPE_INFO[relType];
+
   return (
     <li
       className="flex items-start gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-200 dark:hover:border-blue-700 transition-colors group"
       data-testid="relationship-row"
     >
+      {/* Type indicator with tooltip */}
+      <div 
+        className="relative flex-shrink-0 mt-0.5"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        <span 
+          className={`inline-block px-1.5 py-0.5 text-xs font-mono font-semibold ${typeInfo.color} bg-white dark:bg-gray-800 border border-current rounded`}
+          data-testid={`type-indicator-${relType}`}
+          aria-label={typeInfo.label}
+        >
+          {typeInfo.icon}
+        </span>
+        
+        {/* Tooltip */}
+        {showTooltip && (
+          <div 
+            className="absolute left-0 top-full mt-1 z-10 w-48 p-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded shadow-lg"
+            role="tooltip"
+            data-testid="type-tooltip"
+          >
+            <div className="font-semibold mb-1">{typeInfo.label}</div>
+            <div className="text-gray-300 dark:text-gray-400">{typeInfo.description}</div>
+          </div>
+        )}
+      </div>
+
       {/* Row content (clickable to select/edit) */}
       <button
         onClick={onSelect}

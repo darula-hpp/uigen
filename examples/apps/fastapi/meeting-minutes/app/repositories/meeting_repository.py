@@ -24,6 +24,7 @@ class MeetingRepository:
     
     async def create(
         self,
+        user_id: int,
         meeting_data: MeetingCreate,
         recording_path: Optional[str] = None
     ) -> Meeting:
@@ -31,6 +32,7 @@ class MeetingRepository:
         Create a new meeting record.
         
         Args:
+            user_id: User identifier who owns the meeting
             meeting_data: Meeting creation data
             recording_path: Optional path to recording file
             
@@ -38,6 +40,7 @@ class MeetingRepository:
             Created meeting instance
         """
         meeting = Meeting(
+            user_id=user_id,
             title=meeting_data.title,
             datetime=meeting_data.datetime,
             recording_path=recording_path
@@ -49,18 +52,22 @@ class MeetingRepository:
         
         return meeting
     
-    async def get_by_id(self, meeting_id: int, load_associations: bool = False) -> Optional[Meeting]:
+    async def get_by_id(self, meeting_id: int, load_associations: bool = False, user_id: Optional[int] = None) -> Optional[Meeting]:
         """
         Retrieve meeting by ID.
         
         Args:
             meeting_id: Meeting identifier
             load_associations: Whether to eagerly load template associations
+            user_id: Optional user identifier to filter by ownership
             
         Returns:
             Meeting instance or None if not found
         """
         query = select(Meeting).where(Meeting.id == meeting_id)
+        
+        if user_id is not None:
+            query = query.where(Meeting.user_id == user_id)
         
         if load_associations:
             query = query.options(
@@ -70,28 +77,37 @@ class MeetingRepository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
     
-    async def list_all(self) -> List[Meeting]:
+    async def list_all(self, user_id: Optional[int] = None) -> List[Meeting]:
         """
         List all meetings.
+        
+        Args:
+            user_id: Optional user identifier to filter by ownership
         
         Returns:
             List of all meeting instances
         """
-        result = await self.session.execute(select(Meeting))
+        query = select(Meeting)
+        
+        if user_id is not None:
+            query = query.where(Meeting.user_id == user_id)
+        
+        result = await self.session.execute(query)
         return list(result.scalars().all())
     
-    async def update(self, meeting_id: int, meeting_data: MeetingUpdate) -> Optional[Meeting]:
+    async def update(self, meeting_id: int, meeting_data: MeetingUpdate, user_id: Optional[int] = None) -> Optional[Meeting]:
         """
         Update meeting metadata.
         
         Args:
             meeting_id: Meeting identifier
             meeting_data: Updated meeting data
+            user_id: Optional user identifier to verify ownership
             
         Returns:
             Updated meeting instance or None if not found
         """
-        meeting = await self.get_by_id(meeting_id)
+        meeting = await self.get_by_id(meeting_id, user_id=user_id)
         
         if not meeting:
             return None
@@ -107,17 +123,18 @@ class MeetingRepository:
         
         return meeting
     
-    async def delete(self, meeting_id: int) -> bool:
+    async def delete(self, meeting_id: int, user_id: Optional[int] = None) -> bool:
         """
         Delete meeting record and associated files.
         
         Args:
             meeting_id: Meeting identifier
+            user_id: Optional user identifier to verify ownership
             
         Returns:
             True if deleted, False if not found
         """
-        meeting = await self.get_by_id(meeting_id)
+        meeting = await self.get_by_id(meeting_id, user_id=user_id)
         
         if not meeting:
             return False

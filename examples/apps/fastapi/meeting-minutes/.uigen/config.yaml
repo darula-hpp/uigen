@@ -2,24 +2,18 @@ version: '1.0'
 enabled: {}
 defaults: {}
 annotations:
-  GET:/health:
-    x-uigen-ignore: true
-  POST:/api/v1/meetings/{meeting_id}/generate-ai-data:
-    x-uigen-ignore: true
-  Template.template.jinja_shape:
-    x-uigen-label: Jinja Shape
   POST:/api/v1/auth/login:
     x-uigen-login: true
   POST:/api/v1/auth/password-reset:
     x-uigen-password-reset: true
   POST:/api/v1/auth/sign-up:
     x-uigen-signup: true
-  GET:/api/v1/auth/me:
-    x-uigen-ignore: true
-  Meeting.recording:
-    x-uigen-max-file-size: 6291456
-    x-uigen-file-types:
-      - text/yaml
-      - image/jpeg
-      - image/png
-relationships: []
+relationships:
+  - source: templates
+    target: meetings
+    path: /api/v1/meetings/{meeting_id}/templates/{template_id}
+    type: hasMany
+  - source: meetings
+    target: generate-documents
+    path: /api/v1/meetings/{meeting_id}/generate-documents
+    type: hasMany

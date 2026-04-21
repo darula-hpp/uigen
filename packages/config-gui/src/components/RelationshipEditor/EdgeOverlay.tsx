@@ -86,12 +86,24 @@ export function EdgeOverlay({ relationships, nodeRefsRef, containerRef, position
       data-testid="edge-overlay"
     >
       <defs>
+        {/* Single arrow for hasMany and belongsTo */}
         <marker id="arrow-end" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" />
         </marker>
+        
+        {/* Double-headed arrow markers for manyToMany */}
+        <marker id="arrow-double-start" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto">
+          <polygon points="10 0, 0 3.5, 10 7" fill="#6366f1" />
+        </marker>
+        <marker id="arrow-double-end" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" />
+        </marker>
+        
+        {/* Pending/rubber-band arrow */}
         <marker id="arrow-pending" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" fill="#a5b4fc" />
         </marker>
+        
         <filter id="edge-glow">
           <feGaussianBlur stdDeviation="1.5" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
@@ -101,11 +113,23 @@ export function EdgeOverlay({ relationships, nodeRefsRef, containerRef, position
       {/* Committed edges */}
       {lines.map((line, idx) => {
         const key = `${line.rel.source}-${line.rel.target}-${idx}`;
+        const relType = line.rel.type ?? 'hasMany'; // Default to hasMany for backward compatibility
+        
+        // Type prefix for label
+        const typePrefix = relType === 'hasMany' ? 'hasMany: ' 
+                         : relType === 'belongsTo' ? 'belongsTo: '
+                         : 'manyToMany: ';
         const label = line.rel.label ?? line.rel.path;
+        const fullLabel = `${typePrefix}${label}`;
+        
         const s = shortenLine(line.x1, line.y1, line.x2, line.y2, 6);
         const midX = (s.x1 + s.x2) / 2;
         const midY = (s.y1 + s.y2) / 2;
-        const labelW = Math.min(label.length * 6.5, 180);
+        const labelW = Math.min(fullLabel.length * 6.5, 200);
+
+        // Determine arrow markers based on type
+        const markerStart = relType === 'manyToMany' ? 'url(#arrow-double-start)' : undefined;
+        const markerEnd = relType === 'manyToMany' ? 'url(#arrow-double-end)' : 'url(#arrow-end)';
 
         return (
           <g key={key} data-testid={`edge-line-${line.rel.source}-${line.rel.target}`}>
@@ -119,7 +143,8 @@ export function EdgeOverlay({ relationships, nodeRefsRef, containerRef, position
             {/* Visible line */}
             <line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2}
               stroke="#6366f1" strokeWidth={2}
-              markerEnd="url(#arrow-end)"
+              markerStart={markerStart}
+              markerEnd={markerEnd}
               filter="url(#edge-glow)"
               style={{ pointerEvents: 'none' }}
             />
@@ -129,7 +154,7 @@ export function EdgeOverlay({ relationships, nodeRefsRef, containerRef, position
                 fill="white" stroke="#6366f1" strokeWidth={1} opacity={0.93} />
               <text textAnchor="middle" dominantBaseline="middle"
                 fontSize={10} fill="#4f46e5" fontFamily="ui-monospace,monospace">
-                {label.length > 26 ? label.slice(0, 24) + '…' : label}
+                {fullLabel.length > 30 ? fullLabel.slice(0, 28) + '…' : fullLabel}
               </text>
             </g>
           </g>
