@@ -7,6 +7,8 @@ import { PreviewRenderer } from './components/Preview/PreviewRenderer.js';
 import { HelpPanel } from './components/HelpPanel.js';
 import { ThemeToggle } from './components/ThemeToggle.js';
 import { CSSEditor } from './components/CSSEditor.js';
+import { RelationshipEditor } from './components/RelationshipEditor/index.js';
+import type { RelationshipConfig } from '@uigen-dev/core';
 
 /**
  * Main application component for the Config GUI
@@ -23,7 +25,7 @@ import { CSSEditor } from './components/CSSEditor.js';
 function App() {
   const { state, actions } = useAppContext();
   const { isLoading, error, config, specPath, specStructure, annotations } = state;
-  const [activeTab, setActiveTab] = useState<'annotations' | 'visual' | 'preview' | 'css'>('annotations');
+  const [activeTab, setActiveTab] = useState<'annotations' | 'visual' | 'preview' | 'css' | 'relationships'>('annotations');
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
   
   // CSS content state
@@ -216,6 +218,19 @@ function App() {
                     >
                       Theme
                     </button>
+                    <button
+                      onClick={() => setActiveTab('relationships')}
+                      className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'relationships'
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                      aria-current={activeTab === 'relationships' ? 'page' : undefined}
+                      data-testid="relationships-tab"
+                      disabled={!specStructure}
+                    >
+                      Relationships
+                    </button>
                   </nav>
                 </div>
                 
@@ -317,6 +332,42 @@ function App() {
                           onSave={handleCssSave}
                         />
                       )}
+                    </div>
+                  )}
+                  
+                  {activeTab === 'relationships' && (
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        Relationships
+                      </h2>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                        Declare explicit relationships between resources. Drag one resource node onto another to create a relationship.
+                        {config?.relationships && config.relationships.length > 0 && (
+                          <span className="ml-2 text-blue-600 dark:text-blue-400 font-medium">
+                            {config.relationships.length} relationship{config.relationships.length !== 1 ? 's' : ''} declared.
+                          </span>
+                        )}
+                      </p>
+                      <RelationshipEditor
+                        resources={specStructure?.resources ?? null}
+                        relationships={config?.relationships ?? []}
+                        specOperationPaths={
+                          specStructure?.resources.flatMap((r: any) =>
+                            r.operations.map((op: any) => op.path)
+                          ) ?? []
+                        }
+                        onSave={async (relationships: RelationshipConfig[]) => {
+                          const updated = {
+                            ...(config ?? { version: '1.0', enabled: {}, defaults: {}, annotations: {} }),
+                            relationships,
+                          };
+                          try {
+                            await actions.saveConfig(updated);
+                          } catch {
+                            actions.setError('Failed to save relationships. Please try again.');
+                          }
+                        }}
+                      />
                     </div>
                   )}
                 </div>

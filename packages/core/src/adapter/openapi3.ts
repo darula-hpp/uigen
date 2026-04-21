@@ -12,6 +12,7 @@ import type {
   PaginationHint,
   ParsingError,
 } from '../ir/types.js';
+import type { RelationshipConfig } from '../config/types.js';
 import { SchemaResolver } from './schema-resolver.js';
 import { ViewHintClassifier } from './view-hint-classifier.js';
 import { RelationshipDetector } from './relationship-detector.js';
@@ -118,7 +119,7 @@ export class OpenAPI3Adapter {
     );
   }
 
-  adapt(): UIGenApp {
+  adapt(configRelationships?: RelationshipConfig[]): UIGenApp {
     this.currentIR = {
       meta: this.extractMeta(),
       resources: [],
@@ -139,7 +140,8 @@ export class OpenAPI3Adapter {
     
     // Delegate resource extraction to Resource_Extractor
     this.currentIR.resources = this.resourceExtractor.extractResources(
-      this.adaptOperation.bind(this)
+      this.adaptOperation.bind(this),
+      configRelationships
     );
     
     return this.currentIR;

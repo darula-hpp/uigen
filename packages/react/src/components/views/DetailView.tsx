@@ -297,35 +297,40 @@ export function DetailView({ resource }: DetailViewProps) {
         </div>
       )}
 
-      {/* Related Resources - Requirements 8.4, 40.1-40.5 */}
+      {/* Related Resources - Requirements 8.4, 40.1-40.5, 10.1-10.6 */}
       {!isLoading && !error && data && resource.relationships.filter(rel => rel.type !== 'manyToMany').length > 0 && (
         <div className="mt-8 space-y-4">
           <h3 className="text-lg font-semibold">Related Resources</h3>
           <div className="space-y-2">
             {resource.relationships
               .filter(rel => rel.type !== 'manyToMany')
-              .map((relationship) => (
-                <div key={relationship.target} className="flex items-center gap-2">
-                  <Link
-                    to={
-                      relationship.type === 'hasMany'
-                        ? `/${relationship.target}`
-                        : `/${relationship.target}/${data[relationship.target + 'Id'] || ''}`
-                    }
-                    className="text-primary hover:underline"
-                  >
-                    {relationship.type === 'hasMany' ? '→' : '←'} {relationship.target}
-                  </Link>
-                  <span className="text-xs text-muted-foreground">
-                    ({relationship.type === 'hasMany' ? 'has many' : 'belongs to'})
-                  </span>
-                </div>
-              ))}
+              .map((relationship) => {
+                const linkTo =
+                  relationship.type === 'hasMany'
+                    ? `/${relationship.target}`
+                    : `/${relationship.target}/${data[relationship.target + 'Id'] || ''}`;
+
+                const label =
+                  relationship.type === 'hasMany'
+                    ? `${relationship.target} (has many)`
+                    : `${relationship.target} (belongs to)`;
+
+                return (
+                  <div key={`${relationship.target}-${relationship.type}`} className="flex items-center gap-2">
+                    <Link
+                      to={linkTo}
+                      className="text-primary hover:underline"
+                    >
+                      {relationship.type === 'hasMany' ? '\u2192' : '\u2190'} {label}
+                    </Link>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
 
-      {/* Manage Associations Section - Requirements 4.1, 8.1, 8.2, 8.3, 8.4, 8.5 */}
+      {/* Manage Associations Section - Requirements 4.1, 8.1, 8.2, 8.3, 8.4, 8.5, 10.4, 10.6 */}
       {!isLoading && !error && data && id && resource.relationships.some(rel => rel.type === 'manyToMany') && (
         <div className="mt-8 space-y-6">
           <h3 className="text-xl font-semibold">Manage Associations</h3>

@@ -9,12 +9,14 @@ import type {
   PaginationHint,
   ViewHint,
 } from '../ir/types.js';
+import type { RelationshipConfig } from '../config/types.js';
 import type { AdapterUtils } from './annotations/index.js';
 import { AnnotationHandlerRegistry, createOperationContext } from './annotations/index.js';
 import { ViewHintClassifier } from './view-hint-classifier.js';
 import { RelationshipDetector } from './relationship-detector.js';
 import { PaginationDetector } from './pagination-detector.js';
 import { SchemaProcessor } from './schema-processor.js';
+import { deriveRelationshipType } from './relationship-type-deriver.js';
 
 /**
  * Callback type for adapting OpenAPI operations to IR operations.
@@ -117,14 +119,16 @@ export class Resource_Extractor {
    * 1. Infers resource names from API paths
    * 2. Groups operations by resource
    * 3. Extracts and merges schemas from operations
-   * 4. Detects relationships between resources
+   * 4. Detects relationships between resources (config-driven or heuristic)
    * 5. Detects pagination strategies
    * 6. Ensures unique operation IDs
    * 
-   * @param adaptOperation - Callback to adapt OpenAPI operations to IR operations
+   * @param adaptOperation       - Callback to adapt OpenAPI operations to IR operations
+   * @param configRelationships  - Optional explicit relationship declarations from config.
+   *                               When non-empty, heuristic detection is skipped entirely.
    * @returns Array of extracted resources with operations, schemas, and relationships
    */
-  extractResources(adaptOperation: OperationAdapter): Resource[] {
+  extractResources(adaptOperation: OperationAdapter, configRelationships?: RelationshipConfig[]): Resource[] {
     // Group operations by resource
     const resourceMap = this.groupOperationsByResource(adaptOperation);
     
@@ -185,34 +189,88 @@ export class Resource_Extractor {
     
     // Detect relationships and pagination
     const allRelationships: Relationship[] = [];
-    
-    for (const resource of resourcesWithOperations) {
-      // Detect relationships for each resource
-      resource.relationships = this.detectRelationships(resource, resourceMap);
-      
-      // Collect all relationships for library resource marking
-      allRelationships.push(...resource.relationships);
-      
-      // Detect pagination for each resource
-      resource.pagination = this.detectPagination(resource);
-    }
-    
-    // Detect many-to-many relationships across all resources
-    for (const resource of resourcesWithOperations) {
-      const manyToManyRelationships = this.detectManyToManyAcrossResources(
-        resource,
-        resourcesWithOperations,
-        resourceMap
-      );
-      
-      // Merge many-to-many relationships with existing relationships
-      resource.relationships = [
-        ...resource.relationships,
-        ...manyToManyRelationships
-      ];
-      
-      // Collect all relationships for library resource marking
-      allRelationships.push(...manyToManyRelationships);
+
+    const useConfigRelationships = Array.isArray(configRelationships) && configRelationships.length > 0;
+
+    if (useConfigRelationships) {
+      // Config-driven path: map each RelationshipConfig to IR Relationship, skip heuristics
+      for (const resource of resourcesWithOperations) {
+        const resourceEntries = configRelationships!.filter(
+          (e) => e.source === resource.slug
+        );
+
+        const irRelationships: Relationship[] = [];
+
+        for (const entry of resourceEntries) {
+          // Validate that the target resource exists
+          if (!resourceMap.has(entry.target)) {
+            console.warn(
+              `[Resource_Extractor] Relationship config references unknown target slug ` +
+                `"${entry.target}" (source: "${entry.source}"). Omitting relationship.`
+            );
+            continue;
+          }
+
+          const type = deriveRelationshipType(
+            entry.path,
+            entry.source,
+            entry.target,
+            configRelationships!
+          );
+
+          // isReadOnly: true when no write operations exist on the path
+          const hasWriteOp = resourcesWithOperations.some((r) =>
+            r.operations.some(
+              (op) =>
+                op.path === entry.path &&
+                (op.method === 'POST' || op.method === 'PUT' || op.method === 'PATCH' || op.method === 'DELETE')
+            )
+          );
+
+          irRelationships.push({
+            target: entry.target,
+            type,
+            path: entry.path,
+            isReadOnly: !hasWriteOp,
+          });
+        }
+
+        resource.relationships = irRelationships;
+        allRelationships.push(...irRelationships);
+
+        // Detect pagination for each resource
+        resource.pagination = this.detectPagination(resource);
+      }
+    } else {
+      // Heuristic path (backward compatibility)
+      for (const resource of resourcesWithOperations) {
+        // Detect relationships for each resource
+        resource.relationships = this.detectRelationships(resource, resourceMap);
+
+        // Collect all relationships for library resource marking
+        allRelationships.push(...resource.relationships);
+
+        // Detect pagination for each resource
+        resource.pagination = this.detectPagination(resource);
+      }
+
+      // Detect many-to-many relationships across all resources
+      for (const resource of resourcesWithOperations) {
+        const manyToManyRelationships = this.detectManyToManyAcrossResources(
+          resource,
+          resourcesWithOperations,
+          resourceMap
+        );
+
+        // Merge many-to-many relationships with existing relationships
+        resource.relationships = [
+          ...resource.relationships,
+          ...manyToManyRelationships,
+        ];
+
+        // Collect all relationships for library resource marking
+        allRelationships.push(...manyToManyRelationships);
+      }
     }
     
     // Mark library resources after all relationships are detected

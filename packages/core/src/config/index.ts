@@ -10,5 +10,6 @@ export type { ConfigLoaderOptions } from './loader.js';
 export type {
   ConfigFile,
   ConfigValidationResult,
-  ConfigValidationError
+  ConfigValidationError,
+  RelationshipConfig
 } from './types.js';

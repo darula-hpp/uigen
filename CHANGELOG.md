@@ -31,7 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - 30 unit tests including round-trip conversions and integration scenarios
 - **FileSizeInput component** - User-friendly file size configuration
   - Number input with decimal support
-  - Unit selector dropdown (B, KB, MB, GB)
+  - Unit selector dropdown (KB, MB, GB)
   - Automatic conversion between display value and bytes
   - Real-time formatted byte display
   - Comprehensive validation (positive, finite, min/max bounds)
