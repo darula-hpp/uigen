@@ -6,7 +6,7 @@ import type { AnnotationHandler, AnnotationContext } from '../types.js';
 interface AnnotationMetadata {
   name: string;
   description: string;
-  targetType: 'field' | 'operation' | 'resource' | 'parameter' | 'requestBody' | 'response';
+  targetType: 'field' | 'operation' | 'resource' | 'parameter' | 'requestBody' | 'response' | ('field' | 'operation' | 'resource' | 'parameter' | 'requestBody' | 'response')[];
   parameterSchema: {
     type: 'object' | 'string' | 'boolean' | 'number';
     properties?: Record<string, {
@@ -43,7 +43,7 @@ export class IgnoreHandler implements AnnotationHandler<boolean> {
   public static readonly metadata: AnnotationMetadata = {
     name: 'x-uigen-ignore',
     description: 'Filters elements from the IR. Supports: schema properties, operations, path items, parameters, request bodies, and responses.',
-    targetType: 'field',
+    targetType: ['field', 'operation', 'resource'],
     parameterSchema: {
       type: 'boolean'
     },

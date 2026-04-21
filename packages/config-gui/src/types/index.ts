@@ -21,7 +21,7 @@ import type { FieldType } from '@uigen-dev/core';
 export interface AnnotationMetadata {
   name: string;
   description: string;
-  targetType: 'field' | 'operation' | 'resource';
+  targetType: 'field' | 'operation' | 'resource' | ('field' | 'operation' | 'resource')[];
   parameterSchema: ParameterSchema;
   examples: Array<{ description: string; value: unknown }>;
   defaultValues?: Record<string, unknown>;

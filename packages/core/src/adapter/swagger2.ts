@@ -1,5 +1,6 @@
 import type { OpenAPIV3 } from 'openapi-types';
 import type { UIGenApp } from '../ir/types.js';
+import type { RelationshipConfig } from '../config/types.js';
 import { OpenAPI3Adapter } from './openapi3.js';
 
 /**
@@ -155,10 +156,10 @@ export class Swagger2Adapter {
    * Converts Swagger 2.0 spec to IR by first transforming to OpenAPI 3.x
    * Requirements: 2.1-2.7
    */
-  adapt(): UIGenApp {
+  adapt(configRelationships?: RelationshipConfig[]): UIGenApp {
     const openapi3Spec = this.convertToOpenAPI3();
     const adapter = new OpenAPI3Adapter(openapi3Spec);
-    return adapter.adapt();
+    return adapter.adapt(configRelationships);
   }
 
   /**

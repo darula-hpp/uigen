@@ -108,9 +108,12 @@ export class Operation_Processor {
     );
 
     // Delegate request body processing to Body_Processor
-    const requestBody = operation.requestBody
+    const requestBodyResult = operation.requestBody
       ? this.bodyProcessor.processRequestBody(operation.requestBody)
       : undefined;
+    
+    const requestBody = requestBodyResult?.schema;
+    const requestBodySchemaName = requestBodyResult?.schemaName;
 
     // Determine request content type
     const requestContentType = this.determineRequestContentType(operation, requestBody);
@@ -140,6 +143,7 @@ export class Operation_Processor {
       description: operation.description,
       parameters,
       requestBody,
+      requestBodySchemaName,
       requestContentType,
       responses,
       viewHint,

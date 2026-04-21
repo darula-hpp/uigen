@@ -1,27 +1,10 @@
 openapi: 3.1.0
 info:
-  title: Meeting Minutes
+  title: Meeting Minutes Backend
   description: Automated meeting minutes document generation API
   version: 1.0.0
 paths:
   /api/v1/templates:
-    get:
-      tags:
-      - templates
-      summary: List Templates
-      description: "List all templates.\n\nArgs:\n    db: Database session\n    \n\
-        Returns:\n    List of all templates"
-      operationId: list_templates_api_v1_templates_get
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Template'
-                type: array
-                title: Response List Templates Api V1 Templates Get
     post:
       tags:
       - templates
@@ -29,14 +12,24 @@ paths:
       description: "Upload a new template.\n\nArgs:\n    file: Word document (.docx)\
         \ with Jinja2 variables\n    name: Template name\n    population_type: How\
         \ template will be populated (ai or manual)\n    db: Database session\n  \
-        \  \nReturns:\n    Created template with extracted Jinja2 schema"
+        \  current_user: Authenticated user\n    \nReturns:\n    Created template\
+        \ with extracted Jinja2 schema"
       operationId: upload_template_api_v1_templates_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       requestBody:
+        required: true
         content:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Body_upload_template_api_v1_templates_post'
-        required: true
       responses:
         '201':
           description: Successful Response
@@ -50,13 +43,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - templates
+      summary: List Templates
+      description: "List all templates.\n\nArgs:\n    db: Database session\n    current_user:\
+        \ Authenticated user\n    \nReturns:\n    List of all templates owned by the\
+        \ user"
+      operationId: list_templates_api_v1_templates_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Template'
+                title: Response List Templates Api V1 Templates Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/templates/{template_id}:
     get:
       tags:
       - templates
       summary: Get Template
       description: "Get template by ID.\n\nArgs:\n    template_id: Template identifier\n\
-        \    db: Database session\n    \nReturns:\n    Template details"
+        \    db: Database session\n    current_user: Authenticated user\n    \nReturns:\n\
+        \    Template details"
       operationId: get_template_api_v1_templates__template_id__get
       parameters:
       - name: template_id
@@ -65,6 +92,14 @@ paths:
         schema:
           type: integer
           title: Template Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       responses:
         '200':
           description: Successful Response
@@ -83,7 +118,8 @@ paths:
       - templates
       summary: Delete Template
       description: "Delete a template.\n\nArgs:\n    template_id: Template identifier\n\
-        \    db: Database session\n    \nReturns:\n    No content on success"
+        \    db: Database session\n    current_user: Authenticated user\n    \nReturns:\n\
+        \    No content on success"
       operationId: delete_template_api_v1_templates__template_id__delete
       parameters:
       - name: template_id
@@ -92,6 +128,14 @@ paths:
         schema:
           type: integer
           title: Template Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       responses:
         '204':
           description: Successful Response
@@ -102,37 +146,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/meetings:
-    get:
-      tags:
-      - meetings
-      summary: List Meetings
-      description: "List all meetings.\n\nArgs:\n    db: Database session\n    \n\
-        Returns:\n    List of all meetings"
-      operationId: list_meetings_api_v1_meetings_get
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Meeting'
-                type: array
-                title: Response List Meetings Api V1 Meetings Get
     post:
       tags:
       - meetings
       summary: Create Meeting
       description: "Create a new meeting.\n\nArgs:\n    title: Meeting title\n   \
         \ datetime: Meeting date and time\n    recording: Optional audio recording\
-        \ file\n    db: Database session\n    \nReturns:\n    Created meeting"
+        \ file\n    db: Database session\n    current_user: Authenticated user\n \
+        \   \nReturns:\n    Created meeting"
       operationId: create_meeting_api_v1_meetings_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       requestBody:
+        required: true
         content:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Body_create_meeting_api_v1_meetings_post'
-        required: true
       responses:
         '201':
           description: Successful Response
@@ -146,13 +183,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - meetings
+      summary: List Meetings
+      description: "List all meetings.\n\nArgs:\n    db: Database session\n    current_user:\
+        \ Authenticated user\n    \nReturns:\n    List of all meetings owned by the\
+        \ user"
+      operationId: list_meetings_api_v1_meetings_get
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Meeting'
+                title: Response List Meetings Api V1 Meetings Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/meetings/{meeting_id}:
     get:
       tags:
       - meetings
       summary: Get Meeting
       description: "Get meeting by ID.\n\nArgs:\n    meeting_id: Meeting identifier\n\
-        \    db: Database session\n    \nReturns:\n    Meeting details"
+        \    db: Database session\n    current_user: Authenticated user\n    \nReturns:\n\
+        \    Meeting details"
       operationId: get_meeting_api_v1_meetings__meeting_id__get
       parameters:
       - name: meeting_id
@@ -161,6 +232,14 @@ paths:
         schema:
           type: integer
           title: Meeting Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       responses:
         '200':
           description: Successful Response
@@ -179,8 +258,8 @@ paths:
       - meetings
       summary: Update Meeting
       description: "Update meeting metadata.\n\nArgs:\n    meeting_id: Meeting identifier\n\
-        \    meeting_data: Updated meeting data\n    db: Database session\n    \n\
-        Returns:\n    Updated meeting"
+        \    meeting_data: Updated meeting data\n    db: Database session\n    current_user:\
+        \ Authenticated user\n    \nReturns:\n    Updated meeting"
       operationId: update_meeting_api_v1_meetings__meeting_id__put
       parameters:
       - name: meeting_id
@@ -189,6 +268,14 @@ paths:
         schema:
           type: integer
           title: Meeting Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       requestBody:
         required: true
         content:
@@ -213,7 +300,8 @@ paths:
       - meetings
       summary: Delete Meeting
       description: "Delete a meeting.\n\nArgs:\n    meeting_id: Meeting identifier\n\
-        \    db: Database session\n    \nReturns:\n    No content on success"
+        \    db: Database session\n    current_user: Authenticated user\n    \nReturns:\n\
+        \    No content on success"
       operationId: delete_meeting_api_v1_meetings__meeting_id__delete
       parameters:
       - name: meeting_id
@@ -222,6 +310,14 @@ paths:
         schema:
           type: integer
           title: Meeting Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       responses:
         '204':
           description: Successful Response
@@ -238,7 +334,8 @@ paths:
       summary: Associate Template
       description: "Associate a template with a meeting.\n\nArgs:\n    meeting_id:\
         \ Meeting identifier\n    association_data: Template ID and order index\n\
-        \    db: Database session\n    \nReturns:\n    Created association"
+        \    db: Database session\n    current_user: Authenticated user\n    \nReturns:\n\
+        \    Created association"
       operationId: associate_template_api_v1_meetings__meeting_id__templates_post
       parameters:
       - name: meeting_id
@@ -247,6 +344,14 @@ paths:
         schema:
           type: integer
           title: Meeting Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       requestBody:
         required: true
         content:
@@ -271,8 +376,8 @@ paths:
       - meetings
       summary: Get Template Associations
       description: "Get all template associations for a meeting.\n\nArgs:\n    meeting_id:\
-        \ Meeting identifier\n    db: Database session\n    \nReturns:\n    List of\
-        \ template associations"
+        \ Meeting identifier\n    db: Database session\n    current_user: Authenticated\
+        \ user\n    \nReturns:\n    List of template associations"
       operationId: get_template_associations_api_v1_meetings__meeting_id__templates_get
       parameters:
       - name: meeting_id
@@ -281,6 +386,14 @@ paths:
         schema:
           type: integer
           title: Meeting Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       responses:
         '200':
           description: Successful Response
@@ -305,7 +418,8 @@ paths:
       summary: Remove Template Association
       description: "Remove template association from a meeting.\n\nArgs:\n    meeting_id:\
         \ Meeting identifier\n    template_id: Template identifier\n    db: Database\
-        \ session\n    \nReturns:\n    No content on success"
+        \ session\n    current_user: Authenticated user\n    \nReturns:\n    No content\
+        \ on success"
       operationId: remove_template_association_api_v1_meetings__meeting_id__templates__template_id__delete
       parameters:
       - name: meeting_id
@@ -320,6 +434,14 @@ paths:
         schema:
           type: integer
           title: Template Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       responses:
         '204':
           description: Successful Response
@@ -335,8 +457,8 @@ paths:
       - meetings
       summary: Generate Ai Data
       description: "Generate AI data for meeting's AI template.\n\nArgs:\n    meeting_id:\
-        \ Meeting identifier\n    db: Database session\n    \nReturns:\n    Generated\
-        \ filled data"
+        \ Meeting identifier\n    db: Database session\n    current_user: Authenticated\
+        \ user\n    \nReturns:\n    Generated filled data"
       operationId: generate_ai_data_api_v1_meetings__meeting_id__generate_ai_data_post
       parameters:
       - name: meeting_id
@@ -345,6 +467,14 @@ paths:
         schema:
           type: integer
           title: Meeting Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       responses:
         '200':
           description: Successful Response
@@ -368,8 +498,8 @@ paths:
       summary: Submit Manual Data
       description: "Submit manual data for a template.\n\nArgs:\n    meeting_id: Meeting\
         \ identifier\n    template_id: Template identifier\n    data_submission: Filled\
-        \ data for template variables\n    db: Database session\n    \nReturns:\n\
-        \    Success message"
+        \ data for template variables\n    db: Database session\n    current_user:\
+        \ Authenticated user\n    \nReturns:\n    Success message"
       operationId: submit_manual_data_api_v1_meetings__meeting_id__templates__template_id__data_post
       parameters:
       - name: meeting_id
@@ -384,6 +514,14 @@ paths:
         schema:
           type: integer
           title: Template Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       requestBody:
         required: true
         content:
@@ -408,7 +546,8 @@ paths:
       summary: Get Filled Data
       description: "Get current filled data for a template.\n\nArgs:\n    meeting_id:\
         \ Meeting identifier\n    template_id: Template identifier\n    db: Database\
-        \ session\n    \nReturns:\n    Filled data or empty object if not set"
+        \ session\n    current_user: Authenticated user\n    \nReturns:\n    Filled\
+        \ data or empty object if not set"
       operationId: get_filled_data_api_v1_meetings__meeting_id__templates__template_id__data_get
       parameters:
       - name: meeting_id
@@ -423,6 +562,14 @@ paths:
         schema:
           type: integer
           title: Template Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       responses:
         '200':
           description: Successful Response
@@ -445,8 +592,8 @@ paths:
       - documents
       summary: Generate Documents
       description: "Generate Word documents for all templates in a meeting.\n\nArgs:\n\
-        \    meeting_id: Meeting identifier\n    db: Database session\n    \nReturns:\n\
-        \    List of generated document records"
+        \    meeting_id: Meeting identifier\n    db: Database session\n    current_user:\
+        \ Authenticated user\n    \nReturns:\n    List of generated document records"
       operationId: generate_documents_api_v1_meetings__meeting_id__generate_documents_post
       parameters:
       - name: meeting_id
@@ -455,6 +602,14 @@ paths:
         schema:
           type: integer
           title: Meeting Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       responses:
         '200':
           description: Successful Response
@@ -478,8 +633,8 @@ paths:
       - documents
       summary: Convert To Pdf
       description: "Convert all meeting documents to PDF format.\n\nArgs:\n    meeting_id:\
-        \ Meeting identifier\n    db: Database session\n    \nReturns:\n    List of\
-        \ document records with PDF paths"
+        \ Meeting identifier\n    db: Database session\n    current_user: Authenticated\
+        \ user\n    \nReturns:\n    List of document records with PDF paths"
       operationId: convert_to_pdf_api_v1_meetings__meeting_id__convert_to_pdf_post
       parameters:
       - name: meeting_id
@@ -488,6 +643,14 @@ paths:
         schema:
           type: integer
           title: Meeting Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       responses:
         '200':
           description: Successful Response
@@ -511,8 +674,8 @@ paths:
       - documents
       summary: Download Merged Pdf
       description: "Download merged PDF of all meeting documents.\n\nArgs:\n    meeting_id:\
-        \ Meeting identifier\n    db: Database session\n    \nReturns:\n    Merged\
-        \ PDF file"
+        \ Meeting identifier\n    db: Database session\n    current_user: Authenticated\
+        \ user\n    \nReturns:\n    Merged PDF file"
       operationId: download_merged_pdf_api_v1_meetings__meeting_id__download_pdf_get
       parameters:
       - name: meeting_id
@@ -521,6 +684,14 @@ paths:
         schema:
           type: integer
           title: Meeting Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
       responses:
         '200':
           description: Successful Response

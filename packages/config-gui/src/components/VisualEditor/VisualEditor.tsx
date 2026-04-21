@@ -504,7 +504,18 @@ function ResourceSection({ resource }: ResourceSectionProps) {
               <h4 id={`${resource.slug}-operations-heading`} className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Operations</h4>
               <div className="space-y-2">
                 {resource.operations.map(operation => (
-                  <OperationIgnoreNode key={operation.id} operation={operation} />
+                  <div key={operation.id}>
+                    <OperationIgnoreNode operation={operation} />
+                    {/* Show request body fields if present */}
+                    {operation.requestBodyFields && operation.requestBodyFields.length > 0 && (
+                      <div className="ml-8 mt-1 space-y-1 border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Request Body Fields:</div>
+                        {operation.requestBodyFields.map(field => (
+                          <SchemaPropertyNode key={field.path} field={field} level={0} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

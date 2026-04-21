@@ -15,6 +15,7 @@ export type { OperationAdapter } from './resource-extractor.js';
 export { IgnoreHandler, LabelHandler, RefHandler } from './annotations/handlers/index.js';
 export { AnnotationHandlerRegistry } from './annotations/index.js';
 export type { AnnotationHandler } from './annotations/index.js';
+export { deriveRelationshipType } from './relationship-type-deriver.js';
 
 export async function parseSpec(content: string): Promise<UIGenApp> {
   let doc: unknown;

@@ -163,6 +163,88 @@ annotations:
     x-uigen-custom-validation: "email-domain-check"
 ```
 
+## Relationship Configuration
+
+UIGen can automatically detect relationships between resources based on API path patterns, but you can also explicitly configure relationships for better control and clarity.
+
+### Declaring Relationships
+
+Add relationships to your config file:
+
+```yaml
+relationships:
+  - source: users
+    target: orders
+    path: /users/{id}/orders
+    type: hasMany
+    label: User Orders
+    description: All orders placed by this user
+  
+  - source: orders
+    target: users
+    path: /users/{id}/orders
+    type: belongsTo
+    label: Order Owner
+  
+  - source: projects
+    target: tags
+    path: /projects/{id}/tags
+    type: manyToMany
+    label: Project Tags
+```
+
+### Relationship Types
+
+Three relationship types are supported:
+
+**`hasMany`** - One-to-many relationship
+- Pattern: `/{source}/{id}/{target}`
+- Example: A user has many orders
+- Path: `/users/{id}/orders`
+
+**`belongsTo`** - Many-to-one relationship  
+- Pattern: `/{target}/{id}/{source}`
+- Example: An order belongs to a user
+- Path: `/users/{id}/orders` (from order's perspective)
+
+**`manyToMany`** - Many-to-many relationship
+- Detected when symmetric relationships exist
+- Example: Projects and tags
+- Paths: `/projects/{id}/tags` and `/tags/{id}/projects`
+
+### Explicit vs. Derived Types
+
+**Explicit types** (recommended):
+```yaml
+relationships:
+  - source: users
+    target: orders
+    path: /users/{id}/orders
+    type: hasMany  # Explicitly specified
+```
+
+**Derived types** (backward compatible):
+```yaml
+relationships:
+  - source: users
+    target: orders
+    path: /users/{id}/orders
+    # Type derived from path pattern
+```
+
+When the `type` field is present, it takes precedence over automatic derivation. If omitted, UIGen derives the type from the path pattern for backward compatibility.
+
+### Migration Tool
+
+If you have existing relationships without explicit types, use the config-gui migration tool:
+
+1. Open the config-gui in your browser
+2. Navigate to the Relationships tab
+3. Click "Migrate Now" in the banner
+4. All relationships will be updated with explicit types
+
+The migration preserves all existing relationship fields and only adds the `type` field.
+
 ## Removing Annotations
 
 Set an annotation to `null` to remove it from the reconciled spec:

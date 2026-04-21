@@ -87,9 +87,16 @@ export function AnnotationEditor({
     
     // Map targetType to applicableTo array
     const applicableTo: ('field' | 'operation' | 'resource')[] = [];
-    if (metadata.targetType === 'field') applicableTo.push('field');
-    if (metadata.targetType === 'operation') applicableTo.push('operation');
-    if (metadata.targetType === 'resource') applicableTo.push('resource');
+    const targetType = metadata.targetType;
+    
+    // Handle both single targetType and array of targetTypes
+    if (Array.isArray(targetType)) {
+      applicableTo.push(...targetType);
+    } else {
+      if (targetType === 'field') applicableTo.push('field');
+      if (targetType === 'operation') applicableTo.push('operation');
+      if (targetType === 'resource') applicableTo.push('resource');
+    }
     
     return {
       name: metadata.name,

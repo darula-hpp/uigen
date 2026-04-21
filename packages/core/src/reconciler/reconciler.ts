@@ -13,10 +13,12 @@ import type {
   Swagger2Document,
   Logger,
 } from './types.js';
+import type { RelationshipConfig } from '../config/types.js';
 import { ElementPathResolver } from './path-resolver.js';
 import { AnnotationMerger } from './merger.js';
 import { Validator } from './validator.js';
 import { deepClone } from './utils.js';
+import { validateRelationships } from './relationship-validator.js';
 
 /**
  * Configuration file interface
@@ -26,6 +28,7 @@ interface ConfigFile {
   enabled: Record<string, boolean>;
   defaults: Record<string, Record<string, unknown>>;
   annotations: Record<string, Record<string, unknown>>;
+  relationships?: RelationshipConfig[];
 }
 
 /**
@@ -127,6 +130,14 @@ export class Reconciler {
         };
       });
 
+      // Validate and collect relationships (pass-through, never injected into spec)
+      const { validRelationships, warnings: relationshipWarnings } = validateRelationships(
+        config.relationships ?? []
+      );
+
+      // Merge relationship warnings into the warnings array
+      warnings.push(...relationshipWarnings);
+
       // Log warnings
       for (const warning of warnings) {
         this.logger.warn(warning.message, {
@@ -163,6 +174,7 @@ export class Reconciler {
         spec: mergeResult.modifiedSpec,
         appliedAnnotations: mergeResult.appliedCount,
         warnings,
+        relationships: validRelationships,
       };
     } catch (error) {
       this.logger.error('Reconciliation failed', {
@@ -174,7 +186,7 @@ export class Reconciler {
 
   /**
    * Clear the path resolution cache
-   * 
+   *
    * Useful when reconciling multiple specs or when the spec changes.
    */
   clearCache(): void {

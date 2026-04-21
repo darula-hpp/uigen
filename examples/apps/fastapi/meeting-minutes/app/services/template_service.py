@@ -1,5 +1,5 @@
 """Service for template management business logic."""
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 from fastapi import UploadFile, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,6 +31,7 @@ class TemplateService:
     
     async def upload_template(
         self,
+        user_id: int,
         file: UploadFile,
         name: str,
         population_type: PopulationType
@@ -39,6 +40,7 @@ class TemplateService:
         Upload and process a new template.
         
         Args:
+            user_id: User identifier who owns the template
             file: Uploaded .docx file
             name: Template name
             population_type: How template will be populated (ai or manual)
@@ -57,6 +59,7 @@ class TemplateService:
         
         # Create temporary template to get ID (we'll update file_path after saving)
         temp_template = await self.repository.create(
+            user_id=user_id,
             name=template_data.name,
             population_type=template_data.population_type,
             file_path="",  # Temporary, will update
@@ -104,12 +107,13 @@ class TemplateService:
             await self.repository.delete(temp_template.id)
             raise HTTPException(status_code=500, detail=f"Failed to process template: {str(e)}")
     
-    async def get_template(self, template_id: int) -> Template:
+    async def get_template(self, template_id: int, user_id: Optional[int] = None) -> Template:
         """
         Retrieve template by ID.
         
         Args:
             template_id: Template identifier
+            user_id: Optional user identifier to verify ownership
             
         Returns:
             Template instance
@@ -117,33 +121,37 @@ class TemplateService:
         Raises:
             HTTPException: If template not found
         """
-        template = await self.repository.get_by_id(template_id)
+        template = await self.repository.get_by_id(template_id, user_id)
         
         if not template:
             raise HTTPException(status_code=404, detail="Template not found")
         
         return template
     
-    async def list_templates(self) -> List[Template]:
+    async def list_templates(self, user_id: Optional[int] = None) -> List[Template]:
         """
         List all templates.
+        
+        Args:
+            user_id: Optional user identifier to filter by ownership
         
         Returns:
             List of all templates
         """
-        return await self.repository.list_all()
+        return await self.repository.list_all(user_id)
     
-    async def delete_template(self, template_id: int) -> None:
+    async def delete_template(self, template_id: int, user_id: Optional[int] = None) -> None:
         """
         Delete template and associated files.
         
         Args:
             template_id: Template identifier
+            user_id: Optional user identifier to verify ownership
             
         Raises:
             HTTPException: If template not found
         """
-        deleted = await self.repository.delete(template_id)
+        deleted = await self.repository.delete(template_id, user_id)
         
         if not deleted:
             raise HTTPException(status_code=404, detail="Template not found")

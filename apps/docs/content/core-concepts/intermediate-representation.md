@@ -174,6 +174,50 @@ interface PaginationHint {
 }
 ```
 
+## `Relationship`
+
+Relationships define connections between resources. They can be explicitly configured or automatically detected from API paths.
+
+```typescript
+interface Relationship {
+  type: 'hasMany' | 'belongsTo' | 'manyToMany';
+  targetResource: string;
+  path: string;
+  label?: string;
+  description?: string;
+  isReadOnly: boolean;
+}
+```
+
+### Relationship Types
+
+- **`hasMany`**: One-to-many relationship (e.g., a user has many orders)
+  - Path pattern: `/{sourceResource}/{id}/{targetResource}`
+  - Example: `/users/{id}/orders`
+
+- **`belongsTo`**: Many-to-one relationship (e.g., an order belongs to a user)
+  - Path pattern: `/{targetResource}/{id}/{sourceResource}`
+  - Example: `/users/{id}/orders` (from the order's perspective)
+
+- **`manyToMany`**: Many-to-many relationship (e.g., projects and tags)
+  - Detected when symmetric relationships exist in both directions
+  - Example: `/projects/{id}/tags` and `/tags/{id}/projects`
+
+### Explicit Type Configuration
+
+Relationship types can be explicitly specified in the `.uigen/config.yaml` file:
+
+```yaml
+relationships:
+  - source: users
+    target: orders
+    path: /users/{id}/orders
+    type: hasMany  # Explicit type
+    label: User Orders
+```
+
+When the `type` field is present, it takes precedence over path-based derivation. If omitted, the type is automatically derived from the path pattern for backward compatibility.
+
 ## `ValidationRule`
 
 Validation rules are extracted from JSON Schema constraints in the spec.

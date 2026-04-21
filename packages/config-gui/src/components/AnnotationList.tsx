@@ -64,11 +64,18 @@ export function AnnotationList({ onAnnotationSelect, selectedField }: Annotation
   
   // Group annotations by target type
   const groupedAnnotations = displayedAnnotations.reduce((acc, annotation) => {
-    const category = annotation.targetType;
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(annotation);
+    const targetTypes = Array.isArray(annotation.targetType) 
+      ? annotation.targetType 
+      : [annotation.targetType];
+    
+    // Add annotation to each applicable category
+    targetTypes.forEach(category => {
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(annotation);
+    });
+    
     return acc;
   }, {} as Record<string, AnnotationMetadata[]>);
   

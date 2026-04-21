@@ -7,6 +7,7 @@
  */
 
 import type { OpenAPIV3 } from 'openapi-types';
+import type { RelationshipConfig } from '../config/types.js';
 
 /**
  * Swagger 2.0 Document type
@@ -50,6 +51,9 @@ export interface ReconciledSpec {
   
   /** Warnings generated during reconciliation */
   warnings: ReconciliationWarning[];
+
+  /** Validated relationship declarations from config (empty array when none declared) */
+  relationships: RelationshipConfig[];
 }
 
 /**

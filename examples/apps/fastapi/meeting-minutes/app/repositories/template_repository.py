@@ -28,6 +28,7 @@ class TemplateRepository:
     
     async def create(
         self,
+        user_id: int,
         name: str,
         population_type: PopulationType,
         file_path: str,
@@ -37,6 +38,7 @@ class TemplateRepository:
         Create a new template record.
         
         Args:
+            user_id: User identifier who owns the template
             name: Template name
             population_type: Population type (ai or manual)
             file_path: Path to stored template file
@@ -46,6 +48,7 @@ class TemplateRepository:
             Template: Created template instance
         """
         template = Template(
+            user_id=user_id,
             name=name,
             population_type=population_type.value,
             file_path=file_path,
@@ -58,42 +61,55 @@ class TemplateRepository:
         
         return template
     
-    async def get_by_id(self, template_id: int) -> Optional[Template]:
+    async def get_by_id(self, template_id: int, user_id: Optional[int] = None) -> Optional[Template]:
         """
         Retrieve a template by ID.
         
         Args:
             template_id: Template identifier
+            user_id: Optional user identifier to filter by ownership
             
         Returns:
             Optional[Template]: Template instance or None if not found
         """
-        result = await self.session.execute(
-            select(Template).where(Template.id == template_id)
-        )
+        query = select(Template).where(Template.id == template_id)
+        
+        if user_id is not None:
+            query = query.where(Template.user_id == user_id)
+        
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
     
-    async def list_all(self) -> List[Template]:
+    async def list_all(self, user_id: Optional[int] = None) -> List[Template]:
         """
         List all templates.
+        
+        Args:
+            user_id: Optional user identifier to filter by ownership
         
         Returns:
             List[Template]: List of all template instances
         """
-        result = await self.session.execute(select(Template))
+        query = select(Template)
+        
+        if user_id is not None:
+            query = query.where(Template.user_id == user_id)
+        
+        result = await self.session.execute(query)
         return list(result.scalars().all())
     
-    async def delete(self, template_id: int) -> bool:
+    async def delete(self, template_id: int, user_id: Optional[int] = None) -> bool:
         """
         Delete a template record and associated files.
         
         Args:
             template_id: Template identifier
+            user_id: Optional user identifier to verify ownership
             
         Returns:
             bool: True if deleted, False if not found
         """
-        template = await self.get_by_id(template_id)
+        template = await self.get_by_id(template_id, user_id)
         
         if not template:
             return False

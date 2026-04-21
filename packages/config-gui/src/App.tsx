@@ -7,6 +7,8 @@ import { PreviewRenderer } from './components/Preview/PreviewRenderer.js';
 import { HelpPanel } from './components/HelpPanel.js';
 import { ThemeToggle } from './components/ThemeToggle.js';
 import { CSSEditor } from './components/CSSEditor.js';
+import { RelationshipEditor } from './components/RelationshipEditor/index.js';
+import type { RelationshipConfig } from '@uigen-dev/core';
 
 /**
  * Main application component for the Config GUI
@@ -23,7 +25,7 @@ import { CSSEditor } from './components/CSSEditor.js';
 function App() {
   const { state, actions } = useAppContext();
   const { isLoading, error, config, specPath, specStructure, annotations } = state;
-  const [activeTab, setActiveTab] = useState<'annotations' | 'visual' | 'preview' | 'css'>('annotations');
+  const [activeTab, setActiveTab] = useState<'annotations' | 'visual' | 'preview' | 'css' | 'relationships'>('annotations');
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
   
   // CSS content state
@@ -216,11 +218,24 @@ function App() {
                     >
                       Theme
                     </button>
+                    <button
+                      onClick={() => setActiveTab('relationships')}
+                      className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'relationships'
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                      aria-current={activeTab === 'relationships' ? 'page' : undefined}
+                      data-testid="relationships-tab"
+                      disabled={!specStructure}
+                    >
+                      Relationships
+                    </button>
                   </nav>
                 </div>
                 
                 {/* Tab Content */}
-                <div className="p-6">
+                <div className={activeTab === 'relationships' ? '' : 'p-6'}>
                   {activeTab === 'annotations' && (
                     <div className="space-y-6">
                       <div>
@@ -317,6 +332,46 @@ function App() {
                           onSave={handleCssSave}
                         />
                       )}
+                    </div>
+                  )}
+                  
+                  {activeTab === 'relationships' && (
+                    <div className="flex flex-col h-screen">
+                      {/* Compact header strip */}
+                      <div className="px-6 pt-4 pb-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3 flex-shrink-0">
+                        <h2 className="text-base font-semibold text-gray-900 dark:text-white">Relationships</h2>
+                        {config?.relationships && config.relationships.length > 0 && (
+                          <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full">
+                            {config.relationships.length} declared
+                          </span>
+                        )}
+                        <p className="text-xs text-gray-400 dark:text-gray-500 ml-1">
+                          Drag the port dot on a card to draw a relationship line. Drag the card body to reposition.
+                        </p>
+                      </div>
+                      {/* Canvas fills remaining viewport height */}
+                      <div className="flex-1 min-h-0">
+                        <RelationshipEditor
+                          resources={specStructure?.resources ?? null}
+                          relationships={config?.relationships ?? []}
+                          specOperationPaths={
+                            specStructure?.resources.flatMap((r: any) =>
+                              r.operations.map((op: any) => op.path)
+                            ) ?? []
+                          }
+                          onSave={async (relationships: RelationshipConfig[]) => {
+                            const updated = {
+                              ...(config ?? { version: '1.0', enabled: {}, defaults: {}, annotations: {} }),
+                              relationships,
+                            };
+                            try {
+                              await actions.saveConfig(updated);
+                            } catch {
+                              actions.setError('Failed to save relationships. Please try again.');
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { OpenAPIV3 } from 'openapi-types';
 import { Resource_Extractor } from '../resource-extractor.js';
 import type { AdapterUtils } from '../annotations/index.js';
@@ -7,6 +7,8 @@ import { ViewHintClassifier } from '../view-hint-classifier.js';
 import { RelationshipDetector } from '../relationship-detector.js';
 import { PaginationDetector } from '../pagination-detector.js';
 import { SchemaProcessor } from '../schema-processor.js';
+import type { RelationshipConfig } from '../../config/types.js';
+import type { Operation, UIGenApp } from '../../ir/types.js';
 
 describe('Resource_Extractor', () => {
   let extractor: Resource_Extractor;
@@ -183,6 +185,365 @@ describe('Resource_Extractor', () => {
         expect(inferResourceName('/{id}')).toBe(null);
         expect(inferResourceName('/{id}/{otherId}')).toBe(null);
       });
+    });
+  });
+
+  describe('explicit relationship type handling', () => {
+    let mockIR: UIGenApp;
+    let consoleWarnSpy: any;
+
+    beforeEach(() => {
+      // Setup a basic spec with paths
+      mockSpec.paths = {
+        '/users': {
+          get: {
+            operationId: 'getUsers',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object', properties: {} }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/users/{id}/orders': {
+          get: {
+            operationId: 'getUserOrders',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object', properties: {} }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        '/orders': {
+          get: {
+            operationId: 'getOrders',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object', properties: {} }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      mockIR = {
+        appName: 'Test App',
+        resources: [],
+        authStrategy: { type: 'none' }
+      };
+
+      extractor = new Resource_Extractor(
+        mockSpec,
+        mockAdapterUtils,
+        mockAnnotationRegistry,
+        mockViewHintClassifier,
+        mockRelationshipDetector,
+        mockPaginationDetector,
+        mockSchemaProcessor
+      );
+
+      extractor.setCurrentIR(mockIR);
+
+      // Spy on console.warn
+      consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should use explicit type directly when present', () => {
+      const configRelationships: RelationshipConfig[] = [
+        {
+          source: 'users',
+          target: 'orders',
+          path: '/users/{id}/orders',
+          type: 'hasMany'
+        }
+      ];
+
+      const mockAdaptOperation = (method: string, path: string, operation: OpenAPIV3.OperationObject): Operation => ({
+        id: operation.operationId || `${method}_${path}`,
+        method: method as any,
+        path,
+        summary: operation.summary || '',
+        description: operation.description || '',
+        parameters: [],
+        responses: {},
+        viewHint: 'list'
+      });
+
+      const resources = extractor.extractResources(mockAdaptOperation, configRelationships);
+
+      const userResource = resources.find(r => r.slug === 'users');
+      expect(userResource).toBeDefined();
+      expect(userResource!.relationships).toHaveLength(1);
+      expect(userResource!.relationships[0].type).toBe('hasMany');
+      expect(userResource!.relationships[0].target).toBe('orders');
+
+      // Should NOT log deprecation warning when explicit type is present
+      expect(consoleWarnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('missing explicit type')
+      );
+    });
+
+    it('should fall back to path-based derivation when type is missing', () => {
+      const configRelationships: RelationshipConfig[] = [
+        {
+          source: 'users',
+          target: 'orders',
+          path: '/users/{id}/orders'
+          // type field is missing
+        }
+      ];
+
+      const mockAdaptOperation = (method: string, path: string, operation: OpenAPIV3.OperationObject): Operation => ({
+        id: operation.operationId || `${method}_${path}`,
+        method: method as any,
+        path,
+        summary: operation.summary || '',
+        description: operation.description || '',
+        parameters: [],
+        responses: {},
+        viewHint: 'list'
+      });
+
+      const resources = extractor.extractResources(mockAdaptOperation, configRelationships);
+
+      const userResource = resources.find(r => r.slug === 'users');
+      expect(userResource).toBeDefined();
+      expect(userResource!.relationships).toHaveLength(1);
+      // Should derive hasMany from path pattern /users/{id}/orders
+      expect(userResource!.relationships[0].type).toBe('hasMany');
+      expect(userResource!.relationships[0].target).toBe('orders');
+
+      // Should log deprecation warning when type is missing
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[Resource_Extractor] Relationship users -> orders missing explicit type')
+      );
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Deriving from path. Consider adding an explicit type field.')
+      );
+    });
+
+    it('should use explicit belongsTo type', () => {
+      const configRelationships: RelationshipConfig[] = [
+        {
+          source: 'orders',
+          target: 'users',
+          path: '/users/{id}/orders',
+          type: 'belongsTo'
+        }
+      ];
+
+      const mockAdaptOperation = (method: string, path: string, operation: OpenAPIV3.OperationObject): Operation => ({
+        id: operation.operationId || `${method}_${path}`,
+        method: method as any,
+        path,
+        summary: operation.summary || '',
+        description: operation.description || '',
+        parameters: [],
+        responses: {},
+        viewHint: 'list'
+      });
+
+      const resources = extractor.extractResources(mockAdaptOperation, configRelationships);
+
+      const orderResource = resources.find(r => r.slug === 'orders');
+      expect(orderResource).toBeDefined();
+      expect(orderResource!.relationships).toHaveLength(1);
+      expect(orderResource!.relationships[0].type).toBe('belongsTo');
+      expect(orderResource!.relationships[0].target).toBe('users');
+
+      // Should NOT log deprecation warning
+      expect(consoleWarnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('missing explicit type')
+      );
+    });
+
+    it('should use explicit manyToMany type', () => {
+      const configRelationships: RelationshipConfig[] = [
+        {
+          source: 'users',
+          target: 'orders',
+          path: '/users/{id}/orders',
+          type: 'manyToMany'
+        }
+      ];
+
+      const mockAdaptOperation = (method: string, path: string, operation: OpenAPIV3.OperationObject): Operation => ({
+        id: operation.operationId || `${method}_${path}`,
+        method: method as any,
+        path,
+        summary: operation.summary || '',
+        description: operation.description || '',
+        parameters: [],
+        responses: {},
+        viewHint: 'list'
+      });
+
+      const resources = extractor.extractResources(mockAdaptOperation, configRelationships);
+
+      const userResource = resources.find(r => r.slug === 'users');
+      expect(userResource).toBeDefined();
+      expect(userResource!.relationships).toHaveLength(1);
+      expect(userResource!.relationships[0].type).toBe('manyToMany');
+      expect(userResource!.relationships[0].target).toBe('orders');
+
+      // Should NOT log deprecation warning
+      expect(consoleWarnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('missing explicit type')
+      );
+    });
+
+    it('should not apply path-based derivation when explicit type is present', () => {
+      // Path pattern suggests hasMany, but explicit type is belongsTo
+      const configRelationships: RelationshipConfig[] = [
+        {
+          source: 'users',
+          target: 'orders',
+          path: '/users/{id}/orders',
+          type: 'belongsTo' // Explicit type overrides path pattern
+        }
+      ];
+
+      const mockAdaptOperation = (method: string, path: string, operation: OpenAPIV3.OperationObject): Operation => ({
+        id: operation.operationId || `${method}_${path}`,
+        method: method as any,
+        path,
+        summary: operation.summary || '',
+        description: operation.description || '',
+        parameters: [],
+        responses: {},
+        viewHint: 'list'
+      });
+
+      const resources = extractor.extractResources(mockAdaptOperation, configRelationships);
+
+      const userResource = resources.find(r => r.slug === 'users');
+      expect(userResource).toBeDefined();
+      expect(userResource!.relationships).toHaveLength(1);
+      // Should use explicit type, not derived type
+      expect(userResource!.relationships[0].type).toBe('belongsTo');
+      expect(userResource!.relationships[0].target).toBe('orders');
+
+      // Should NOT log deprecation warning
+      expect(consoleWarnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('missing explicit type')
+      );
+    });
+
+    it('should handle multiple relationships with mixed explicit and missing types', () => {
+      mockSpec.paths['/users/{id}/posts'] = {
+        get: {
+          operationId: 'getUserPosts',
+          responses: {
+            '200': {
+              description: 'Success',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'array',
+                    items: { type: 'object', properties: {} }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      mockSpec.paths['/posts'] = {
+        get: {
+          operationId: 'getPosts',
+          responses: {
+            '200': {
+              description: 'Success',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'array',
+                    items: { type: 'object', properties: {} }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      const configRelationships: RelationshipConfig[] = [
+        {
+          source: 'users',
+          target: 'orders',
+          path: '/users/{id}/orders',
+          type: 'hasMany' // Explicit type
+        },
+        {
+          source: 'users',
+          target: 'posts',
+          path: '/users/{id}/posts'
+          // Missing type - should derive
+        }
+      ];
+
+      const mockAdaptOperation = (method: string, path: string, operation: OpenAPIV3.OperationObject): Operation => ({
+        id: operation.operationId || `${method}_${path}`,
+        method: method as any,
+        path,
+        summary: operation.summary || '',
+        description: operation.description || '',
+        parameters: [],
+        responses: {},
+        viewHint: 'list'
+      });
+
+      const resources = extractor.extractResources(mockAdaptOperation, configRelationships);
+
+      const userResource = resources.find(r => r.slug === 'users');
+      expect(userResource).toBeDefined();
+      expect(userResource!.relationships).toHaveLength(2);
+
+      const ordersRel = userResource!.relationships.find(r => r.target === 'orders');
+      expect(ordersRel).toBeDefined();
+      expect(ordersRel!.type).toBe('hasMany');
+
+      const postsRel = userResource!.relationships.find(r => r.target === 'posts');
+      expect(postsRel).toBeDefined();
+      expect(postsRel!.type).toBe('hasMany'); // Derived from path
+
+      // Should log deprecation warning only for the relationship without explicit type
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[Resource_Extractor] Relationship users -> posts missing explicit type')
+      );
+      expect(consoleWarnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('users -> orders')
+      );
     });
   });
 });
