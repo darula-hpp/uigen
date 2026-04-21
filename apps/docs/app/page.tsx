@@ -30,6 +30,15 @@ export default function Home() {
               <code>
                 <span className="text-gray-500">$</span>{" "}
                 <span className="text-[var(--primary)]">npx</span>{" "}
+                <span className="text-white">@uigen-dev/cli config</span>{" "}
+                <span className="text-yellow-300">./openapi.yaml</span>
+                {"\n"}
+                <span className="text-gray-500">
+                  # → Configure your UI at http://localhost:4401
+                </span>
+                {"\n\n"}
+                <span className="text-gray-500">$</span>{" "}
+                <span className="text-[var(--primary)]">npx</span>{" "}
                 <span className="text-white">@uigen-dev/cli serve</span>{" "}
                 <span className="text-yellow-300">./openapi.yaml</span>
                 {"\n"}
