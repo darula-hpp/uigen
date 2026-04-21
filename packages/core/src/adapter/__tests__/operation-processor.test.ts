@@ -935,5 +935,103 @@ describe('Operation_Processor', () => {
       expect(result?.responses).toBeDefined();
       expect(result?.security).toBeUndefined();
     });
+
+    it('should extract requestBodySchemaName from request body with $ref', () => {
+      // Mock the body processor to return a schema name
+      const mockFileMetadataVisitor = {
+        hasFileFields: vi.fn(() => false),
+        visit: vi.fn()
+      };
+
+      const mockSchemaProcessor = {
+        processSchema: vi.fn((key: string) => ({
+          type: 'object' as const,
+          key,
+          label: key,
+          required: false,
+          children: []
+        })),
+        shouldIgnoreSchema: vi.fn(() => false),
+        setCurrentIR: vi.fn()
+      };
+
+      const minimalSpec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {},
+        components: {
+          schemas: {
+            'Body_create_meeting_api_v1_meetings_post': {
+              type: 'object',
+              properties: {
+                title: { type: 'string' },
+                recording: { type: 'string', format: 'binary' }
+              }
+            }
+          }
+        }
+      };
+
+      const bodyProcessorWithSchemaName = new Body_Processor(
+        minimalSpec,
+        adapterUtils,
+        mockSchemaProcessor as any,
+        annotationRegistry,
+        mockFileMetadataVisitor as any
+      );
+
+      const processorWithSchemaName = new Operation_Processor(
+        viewHintClassifier,
+        parameterProcessor,
+        bodyProcessorWithSchemaName,
+        annotationRegistry,
+        adapterUtils
+      );
+
+      const operation: OpenAPIV3.OperationObject = {
+        operationId: 'createMeeting',
+        requestBody: {
+          content: {
+            'multipart/form-data': {
+              schema: {
+                $ref: '#/components/schemas/Body_create_meeting_api_v1_meetings_post'
+              }
+            }
+          }
+        },
+        responses: {}
+      };
+
+      const result = processorWithSchemaName.processOperation('POST', '/api/v1/meetings', operation);
+
+      expect(result).toBeDefined();
+      expect(result?.requestBody).toBeDefined();
+      expect(result?.requestBodySchemaName).toBe('Body_create_meeting_api_v1_meetings_post');
+    });
+
+    it('should have undefined requestBodySchemaName for inline schemas', () => {
+      const operation: OpenAPIV3.OperationObject = {
+        operationId: 'createUser',
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' }
+                }
+              }
+            }
+          }
+        },
+        responses: {}
+      };
+
+      const result = processor.processOperation('POST', '/users', operation);
+
+      expect(result).toBeDefined();
+      expect(result?.requestBody).toBeDefined();
+      expect(result?.requestBodySchemaName).toBeUndefined();
+    });
   });
 });

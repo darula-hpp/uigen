@@ -318,7 +318,7 @@ export class OpenAPI3Adapter {
   }
 
   private adaptRequestBody(body: OpenAPIV3.ReferenceObject | OpenAPIV3.RequestBodyObject): SchemaNode | undefined {
-    return this.bodyProcessor.processRequestBody(body);
+    return this.bodyProcessor.processRequestBody(body)?.schema;
   }
 
   private adaptResponses(responses: OpenAPIV3.ResponsesObject): Record<string, { description?: string; schema?: SchemaNode }> {

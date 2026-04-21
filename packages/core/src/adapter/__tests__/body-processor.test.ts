@@ -63,7 +63,84 @@ describe('Body_Processor', () => {
 
       const result = bodyProcessor.processRequestBody(requestBody);
       expect(result).toBeDefined();
-      expect(result?.type).toBe('object');
+      expect(result?.schema).toBeDefined();
+      expect(result?.schema?.type).toBe('object');
+    });
+
+    it('should extract schema name from $ref in request body', () => {
+      // Setup mock document with a schema
+      mockDocument.components!.schemas = {
+        'CreateUserRequest': {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            email: { type: 'string' }
+          }
+        }
+      };
+
+      const requestBody: OpenAPIV3.RequestBodyObject = {
+        content: {
+          'application/json': {
+            schema: {
+              $ref: '#/components/schemas/CreateUserRequest'
+            }
+          }
+        }
+      };
+
+      const result = bodyProcessor.processRequestBody(requestBody);
+      expect(result).toBeDefined();
+      expect(result?.schemaName).toBe('CreateUserRequest');
+      expect(result?.schema).toBeDefined();
+    });
+
+    it('should extract schema name from FastAPI-style request body schema', () => {
+      // Setup mock document with FastAPI-style schema name
+      mockDocument.components!.schemas = {
+        'Body_create_meeting_api_v1_meetings_post': {
+          type: 'object',
+          properties: {
+            title: { type: 'string' },
+            recording: { type: 'string', format: 'binary' }
+          }
+        }
+      };
+
+      const requestBody: OpenAPIV3.RequestBodyObject = {
+        content: {
+          'multipart/form-data': {
+            schema: {
+              $ref: '#/components/schemas/Body_create_meeting_api_v1_meetings_post'
+            }
+          }
+        }
+      };
+
+      const result = bodyProcessor.processRequestBody(requestBody);
+      expect(result).toBeDefined();
+      expect(result?.schemaName).toBe('Body_create_meeting_api_v1_meetings_post');
+      expect(result?.schema).toBeDefined();
+    });
+
+    it('should return undefined schemaName for inline schemas without $ref', () => {
+      const requestBody: OpenAPIV3.RequestBodyObject = {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' }
+              }
+            }
+          }
+        }
+      };
+
+      const result = bodyProcessor.processRequestBody(requestBody);
+      expect(result).toBeDefined();
+      expect(result?.schemaName).toBeUndefined();
+      expect(result?.schema).toBeDefined();
     });
 
     it('should return undefined for request body with x-uigen-ignore: true', () => {

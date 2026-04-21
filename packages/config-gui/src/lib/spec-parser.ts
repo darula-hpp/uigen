@@ -30,6 +30,7 @@ export interface OperationNode {
   path: string;
   summary?: string;
   description?: string;
+  requestBodyFields?: FieldNode[];
   annotations: Record<string, unknown>;
 }
 
@@ -114,6 +115,7 @@ export class SpecParser {
   
   /**
    * Parse an operation and extract its annotations.
+   * Also extracts fields from request body if present.
    * 
    * @param operation - The operation to parse
    * @returns The operation node for the visual editor
@@ -130,6 +132,15 @@ export class SpecParser {
       }
     }
     
+    // Extract fields from request body if present
+    let requestBodyFields: FieldNode[] | undefined;
+    if (operation.requestBody) {
+      // Use the actual schema name from the IR if available
+      // This is extracted from the OpenAPI spec's $ref or schema name
+      const schemaName = operation.requestBodySchemaName || 'RequestBody';
+      requestBodyFields = this.parseFields(operation.requestBody, schemaName);
+    }
+    
     return {
       id: operation.id,
       uigenId: operation.uigenId,
@@ -137,6 +148,7 @@ export class SpecParser {
       path: operation.path,
       summary: operation.summary,
       description: operation.description,
+      requestBodyFields,
       annotations
     };
   }

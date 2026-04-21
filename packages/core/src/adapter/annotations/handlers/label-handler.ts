@@ -6,7 +6,7 @@ import type { AnnotationHandler, AnnotationContext } from '../types.js';
 interface AnnotationMetadata {
   name: string;
   description: string;
-  targetType: 'field' | 'operation' | 'resource';
+  targetType: 'field' | 'operation' | 'resource' | ('field' | 'operation' | 'resource')[];
   parameterSchema: {
     type: 'object' | 'string' | 'boolean' | 'number';
     properties?: Record<string, {
@@ -34,8 +34,8 @@ export class LabelHandler implements AnnotationHandler<string> {
 
   public static readonly metadata: AnnotationMetadata = {
     name: 'x-uigen-label',
-    description: 'Applies custom labels to schema properties and objects',
-    targetType: 'field',
+    description: 'Applies custom labels to schema properties, objects, and operations',
+    targetType: ['field', 'operation'],
     parameterSchema: {
       type: 'string'
     },
@@ -47,6 +47,10 @@ export class LabelHandler implements AnnotationHandler<string> {
       {
         description: 'Custom label for role field',
         value: 'User Role'
+      },
+      {
+        description: 'Custom label for operation',
+        value: 'User Login'
       }
     ]
   };

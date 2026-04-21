@@ -140,8 +140,10 @@ export interface Operation {
   path: string;
   summary?: string;
   description?: string;
+  operationId?: string; // OpenAPI operationId for deriving request body schema names
   parameters: Parameter[];
   requestBody?: SchemaNode;
+  requestBodySchemaName?: string; // The actual schema name from components/schemas for request body
   requestContentType?: string;
   responses: Record<string, ResponseDescriptor>;
   viewHint: ViewHint;

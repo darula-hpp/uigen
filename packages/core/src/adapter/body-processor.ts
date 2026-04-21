@@ -233,19 +233,19 @@ export class Body_Processor {
    * 5. Delegate to SchemaProcessor.processSchema() with "body" as key
    * 
    * @param body - The request body object (inline or $ref)
-   * @returns SchemaNode if body has a schema, undefined otherwise
+   * @returns Object with schema and schemaName, or undefined if body should be ignored
    * 
    * @example
    * ```typescript
    * const body = {
    *   content: {
    *     'application/json': {
-   *       schema: { type: 'object', properties: { name: { type: 'string' } } }
+   *       schema: { $ref: '#/components/schemas/CreateUserRequest' }
    *     }
    *   }
    * };
-   * const schema = processRequestBody(body);
-   * // Returns SchemaNode for the body schema
+   * const result = processRequestBody(body);
+   * // Returns { schema: SchemaNode, schemaName: 'CreateUserRequest' }
    * ```
    * 
    * Returns undefined when:
@@ -257,7 +257,7 @@ export class Body_Processor {
    */
   processRequestBody(
     body: OpenAPIV3.ReferenceObject | OpenAPIV3.RequestBodyObject
-  ): SchemaNode | undefined {
+  ): { schema: SchemaNode; schemaName?: string } | undefined {
     // Check x-uigen-ignore annotation on the body object itself
     const bodyIgnoreAnnotation = this.checkIgnoreAnnotation(body);
     
@@ -282,7 +282,14 @@ export class Body_Processor {
         const content = this.pickContent(rawRequestBody.content);
         if (!content?.schema) return undefined;
         
-        return this.schemaProcessor.processSchema('body', content.schema as OpenAPIV3.SchemaObject);
+        // Extract schema name from $ref if present in content
+        let schemaName: string | undefined;
+        if ('$ref' in content.schema) {
+          schemaName = this.extractSchemaNameFromRef(content.schema.$ref);
+        }
+        
+        const schema = this.schemaProcessor.processSchema('body', content.schema as OpenAPIV3.SchemaObject);
+        return { schema, schemaName };
       }
       
       // If reference cannot be resolved, return undefined
@@ -293,7 +300,29 @@ export class Body_Processor {
     const content = this.pickContent(body.content);
     if (!content?.schema) return undefined;
     
-    return this.schemaProcessor.processSchema('body', content.schema as OpenAPIV3.SchemaObject);
+    // Extract schema name from $ref if present
+    let schemaName: string | undefined;
+    if ('$ref' in content.schema) {
+      schemaName = this.extractSchemaNameFromRef(content.schema.$ref);
+    }
+    
+    const schema = this.schemaProcessor.processSchema('body', content.schema as OpenAPIV3.SchemaObject);
+    return { schema, schemaName };
+  }
+
+  /**
+   * Extracts the schema name from a $ref string.
+   * 
+   * @param ref - The $ref string (e.g., '#/components/schemas/User')
+   * @returns The schema name (e.g., 'User'), or undefined if invalid
+   */
+  private extractSchemaNameFromRef(ref: string): string | undefined {
+    if (!ref.startsWith('#/components/schemas/') && !ref.startsWith('#/definitions/')) {
+      return undefined;
+    }
+    
+    const parts = ref.split('/');
+    return parts[parts.length - 1];
   }
 
   /**
