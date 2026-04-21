@@ -137,9 +137,9 @@ export function RelationshipEditor({
   }
 
   return (
-    <div className="flex gap-4 h-full" data-testid="relationship-editor">
-      {/* Left: Graph canvas (70%) */}
-      <div className="flex-[7] min-w-0">
+    <div className="flex h-full min-h-screen" data-testid="relationship-editor">
+      {/* Canvas — takes all available width minus the side panel */}
+      <div className="flex-1 min-w-0">
         <GraphCanvas
           resources={resources}
           relationships={relationships}
@@ -148,8 +148,8 @@ export function RelationshipEditor({
         />
       </div>
 
-      {/* Right: List + overlay panel (30%) */}
-      <div className="flex-[3] min-w-0 flex flex-col gap-4">
+      {/* Right side panel — fixed width, scrollable */}
+      <div className="w-72 flex-shrink-0 flex flex-col gap-3 p-3 border-l border-gray-200 dark:border-gray-700 overflow-y-auto" style={{ height: '100vh' }}>
         {/* Overlay panel */}
         {panel.type === 'form' && (
           <RelationshipForm

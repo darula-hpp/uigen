@@ -103,7 +103,7 @@ describe('ResourceNodeCard', () => {
         relationshipCount={0}
         isHighlighted={false}
         onPortMouseDown={vi.fn()}
-        onCardMouseUp={vi.fn()}
+        onCardMouseDown={vi.fn()}
       />
     );
     expect(screen.getByText('Users')).toBeInTheDocument();
@@ -117,7 +117,7 @@ describe('ResourceNodeCard', () => {
         relationshipCount={3}
         isHighlighted={false}
         onPortMouseDown={vi.fn()}
-        onCardMouseUp={vi.fn()}
+        onCardMouseDown={vi.fn()}
       />
     );
     expect(screen.getByText('3')).toBeInTheDocument();
@@ -130,7 +130,7 @@ describe('ResourceNodeCard', () => {
         relationshipCount={0}
         isHighlighted={true}
         onPortMouseDown={vi.fn()}
-        onCardMouseUp={vi.fn()}
+        onCardMouseDown={vi.fn()}
       />
     );
     const node = screen.getByTestId('resource-node-users');
@@ -145,11 +145,26 @@ describe('ResourceNodeCard', () => {
         relationshipCount={0}
         isHighlighted={false}
         onPortMouseDown={onPortMouseDown}
-        onCardMouseUp={vi.fn()}
+        onCardMouseDown={vi.fn()}
       />
     );
     fireEvent.mouseDown(screen.getByTestId('port-users'));
     expect(onPortMouseDown).toHaveBeenCalledWith('users', expect.any(Object));
+  });
+
+  it('calls onCardMouseDown when the card body is mousedown-ed', () => {
+    const onCardMouseDown = vi.fn();
+    render(
+      <ResourceNodeCard
+        resource={usersResource}
+        relationshipCount={0}
+        isHighlighted={false}
+        onPortMouseDown={vi.fn()}
+        onCardMouseDown={onCardMouseDown}
+      />
+    );
+    fireEvent.mouseDown(screen.getByTestId('resource-node-users'));
+    expect(onCardMouseDown).toHaveBeenCalledWith('users', expect.any(Object));
   });
 
   it('renders a connector port', () => {
@@ -159,7 +174,7 @@ describe('ResourceNodeCard', () => {
         relationshipCount={0}
         isHighlighted={false}
         onPortMouseDown={vi.fn()}
-        onCardMouseUp={vi.fn()}
+        onCardMouseDown={vi.fn()}
       />
     );
     expect(screen.getByTestId('port-users')).toBeInTheDocument();

@@ -4,32 +4,35 @@ export interface ResourceNodeCardProps {
   resource: ResourceNode;
   relationshipCount: number;
   isHighlighted: boolean;
-  /** Called when the user starts dragging the connector port */
+  /** Mousedown on the card body — starts a card-move drag */
+  onCardMouseDown: (slug: string, e: React.MouseEvent) => void;
+  /** Mousedown on the connector port — starts a line-draw drag */
   onPortMouseDown: (slug: string, e: React.MouseEvent) => void;
-  /** Called when the user releases over this card */
-  onCardMouseUp: (slug: string) => void;
 }
 
 /**
- * ResourceNodeCard — a static card with a connector port dot on the right edge.
- * Cards do NOT move. Relationships are drawn by dragging from the port dot.
+ * ResourceNodeCard — freely positionable card with a connector port.
+ *
+ * - Drag the card body to move it around the canvas.
+ * - Drag the port dot (right edge) to draw a relationship line.
  */
 export function ResourceNodeCard({
   resource,
   relationshipCount,
   isHighlighted,
+  onCardMouseDown,
   onPortMouseDown,
-  onCardMouseUp,
 }: ResourceNodeCardProps) {
   return (
     <div
       className={[
-        'relative rounded-xl border-2 p-4 select-none transition-all duration-150 bg-white dark:bg-gray-800',
+        'relative rounded-xl border-2 p-3 select-none transition-colors duration-100 bg-white dark:bg-gray-800',
         isHighlighted
           ? 'border-indigo-400 shadow-xl ring-2 ring-indigo-300 dark:ring-indigo-700'
           : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md',
       ].join(' ')}
-      onMouseUp={() => onCardMouseUp(resource.slug)}
+      style={{ cursor: 'grab' }}
+      onMouseDown={e => onCardMouseDown(resource.slug, e)}
       data-testid={`resource-node-${resource.slug}`}
       data-slug={resource.slug}
       aria-label={`Resource: ${resource.name}`}
@@ -60,7 +63,8 @@ export function ResourceNodeCard({
 
       {/* Connector port — right-center dot */}
       <div
-        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-3 rounded-full bg-indigo-400 border-2 border-white dark:border-gray-800 cursor-crosshair hover:bg-indigo-600 hover:scale-125 transition-transform z-10"
+        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-3 rounded-full bg-indigo-400 border-2 border-white dark:border-gray-800 hover:bg-indigo-600 hover:scale-125 transition-transform z-10"
+        style={{ cursor: 'crosshair' }}
         onMouseDown={e => { e.stopPropagation(); onPortMouseDown(resource.slug, e); }}
         aria-label={`Connect from ${resource.name}`}
         data-testid={`port-${resource.slug}`}

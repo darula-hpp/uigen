@@ -11,24 +11,60 @@ export interface GraphCanvasProps {
   onEdgeSelect: (rel: RelationshipConfig) => void;
 }
 
+interface NodePosition { x: number; y: number; }
+
 interface PendingLine {
   sourceSlug: string;
-  x1: number; y1: number; // port origin (container-relative)
-  x2: number; y2: number; // current cursor position
+  /** world-space coordinates */
+  x1: number; y1: number;
+  x2: number; y2: number;
 }
 
-/**
- * GraphCanvas — connector-port interaction model.
- *
- * Each card has a small dot on its right edge (the "port").
- * The user mousedowns on a port, drags a rubber-band line across the canvas,
- * and releases on another card to create a relationship.
- * Cards themselves do not move.
- */
+type DragMode =
+  | { kind: 'card'; slug: string; startMouseX: number; startMouseY: number; startNodeX: number; startNodeY: number }
+  | { kind: 'pan';  startMouseX: number; startMouseY: number; startPanX: number; startPanY: number };
+
+const CARD_W = 160;
+const CARD_H = 80;
+const WORLD_W = 8000;
+const WORLD_H = 8000;
+const COLS = 4;
+const GAP = 56;
+const PAD = 48;
+
+function initialPositions(resources: ResourceNode[]): Map<string, NodePosition> {
+  const map = new Map<string, NodePosition>();
+  resources.forEach((r, i) => {
+    map.set(r.slug, {
+      x: PAD + (i % COLS) * (CARD_W + GAP),
+      y: PAD + Math.floor(i / COLS) * (CARD_H + GAP),
+    });
+  });
+  return map;
+}
+
 export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeSelect }: GraphCanvasProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  // The viewport element (fixed size, clips the world)
+  const viewportRef = useRef<HTMLDivElement>(null);
+  // The world element (large, panned via transform)
+  const worldRef = useRef<HTMLDivElement>(null);
   const nodeRefsRef = useRef<Map<string, HTMLElement>>(new Map());
+
+  const [positions, setPositions] = useState<Map<string, NodePosition>>(() => initialPositions(resources));
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+
+  // Re-initialise when resource list changes
+  const prevSlugsRef = useRef<string>('');
+  useEffect(() => {
+    const key = resources.map(r => r.slug).join(',');
+    if (key !== prevSlugsRef.current) {
+      prevSlugsRef.current = key;
+      setPositions(initialPositions(resources));
+    }
+  }, [resources]);
+
   const [pending, setPending] = useState<PendingLine | null>(null);
+  const [drag, setDrag] = useState<DragMode | null>(null);
   const [highlightedSlug, setHighlightedSlug] = useState<string | null>(null);
 
   const outgoingCount = useCallback(
@@ -41,67 +77,119 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
     else nodeRefsRef.current.delete(slug);
   }
 
-  /** Convert a viewport-relative point to container-relative */
-  function toContainerCoords(clientX: number, clientY: number) {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return { x: clientX, y: clientY };
-    return { x: clientX - rect.left, y: clientY - rect.top };
+  /** Convert viewport-relative client coords to world coords */
+  function toWorld(clientX: number, clientY: number) {
+    const vr = viewportRef.current?.getBoundingClientRect();
+    if (!vr) return { x: clientX, y: clientY };
+    return { x: clientX - vr.left - pan.x, y: clientY - vr.top - pan.y };
   }
+
+  // ── Port drag ─────────────────────────────────────────────────────────────
 
   function handlePortMouseDown(sourceSlug: string, e: React.MouseEvent) {
     e.preventDefault();
+    e.stopPropagation();
     const srcEl = nodeRefsRef.current.get(sourceSlug);
-    if (!srcEl || !containerRef.current) return;
-
-    const containerRect = containerRef.current.getBoundingClientRect();
+    if (!srcEl || !worldRef.current) return;
+    const worldRect = worldRef.current.getBoundingClientRect();
     const srcRect = srcEl.getBoundingClientRect();
-    const x1 = srcRect.right - containerRect.left;
-    const y1 = srcRect.top + srcRect.height / 2 - containerRect.top;
-
+    // Port is on the right-center of the card, in world space
+    const x1 = srcRect.right - worldRect.left;
+    const y1 = srcRect.top + srcRect.height / 2 - worldRect.top;
     setPending({ sourceSlug, x1, y1, x2: x1, y2: y1 });
   }
 
+  // ── Card drag ─────────────────────────────────────────────────────────────
+
+  function handleCardMouseDown(slug: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const pos = positions.get(slug);
+    if (!pos) return;
+    setDrag({ kind: 'card', slug, startMouseX: e.clientX, startMouseY: e.clientY, startNodeX: pos.x, startNodeY: pos.y });
+  }
+
+  // ── Canvas pan ────────────────────────────────────────────────────────────
+
+  function handleCanvasMouseDown(e: React.MouseEvent) {
+    // Only pan on left-click directly on the canvas background
+    if (e.target !== viewportRef.current && e.target !== worldRef.current) return;
+    e.preventDefault();
+    setDrag({ kind: 'pan', startMouseX: e.clientX, startMouseY: e.clientY, startPanX: pan.x, startPanY: pan.y });
+  }
+
+  // ── Global move / up ──────────────────────────────────────────────────────
+
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!pending) return;
-    const { x, y } = toContainerCoords(e.clientX, e.clientY);
-    setPending(p => p ? { ...p, x2: x, y2: y } : null);
+    if (pending) {
+      const w = toWorld(e.clientX, e.clientY);
+      setPending(p => p ? { ...p, x2: w.x, y2: w.y } : null);
 
-    // Highlight whichever card the cursor is over
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const card = el?.closest('[data-slug]') as HTMLElement | null;
-    setHighlightedSlug(card?.dataset.slug ?? null);
-  }, [pending]);
-
-  const handleMouseUp = useCallback((e: MouseEvent) => {
-    if (!pending) return;
-
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const card = el?.closest('[data-slug]') as HTMLElement | null;
-    const targetSlug = card?.dataset.slug;
-
-    if (targetSlug && targetSlug !== pending.sourceSlug) {
-      onEdgeInitiated(pending.sourceSlug, targetSlug);
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const card = el?.closest('[data-slug]') as HTMLElement | null;
+      setHighlightedSlug(card?.dataset.slug ?? null);
     }
 
-    setPending(null);
-    setHighlightedSlug(null);
+    if (drag?.kind === 'card') {
+      const dx = e.clientX - drag.startMouseX;
+      const dy = e.clientY - drag.startMouseY;
+      setPositions(prev => {
+        const next = new Map(prev);
+        next.set(drag.slug, {
+          x: Math.max(0, drag.startNodeX + dx),
+          y: Math.max(0, drag.startNodeY + dy),
+        });
+        return next;
+      });
+    }
+
+    if (drag?.kind === 'pan') {
+      const dx = e.clientX - drag.startMouseX;
+      const dy = e.clientY - drag.startMouseY;
+      setPan({
+        x: drag.startPanX + dx,
+        y: drag.startPanY + dy,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending, drag]);
+
+  const handleMouseUp = useCallback((e: MouseEvent) => {
+    if (pending) {
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const card = el?.closest('[data-slug]') as HTMLElement | null;
+      const targetSlug = card?.dataset.slug;
+      if (targetSlug && targetSlug !== pending.sourceSlug) {
+        onEdgeInitiated(pending.sourceSlug, targetSlug);
+      }
+      setPending(null);
+      setHighlightedSlug(null);
+    }
+    setDrag(null);
   }, [pending, onEdgeInitiated]);
 
-  // Attach global listeners only while dragging
   useEffect(() => {
-    if (!pending) return;
+    if (!pending && !drag) return;
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [pending, handleMouseMove, handleMouseUp]);
+  }, [pending, drag, handleMouseMove, handleMouseUp]);
+
+  // ── Cursor ────────────────────────────────────────────────────────────────
+
+  let cursor = 'default';
+  if (pending) cursor = 'crosshair';
+  else if (drag?.kind === 'pan') cursor = 'grabbing';
+  else if (drag?.kind === 'card') cursor = 'grabbing';
 
   if (resources.length === 0) {
     return (
       <div
-        className="flex items-center justify-center h-64 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg"
+        className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700"
+        style={{ height: 480 }}
         data-testid="graph-canvas-empty"
       >
         <div className="text-center">
@@ -118,32 +206,82 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
 
   return (
     <div
-      ref={containerRef}
-      className="relative min-h-64 select-none"
-      style={{ cursor: pending ? 'crosshair' : 'default' }}
+      ref={viewportRef}
+      className="relative overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+      style={{ height: '100%', minHeight: 600, cursor }}
+      onMouseDown={handleCanvasMouseDown}
       data-testid="graph-canvas"
     >
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 p-6 pb-10">
-        {resources.map(resource => (
-          <div key={resource.slug} ref={el => registerNodeRef(resource.slug, el)}>
-            <ResourceNodeCard
-              resource={resource}
-              relationshipCount={outgoingCount(resource.slug)}
-              isHighlighted={highlightedSlug === resource.slug && pending !== null && pending.sourceSlug !== resource.slug}
-              onPortMouseDown={handlePortMouseDown}
-              onCardMouseUp={() => {/* handled globally */}}
-            />
-          </div>
-        ))}
+      {/* Panned world */}
+      <div
+        ref={worldRef}
+        style={{
+          position: 'absolute',
+          width: WORLD_W,
+          height: WORLD_H,
+          transform: `translate(${pan.x}px, ${pan.y}px)`,
+          willChange: 'transform',
+        }}
+      >
+        {/* Dot-grid background */}
+        <svg
+          className="absolute inset-0 pointer-events-none opacity-25"
+          width={WORLD_W}
+          height={WORLD_H}
+          aria-hidden="true"
+        >
+          <defs>
+            <pattern id="dot-grid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="1" fill="#94a3b8" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#dot-grid)" />
+        </svg>
+
+        {/* Cards */}
+        {resources.map(resource => {
+          const pos = positions.get(resource.slug) ?? { x: 0, y: 0 };
+          return (
+            <div
+              key={resource.slug}
+              ref={el => registerNodeRef(resource.slug, el)}
+              style={{
+                position: 'absolute',
+                left: pos.x,
+                top: pos.y,
+                width: CARD_W,
+                zIndex: drag?.kind === 'card' && drag.slug === resource.slug ? 20 : 10,
+              }}
+            >
+              <ResourceNodeCard
+                resource={resource}
+                relationshipCount={outgoingCount(resource.slug)}
+                isHighlighted={
+                  highlightedSlug === resource.slug &&
+                  pending !== null &&
+                  pending.sourceSlug !== resource.slug
+                }
+                onPortMouseDown={handlePortMouseDown}
+                onCardMouseDown={handleCardMouseDown}
+              />
+            </div>
+          );
+        })}
+
+        {/* SVG edge overlay — covers the whole world so lines are always correct */}
+        <EdgeOverlay
+          relationships={relationships}
+          nodeRefsRef={nodeRefsRef}
+          containerRef={worldRef}
+          pendingLine={pending ? { x1: pending.x1, y1: pending.y1, x2: pending.x2, y2: pending.y2 } : null}
+          onEdgeSelect={onEdgeSelect}
+        />
       </div>
 
-      <EdgeOverlay
-        relationships={relationships}
-        nodeRefsRef={nodeRefsRef}
-        containerRef={containerRef}
-        pendingLine={pending ? { x1: pending.x1, y1: pending.y1, x2: pending.x2, y2: pending.y2 } : null}
-        onEdgeSelect={onEdgeSelect}
-      />
+      {/* Pan hint */}
+      <div className="absolute bottom-2 right-3 text-xs text-gray-400 dark:text-gray-600 pointer-events-none select-none">
+        drag canvas to pan
+      </div>
     </div>
   );
 }

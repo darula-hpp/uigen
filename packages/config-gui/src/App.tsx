@@ -235,7 +235,7 @@ function App() {
                 </div>
                 
                 {/* Tab Content */}
-                <div className="p-6">
+                <div className={activeTab === 'relationships' ? '' : 'p-6'}>
                   {activeTab === 'annotations' && (
                     <div className="space-y-6">
                       <div>
@@ -336,38 +336,42 @@ function App() {
                   )}
                   
                   {activeTab === 'relationships' && (
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                        Relationships
-                      </h2>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                        Declare explicit relationships between resources. Drag one resource node onto another to create a relationship.
+                    <div className="flex flex-col h-screen">
+                      {/* Compact header strip */}
+                      <div className="px-6 pt-4 pb-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3 flex-shrink-0">
+                        <h2 className="text-base font-semibold text-gray-900 dark:text-white">Relationships</h2>
                         {config?.relationships && config.relationships.length > 0 && (
-                          <span className="ml-2 text-blue-600 dark:text-blue-400 font-medium">
-                            {config.relationships.length} relationship{config.relationships.length !== 1 ? 's' : ''} declared.
+                          <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full">
+                            {config.relationships.length} declared
                           </span>
                         )}
-                      </p>
-                      <RelationshipEditor
-                        resources={specStructure?.resources ?? null}
-                        relationships={config?.relationships ?? []}
-                        specOperationPaths={
-                          specStructure?.resources.flatMap((r: any) =>
-                            r.operations.map((op: any) => op.path)
-                          ) ?? []
-                        }
-                        onSave={async (relationships: RelationshipConfig[]) => {
-                          const updated = {
-                            ...(config ?? { version: '1.0', enabled: {}, defaults: {}, annotations: {} }),
-                            relationships,
-                          };
-                          try {
-                            await actions.saveConfig(updated);
-                          } catch {
-                            actions.setError('Failed to save relationships. Please try again.');
+                        <p className="text-xs text-gray-400 dark:text-gray-500 ml-1">
+                          Drag the port dot on a card to draw a relationship line. Drag the card body to reposition.
+                        </p>
+                      </div>
+                      {/* Canvas fills remaining viewport height */}
+                      <div className="flex-1 min-h-0">
+                        <RelationshipEditor
+                          resources={specStructure?.resources ?? null}
+                          relationships={config?.relationships ?? []}
+                          specOperationPaths={
+                            specStructure?.resources.flatMap((r: any) =>
+                              r.operations.map((op: any) => op.path)
+                            ) ?? []
                           }
-                        }}
-                      />
+                          onSave={async (relationships: RelationshipConfig[]) => {
+                            const updated = {
+                              ...(config ?? { version: '1.0', enabled: {}, defaults: {}, annotations: {} }),
+                              relationships,
+                            };
+                            try {
+                              await actions.saveConfig(updated);
+                            } catch {
+                              actions.setError('Failed to save relationships. Please try again.');
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
