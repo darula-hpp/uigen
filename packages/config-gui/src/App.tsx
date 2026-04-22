@@ -359,17 +359,6 @@ function App() {
                                 const operationKey = `${op.method}:${op.path}`;
                                 const annotation = config?.annotations?.[operationKey];
                                 const shouldKeep = !annotation || annotation['x-uigen-ignore'] !== true;
-                                
-                                // Debug logging
-                                if (op.path.includes('health')) {
-                                  console.log('[RelationshipEditor Filter]', {
-                                    operationKey,
-                                    annotation,
-                                    'x-uigen-ignore': annotation?.['x-uigen-ignore'],
-                                    shouldKeep
-                                  });
-                                }
-                                
                                 return shouldKeep;
                               });
                               
@@ -379,13 +368,18 @@ function App() {
                               };
                             }).filter((r: any) => r.operations.length > 0) ?? null; // Filter out resources with no operations
                             
-                            console.log('[RelationshipEditor] Filtered resources:', filtered?.map((r: any) => ({ name: r.name, operationCount: r.operations.length })));
                             return filtered;
                           })()}
                           relationships={config?.relationships ?? []}
                           specOperationPaths={
                             specStructure?.resources.flatMap((r: any) =>
-                              r.operations.map((op: any) => op.path)
+                              r.operations
+                                .filter((op: any) => {
+                                  const operationKey = `${op.method}:${op.path}`;
+                                  const annotation = config?.annotations?.[operationKey];
+                                  return !annotation || annotation['x-uigen-ignore'] !== true;
+                                })
+                                .map((op: any) => op.path)
                             ) ?? []
                           }
                           onSave={async (relationships: RelationshipConfig[]) => {

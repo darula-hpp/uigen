@@ -35,7 +35,7 @@ describe('Ignored Operations Filter', () => {
     };
 
     // Mock config with health endpoint ignored
-    const config = {
+    const config: any = {
       version: '1.0',
       enabled: {},
       defaults: {},
@@ -84,7 +84,7 @@ describe('Ignored Operations Filter', () => {
       ]
     };
 
-    const config = {
+    const config: any = {
       version: '1.0',
       enabled: {},
       defaults: {},
@@ -123,7 +123,7 @@ describe('Ignored Operations Filter', () => {
       ]
     };
 
-    const config = {
+    const config: any = {
       version: '1.0',
       enabled: {},
       defaults: {},
@@ -178,7 +178,7 @@ describe('Ignored Operations Filter', () => {
       ]
     };
 
-    const config = {
+    const config: any = {
       version: '1.0',
       enabled: {},
       defaults: {},
@@ -201,5 +201,71 @@ describe('Ignored Operations Filter', () => {
     const mixedResource = filteredResources.find(r => r.slug === 'mixed');
     expect(mixedResource?.operations).toHaveLength(2);
     expect(mixedResource?.operations.map((op: any) => op.id)).toEqual(['op1', 'op3']);
+  });
+
+  it('should filter ignored operation paths from specOperationPaths', () => {
+    const specStructure = {
+      resources: [
+        {
+          name: 'Health',
+          slug: 'health',
+          operations: [
+            {
+              id: 'health_health_get',
+              method: 'GET',
+              path: '/health',
+              summary: 'Health check'
+            }
+          ],
+          fields: []
+        },
+        {
+          name: 'Users',
+          slug: 'users',
+          operations: [
+            {
+              id: 'list_users',
+              method: 'GET',
+              path: '/users',
+              summary: 'List users'
+            },
+            {
+              id: 'create_user',
+              method: 'POST',
+              path: '/users',
+              summary: 'Create user'
+            }
+          ],
+          fields: []
+        }
+      ]
+    };
+
+    const config: any = {
+      version: '1.0',
+      enabled: {},
+      defaults: {},
+      annotations: {
+        'GET:/health': {
+          'x-uigen-ignore': true
+        }
+      }
+    };
+
+    // Apply the same filtering logic as in App.tsx for specOperationPaths
+    const specOperationPaths = specStructure.resources.flatMap((r: any) =>
+      r.operations
+        .filter((op: any) => {
+          const operationKey = `${op.method}:${op.path}`;
+          const annotation = config?.annotations?.[operationKey];
+          return !annotation || annotation['x-uigen-ignore'] !== true;
+        })
+        .map((op: any) => op.path)
+    );
+
+    // Should only have /users paths, not /health
+    expect(specOperationPaths).toHaveLength(2);
+    expect(specOperationPaths).toEqual(['/users', '/users']);
+    expect(specOperationPaths.includes('/health')).toBe(false);
   });
 });
