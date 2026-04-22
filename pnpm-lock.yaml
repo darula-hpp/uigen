@@ -26,6 +26,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@uigen-dev/config-gui':
+        specifier: workspace:*
+        version: link:../config-gui
       '@uigen-dev/core':
         specifier: workspace:*
         version: link:../core

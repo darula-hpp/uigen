@@ -8,7 +8,7 @@ import { HelpPanel } from './components/HelpPanel.js';
 import { ThemeToggle } from './components/ThemeToggle.js';
 import { CSSEditor } from './components/CSSEditor.js';
 import { RelationshipEditor } from './components/RelationshipEditor/index.js';
-import type { RelationshipConfig } from '@uigen-dev/core';
+import type { RelationshipConfig, ConfigFile } from '@uigen-dev/core';
 
 /**
  * Main application component for the Config GUI
@@ -391,6 +391,30 @@ function App() {
                               await actions.saveConfig(updated);
                             } catch {
                               actions.setError('Failed to save relationships. Please try again.');
+                            }
+                          }}
+                          loadConfig={async () => {
+                            // Use fetch directly to get the config
+                            const response = await fetch('/api/config', {
+                              method: 'GET',
+                              headers: { 'Accept': 'application/json' }
+                            });
+                            if (!response.ok) {
+                              throw new Error(`Failed to load config: ${response.statusText}`);
+                            }
+                            const loadedConfig = await response.json();
+                            return loadedConfig ?? { version: '1.0', enabled: {}, defaults: {}, annotations: {} };
+                          }}
+                          saveConfig={async (configToSave: ConfigFile) => {
+                            // Use fetch directly to save the config
+                            const response = await fetch('/api/config', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify(configToSave)
+                            });
+                            if (!response.ok) {
+                              const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                              throw new Error(`Failed to save config: ${errorData.error || response.statusText}`);
                             }
                           }}
                         />

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { ResourceNode } from '../../types/index.js';
 
 export interface ResourceNodeCardProps {
@@ -15,14 +16,18 @@ export interface ResourceNodeCardProps {
  *
  * - Drag the card body to move it around the canvas.
  * - Drag the port dot (right edge) to draw a relationship line.
+ * 
+ * Performance: Wrapped in React.memo with custom comparison to prevent
+ * unnecessary re-renders during drag operations. Only re-renders when
+ * resource slug, relationship count, or highlight state changes.
  */
-export function ResourceNodeCard({
+const ResourceNodeCardComponent = ({
   resource,
   relationshipCount,
   isHighlighted,
   onCardMouseDown,
   onPortMouseDown,
-}: ResourceNodeCardProps) {
+}: ResourceNodeCardProps) => {
   return (
     <div
       className={[
@@ -71,4 +76,28 @@ export function ResourceNodeCard({
       />
     </div>
   );
-}
+};
+
+/**
+ * Memoized ResourceNodeCard with custom comparison function
+ * 
+ * Only re-renders when:
+ * - resource.slug changes (different resource)
+ * - relationshipCount changes (relationships added/removed)
+ * - isHighlighted changes (hover state during edge creation)
+ * 
+ * Does NOT re-render when:
+ * - Parent component re-renders
+ * - Other cards are being dragged
+ * - Callback functions change (onCardMouseDown, onPortMouseDown)
+ */
+export const ResourceNodeCard = memo(ResourceNodeCardComponent, (prevProps, nextProps) => {
+  // Return true if props are equal (skip re-render)
+  // Return false if props changed (re-render)
+  return (
+    prevProps.resource.slug === nextProps.resource.slug &&
+    prevProps.resource.name === nextProps.resource.name &&
+    prevProps.relationshipCount === nextProps.relationshipCount &&
+    prevProps.isHighlighted === nextProps.isHighlighted
+  );
+});

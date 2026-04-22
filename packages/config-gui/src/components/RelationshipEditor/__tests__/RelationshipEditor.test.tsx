@@ -48,6 +48,10 @@ const sampleRelationship: RelationshipConfig = {
   label: 'User Orders'
 };
 
+// Mock config functions for tests
+const mockLoadConfig = vi.fn().mockResolvedValue({ version: '1.0', enabled: {}, defaults: {}, annotations: {} });
+const mockSaveConfig = vi.fn().mockResolvedValue(undefined);
+
 // --- GraphCanvas tests ---
 
 describe('GraphCanvas', () => {
@@ -58,6 +62,8 @@ describe('GraphCanvas', () => {
         relationships={[]}
         onEdgeInitiated={vi.fn()}
         onEdgeSelect={vi.fn()}
+        loadConfig={mockLoadConfig}
+        saveConfig={mockSaveConfig}
       />
     );
 
@@ -73,6 +79,8 @@ describe('GraphCanvas', () => {
         relationships={[]}
         onEdgeInitiated={vi.fn()}
         onEdgeSelect={vi.fn()}
+        loadConfig={mockLoadConfig}
+        saveConfig={mockSaveConfig}
       />
     );
 
@@ -87,6 +95,8 @@ describe('GraphCanvas', () => {
         relationships={[]}
         onEdgeInitiated={vi.fn()}
         onEdgeSelect={vi.fn()}
+        loadConfig={mockLoadConfig}
+        saveConfig={mockSaveConfig}
       />
     );
 
@@ -193,6 +203,8 @@ describe('GraphCanvas connector interaction', () => {
         relationships={[]}
         onEdgeInitiated={onEdgeInitiated}
         onEdgeSelect={vi.fn()}
+        loadConfig={mockLoadConfig}
+        saveConfig={mockSaveConfig}
       />
     );
     // Mousedown on users port, mouseup on users card — self-connection rejected
@@ -208,6 +220,8 @@ describe('GraphCanvas connector interaction', () => {
         relationships={[]}
         onEdgeInitiated={vi.fn()}
         onEdgeSelect={vi.fn()}
+        loadConfig={mockLoadConfig}
+        saveConfig={mockSaveConfig}
       />
     );
     expect(screen.getByTestId('resource-node-users')).toBeInTheDocument();
@@ -222,6 +236,8 @@ describe('GraphCanvas connector interaction', () => {
         relationships={[]}
         onEdgeInitiated={vi.fn()}
         onEdgeSelect={vi.fn()}
+        loadConfig={mockLoadConfig}
+        saveConfig={mockSaveConfig}
       />
     );
     expect(screen.getByTestId('graph-canvas-empty')).toBeInTheDocument();
@@ -693,6 +709,8 @@ describe('Migration functionality', () => {
         relationships={implicitRels}
         specOperationPaths={[]}
         onSave={vi.fn()}
+        loadConfig={mockLoadConfig}
+        saveConfig={mockSaveConfig}
       />
     );
 
@@ -712,6 +730,8 @@ describe('Migration functionality', () => {
         relationships={explicitRels}
         specOperationPaths={[]}
         onSave={vi.fn()}
+        loadConfig={mockLoadConfig}
+        saveConfig={mockSaveConfig}
       />
     );
 
@@ -730,6 +750,8 @@ describe('Migration functionality', () => {
         relationships={mixedRels}
         specOperationPaths={[]}
         onSave={vi.fn()}
+        loadConfig={mockLoadConfig}
+        saveConfig={mockSaveConfig}
       />
     );
 
@@ -750,6 +772,8 @@ describe('Migration functionality', () => {
         relationships={implicitRels}
         specOperationPaths={[]}
         onSave={onSave}
+        loadConfig={mockLoadConfig}
+        saveConfig={mockSaveConfig}
       />
     );
 
@@ -774,6 +798,8 @@ describe('Migration functionality', () => {
         relationships={mixedRels}
         specOperationPaths={[]}
         onSave={onSave}
+        loadConfig={mockLoadConfig}
+        saveConfig={mockSaveConfig}
       />
     );
 
@@ -803,6 +829,8 @@ describe('Migration functionality', () => {
         relationships={implicitRels}
         specOperationPaths={[]}
         onSave={onSave}
+        loadConfig={mockLoadConfig}
+        saveConfig={mockSaveConfig}
       />
     );
 
@@ -831,6 +859,8 @@ describe('Migration functionality', () => {
         relationships={implicitRels}
         specOperationPaths={[]}
         onSave={vi.fn()}
+        loadConfig={mockLoadConfig}
+        saveConfig={mockSaveConfig}
       />
     );
 
