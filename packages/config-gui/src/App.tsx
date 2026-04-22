@@ -352,7 +352,36 @@ function App() {
                       {/* Canvas fills remaining viewport height */}
                       <div className="flex-1 min-h-0">
                         <RelationshipEditor
-                          resources={specStructure?.resources ?? null}
+                          resources={(() => {
+                            const filtered = specStructure?.resources.map((r: any) => {
+                              const filteredOps = r.operations.filter((op: any) => {
+                                // Filter out operations with x-uigen-ignore in config
+                                const operationKey = `${op.method}:${op.path}`;
+                                const annotation = config?.annotations?.[operationKey];
+                                const shouldKeep = !annotation || annotation['x-uigen-ignore'] !== true;
+                                
+                                // Debug logging
+                                if (op.path.includes('health')) {
+                                  console.log('[RelationshipEditor Filter]', {
+                                    operationKey,
+                                    annotation,
+                                    'x-uigen-ignore': annotation?.['x-uigen-ignore'],
+                                    shouldKeep
+                                  });
+                                }
+                                
+                                return shouldKeep;
+                              });
+                              
+                              return {
+                                ...r,
+                                operations: filteredOps
+                              };
+                            }).filter((r: any) => r.operations.length > 0) ?? null; // Filter out resources with no operations
+                            
+                            console.log('[RelationshipEditor] Filtered resources:', filtered?.map((r: any) => ({ name: r.name, operationCount: r.operations.length })));
+                            return filtered;
+                          })()}
                           relationships={config?.relationships ?? []}
                           specOperationPaths={
                             specStructure?.resources.flatMap((r: any) =>
