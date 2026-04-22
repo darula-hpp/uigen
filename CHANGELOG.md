@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.1] - 2026-04-22
+
+### Fixed
+
+**Core engine (`@uigen-dev/core`)**
+- **Request body schema name extraction** - Fixed annotation system to correctly identify request body fields
+  - Added `requestBodySchemaName` field to `Operation` interface in IR
+  - Updated `Body_Processor.processRequestBody()` to extract schema names from `$ref` paths
+  - Added `extractSchemaNameFromRef()` helper method to parse schema names from OpenAPI references
+  - Updated `Operation_Processor` to pass through `requestBodySchemaName` to operations
+  - Fixed `SpecParser` to use actual schema names from IR instead of deriving them
+  - Annotations like `x-uigen-max-file-size` now work correctly on request body fields
+  - Config reconciliation now provides accurate path suggestions for request body fields
+  - 62 tests passing (13 for body processor, 49 for operation processor)
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- **Ignored operations in relationship canvas** - Operations with `x-uigen-ignore: true` no longer appear in relationship graph
+  - Added filtering logic in `App.tsx` to exclude operations with `x-uigen-ignore` annotation from relationship editor
+  - Resources with all operations ignored are automatically filtered out from the canvas
+  - Prevents visual clutter and confusion from showing ignored endpoints in relationship management
+  - 4 unit tests verifying filtering logic for various scenarios
+
+### Tests
+- Added comprehensive tests for schema name extraction from `$ref` paths
+- Added tests for `requestBodySchemaName` field propagation through IR
+- Added tests for filtering ignored operations in relationship canvas
+- All existing tests continue to pass
+
+---
+
 ## [0.5.0] - 2026-04-20
 
 ### Added
