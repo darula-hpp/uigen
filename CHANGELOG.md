@@ -6,6 +6,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.3] - 2026-04-23
+
+### Added
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- **URL-based tab persistence** - Active tab state is now persisted in URL query parameters
+  - Created reusable `useUrlState` hook for managing state synchronized with URL
+  - Tab selection persists across page reloads
+  - Browser back/forward buttons navigate between tab states
+  - Bookmarkable tabs (e.g., `?tab=relationships` opens directly to that tab)
+  - Deep linking support for sharing specific tabs
+  - Type-safe with validation against allowed tab values
+  - 8 comprehensive unit tests for the hook
+  - Scalable pattern for future URL-based state needs (filters, search, pagination)
+
+### Fixed
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- **Integration test setup** - Added missing `KeyboardNavigationProvider` wrapper to integration tests
+  - Fixed pre-existing test issue where VisualEditor component required KeyboardNavigationProvider context
+  - All test renders now properly wrapped with required context providers
+  - Tests now match production component structure
+
+### Changed
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- Refactored tab state management from manual URL manipulation to custom hook pattern
+  - Removed ~30 lines of boilerplate code from App.tsx
+  - Simplified tab switching to simple `setActiveTab` calls
+  - Improved code maintainability and testability
+  - Better separation of concerns
+
+### Tests
+- Added 8 unit tests for `useUrlState` hook covering all scenarios
+- Fixed integration tests with proper context provider setup
+- All builds passing with TypeScript compilation
+
+---
+
 ## [0.5.2] - 2026-04-23
 
 ### Added
