@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from './contexts/AppContext.js';
+import { useUrlState } from './hooks/useUrlState.js';
 import { AnnotationList } from './components/AnnotationList.js';
 import { AnnotationForm } from './components/AnnotationForm.js';
 import { VisualEditor } from './components/VisualEditor/index.js';
@@ -25,7 +26,14 @@ import type { RelationshipConfig, ConfigFile } from '@uigen-dev/core';
 function App() {
   const { state, actions } = useAppContext();
   const { isLoading, error, config, specPath, specStructure, annotations } = state;
-  const [activeTab, setActiveTab] = useState<'annotations' | 'visual' | 'preview' | 'css' | 'relationships'>('annotations');
+  
+  // Valid tab values
+  const VALID_TABS = ['annotations', 'visual', 'preview', 'css', 'relationships'] as const;
+  type TabType = typeof VALID_TABS[number];
+  
+  // Use URL state for tab persistence
+  const [activeTab, setActiveTab] = useUrlState<TabType>('tab', 'annotations', VALID_TABS);
+  
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
   
   // CSS content state
