@@ -11,5 +11,7 @@ export type {
   ConfigFile,
   ConfigValidationResult,
   ConfigValidationError,
-  RelationshipConfig
+  RelationshipConfig,
+  NodePosition,
+  CanvasLayout
 } from './types.js';

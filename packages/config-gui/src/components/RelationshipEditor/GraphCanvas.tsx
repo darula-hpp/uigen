@@ -1,14 +1,19 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
-import type { RelationshipConfig } from '@uigen-dev/core';
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import type { RelationshipConfig, ConfigFile } from '@uigen-dev/core';
 import type { ResourceNode } from '../../types/index.js';
 import { ResourceNodeCard } from './ResourceNode.js';
 import { EdgeOverlay } from './EdgeOverlay.js';
+import { PositionManager } from '../../lib/position-manager.js';
+import { GridLayoutStrategy } from '../../lib/layout-strategy.js';
+import { ConfigFilePersistenceAdapter } from '../../lib/config-file-persistence-adapter.js';
 
 export interface GraphCanvasProps {
   resources: ResourceNode[];
   relationships: RelationshipConfig[];
   onEdgeInitiated: (source: string, target: string) => void;
   onEdgeSelect: (rel: RelationshipConfig) => void;
+  loadConfig: () => Promise<ConfigFile>;
+  saveConfig: (config: ConfigFile) => Promise<void>;
 }
 
 interface NodePosition { x: number; y: number; }
@@ -24,6 +29,10 @@ type DragMode =
   | { kind: 'card'; slug: string; startMouseX: number; startMouseY: number; startNodeX: number; startNodeY: number }
   | { kind: 'pan';  startMouseX: number; startMouseY: number; startPanX: number; startPanY: number };
 
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+type ResetState = 'idle' | 'confirming' | 'resetting';
+
 const CARD_W = 160;
 const CARD_H = 80;
 const WORLD_W = 8000;
@@ -32,36 +41,87 @@ const COLS = 4;
 const GAP = 56;
 const PAD = 48;
 
-function initialPositions(resources: ResourceNode[]): Map<string, NodePosition> {
-  const map = new Map<string, NodePosition>();
-  resources.forEach((r, i) => {
-    map.set(r.slug, {
-      x: PAD + (i % COLS) * (CARD_W + GAP),
-      y: PAD + Math.floor(i / COLS) * (CARD_H + GAP),
-    });
-  });
-  return map;
-}
-
-export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeSelect }: GraphCanvasProps) {
+export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeSelect, loadConfig, saveConfig }: GraphCanvasProps) {
   // The viewport element (fixed size, clips the world)
   const viewportRef = useRef<HTMLDivElement>(null);
   // The world element (large, panned via transform)
   const worldRef = useRef<HTMLDivElement>(null);
   const nodeRefsRef = useRef<Map<string, HTMLElement>>(new Map());
 
-  const [positions, setPositions] = useState<Map<string, NodePosition>>(() => initialPositions(resources));
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  // Create PositionManager instance (Task 7.1)
+  const positionManagerRef = useRef<PositionManager | null>(null);
+  if (!positionManagerRef.current) {
+    const adapter = new ConfigFilePersistenceAdapter(loadConfig, saveConfig);
+    const layoutStrategy = new GridLayoutStrategy(
+      CARD_W,
+      CARD_H,
+      GAP,
+      PAD,
+      COLS,
+      { width: WORLD_W, height: WORLD_H }
+    );
+    positionManagerRef.current = new PositionManager(
+      adapter,
+      layoutStrategy,
+      { width: WORLD_W, height: WORLD_H }
+    );
+  }
 
-  // Re-initialise when resource list changes
-  const prevSlugsRef = useRef<string>('');
+  const [positions, setPositions] = useState<Map<string, NodePosition>>(new Map());
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [resetState, setResetState] = useState<ResetState>('idle');
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Ref to hold current positions for event handlers (avoids stale closures)
+  const positionsRef = useRef(positions);
   useEffect(() => {
-    const key = resources.map(r => r.slug).join(',');
-    if (key !== prevSlugsRef.current) {
-      prevSlugsRef.current = key;
-      setPositions(initialPositions(resources));
+    positionsRef.current = positions;
+  }, [positions]);
+
+  // Load positions on mount and when resource list changes (Task 7.2 & 7.4)
+  // Memoize resource slugs to avoid unnecessary recalculations (Task 11.2)
+  const resourceSlugs = useMemo(() => resources.map(r => r.slug), [resources]);
+  
+  // Track previous resource slugs to detect changes
+  const prevResourceSlugsRef = useRef<string>('');
+  
+  useEffect(() => {
+    const key = resourceSlugs.join(',');
+    
+    // Only load if resource list has changed
+    if (key === prevResourceSlugsRef.current) {
+      return;
     }
-  }, [resources]);
+    
+    prevResourceSlugsRef.current = key;
+    
+    const loadPositions = async () => {
+      try {
+        const positionManager = positionManagerRef.current;
+        if (!positionManager) {
+          console.warn('PositionManager not initialized');
+          return;
+        }
+        
+        // Clean up orphaned positions (Task 7.4)
+        await positionManager.cleanupOrphanedPositions(resourceSlugs);
+        
+        // Initialize positions for all resources (Task 7.2)
+        // This call is now optimized with useMemo on resourceSlugs
+        const loadedPositions = await positionManager.initializePositions(resourceSlugs);
+        setPositions(loadedPositions);
+      } catch (error) {
+        console.error('Failed to load positions:', error);
+        // Fallback to empty map - positions will be calculated on demand
+        setPositions(new Map());
+      }
+    };
+    
+    loadPositions();
+  }, [resourceSlugs]);
 
   const [pending, setPending] = useState<PendingLine | null>(null);
   const [drag, setDrag] = useState<DragMode | null>(null);
@@ -104,8 +164,11 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
   function handleCardMouseDown(slug: string, e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    const pos = positions.get(slug);
-    if (!pos) return;
+    // Use ref to get current position (avoids stale closure)
+    const pos = positionsRef.current.get(slug);
+    if (!pos) {
+      return;
+    }
     setDrag({ kind: 'card', slug, startMouseX: e.clientX, startMouseY: e.clientY, startNodeX: pos.x, startNodeY: pos.y });
   }
 
@@ -122,8 +185,11 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (pending) {
-      const w = toWorld(e.clientX, e.clientY);
-      setPending(p => p ? { ...p, x2: w.x, y2: w.y } : null);
+      const vr = viewportRef.current?.getBoundingClientRect();
+      if (vr) {
+        const w = { x: e.clientX - vr.left - pan.x, y: e.clientY - vr.top - pan.y };
+        setPending(p => p ? { ...p, x2: w.x, y2: w.y } : null);
+      }
 
       const el = document.elementFromPoint(e.clientX, e.clientY);
       const card = el?.closest('[data-slug]') as HTMLElement | null;
@@ -151,10 +217,9 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
         y: drag.startPanY + dy,
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pending, drag]);
+  }, [pending, drag, pan]);
 
-  const handleMouseUp = useCallback((e: MouseEvent) => {
+  const handleMouseUp = useCallback(async (e: MouseEvent) => {
     if (pending) {
       const el = document.elementFromPoint(e.clientX, e.clientY);
       const card = el?.closest('[data-slug]') as HTMLElement | null;
@@ -165,8 +230,130 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
       setPending(null);
       setHighlightedSlug(null);
     }
+    
+    // Save position after card drag (Task 7.3 & 8.1)
+    if (drag?.kind === 'card') {
+      const positionManager = positionManagerRef.current;
+      if (positionManager) {
+        // Use ref to get current position (avoids stale closure)
+        const newPosition = positionsRef.current.get(drag.slug);
+        if (newPosition) {
+          try {
+            // Set saving status
+            setSaveStatus('saving');
+            setSaveError(null);
+            
+            await positionManager.setPosition(drag.slug, newPosition);
+            
+            // Set saved status
+            setSaveStatus('saved');
+            
+            // Auto-hide indicator after 1 second
+            setTimeout(() => {
+              setSaveStatus('idle');
+            }, 1000);
+            
+            // Reset retry count on success
+            setRetryCount(0);
+          } catch (error) {
+            console.error('Failed to save position:', error);
+            setSaveStatus('error');
+            setSaveError(error instanceof Error ? error.message : 'Failed to save layout');
+          }
+        }
+      }
+    }
+    
     setDrag(null);
-  }, [pending, onEdgeInitiated]);
+  }, [pending, onEdgeInitiated, drag]);
+
+  // Retry save handler (Task 8.2)
+  const handleRetrySave = useCallback(async () => {
+    // Limit retries to 3 attempts
+    if (retryCount >= 3) {
+      setSaveError('Maximum retry attempts reached. Please try again later.');
+      return;
+    }
+
+    const positionManager = positionManagerRef.current;
+    if (!positionManager) return;
+
+    try {
+      setSaveStatus('saving');
+      setSaveError(null);
+      setRetryCount(prev => prev + 1);
+
+      // Save all current positions using ref
+      const allPositions: Record<string, NodePosition> = {};
+      positionsRef.current.forEach((pos, slug) => {
+        allPositions[slug] = pos;
+      });
+
+      // Use the adapter's save method directly
+      const adapter = new ConfigFilePersistenceAdapter(loadConfig, saveConfig);
+      await adapter.save(allPositions);
+
+      setSaveStatus('saved');
+      setTimeout(() => {
+        setSaveStatus('idle');
+      }, 1000);
+
+      // Reset retry count on success
+      setRetryCount(0);
+    } catch (error) {
+      console.error('Retry save failed:', error);
+      setSaveStatus('error');
+      setSaveError(error instanceof Error ? error.message : 'Failed to save layout');
+    }
+  }, [retryCount, loadConfig, saveConfig]);
+
+  // Reset layout handler (Task 10.4)
+  const handleResetLayout = useCallback(async () => {
+    const positionManager = positionManagerRef.current;
+    if (!positionManager) return;
+
+    try {
+      setResetState('resetting');
+      setIsAnimating(true);
+
+      // Reset to default positions
+      const defaultPositions = await positionManager.resetToDefault(resourceSlugs);
+
+      // Update positions state with animation
+      setPositions(defaultPositions);
+
+      // Wait for animation to complete
+      setTimeout(() => {
+        setIsAnimating(false);
+        setResetState('idle');
+        
+        // Show success message
+        setSaveStatus('saved');
+        setTimeout(() => {
+          setSaveStatus('idle');
+        }, 1000);
+      }, 300);
+    } catch (error) {
+      console.error('Failed to reset layout:', error);
+      setResetState('idle');
+      setIsAnimating(false);
+      setSaveStatus('error');
+      setSaveError(error instanceof Error ? error.message : 'Failed to reset layout');
+    }
+  }, [resourceSlugs]);
+
+  const handleResetClick = useCallback(() => {
+    setResetState('confirming');
+  }, []);
+
+  const handleResetConfirm = useCallback(() => {
+    setResetState('idle');
+    handleResetLayout();
+  }, [handleResetLayout]);
+
+  const handleResetCancel = useCallback(() => {
+    setResetState('idle');
+  }, []);
 
   useEffect(() => {
     if (!pending && !drag) return;
@@ -240,7 +427,12 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
 
         {/* Cards */}
         {resources.map(resource => {
-          const pos = positions.get(resource.slug) ?? { x: 0, y: 0 };
+          const pos = positions.get(resource.slug);
+          // Skip rendering if position not loaded yet
+          if (!pos) {
+            return null;
+          }
+          
           return (
             <div
               key={resource.slug}
@@ -251,6 +443,7 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
                 top: pos.y,
                 width: CARD_W,
                 zIndex: drag?.kind === 'card' && drag.slug === resource.slug ? 20 : 10,
+                transition: isAnimating ? 'left 300ms ease-out, top 300ms ease-out' : 'none',
               }}
             >
               <ResourceNodeCard
@@ -279,10 +472,122 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
         />
       </div>
 
+      {/* Reset Layout button (Task 10.1) */}
+      <button
+        onClick={handleResetClick}
+        disabled={resetState === 'resetting' || isAnimating}
+        className="absolute top-3 right-3 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        data-testid="reset-layout-button"
+        title="Reset all card positions to default grid layout"
+      >
+        <svg className="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        Reset Layout
+      </button>
+
+      {/* Confirmation dialog (Task 10.2) */}
+      {resetState === 'confirming' && (
+        <div 
+          className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          data-testid="reset-confirmation-dialog"
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              Reset Layout
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Reset all card positions to default grid layout?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleResetCancel}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600"
+                data-testid="reset-cancel-button"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetConfirm}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                data-testid="reset-confirm-button"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Pan hint */}
       <div className="absolute bottom-2 right-3 text-xs text-gray-400 dark:text-gray-600 pointer-events-none select-none">
         drag canvas to pan
       </div>
+
+      {/* Save indicator (Task 8.1) */}
+      {saveStatus === 'saving' && (
+        <div 
+          className="absolute bottom-2 left-3 px-3 py-1.5 bg-blue-500 text-white text-xs rounded-md shadow-md flex items-center gap-2"
+          data-testid="save-indicator"
+        >
+          <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Saving layout...
+        </div>
+      )}
+
+      {saveStatus === 'saved' && (
+        <div 
+          className="absolute bottom-2 left-3 px-3 py-1.5 bg-green-500 text-white text-xs rounded-md shadow-md flex items-center gap-2"
+          data-testid="save-indicator"
+        >
+          <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          Saved
+        </div>
+      )}
+
+      {/* Error notification (Task 8.2) */}
+      {saveStatus === 'error' && (
+        <div 
+          className="absolute bottom-2 left-3 px-3 py-2 bg-red-500 text-white text-xs rounded-md shadow-lg max-w-xs"
+          data-testid="error-notification"
+        >
+          <div className="flex items-start gap-2">
+            <svg className="h-4 w-4 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="flex-1">
+              <div className="font-medium mb-1">Failed to save layout</div>
+              {saveError && <div className="text-xs opacity-90 mb-2">{saveError}</div>}
+              {retryCount < 3 ? (
+                <button
+                  onClick={handleRetrySave}
+                  className="text-xs font-medium underline hover:no-underline"
+                  data-testid="retry-button"
+                >
+                  Retry ({3 - retryCount} attempts remaining)
+                </button>
+              ) : (
+                <div className="text-xs opacity-90">Maximum retries reached</div>
+              )}
+            </div>
+            <button
+              onClick={() => setSaveStatus('idle')}
+              className="flex-shrink-0 hover:opacity-75"
+              aria-label="Dismiss error"
+              data-testid="dismiss-error-button"
+            >
+              <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

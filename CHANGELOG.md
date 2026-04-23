@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.2] - 2026-04-23
+
+### Added
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- **Canvas position persistence** - Resource card positions on the relationship graph are now saved and restored
+  - Added `PositionManager` class for centralized position management with validation and layout calculation
+  - Added `ConfigFilePersistenceAdapter` for reading/writing positions to `.uigen/config.yaml`
+  - Added `GridLayoutStrategy` for calculating default positions with spatial hashing for O(1) overlap detection
+  - Positions stored in `config.canvasLayout.positions` field with resource slug as key
+  - Debounced saves (500ms) to avoid excessive writes during drag operations
+  - Automatic cleanup of orphaned positions when resources are removed
+  - Reset layout button to restore default grid positions with confirmation dialog
+  - Save indicators showing saving/saved/error states
+  - Retry mechanism for failed saves (up to 3 attempts)
+  - 300ms smooth animation when resetting layout
+  - Positions validated and clamped to world bounds (0-8000px)
+  - 156 unit tests covering position management, persistence, layout calculation, and UI interactions
+  - 10 property-based tests (100 iterations each) verifying correctness properties
+
+### Fixed
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- **Canvas drag stale closure bug** - Fixed issue where subsequent drags would snap cards back to original positions
+  - Root cause: `handleCardMouseDown` and `handleMouseUp` were reading from stale `positions` state closures
+  - Solution: Added `positionsRef` to track current positions and updated handlers to read from ref instead of state
+  - First drag now works correctly, and all subsequent drags start from the current position
+  - Reload no longer required between drags
+  - Pattern: `useState` for rendering, `useRef` for real-time imperative state in event handlers
+
+### Tests
+- Added 156 unit tests for canvas position persistence
+- Added 10 property-based tests for position management correctness
+
+---
+
 ## [0.5.1] - 2026-04-22
 
 ### Fixed

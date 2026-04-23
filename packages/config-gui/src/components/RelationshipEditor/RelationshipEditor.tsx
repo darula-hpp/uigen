@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import type { RelationshipConfig } from '@uigen-dev/core';
+import type { RelationshipConfig, ConfigFile } from '@uigen-dev/core';
 import type { ResourceNode } from '../../types/index.js';
 import { GraphCanvas } from './GraphCanvas.js';
 import { RelationshipList } from './RelationshipList.js';
@@ -24,6 +24,8 @@ export interface RelationshipEditorProps {
   relationships: RelationshipConfig[];
   specOperationPaths: string[];
   onSave: (relationships: RelationshipConfig[]) => void;
+  loadConfig: () => Promise<ConfigFile>;
+  saveConfig: (config: ConfigFile) => Promise<void>;
 }
 
 /**
@@ -41,7 +43,9 @@ export function RelationshipEditor({
   resources,
   relationships,
   specOperationPaths,
-  onSave
+  onSave,
+  loadConfig,
+  saveConfig
 }: RelationshipEditorProps) {
   const [panel, setPanel] = useState<PanelState>({ type: 'none' });
 
@@ -187,6 +191,8 @@ export function RelationshipEditor({
           relationships={relationships}
           onEdgeInitiated={handleEdgeInitiated}
           onEdgeSelect={handleEdgeSelect}
+          loadConfig={loadConfig}
+          saveConfig={saveConfig}
         />
       </div>
 

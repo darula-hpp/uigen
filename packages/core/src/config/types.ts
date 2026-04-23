@@ -6,6 +6,28 @@
  */
 
 /**
+ * Position coordinates for a node on the canvas
+ *
+ * @property x - X coordinate in world space (0-8000)
+ * @property y - Y coordinate in world space (0-8000)
+ */
+export interface NodePosition {
+  x: number;
+  y: number;
+}
+
+/**
+ * Canvas layout configuration for the RelationshipEditor
+ *
+ * @property positions - Map of resource slugs to their canvas positions
+ * @property pan - Optional viewport pan offset
+ */
+export interface CanvasLayout {
+  positions: Record<string, NodePosition>;
+  pan?: { x: number; y: number };
+}
+
+/**
  * A single relationship declaration in the config file.
  *
  * @property source - Slug of the source resource
@@ -32,6 +54,7 @@ export interface RelationshipConfig {
  * @property defaults      - Map of annotation names to default parameter values
  * @property annotations   - Map of element paths to annotation configurations
  * @property relationships - Optional array of explicit relationship declarations
+ * @property canvasLayout  - Optional canvas layout configuration for node positions
  */
 export interface ConfigFile {
   version: string;
@@ -39,6 +62,7 @@ export interface ConfigFile {
   defaults: Record<string, Record<string, unknown>>;
   annotations: Record<string, Record<string, unknown>>;
   relationships?: RelationshipConfig[];
+  canvasLayout?: CanvasLayout;
 }
 
 /**

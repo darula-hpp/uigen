@@ -24,3 +24,35 @@ relationships:
     target: generate-documents
     path: /api/v1/meetings/{meeting_id}/generate-documents
     type: hasMany
+canvasLayout:
+  positions:
+    password-reset:
+      x: 97
+      'y': 344
+    confirm:
+      x: 623
+      'y': 454
+    me:
+      x: 607
+      'y': 564
+    login:
+      x: 205
+      'y': 578
+    sign-up:
+      x: 150
+      'y': 495
+    convert-to-pdf:
+      x: 340
+      'y': 374
+    generate-ai-data:
+      x: 481
+      'y': 157
+    download-pdf:
+      x: 696
+      'y': 302
+    data:
+      x: 694
+      'y': 133
+    generate-documents:
+      x: 246
+      'y': 251
