@@ -6,7 +6,7 @@
  */
 
 export { SpecTree } from './SpecTree.js';
-export { RefLinkCanvas } from './RefLinkCanvas.js';
+export { RefLinkVisualCanvas } from './RefLinkVisualCanvas.js';
 export { VisualEditor } from './VisualEditor.js';
 export { FieldNode } from './FieldNode.js';
 export { OperationNode } from './OperationNode.js';

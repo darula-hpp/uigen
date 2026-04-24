@@ -26,36 +26,6 @@ relationships:
     type: hasMany
 canvasLayout:
   positions:
-    password-reset:
-      x: 89
-      'y': 442
-    confirm:
-      x: 744
-      'y': 433
-    me:
-      x: 527
-      'y': 551
-    login:
-      x: 227
-      'y': 579
-    sign-up:
-      x: 0
-      'y': 328
-    convert-to-pdf:
-      x: 362
-      'y': 370
     generate-ai-data:
-      x: 438
-      'y': 66
-    download-pdf:
-      x: 696
-      'y': 302
-    data:
-      x: 652
-      'y': 133
-    generate-documents:
-      x: 395
-      'y': 272
-    meetings:
-      x: 80
-      'y': 201
+      x: 691
+      'y': 88

@@ -1,8 +1,19 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { VisualEditor } from '../index.js';
 import { AppProvider } from '../../../contexts/AppContext.js';
+import { KeyboardNavigationProvider } from '../../../contexts/KeyboardNavigationContext.js';
 import type { SpecStructure } from '../../../types/index.js';
+
+// Mock fetch to avoid API calls in tests
+beforeEach(() => {
+  global.fetch = vi.fn(() =>
+    Promise.resolve({
+      ok: false,
+      json: () => Promise.resolve({}),
+    } as Response)
+  );
+});
 
 describe('VisualEditor', () => {
   const mockStructure: SpecStructure = {
@@ -37,8 +48,10 @@ describe('VisualEditor', () => {
 
   const renderWithProvider = (structure: SpecStructure | null) => {
     return render(
-      <AppProvider>
-        <VisualEditor structure={structure} />
+      <AppProvider specStructure={structure}>
+        <KeyboardNavigationProvider>
+          <VisualEditor structure={structure} />
+        </KeyboardNavigationProvider>
       </AppProvider>
     );
   };
