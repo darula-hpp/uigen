@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from '../App.js';
 import { AppProvider } from '../contexts/AppContext.js';
+import { KeyboardNavigationProvider } from '../contexts/KeyboardNavigationContext.js';
 import type { AnnotationMetadata } from '../types/index.js';
 
 /**
@@ -57,7 +58,9 @@ describe('Config GUI Integration', () => {
   const renderApp = () => {
     return render(
       <AppProvider handlers={[]} specPath="/test/spec.yaml" specStructure={null}>
-        <App />
+        <KeyboardNavigationProvider>
+          <App />
+        </KeyboardNavigationProvider>
       </AppProvider>
     );
   };
@@ -137,7 +140,9 @@ describe('Config GUI Integration', () => {
       
       render(
         <AppProvider handlers={[]} specPath="/test/spec.yaml" specStructure={mockSpecStructure}>
-          <App />
+          <KeyboardNavigationProvider>
+            <App />
+          </KeyboardNavigationProvider>
         </AppProvider>
       );
       
@@ -157,7 +162,9 @@ describe('Config GUI Integration', () => {
       
       render(
         <AppProvider handlers={[]} specPath="/test/spec.yaml" specStructure={mockSpecStructure}>
-          <App />
+          <KeyboardNavigationProvider>
+            <App />
+          </KeyboardNavigationProvider>
         </AppProvider>
       );
       
@@ -175,7 +182,9 @@ describe('Config GUI Integration', () => {
     it('should display spec path in header when provided', () => {
       render(
         <AppProvider handlers={[]} specPath="/test/petstore.yaml" specStructure={null}>
-          <App />
+          <KeyboardNavigationProvider>
+            <App />
+          </KeyboardNavigationProvider>
         </AppProvider>
       );
       
@@ -185,7 +194,9 @@ describe('Config GUI Integration', () => {
     it('should not display spec path when not provided', () => {
       render(
         <AppProvider handlers={[]} specPath={null} specStructure={null}>
-          <App />
+          <KeyboardNavigationProvider>
+            <App />
+          </KeyboardNavigationProvider>
         </AppProvider>
       );
       
