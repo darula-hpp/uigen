@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from './contexts/AppContext.js';
 import { useUrlState } from './hooks/useUrlState.js';
+import { usePluginComponents, useCustomTabs, usePluginContext as usePluginContextHook } from './hooks/usePlugins.js';
+import { pluginRegistry } from './lib/plugin-registry.js';
 import { AnnotationList } from './components/AnnotationList.js';
 import { AnnotationForm } from './components/AnnotationForm.js';
 import { VisualEditor } from './components/VisualEditor/index.js';
@@ -27,9 +29,16 @@ function App() {
   const { state, actions } = useAppContext();
   const { isLoading, error, config, specPath, specStructure, annotations } = state;
   
-  // Valid tab values
-  const VALID_TABS = ['annotations', 'visual', 'preview', 'css', 'relationships'] as const;
-  type TabType = typeof VALID_TABS[number];
+  // Get plugin components and custom tabs
+  const { components: headerActionComponents, context: pluginContext } = usePluginComponents('headerActions');
+  const customTabs = useCustomTabs();
+  
+  // Valid tab values - include custom tabs from plugins
+  const baseTabIds = ['annotations', 'visual', 'preview', 'css', 'relationships'] as const;
+  type BaseTabType = typeof baseTabIds[number];
+  const customTabIds = customTabs.map(tab => tab.id);
+  const VALID_TABS = [...baseTabIds, ...customTabIds];
+  type TabType = BaseTabType | string;
   
   // Use URL state for tab persistence
   const [activeTab, setActiveTab] = useUrlState<TabType>('tab', 'annotations', VALID_TABS);
@@ -46,6 +55,20 @@ function App() {
   const selectedAnnotationMetadata = selectedAnnotation 
     ? annotations.find(a => a.name === selectedAnnotation)
     : null;
+  
+  /**
+   * Handle tab changes and notify plugins
+   */
+  const handleTabChange = async (newTab: TabType) => {
+    setActiveTab(newTab);
+    
+    // Notify plugins of tab change
+    try {
+      await pluginRegistry.executeTabChangeHooks(newTab, pluginContext);
+    } catch (error) {
+      console.error('Error executing tab change hooks:', error);
+    }
+  };
   
   /**
    * Load CSS content from API when CSS tab is opened
@@ -124,6 +147,10 @@ function App() {
                   Config version: {config.version}
                 </span>
               )}
+              {/* Plugin header actions */}
+              {headerActionComponents.map((Component, index) => (
+                <Component key={index} context={pluginContext} />
+              ))}
               <ThemeToggle />
             </div>
           </div>
@@ -177,7 +204,7 @@ function App() {
                 <div className="border-b border-gray-200 dark:border-gray-700">
                   <nav className="flex -mb-px" aria-label="Main navigation tabs">
                     <button
-                      onClick={() => setActiveTab('annotations')}
+                      onClick={() => handleTabChange('annotations')}
                       className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                         activeTab === 'annotations'
                           ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -189,7 +216,7 @@ function App() {
                       Annotations
                     </button>
                     <button
-                      onClick={() => setActiveTab('visual')}
+                      onClick={() => handleTabChange('visual')}
                       className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                         activeTab === 'visual'
                           ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -202,7 +229,7 @@ function App() {
                       Visual Editor
                     </button>
                     <button
-                      onClick={() => setActiveTab('preview')}
+                      onClick={() => handleTabChange('preview')}
                       className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                         activeTab === 'preview'
                           ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -215,7 +242,7 @@ function App() {
                       Preview
                     </button>
                     <button
-                      onClick={() => setActiveTab('css')}
+                      onClick={() => handleTabChange('css')}
                       className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                         activeTab === 'css'
                           ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -227,7 +254,7 @@ function App() {
                       Theme
                     </button>
                     <button
-                      onClick={() => setActiveTab('relationships')}
+                      onClick={() => handleTabChange('relationships')}
                       className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                         activeTab === 'relationships'
                           ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -239,6 +266,23 @@ function App() {
                     >
                       Relationships
                     </button>
+                    {/* Custom tabs from plugins */}
+                    {customTabs.map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => handleTabChange(tab.id)}
+                        className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                          activeTab === tab.id
+                            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
+                        aria-current={activeTab === tab.id ? 'page' : undefined}
+                        data-testid={`${tab.id}-tab`}
+                      >
+                        {tab.icon && <tab.icon />}
+                        {tab.label}
+                      </button>
+                    ))}
                   </nav>
                 </div>
                 
@@ -429,6 +473,19 @@ function App() {
                       </div>
                     </div>
                   )}
+                  
+                  {/* Custom tabs from plugins */}
+                  {customTabs.map(tab => {
+                    if (activeTab === tab.id) {
+                      const TabComponent = tab.component;
+                      return (
+                        <div key={tab.id}>
+                          <TabComponent context={pluginContext} />
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
                 </div>
               </div>
             </div>

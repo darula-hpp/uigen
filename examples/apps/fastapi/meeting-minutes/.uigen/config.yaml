@@ -19,17 +19,17 @@ relationships: []
 canvasLayout:
   positions:
     me:
-      x: 412
-      'y': 441
+      x: 411
+      'y': 364
     confirm:
-      x: 0
-      'y': 160
+      x: 119
+      'y': 157
     password-reset:
       x: 81
       'y': 415
     sign-up:
-      x: 913
-      'y': 300
+      x: 943
+      'y': 202
     login:
       x: 669
       'y': 357

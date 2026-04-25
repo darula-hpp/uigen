@@ -1,0 +1,10 @@
+# This directory is for plugin implementations
+# 
+# Plugins extend the config GUI with custom functionality without forking.
+# 
+# Structure:
+# - saas/       - SaaS-specific plugins (gitignored)
+# - enterprise/ - Enterprise plugins (gitignored)
+# - custom/     - Custom plugins (gitignored)
+# 
+# See the plugin system documentation for more information.

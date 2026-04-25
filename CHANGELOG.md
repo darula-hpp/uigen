@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.5] - 2026-04-25
+
+### Added
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- **Plugin system for extending the Config GUI** - Complete plugin architecture for adding custom functionality without forking
+  - Plugin interface with lifecycle hooks (onInit, onDestroy, onConfigLoad, onConfigSave, onTabChange)
+  - UI extension points: header actions, custom tabs, annotation form extras, settings panels
+  - API middleware for intercepting requests/responses
+  - Plugin registry with event system for monitoring plugin lifecycle
+  - Plugin loader with environment-based loading (OSS/SaaS/Enterprise editions)
+  - React integration with PluginProvider and custom hooks (usePlugins, usePluginComponents, useCustomTabs)
+  - Stub files for SaaS/Enterprise plugins (gitignored except index.ts)
+  - Comprehensive documentation (PLUGIN_SYSTEM.md, PLUGIN_SYSTEM_QUICKSTART.md, PLUGIN_SYSTEM_SUMMARY.md)
+  - Example plugin demonstrating all features
+  - Full test coverage (20 passing tests)
+  - Zero breaking changes - existing functionality unchanged
+  - Use case: Add SaaS features (auth, teams, billing, analytics) without maintaining a fork
+
+**Documentation**
+- Added CLI reference page for `uigen config` command with plugin system section
+- Added complete plugin guide at `/docs/extending-uigen/config-gui-plugins`
+- Updated CHANGELOG with plugin system feature
+
+---
+
 ## [0.5.4] - 2026-04-25
 
 ### Added
