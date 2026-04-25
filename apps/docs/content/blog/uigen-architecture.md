@@ -539,7 +539,7 @@ Generated from non-CRUD operations like `POST /users/{id}/activate` or `POST /or
 The CLI is built with Commander.js and exposes a single primary command: `serve`.
 
 ```bash
-uigen serve --spec ./openapi.yaml [--port 4400] [--proxy-base http://api.example.com]
+uigen serve ./openapi.yaml [--port 4400] [--proxy-base http://api.example.com]
 ```
 
 The `serve` command has two modes of operation, depending on how UIGen is installed.
@@ -599,7 +599,7 @@ The IR is the key to the renderer ecosystem. Because the IR is framework-agnosti
 If you want to try UIGen, the quickest way is:
 
 ```bash
-npx @uigen-dev/cli serve --spec ./your-openapi.yaml
+npx @uigen-dev/cli serve ./your-openapi.yaml
 ```
 
 If you want to contribute or build on top of UIGen, the `@uigen-dev/core` package exports the adapters, IR types, and reconciler as independent modules. The architecture is designed to be built on, not just used.
