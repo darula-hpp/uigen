@@ -55,21 +55,49 @@ Appsmith targets teams that want Retool's capabilities without vendor lock-in or
 
 Like Retool, Appsmith's visual builder is powerful for simple apps but becomes unwieldy for complex workflows. The JavaScript glue code problem is identical.
 
-### UIGen: Code-First Automatic Generation
+### UIGen: Spec-First Generation with Visual Config
 
-UIGen takes a completely different approach. Instead of building UIs visually, UIGen generates them automatically from your OpenAPI specification.
+UIGen takes a completely different approach. Instead of building UIs visually, UIGen generates them from your OpenAPI specification and provides a visual config GUI to refine the output.
 
 The core workflow is:
 1. Build your backend API (FastAPI, Express, Django, Rails, anything)
 2. Export an OpenAPI spec (auto-generated or hand-written)
-3. Run `uigen serve openapi.yaml`
-4. Get a complete frontend with tables, forms, authentication, and validation
+3. Run `uigen config openapi.yaml` to open the visual config GUI
+4. Add annotations, define relationships, customize labels, and configure theme
+5. Run `uigen serve openapi.yaml` to see your configured UI
 
-There is no visual builder. There is no component wiring. There is no JavaScript glue code. The OpenAPI spec contains all the information UIGen needs to generate a functional UI: endpoints, schemas, validation rules, authentication methods.
+UIGen's philosophy is that a well-designed API describes most of the UI, but you need a visual tool to add the finishing touches. The spec defines resources, operations, field types, and validation rules. The config GUI lets you hide sensitive fields, rename labels, define foreign key relationships, and customize the theme without writing code or modifying your spec file.
 
-UIGen's philosophy is that a well-designed API already describes the UI. The spec defines resources (users, products, orders), operations (list, create, update, delete), field types (string, number, date, file), validation rules (required, min/max, pattern), and relationships (foreign keys, nested objects). UIGen extracts this information and renders it as a React SPA.
+**The honest truth:** The raw generated UI from just the spec is functional but basic. To get a production-ready UI, you need to run the config command and add annotations for relationships, labels, and field visibility. The config GUI makes this fast and visual, but it is a required step, not optional.
 
-The tradeoff is control. Retool and Appsmith give you pixel-perfect control over layout and behavior. UIGen gives you a sensible default UI that matches your API structure. You can customize it through config files and annotations, but you cannot drag components around a canvas.
+The tradeoff is control. Retool and Appsmith give you pixel-perfect control over layout and behavior. UIGen gives you a sensible default UI that you refine through the config GUI. You cannot drag components around a canvas, but you can configure everything that matters: relationships, labels, visibility, validation, and theme.
+
+---
+
+## The UIGen Config GUI: A Key Differentiator
+
+UIGen's config GUI is what makes the tool practical for production use. It is a visual interface with five tabs that let you refine the generated UI without writing code or modifying your spec file.
+
+### Annotations Tab
+Enable or disable specific annotations (`x-uigen-ignore`, `x-uigen-label`, `x-uigen-ref`) and set project-wide defaults. For example, you can set a default to ignore all fields named `password` or `secret`.
+
+### Visual Editor Tab
+Configure specific fields and operations in your spec. Click on a field to hide it, rename its label, or mark it as required. Click on an operation to mark it as a login endpoint or hide it from the UI. All changes are applied to `.uigen/config.yaml`, not your spec file.
+
+### Relationships Tab
+The most powerful feature. A visual canvas where you define foreign key relationships between resources. Drag from a field on one resource to another resource to create a relationship. UIGen uses these relationships to generate dropdown selectors and linked detail views.
+
+For example, if you have a `Product` resource with a `categoryId` field and a `Category` resource, you can drag from `Product.categoryId` to `Category` to tell UIGen that this is a foreign key. The generated UI will show a dropdown of category names instead of a raw ID field.
+
+### Theme Tab
+Customize the CSS and appearance of your generated UI. Edit colors, fonts, spacing, and component styles. The theme editor provides syntax highlighting and live preview.
+
+### Preview Tab
+See your changes in real-time without running `uigen serve`. The preview tab renders the UI with your current config, so you can iterate quickly.
+
+**Why this matters:** Retool and Appsmith require you to build everything in their visual builder. UIGen generates 80% of the UI automatically and gives you a visual tool to refine the remaining 20%. This is faster than building from scratch but more flexible than pure automatic generation.
+
+The config GUI outputs plain YAML that you can version control with Git. This means you get the benefits of a visual tool (speed, discoverability) with the benefits of code (version control, code review, CI/CD).
 
 ---
 
@@ -131,9 +159,14 @@ Appsmith's component library is smaller but covers the essentials. The component
 - **Array fields** → Multi-select or nested table
 - **Object fields** → Nested form or expandable section
 
-UIGen uses TanStack Table for list views, React Hook Form for forms, and Zod for validation. The components are not configurable through a GUI, but you can customize them through CSS and config annotations.
+UIGen uses TanStack Table for list views, React Hook Form for forms, and Zod for validation. The components are configured through the visual config GUI:
+- **Annotations tab**: Enable/disable annotations and set defaults
+- **Visual Editor tab**: Configure specific fields and operations
+- **Relationships tab**: Define foreign key relationships with a visual canvas
+- **Theme tab**: Customize CSS and appearance
+- **Preview tab**: See changes in real-time
 
-The advantage is zero configuration. UIGen picks the right component for each field type automatically. The disadvantage is less control. You cannot swap a text input for a rich text editor without modifying the renderer.
+The advantage is automatic component selection with visual refinement. UIGen picks the right component for each field type, and you use the config GUI to add relationships, hide fields, and customize labels. The disadvantage is less control than a full visual builder. You cannot swap a text input for a rich text editor without modifying the renderer.
 
 ### Authentication and Authorization
 
@@ -208,13 +241,13 @@ Retool's visual builder is intuitive for simple apps. The learning curve steepen
 Appsmith's interface is nearly identical to Retool's, so the learning curve is similar. The documentation is less comprehensive, but the community is active and helpful.
 
 **UIGen** has a different learning curve:
-- **Day 1**: Run `uigen serve openapi.yaml`. Get a working UI in seconds. No learning required.
-- **Week 1**: Learn OpenAPI annotations (`x-uigen-ignore`, `x-uigen-label`, `x-uigen-ref`). Customize the generated UI.
-- **Month 1**: Master the config system, understand the IR, and build custom renderers or plugins.
+- **Day 1**: Run `uigen serve openapi.yaml`. Get a basic UI in seconds. Run `uigen config openapi.yaml` to open the visual config GUI.
+- **Week 1**: Learn the config GUI tabs (annotations, visual editor, relationships, theme). Add relationships between resources, hide sensitive fields, customize labels. Get a production-ready UI.
+- **Month 1**: Master OpenAPI annotations, understand the config reconciliation system, and build custom plugins.
 
-UIGen's initial experience is instant. If you have an OpenAPI spec, you get a UI immediately. The learning curve is about customization, not basic usage. You learn OpenAPI annotations and config files, not a visual builder.
+UIGen's initial experience is fast but requires configuration. The raw generated UI is functional but basic. The config GUI is where you refine it into a production-ready interface. The learning curve is about using the visual config tool, not writing code.
 
-The advantage is speed. You can evaluate UIGen in 5 minutes. The disadvantage is less control. If you need a custom layout or behavior that UIGen does not support, you need to modify the renderer or build a custom component.
+The advantage is speed with control. You get a working UI instantly and refine it visually. The disadvantage is that you must learn the config GUI and OpenAPI annotations to get a polished result. The config GUI is intuitive, but it is a required step.
 
 ### Iteration Speed
 
@@ -231,12 +264,13 @@ Retool's visual builder is great for prototyping but becomes a bottleneck for co
 Appsmith's Git sync feature helps with version control. You can commit app changes to a Git repo and collaborate through pull requests. This is a significant advantage over Retool for teams that value code review and version history.
 
 **UIGen** iteration speed is different:
-- **Initial generation**: Instant. Run `uigen serve`, get a UI in seconds.
+- **Initial generation**: Instant. Run `uigen serve`, get a basic UI in seconds.
+- **Config GUI changes**: Instant. The config GUI has a preview tab that shows changes in real-time. Add a relationship, see it immediately.
 - **Spec changes**: Instant. UIGen watches the spec file and regenerates the UI automatically.
-- **Config changes**: Instant. UIGen watches the config file and applies changes live.
+- **Config file changes**: Instant. UIGen watches the `.uigen/config.yaml` file and applies changes live.
 - **Custom components**: Moderate. Requires modifying the renderer and rebuilding.
 
-UIGen's iteration speed is fast for spec-driven changes. If you add a new endpoint or field to your API, the UI updates automatically. The bottleneck is custom components, which require code changes.
+UIGen's iteration speed is fast for config-driven changes. The config GUI's preview tab gives you instant feedback. If you add a new endpoint or field to your API, the UI updates automatically. The bottleneck is custom components, which require code changes.
 
 ### Version Control and Collaboration
 
@@ -346,13 +380,14 @@ Appsmith is the best open-source alternative to Retool. It is not as mature, but
 
 UIGen is the best choice when:
 - **You already have a backend API**: UIGen generates frontends for existing APIs. If you have FastAPI, Express, Django, or Rails, UIGen works out of the box.
-- **You want zero frontend code**: UIGen generates the entire UI from your OpenAPI spec. No React, no forms, no tables.
-- **You value speed and simplicity**: Run `uigen serve`, get a UI in seconds. No visual builder, no component wiring, no JavaScript glue code.
+- **You want minimal frontend code**: UIGen generates the entire UI from your OpenAPI spec. You use the visual config GUI to refine it, but you write zero React code.
+- **You value speed with visual refinement**: Run `uigen serve` for a basic UI in seconds. Run `uigen config` to refine it visually with the config GUI. No component wiring, no JavaScript glue code.
 - **You want full control over your backend**: UIGen does not touch your backend. All business logic, data access, and integrations stay in your API.
-- **You want standard version control**: UIGen uses plain text files (OpenAPI spec, config YAML). Use Git, code review, CI/CD.
+- **You want standard version control**: UIGen uses plain text files (OpenAPI spec, config YAML). Use Git, code review, CI/CD. The config GUI generates YAML, not binary blobs.
 - **You need a lightweight solution**: UIGen is a CLI tool, not a platform. No database, no user accounts, no infrastructure to maintain.
+- **You are comfortable with a two-step workflow**: Generate from spec, then refine with config GUI. This is faster than building from scratch but requires learning the config tool.
 
-UIGen is the best choice for teams that already have a backend API and want to skip frontend development entirely. It is not a visual builder. It is a frontend generator.
+UIGen is the best choice for teams that already have a backend API and want to skip frontend development. It is not a pure visual builder like Retool/Appsmith, but it is also not fully automatic. It is a hybrid: automatic generation + visual refinement.
 
 ---
 
@@ -375,9 +410,10 @@ UIGen is the best choice for teams that already have a backend API and want to s
 ### UIGen Limitations
 
 - **Requires a backend API**: UIGen does not query databases directly. You must build an API first.
-- **Less control over layout**: UIGen generates a sensible default UI. You cannot drag components around a canvas.
-- **No visual builder**: Customization is through config files and annotations, not a GUI.
-- **Early stage**: UIGen is pre-v1. The API is stable, but some features are missing (custom themes, advanced layouts).
+- **Less control over layout**: UIGen generates a sensible default UI. You can configure relationships, labels, and visibility through the config GUI, but you cannot drag components around a canvas or create custom layouts.
+- **Two-step workflow required**: The raw generated UI is basic. You must use the config GUI to add relationships, hide fields, and customize labels to get a production-ready result. This is faster than building from scratch but not as instant as it sounds.
+- **Config GUI learning curve**: The config GUI is intuitive but has five tabs (annotations, visual editor, relationships, theme, preview). You need to learn what each does and how they interact.
+- **Early stage**: UIGen is pre-v1. The API is stable, but some features are missing (advanced layouts, custom component overrides).
 - **You own the build process**: UIGen generates the frontend, but you deploy and maintain it.
 
 ---
@@ -402,11 +438,12 @@ Use this framework to choose the right tool for your team:
 
 ### Choose UIGen if:
 - You already have a backend API with an OpenAPI spec
-- You want to skip frontend development entirely
-- You value speed and simplicity over pixel-perfect control
+- You want to skip writing frontend code (but are willing to use a visual config GUI)
+- You value speed with visual refinement over pixel-perfect control
 - You want standard version control (Git, code review, CI/CD)
 - You want a lightweight solution with no platform to maintain
-- You are comfortable with a code-first approach
+- You are comfortable with a two-step workflow: generate from spec, refine with config GUI
+- You need to define relationships between resources (the config GUI has a visual relationship editor)
 
 ---
 
@@ -434,22 +471,31 @@ If you have an OpenAPI spec, you can try UIGen in 5 minutes:
 # Install UIGen
 npm install -g @uigen-dev/cli
 
-# Serve your API spec
+# Open the visual config GUI (recommended first step)
+uigen config openapi.yaml
+
+# In the config GUI:
+# 1. Relationships tab: Define foreign key relationships between resources
+# 2. Visual Editor tab: Hide sensitive fields, customize labels
+# 3. Theme tab: Customize colors and appearance
+# 4. Preview tab: See your changes in real-time
+
+# Serve your configured UI
 uigen serve openapi.yaml
 
 # Visit http://localhost:4400
 ```
 
-UIGen generates a complete frontend with tables, forms, authentication, and validation. No configuration required. If you want to customize the UI, run:
+**Important:** The raw `uigen serve` output is functional but basic. The config GUI is where you refine it into a production-ready UI. The config GUI is visual and intuitive, with five tabs:
 
-```bash
-# Open the visual config editor
-uigen config openapi.yaml
+- **Annotations**: Enable/disable annotations and set defaults
+- **Visual Editor**: Configure specific fields and operations
+- **Relationships**: Define foreign key relationships with a visual canvas (drag and drop)
+- **Theme**: Customize CSS and appearance
+- **Preview**: See changes in real-time
 
-# Customize labels, hide fields, mark login endpoints
-# Changes are saved to .uigen/config.yaml
-```
+All changes are saved to `.uigen/config.yaml`, a plain text file you can version control with Git.
 
-The full documentation is available at [uigen-docs.vercel.app](https://uigen-docs.vercel.app). The source code is on [GitHub](https://github.com/uigen-dev/uigen) under the MIT license.
+The full documentation is available at [uigen-docs.vercel.app](https://uigen-docs.vercel.app). The source code is on [GitHub](https://github.com/darula-hpp/uigen) under the MIT license.
 
-If you are building internal tools and already have a backend API, UIGen might be the fastest path to a working UI. No visual builder. No component wiring. No frontend code. Just point it at your spec and go.
+If you are building internal tools and already have a backend API, UIGen might be the fastest path to a production-ready UI. No frontend code. No component wiring. Just configure visually and deploy.
