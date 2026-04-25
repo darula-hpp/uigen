@@ -16,7 +16,7 @@ Three tools have emerged to solve this problem, each with a different philosophy
 
 **Appsmith** launched in 2019 as the open-source alternative to Retool. Similar drag-and-drop interface, similar component library, but self-hostable and free for unlimited users. Appsmith targets teams that want control over their infrastructure and data.
 
-**UIGen** takes a fundamentally different approach. Instead of a visual builder, UIGen generates complete frontends automatically from your OpenAPI specification. No drag-and-drop. No component wiring. No JavaScript glue code. You point it at your API spec and get a working UI in seconds.
+**UIGen** takes a fundamentally different approach. Instead of a visual builder, UIGen uses **runtime rendering** to automatically create frontends from your OpenAPI specification. No drag-and-drop. No component wiring. No JavaScript glue code. No code generation. UIGen parses your API spec into an Intermediate Representation (IR) that an intelligent React renderer interprets at runtime. You refine the output through a visual config GUI, but the UI is always rendered from your API structure, never frozen as generated code.
 
 This post compares all three tools across technical capabilities, developer experience, deployment models, pricing, and use case fit. Whether you are evaluating tools for your team or deciding between approaches, this guide will help you understand the tradeoffs.
 
@@ -57,7 +57,9 @@ Like Retool, Appsmith's visual builder is powerful for simple apps but becomes u
 
 ### UIGen: Spec-First Generation with Visual Config
 
-UIGen takes a completely different approach. Instead of building UIs visually, UIGen generates them from your OpenAPI specification and provides a visual config GUI to refine the output.
+### UIGen: Runtime Rendering with Visual Config
+
+UIGen takes a completely different approach. Instead of building UIs visually or generating code, UIGen uses **runtime rendering**. It parses your OpenAPI specification into an Intermediate Representation (IR) that an intelligent React renderer interprets at runtime. You refine the output through a visual config GUI, but you never touch React code.
 
 The core workflow is:
 1. Build your backend API (FastAPI, Express, Django, Rails, anything)
@@ -68,7 +70,9 @@ The core workflow is:
 
 UIGen's philosophy is that a well-designed API describes most of the UI, but you need a visual tool to add the finishing touches. The spec defines resources, operations, field types, and validation rules. The config GUI lets you hide sensitive fields, rename labels, define foreign key relationships, and customize the theme without writing code or modifying your spec file.
 
-**The honest truth:** The raw generated UI from just the spec is functional but basic. To get a production-ready UI, you need to run the config command and add annotations for relationships, labels, and field visibility. The config GUI makes this fast and visual, but it is a required step, not optional.
+**The key difference:** Retool and Appsmith are visual builders where you construct UIs component by component. UIGen is a runtime renderer where the UI is automatically derived from your API structure and refined through visual configuration. No code generation, no component wiring, no vendor lock-in. When your API changes, the UI updates automatically because it is rendered from the spec at runtime, not generated once and frozen.
+
+**The honest truth:** The raw rendered UI from just the spec is functional but basic. To get a production-ready UI, you need to run the config command and add annotations for relationships, labels, and field visibility. The config GUI makes this fast and visual, but it is a required step, not optional.
 
 The tradeoff is control. Retool and Appsmith give you pixel-perfect control over layout and behavior. UIGen gives you a sensible default UI that you refine through the config GUI. You cannot drag components around a canvas, but you can configure everything that matters: relationships, labels, visibility, validation, and theme.
 
@@ -95,7 +99,7 @@ Customize the CSS and appearance of your generated UI. Edit colors, fonts, spaci
 ### Preview Tab
 See your changes in real-time without running `uigen serve`. The preview tab renders the UI with your current config, so you can iterate quickly.
 
-**Why this matters:** Retool and Appsmith require you to build everything in their visual builder. UIGen generates 80% of the UI automatically and gives you a visual tool to refine the remaining 20%. This is faster than building from scratch but more flexible than pure automatic generation.
+**Why this matters:** Retool and Appsmith require you to build everything in their visual builder. UIGen renders 80% of the UI automatically from your API structure and gives you a visual tool to refine the remaining 20%. This is faster than building from scratch but more flexible than pure automatic generation. And because UIGen uses runtime rendering instead of code generation, your UI stays in sync with your API automatically. Change an endpoint, add a field, modify validation rules, and the UI updates instantly without regeneration.
 
 The config GUI outputs plain YAML that you can version control with Git. This means you get the benefits of a visual tool (speed, discoverability) with the benefits of code (version control, code review, CI/CD).
 
