@@ -69,6 +69,7 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
 
   const [positions, setPositions] = useState<Map<string, NodePosition>>(new Map());
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -141,8 +142,75 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
   function toWorld(clientX: number, clientY: number) {
     const vr = viewportRef.current?.getBoundingClientRect();
     if (!vr) return { x: clientX, y: clientY };
-    return { x: clientX - vr.left - pan.x, y: clientY - vr.top - pan.y };
+    return { x: (clientX - vr.left - pan.x) / zoom, y: (clientY - vr.top - pan.y) / zoom };
   }
+
+  // ── Zoom handlers ─────────────────────────────────────────────────────────
+
+  const handleWheel = useCallback((e: WheelEvent) => {
+    // Check if this is a pinch gesture (ctrlKey is set for trackpad pinch on most browsers)
+    if (e.ctrlKey) {
+      e.preventDefault();
+      
+      const vr = viewportRef.current?.getBoundingClientRect();
+      if (!vr) return;
+
+      // Get mouse position relative to viewport
+      const mouseX = e.clientX - vr.left;
+      const mouseY = e.clientY - vr.top;
+
+      // Calculate zoom delta (negative deltaY means zoom in)
+      const delta = -e.deltaY * 0.01;
+      const newZoom = Math.min(Math.max(0.1, zoom + delta), 3);
+
+      // Calculate pan adjustment to keep mouse position fixed
+      const zoomRatio = newZoom / zoom;
+      const newPanX = mouseX - (mouseX - pan.x) * zoomRatio;
+      const newPanY = mouseY - (mouseY - pan.y) * zoomRatio;
+
+      setZoom(newZoom);
+      setPan({ x: newPanX, y: newPanY });
+    }
+  }, [zoom, pan]);
+
+  const handleZoomIn = useCallback(() => {
+    const vr = viewportRef.current?.getBoundingClientRect();
+    if (!vr) return;
+
+    // Zoom towards center of viewport
+    const centerX = vr.width / 2;
+    const centerY = vr.height / 2;
+
+    const newZoom = Math.min(zoom * 1.2, 3);
+    const zoomRatio = newZoom / zoom;
+    const newPanX = centerX - (centerX - pan.x) * zoomRatio;
+    const newPanY = centerY - (centerY - pan.y) * zoomRatio;
+
+    setZoom(newZoom);
+    setPan({ x: newPanX, y: newPanY });
+  }, [zoom, pan]);
+
+  const handleZoomOut = useCallback(() => {
+    const vr = viewportRef.current?.getBoundingClientRect();
+    if (!vr) return;
+
+    // Zoom towards center of viewport
+    const centerX = vr.width / 2;
+    const centerY = vr.height / 2;
+
+    const newZoom = Math.max(zoom / 1.2, 0.1);
+    const zoomRatio = newZoom / zoom;
+    const newPanX = centerX - (centerX - pan.x) * zoomRatio;
+    const newPanY = centerY - (centerY - pan.y) * zoomRatio;
+
+    setZoom(newZoom);
+    setPan({ x: newPanX, y: newPanY });
+  }, [zoom, pan]);
+
+  const handleZoomReset = useCallback(() => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, []);
 
   // ── Port drag ─────────────────────────────────────────────────────────────
 
@@ -365,6 +433,17 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
     };
   }, [pending, drag, handleMouseMove, handleMouseUp]);
 
+  // Add wheel event listener for pinch-to-zoom
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    viewport.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      viewport.removeEventListener('wheel', handleWheel);
+    };
+  }, [handleWheel]);
+
   // ── Cursor ────────────────────────────────────────────────────────────────
 
   let cursor = 'default';
@@ -406,7 +485,8 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
           position: 'absolute',
           width: WORLD_W,
           height: WORLD_H,
-          transform: `translate(${pan.x}px, ${pan.y}px)`,
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: '0 0',
           willChange: 'transform',
         }}
       >
@@ -472,6 +552,41 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
         />
       </div>
 
+      {/* Zoom controls */}
+      <div className="absolute top-3 left-3 flex flex-col gap-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm overflow-hidden">
+        <button
+          onClick={handleZoomIn}
+          className="px-2 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Zoom in"
+          data-testid="zoom-in-button"
+        >
+          <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+        <div className="px-2 py-0.5 text-xs text-center text-gray-600 dark:text-gray-400 border-t border-b border-gray-200 dark:border-gray-700 min-w-[3rem]">
+          {Math.round(zoom * 100)}%
+        </div>
+        <button
+          onClick={handleZoomOut}
+          className="px-2 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Zoom out"
+          data-testid="zoom-out-button"
+        >
+          <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+          </svg>
+        </button>
+        <button
+          onClick={handleZoomReset}
+          className="px-2 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-200 dark:border-gray-700 text-xs"
+          title="Reset zoom"
+          data-testid="zoom-reset-button"
+        >
+          Reset
+        </button>
+      </div>
+
       {/* Reset Layout button (Task 10.1) */}
       <button
         onClick={handleResetClick}
@@ -519,9 +634,9 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
         </div>
       )}
 
-      {/* Pan hint */}
+      {/* Pan and zoom hints */}
       <div className="absolute bottom-2 right-3 text-xs text-gray-400 dark:text-gray-600 pointer-events-none select-none">
-        drag canvas to pan
+        drag to pan • pinch to zoom
       </div>
 
       {/* Save indicator (Task 8.1) */}

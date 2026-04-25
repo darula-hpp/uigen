@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/cli",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Auto-generate frontends from OpenAPI specs",
   "license": "MIT",
   "repository": {
