@@ -120,20 +120,23 @@ describe('Resource_Extractor', () => {
     });
 
     describe('sub-resource handling (Requirement 2.2, 8.1-8.4)', () => {
-      it('should use deepest static segment for sub-resources', () => {
-        expect(inferResourceName('/v1/Services/{sid}/AlphaSenders')).toBe('AlphaSenders');
+      it('should group nested resources under parent resource', () => {
+        // /Services/{id}/AlphaSenders should be grouped under Services, not AlphaSenders
+        // This prevents Association schemas from polluting child resources
+        expect(inferResourceName('/v1/Services/{sid}/AlphaSenders')).toBe('Services');
       });
 
-      it('should use deepest static segment with parameter at end', () => {
-        expect(inferResourceName('/v1/Services/{sid}/AlphaSenders/{id}')).toBe('AlphaSenders');
+      it('should group nested resources with parameter at end under parent', () => {
+        expect(inferResourceName('/v1/Services/{sid}/AlphaSenders/{id}')).toBe('Services');
       });
 
       it('should handle deeply nested sub-resources', () => {
-        expect(inferResourceName('/v1/Services/{sid}/AlphaSenders/{aid}/Messages')).toBe('Messages');
+        // Deeply nested paths should still group under the first parent
+        expect(inferResourceName('/v1/Services/{sid}/AlphaSenders/{aid}/Messages')).toBe('Services');
       });
 
       it('should handle sub-resources without version prefix', () => {
-        expect(inferResourceName('/Services/{sid}/AlphaSenders')).toBe('AlphaSenders');
+        expect(inferResourceName('/Services/{sid}/AlphaSenders')).toBe('Services');
       });
     });
 
@@ -170,14 +173,16 @@ describe('Resource_Extractor', () => {
         expect(inferResourceName('/v1/Services/{sid}')).toBe('Services');
       });
 
-      // Requirement 2.7: WHEN a path is /v1/Services/{sid}/AlphaSenders, THE Resource_Extractor SHALL infer the resource name as "AlphaSenders"
+      // Requirement 2.7: WHEN a path is /v1/Services/{sid}/AlphaSenders, THE Resource_Extractor SHALL group under parent "Services"
+      // Updated: Nested resources should be grouped under parent to prevent schema pollution
       it('validates Requirement 2.7', () => {
-        expect(inferResourceName('/v1/Services/{sid}/AlphaSenders')).toBe('AlphaSenders');
+        expect(inferResourceName('/v1/Services/{sid}/AlphaSenders')).toBe('Services');
       });
 
-      // Requirement 2.8: WHEN a path is /v1/Services/{sid}/AlphaSenders/{sid}, THE Resource_Extractor SHALL infer the resource name as "AlphaSenders"
+      // Requirement 2.8: WHEN a path is /v1/Services/{sid}/AlphaSenders/{sid}, THE Resource_Extractor SHALL group under parent "Services"
+      // Updated: Nested resources should be grouped under parent to prevent schema pollution
       it('validates Requirement 2.8', () => {
-        expect(inferResourceName('/v1/Services/{sid}/AlphaSenders/{sid}')).toBe('AlphaSenders');
+        expect(inferResourceName('/v1/Services/{sid}/AlphaSenders/{sid}')).toBe('Services');
       });
 
       // Requirement 2.9: WHEN a path has no static segments, THE Resource_Extractor SHALL return null

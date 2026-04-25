@@ -20,7 +20,7 @@ interface FieldNodeProps {
  * - Annotation badges for all applied annotations
  * - Inline text input for x-uigen-label (click badge or "Add label" to edit)
  * - Toggle switch for x-uigen-ignore
- * - Draggable for x-uigen-ref linking (drag source for RefLinkCanvas)
+ * - Draggable for x-uigen-ref linking (drag source for RefLinkVisualCanvas)
  * - Keyboard navigation support with focus indicator
  * - ARIA labels for accessibility
  * - Memoized to prevent unnecessary re-renders (Requirements: 23.1, 23.4)

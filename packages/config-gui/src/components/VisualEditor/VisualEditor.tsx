@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { FieldNode } from './FieldNode.js';
-import { OperationNode } from './OperationNode.js';
 import { SchemaPropertyNode } from './ElementTree/SchemaPropertyNode.js';
 import { OperationIgnoreNode } from './ElementTree/OperationIgnoreNode.js';
-import { RefLinkCanvas } from './RefLinkCanvas.js';
+import { RefLinkVisualCanvas } from './RefLinkVisualCanvas.js';
 import { ValidationWarnings } from './ValidationWarnings.js';
 import type { SpecStructure, ResourceNode } from '../../types/index.js';
 import { useKeyboardNavigation } from '../../contexts/KeyboardNavigationContext.js';
@@ -25,7 +23,7 @@ export interface VisualEditorProps {
  * - Displays spec structure in a tree view (SpecTree)
  * - Provides interactive annotation controls for fields (FieldNode)
  * - Provides interactive annotation controls for operations (OperationNode)
- * - Enables drag-and-drop ref linking (RefLinkCanvas)
+ * - Enables drag-and-drop ref linking (RefLinkVisualCanvas)
  * - Handles annotation deletion via visual controls
  * - Saves all changes to config file immediately
  * - Keyboard navigation with arrow keys, Enter, Space, Tab
@@ -539,7 +537,7 @@ function ResourceSection({ resource }: ResourceSectionProps) {
 }
 
 /**
- * RefsView displays the ref link management interface with split view
+ * RefsView displays the ref link management interface with visual canvas
  */
 interface RefsViewProps {
   structure: SpecStructure;
@@ -548,64 +546,32 @@ interface RefsViewProps {
 function RefsView({ structure }: RefsViewProps) {
   return (
     <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-          Reference Link Manager
-        </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-          Create x-uigen-ref annotations by dragging fields from the left panel onto resources on the right.
-          Ref links enable select/autocomplete widgets that pull data from related resources.
-        </p>
-      </div>
-
-      {/* Split View: Fields on left, Canvas on right */}
-      <div className="grid grid-cols-2 gap-6">
-        {/* Left: Fields to drag */}
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800 max-h-[600px] overflow-y-auto">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-            Fields (Drag to create refs)
-          </h4>
-          <div className="space-y-4">
-            {structure.resources.map(resource => (
-              <div key={resource.slug} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
-                <div className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                  <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-                    />
-                  </svg>
-                  {resource.name}
-                </div>
-                <div className="space-y-1">
-                  {resource.fields.map(field => (
-                    <div
-                      key={field.path}
-                      draggable
-                      className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded cursor-move hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-gray-900 dark:text-white font-medium"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>{field.label}</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">{field.type}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+      {/* Instructions Banner */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-0.5">
+            <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">
+              How to Create Reference Links
+            </h3>
+            <ol className="text-sm text-blue-800 dark:text-blue-300 space-y-1.5 list-decimal list-inside">
+              <li><strong>Expand a resource card</strong> to see its fields</li>
+              <li><strong>Drag from a field's connection port</strong> (the small circle on the right) to a target resource card</li>
+              <li><strong>Configure the link</strong> by selecting which field to use as the value and which to display as the label</li>
+            </ol>
+            <p className="text-xs text-blue-700 dark:text-blue-400 mt-2 italic">
+              💡 This turns plain text inputs into dropdowns that fetch real data from the linked resource
+            </p>
           </div>
         </div>
-
-        {/* Right: Canvas to drop */}
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-            Resources (Drop fields here)
-          </h4>
-          <RefLinkCanvas structure={structure} />
-        </div>
       </div>
+
+      {/* Visual Canvas */}
+      <RefLinkVisualCanvas structure={structure} />
     </div>
   );
 }

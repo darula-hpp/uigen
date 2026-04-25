@@ -1,56 +1,82 @@
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
-import type { RelationshipConfig, ConfigFile } from '@uigen-dev/core';
-import type { ResourceNode } from '../../types/index.js';
-import { ResourceNodeCard } from './ResourceNode.js';
-import { EdgeOverlay } from './EdgeOverlay.js';
-import { PositionManager } from '../../lib/position-manager.js';
-import { GridLayoutStrategy } from '../../lib/layout-strategy.js';
-import { ConfigFilePersistenceAdapter } from '../../lib/config-file-persistence-adapter.js';
+import type { ConfigFile } from '@uigen-dev/core';
+import type { ResourceNode } from '../../lib/spec-parser';
+import type { RefLinkConfig, DragMode, PendingLine } from './RefLinkTypes';
+import { ResourceCard } from './ResourceCard';
+import { RefLinkEdgeOverlay } from './RefLinkEdgeOverlay';
+import { PositionManager } from '../../lib/position-manager';
+import { GridLayoutStrategy } from '../../lib/layout-strategy';
+import { ConfigFilePersistenceAdapter } from '../../lib/config-file-persistence-adapter';
 
-export interface GraphCanvasProps {
+export interface RefLinkGraphCanvasProps {
   resources: ResourceNode[];
-  relationships: RelationshipConfig[];
-  onEdgeInitiated: (source: string, target: string) => void;
-  onEdgeSelect: (rel: RelationshipConfig) => void;
+  refLinks: RefLinkConfig[];
+  onConnectionInitiated: (fieldPath: string, targetSlug: string) => void;
+  onRefLinkSelect: (refLink: RefLinkConfig) => void;
   loadConfig: () => Promise<ConfigFile>;
   saveConfig: (config: ConfigFile) => Promise<void>;
 }
 
-interface NodePosition { x: number; y: number; }
-
-interface PendingLine {
-  sourceSlug: string;
-  /** world-space coordinates */
-  x1: number; y1: number;
-  x2: number; y2: number;
+interface NodePosition {
+  x: number;
+  y: number;
 }
-
-type DragMode =
-  | { kind: 'card'; slug: string; startMouseX: number; startMouseY: number; startNodeX: number; startNodeY: number }
-  | { kind: 'pan';  startMouseX: number; startMouseY: number; startPanX: number; startPanY: number };
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 type ResetState = 'idle' | 'confirming' | 'resetting';
 
-const CARD_W = 160;
-const CARD_H = 80;
+const CARD_W = 200; // Wider than relationship cards to accommodate field list
+const CARD_H = 600; // Large enough for expanded cards with many fields (approx 15 fields)
 const WORLD_W = 8000;
 const WORLD_H = 8000;
-const COLS = 4;
-const GAP = 56;
+const COLS = 3; // Reduced columns to give more horizontal space
+const GAP = 120; // Large gap to prevent overlap when cards are expanded
 const PAD = 48;
 
-export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeSelect, loadConfig, saveConfig }: GraphCanvasProps) {
+/**
+ * RefLinkGraphCanvas - Canvas component for visual ref link editor
+ * 
+ * Renders resource cards on a pannable canvas with drag-to-connect functionality
+ * for creating x-uigen-ref annotations. Reuses infrastructure from RelationshipEditor
+ * including PositionManager, GridLayoutStrategy, and EdgeOverlay patterns.
+ * 
+ * Features:
+ * - Pannable canvas with dot-grid background
+ * - Draggable resource cards with position persistence
+ * - Drag from field ports to resource cards to create connections
+ * - Visual connection lines for existing ref links
+ * - Reset layout functionality
+ * - Save indicators and error notifications
+ * 
+ * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 9.1, 12.6
+ * 
+ * @param props - Component props
+ * @returns RefLinkGraphCanvas component
+ */
+export function RefLinkGraphCanvas({
+  resources,
+  refLinks,
+  onConnectionInitiated,
+  onRefLinkSelect,
+  loadConfig,
+  saveConfig,
+}: RefLinkGraphCanvasProps) {
   // The viewport element (fixed size, clips the world)
   const viewportRef = useRef<HTMLDivElement>(null);
   // The world element (large, panned via transform)
   const worldRef = useRef<HTMLDivElement>(null);
-  const nodeRefsRef = useRef<Map<string, HTMLElement>>(new Map());
+  // Refs to resource card DOM elements (for line positioning)
+  const resourceRefsRef = useRef<Map<string, HTMLElement>>(new Map());
+  // Refs to field port DOM elements (for line positioning)
+  const fieldRefsRef = useRef<Map<string, HTMLElement>>(new Map());
 
-  // Create PositionManager instance (Task 7.1)
+  // Create PositionManager instance with separate config key for ref link positions
   const positionManagerRef = useRef<PositionManager | null>(null);
   if (!positionManagerRef.current) {
+    // Use ConfigFilePersistenceAdapter but with a custom config key
+    // We'll need to modify the adapter to support custom keys
+    // For now, we'll use the same adapter pattern as RelationshipEditor
     const adapter = new ConfigFilePersistenceAdapter(loadConfig, saveConfig);
     const layoutStrategy = new GridLayoutStrategy(
       CARD_W,
@@ -67,9 +93,17 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
     );
   }
 
+  // State management
   const [positions, setPositions] = useState<Map<string, NodePosition>>(new Map());
+  // Initialize with all resource slugs so cards are expanded by default
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(() => 
+    new Set(resources.map(r => r.slug))
+  );
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [drag, setDrag] = useState<DragMode | null>(null);
+  const [pending, setPending] = useState<PendingLine | null>(null);
+  const [highlightedSlug, setHighlightedSlug] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -82,23 +116,23 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
     positionsRef.current = positions;
   }, [positions]);
 
-  // Load positions on mount and when resource list changes (Task 7.2 & 7.4)
-  // Memoize resource slugs to avoid unnecessary recalculations (Task 11.2)
-  const resourceSlugs = useMemo(() => resources.map(r => r.slug), [resources]);
-  
+  // Load positions on mount and when resource list changes
+  // Memoize resource slugs to avoid unnecessary recalculations
+  const resourceSlugs = useMemo(() => resources.map((r) => r.slug), [resources]);
+
   // Track previous resource slugs to detect changes
   const prevResourceSlugsRef = useRef<string>('');
-  
+
   useEffect(() => {
     const key = resourceSlugs.join(',');
-    
+
     // Only load if resource list has changed
     if (key === prevResourceSlugsRef.current) {
       return;
     }
-    
+
     prevResourceSlugsRef.current = key;
-    
+
     const loadPositions = async () => {
       try {
         const positionManager = positionManagerRef.current;
@@ -106,12 +140,11 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
           console.warn('PositionManager not initialized');
           return;
         }
-        
-        // Clean up orphaned positions (Task 7.4)
+
+        // Clean up orphaned positions
         await positionManager.cleanupOrphanedPositions(resourceSlugs);
-        
-        // Initialize positions for all resources (Task 7.2)
-        // This call is now optimized with useMemo on resourceSlugs
+
+        // Initialize positions for all resources
         const loadedPositions = await positionManager.initializePositions(resourceSlugs);
         setPositions(loadedPositions);
       } catch (error) {
@@ -120,22 +153,20 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
         setPositions(new Map());
       }
     };
-    
+
     loadPositions();
   }, [resourceSlugs]);
 
-  const [pending, setPending] = useState<PendingLine | null>(null);
-  const [drag, setDrag] = useState<DragMode | null>(null);
-  const [highlightedSlug, setHighlightedSlug] = useState<string | null>(null);
+  // Register resource card ref
+  function registerResourceRef(slug: string, el: HTMLElement | null) {
+    if (el) resourceRefsRef.current.set(slug, el);
+    else resourceRefsRef.current.delete(slug);
+  }
 
-  const outgoingCount = useCallback(
-    (slug: string) => relationships.filter(r => r.source === slug).length,
-    [relationships]
-  );
-
-  function registerNodeRef(slug: string, el: HTMLElement | null) {
-    if (el) nodeRefsRef.current.set(slug, el);
-    else nodeRefsRef.current.delete(slug);
+  // Register field port ref
+  function registerFieldRef(fieldPath: string, el: HTMLElement | null) {
+    if (el) fieldRefsRef.current.set(fieldPath, el);
+    else fieldRefsRef.current.delete(fieldPath);
   }
 
   /** Convert viewport-relative client coords to world coords */
@@ -212,19 +243,24 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
     setPan({ x: 0, y: 0 });
   }, []);
 
-  // ── Port drag ─────────────────────────────────────────────────────────────
+  // ── Port drag (connection creation) ───────────────────────────────────────
 
-  function handlePortMouseDown(sourceSlug: string, e: React.MouseEvent) {
+  function handlePortMouseDown(fieldPath: string, e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    const srcEl = nodeRefsRef.current.get(sourceSlug);
-    if (!srcEl || !worldRef.current) return;
+
+    // Get the port element position
+    const portEl = fieldRefsRef.current.get(fieldPath);
+    if (!portEl || !worldRef.current) return;
+
     const worldRect = worldRef.current.getBoundingClientRect();
-    const srcRect = srcEl.getBoundingClientRect();
-    // Port is on the right-center of the card, in world space
-    const x1 = srcRect.right - worldRect.left;
-    const y1 = srcRect.top + srcRect.height / 2 - worldRect.top;
-    setPending({ sourceSlug, x1, y1, x2: x1, y2: y1 });
+    const portRect = portEl.getBoundingClientRect();
+
+    // Port is on the right-center of the field row, in world space
+    const x1 = portRect.right - worldRect.left;
+    const y1 = portRect.top + portRect.height / 2 - worldRect.top;
+
+    setPending({ fieldPath, x1, y1, x2: x1, y2: y1 });
   }
 
   // ── Card drag ─────────────────────────────────────────────────────────────
@@ -232,12 +268,21 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
   function handleCardMouseDown(slug: string, e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+
     // Use ref to get current position (avoids stale closure)
     const pos = positionsRef.current.get(slug);
     if (!pos) {
       return;
     }
-    setDrag({ kind: 'card', slug, startMouseX: e.clientX, startMouseY: e.clientY, startNodeX: pos.x, startNodeY: pos.y });
+
+    setDrag({
+      kind: 'card',
+      slug,
+      startMouseX: e.clientX,
+      startMouseY: e.clientY,
+      startNodeX: pos.x,
+      startNodeY: pos.y,
+    });
   }
 
   // ── Canvas pan ────────────────────────────────────────────────────────────
@@ -246,96 +291,128 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
     // Only pan on left-click directly on the canvas background
     if (e.target !== viewportRef.current && e.target !== worldRef.current) return;
     e.preventDefault();
-    setDrag({ kind: 'pan', startMouseX: e.clientX, startMouseY: e.clientY, startPanX: pan.x, startPanY: pan.y });
+    setDrag({
+      kind: 'pan',
+      startMouseX: e.clientX,
+      startMouseY: e.clientY,
+      startPanX: pan.x,
+      startPanY: pan.y,
+    });
   }
+
+  // ── Toggle expand/collapse ────────────────────────────────────────────────
+
+  const handleToggleExpand = useCallback((slug: string) => {
+    setExpandedCards((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) {
+        next.delete(slug);
+      } else {
+        next.add(slug);
+      }
+      return next;
+    });
+  }, []);
 
   // ── Global move / up ──────────────────────────────────────────────────────
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (pending) {
-      const vr = viewportRef.current?.getBoundingClientRect();
-      if (vr) {
-        const w = { x: e.clientX - vr.left - pan.x, y: e.clientY - vr.top - pan.y };
-        setPending(p => p ? { ...p, x2: w.x, y2: w.y } : null);
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (pending) {
+        const vr = viewportRef.current?.getBoundingClientRect();
+        if (vr) {
+          const w = { x: e.clientX - vr.left - pan.x, y: e.clientY - vr.top - pan.y };
+          setPending((p) => (p ? { ...p, x2: w.x, y2: w.y } : null));
+        }
+
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const card = el?.closest('[data-slug]') as HTMLElement | null;
+        setHighlightedSlug(card?.dataset.slug ?? null);
       }
 
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-      const card = el?.closest('[data-slug]') as HTMLElement | null;
-      setHighlightedSlug(card?.dataset.slug ?? null);
-    }
-
-    if (drag?.kind === 'card') {
-      const dx = e.clientX - drag.startMouseX;
-      const dy = e.clientY - drag.startMouseY;
-      setPositions(prev => {
-        const next = new Map(prev);
-        next.set(drag.slug, {
-          x: Math.max(0, drag.startNodeX + dx),
-          y: Math.max(0, drag.startNodeY + dy),
+      if (drag?.kind === 'card') {
+        const dx = e.clientX - drag.startMouseX;
+        const dy = e.clientY - drag.startMouseY;
+        setPositions((prev) => {
+          const next = new Map(prev);
+          next.set(drag.slug, {
+            x: Math.max(0, drag.startNodeX + dx),
+            y: Math.max(0, drag.startNodeY + dy),
+          });
+          return next;
         });
-        return next;
-      });
-    }
-
-    if (drag?.kind === 'pan') {
-      const dx = e.clientX - drag.startMouseX;
-      const dy = e.clientY - drag.startMouseY;
-      setPan({
-        x: drag.startPanX + dx,
-        y: drag.startPanY + dy,
-      });
-    }
-  }, [pending, drag, pan]);
-
-  const handleMouseUp = useCallback(async (e: MouseEvent) => {
-    if (pending) {
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-      const card = el?.closest('[data-slug]') as HTMLElement | null;
-      const targetSlug = card?.dataset.slug;
-      if (targetSlug && targetSlug !== pending.sourceSlug) {
-        onEdgeInitiated(pending.sourceSlug, targetSlug);
       }
-      setPending(null);
-      setHighlightedSlug(null);
-    }
-    
-    // Save position after card drag (Task 7.3 & 8.1)
-    if (drag?.kind === 'card') {
-      const positionManager = positionManagerRef.current;
-      if (positionManager) {
-        // Use ref to get current position (avoids stale closure)
-        const newPosition = positionsRef.current.get(drag.slug);
-        if (newPosition) {
-          try {
-            // Set saving status
-            setSaveStatus('saving');
-            setSaveError(null);
-            
-            await positionManager.setPosition(drag.slug, newPosition);
-            
-            // Set saved status
-            setSaveStatus('saved');
-            
-            // Auto-hide indicator after 1 second
-            setTimeout(() => {
-              setSaveStatus('idle');
-            }, 1000);
-            
-            // Reset retry count on success
-            setRetryCount(0);
-          } catch (error) {
-            console.error('Failed to save position:', error);
-            setSaveStatus('error');
-            setSaveError(error instanceof Error ? error.message : 'Failed to save layout');
+
+      if (drag?.kind === 'pan') {
+        const dx = e.clientX - drag.startMouseX;
+        const dy = e.clientY - drag.startMouseY;
+        setPan({
+          x: drag.startPanX + dx,
+          y: drag.startPanY + dy,
+        });
+      }
+    },
+    [pending, drag, pan]
+  );
+
+  const handleMouseUp = useCallback(
+    async (e: MouseEvent) => {
+      if (pending) {
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const card = el?.closest('[data-slug]') as HTMLElement | null;
+        const targetSlug = card?.dataset.slug;
+
+        // Extract source resource slug from field path (e.g., "users.departmentId" -> "users")
+        const sourceSlug = pending.fieldPath.split('.')[0];
+
+        // Prevent self-connections
+        if (targetSlug && targetSlug !== sourceSlug) {
+          onConnectionInitiated(pending.fieldPath, targetSlug);
+        }
+
+        setPending(null);
+        setHighlightedSlug(null);
+      }
+
+      // Save position after card drag
+      if (drag?.kind === 'card') {
+        const positionManager = positionManagerRef.current;
+        if (positionManager) {
+          // Use ref to get current position (avoids stale closure)
+          const newPosition = positionsRef.current.get(drag.slug);
+          if (newPosition) {
+            try {
+              // Set saving status
+              setSaveStatus('saving');
+              setSaveError(null);
+
+              await positionManager.setPosition(drag.slug, newPosition);
+
+              // Set saved status
+              setSaveStatus('saved');
+
+              // Auto-hide indicator after 1 second
+              setTimeout(() => {
+                setSaveStatus('idle');
+              }, 1000);
+
+              // Reset retry count on success
+              setRetryCount(0);
+            } catch (error) {
+              console.error('Failed to save position:', error);
+              setSaveStatus('error');
+              setSaveError(error instanceof Error ? error.message : 'Failed to save layout');
+            }
           }
         }
       }
-    }
-    
-    setDrag(null);
-  }, [pending, onEdgeInitiated, drag]);
 
-  // Retry save handler (Task 8.2)
+      setDrag(null);
+    },
+    [pending, onConnectionInitiated, drag]
+  );
+
+  // Retry save handler
   const handleRetrySave = useCallback(async () => {
     // Limit retries to 3 attempts
     if (retryCount >= 3) {
@@ -349,7 +426,7 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
     try {
       setSaveStatus('saving');
       setSaveError(null);
-      setRetryCount(prev => prev + 1);
+      setRetryCount((prev) => prev + 1);
 
       // Save all current positions using ref
       const allPositions: Record<string, NodePosition> = {};
@@ -375,7 +452,7 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
     }
   }, [retryCount, loadConfig, saveConfig]);
 
-  // Reset layout handler (Task 10.4)
+  // Reset layout handler
   const handleResetLayout = useCallback(async () => {
     const positionManager = positionManagerRef.current;
     if (!positionManager) return;
@@ -394,7 +471,7 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
       setTimeout(() => {
         setIsAnimating(false);
         setResetState('idle');
-        
+
         // Show success message
         setSaveStatus('saved');
         setTimeout(() => {
@@ -456,15 +533,28 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
       <div
         className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700"
         style={{ height: 480 }}
-        data-testid="graph-canvas-empty"
+        data-testid="ref-link-graph-canvas-empty"
       >
         <div className="text-center">
-          <svg className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+          <svg
+            className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+            />
           </svg>
-          <p className="text-sm text-gray-400 dark:text-gray-500">No resources found in the loaded spec.</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Load a spec with resources to start declaring relationships.</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">
+            No resources found in the loaded spec.
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            Load a spec with resources to start creating ref links.
+          </p>
         </div>
       </div>
     );
@@ -476,8 +566,21 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
       className="relative overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
       style={{ height: '100%', minHeight: 600, cursor }}
       onMouseDown={handleCanvasMouseDown}
-      data-testid="graph-canvas"
+      data-testid="ref-link-graph-canvas"
     >
+      {/* ARIA live region for state change announcements */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {saveStatus === 'saving' && 'Saving layout...'}
+        {saveStatus === 'saved' && 'Layout saved'}
+        {saveStatus === 'error' && `Failed to save layout: ${saveError || 'Unknown error'}`}
+        {resetState === 'resetting' && 'Resetting layout...'}
+      </div>
+
       {/* Panned world */}
       <div
         ref={worldRef}
@@ -498,25 +601,25 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
           aria-hidden="true"
         >
           <defs>
-            <pattern id="dot-grid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+            <pattern id="dot-grid-reflink" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
               <circle cx="1" cy="1" r="1" fill="#94a3b8" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#dot-grid)" />
+          <rect width="100%" height="100%" fill="url(#dot-grid-reflink)" />
         </svg>
 
-        {/* Cards */}
-        {resources.map(resource => {
+        {/* Resource Cards */}
+        {resources.map((resource) => {
           const pos = positions.get(resource.slug);
           // Skip rendering if position not loaded yet
           if (!pos) {
             return null;
           }
-          
+
           return (
             <div
               key={resource.slug}
-              ref={el => registerNodeRef(resource.slug, el)}
+              ref={(el) => registerResourceRef(resource.slug, el)}
               style={{
                 position: 'absolute',
                 left: pos.x,
@@ -526,29 +629,32 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
                 transition: isAnimating ? 'left 300ms ease-out, top 300ms ease-out' : 'none',
               }}
             >
-              <ResourceNodeCard
+              <ResourceCard
                 resource={resource}
-                relationshipCount={outgoingCount(resource.slug)}
+                isExpanded={expandedCards.has(resource.slug)}
                 isHighlighted={
                   highlightedSlug === resource.slug &&
                   pending !== null &&
-                  pending.sourceSlug !== resource.slug
+                  !pending.fieldPath.startsWith(resource.slug + '.')
                 }
-                onPortMouseDown={handlePortMouseDown}
+                onToggleExpand={handleToggleExpand}
                 onCardMouseDown={handleCardMouseDown}
+                onPortMouseDown={handlePortMouseDown}
+                onRegisterPortRef={registerFieldRef}
               />
             </div>
           );
         })}
 
-        {/* SVG edge overlay — covers the whole world so lines are always correct */}
-        <EdgeOverlay
-          relationships={relationships}
-          nodeRefsRef={nodeRefsRef}
-          containerRef={worldRef}
+        {/* SVG edge overlay for connection lines */}
+        <RefLinkEdgeOverlay
+          refLinks={refLinks}
+          fieldRefsRef={fieldRefsRef}
+          resourceRefsRef={resourceRefsRef}
+          containerRef={worldRef as React.RefObject<HTMLElement>}
           positions={positions}
           pendingLine={pending ? { x1: pending.x1, y1: pending.y1, x2: pending.x2, y2: pending.y2 } : null}
-          onEdgeSelect={onEdgeSelect}
+          onRefLinkSelect={onRefLinkSelect}
         />
       </div>
 
@@ -587,7 +693,7 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
         </button>
       </div>
 
-      {/* Reset Layout button (Task 10.1) */}
+      {/* Reset Layout button */}
       <button
         onClick={handleResetClick}
         disabled={resetState === 'resetting' || isAnimating}
@@ -595,15 +701,26 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
         data-testid="reset-layout-button"
         title="Reset all card positions to default grid layout"
       >
-        <svg className="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        <svg
+          className="w-3 h-3"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
         </svg>
         Reset Layout
       </button>
 
-      {/* Confirmation dialog (Task 10.2) */}
+      {/* Confirmation dialog */}
       {resetState === 'confirming' && (
-        <div 
+        <div
           className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           data-testid="reset-confirmation-dialog"
         >
@@ -639,41 +756,74 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
         drag to pan • pinch to zoom
       </div>
 
-      {/* Save indicator (Task 8.1) */}
+      {/* Save indicator */}
       {saveStatus === 'saving' && (
-        <div 
+        <div
           className="absolute bottom-2 left-3 px-3 py-1.5 bg-blue-500 text-white text-xs rounded-md shadow-md flex items-center gap-2"
           data-testid="save-indicator"
         >
-          <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          <svg
+            className="animate-spin h-3 w-3"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
           </svg>
           Saving layout...
         </div>
       )}
 
       {saveStatus === 'saved' && (
-        <div 
+        <div
           className="absolute bottom-2 left-3 px-3 py-1.5 bg-green-500 text-white text-xs rounded-md shadow-md flex items-center gap-2"
           data-testid="save-indicator"
         >
-          <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            className="h-3 w-3"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
           Saved
         </div>
       )}
 
-      {/* Error notification (Task 8.2) */}
+      {/* Error notification */}
       {saveStatus === 'error' && (
-        <div 
+        <div
           className="absolute bottom-2 left-3 px-3 py-2 bg-red-500 text-white text-xs rounded-md shadow-lg max-w-xs"
           data-testid="error-notification"
         >
           <div className="flex items-start gap-2">
-            <svg className="h-4 w-4 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="h-4 w-4 flex-shrink-0 mt-0.5"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <div className="flex-1">
               <div className="font-medium mb-1">Failed to save layout</div>
@@ -696,8 +846,19 @@ export function GraphCanvas({ resources, relationships, onEdgeInitiated, onEdgeS
               aria-label="Dismiss error"
               data-testid="dismiss-error-button"
             >
-              <svg className="h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="h-3 w-3"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>

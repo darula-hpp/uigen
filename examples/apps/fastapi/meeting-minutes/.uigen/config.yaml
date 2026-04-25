@@ -15,47 +15,27 @@ annotations:
     x-uigen-max-file-size: 62914560
   Body_upload_template_api_v1_templates_post.file:
     x-uigen-max-file-size: 62914560
-relationships:
-  - source: templates
-    target: meetings
-    path: /api/v1/meetings/{meeting_id}/templates/{template_id}
-    type: hasMany
-  - source: meetings
-    target: generate-documents
-    path: /api/v1/meetings/{meeting_id}/generate-documents
-    type: hasMany
+relationships: []
 canvasLayout:
   positions:
-    password-reset:
-      x: 89
-      'y': 442
-    confirm:
-      x: 744
-      'y': 433
     me:
-      x: 527
-      'y': 551
-    login:
-      x: 227
-      'y': 579
-    sign-up:
+      x: 412
+      'y': 441
+    confirm:
       x: 0
-      'y': 328
-    convert-to-pdf:
-      x: 362
-      'y': 370
-    generate-ai-data:
-      x: 438
-      'y': 66
-    download-pdf:
-      x: 696
-      'y': 302
-    data:
-      x: 652
-      'y': 133
-    generate-documents:
-      x: 395
-      'y': 272
+      'y': 160
+    password-reset:
+      x: 81
+      'y': 415
+    sign-up:
+      x: 913
+      'y': 300
+    login:
+      x: 669
+      'y': 357
     meetings:
-      x: 80
-      'y': 201
+      x: 372
+      'y': 63
+    templates:
+      x: 773
+      'y': 794

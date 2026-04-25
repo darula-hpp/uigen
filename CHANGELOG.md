@@ -6,6 +6,95 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.4] - 2026-04-25
+
+### Added
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- **Pinch-to-zoom support for visual canvases** - Both Ref Links and Relationships canvases now support zoom functionality
+  - Trackpad pinch gesture support (Ctrl+wheel) for smooth zooming
+  - Zoom range: 10% to 300% with visual percentage indicator
+  - Zoom controls UI with +/- buttons and reset button
+  - Zoom centered on mouse/pinch position for intuitive navigation
+  - Zoom state preserved during pan and drag operations
+  - Transform origin set to top-left (0,0) for consistent scaling
+  - Updated hints: "drag to pan • pinch to zoom"
+  - Zoom controls positioned in top-left corner with clean vertical layout
+  - All zoom interactions work seamlessly with existing pan and drag functionality
+
+### Fixed
+
+**Core engine (`@uigen-dev/core`)**
+- **Schema pollution bug in resource extractor** - Fixed core spec parser incorrectly merging association schemas into resource schemas
+  - Root cause: Three bugs in resource extraction logic:
+    1. `inferResourceName` used last path segment, causing `/meetings/{id}/templates` to group under "templates" instead of "meetings"
+    2. Didn't skip 'api' prefix in paths, creating phantom "api" resource
+    3. Merged all response schemas indiscriminately, including nested association operations
+  - Fixed `inferResourceName` to detect nested patterns (`/{resource1}/{id}/{resource2}`) and group under parent resource
+  - Added logic to skip 'api' prefix (like version prefixes)
+  - Modified `extractSchemaFromOperation` to skip schema extraction for nested resource operations (operations with static segments after `/{resource}/{id}/`)
+  - Result: Resources now only show their own fields, not fields from association endpoints
+  - Example: Templates resource now correctly shows only Template fields (name, population_type, id, file_path, jinja_shape, created_at, updated_at) instead of incorrectly including Meeting fields
+  - Updated tests to expect new behavior (nested resources grouped under parent)
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- **Ref Links canvas card spacing** - Fixed resource cards stacking on top of each other when expanded by default
+  - Made cards expanded by default (changed `expandedCards` initialization to include all resource slugs)
+  - Increased CARD_H from 80px to 600px to accommodate expanded cards with many fields (approx 15 fields)
+  - Increased GAP from 56px to 120px to prevent overlap when cards are expanded
+  - Reduced COLS from 4 to 3 for more horizontal space
+  - Cleared saved positions from config file to force recalculation with new spacing
+  - Cards now properly spaced in grid layout without manual repositioning
+
+### Changed
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- Enhanced canvas navigation with combined pan and zoom capabilities
+- Improved viewport transform handling with scale applied after translation
+- Updated world coordinate conversion to account for zoom level
+- Ref Links canvas now uses larger card dimensions and spacing optimized for expanded state
+
+---
+
+## [0.5.3] - 2026-04-23
+
+### Added
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- **URL-based tab persistence** - Active tab state is now persisted in URL query parameters
+  - Created reusable `useUrlState` hook for managing state synchronized with URL
+  - Tab selection persists across page reloads
+  - Browser back/forward buttons navigate between tab states
+  - Bookmarkable tabs (e.g., `?tab=relationships` opens directly to that tab)
+  - Deep linking support for sharing specific tabs
+  - Type-safe with validation against allowed tab values
+  - 8 comprehensive unit tests for the hook
+  - Scalable pattern for future URL-based state needs (filters, search, pagination)
+
+### Fixed
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- **Integration test setup** - Added missing `KeyboardNavigationProvider` wrapper to integration tests
+  - Fixed pre-existing test issue where VisualEditor component required KeyboardNavigationProvider context
+  - All test renders now properly wrapped with required context providers
+  - Tests now match production component structure
+
+### Changed
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- Refactored tab state management from manual URL manipulation to custom hook pattern
+  - Removed ~30 lines of boilerplate code from App.tsx
+  - Simplified tab switching to simple `setActiveTab` calls
+  - Improved code maintainability and testability
+  - Better separation of concerns
+
+### Tests
+- Added 8 unit tests for `useUrlState` hook covering all scenarios
+- Fixed integration tests with proper context provider setup
+- All builds passing with TypeScript compilation
+
+---
+
 ## [0.5.2] - 2026-04-23
 
 ### Added

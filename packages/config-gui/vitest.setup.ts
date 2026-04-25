@@ -1,5 +1,12 @@
 import '@testing-library/jest-dom/vitest';
-import { beforeEach } from 'vitest';
+import { beforeEach, vi } from 'vitest';
+
+// Mock ResizeObserver for components that use it
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}));
 
 // Mock window.location and window.history for URL-based routing tests
 beforeEach(() => {

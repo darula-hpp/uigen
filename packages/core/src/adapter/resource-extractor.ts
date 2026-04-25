@@ -136,7 +136,7 @@ export class Resource_Extractor {
     for (const resource of resourceMap.values()) {
       for (const operation of resource.operations) {
         // Extract schema from operation based on view hint
-        const schema = this.extractSchemaFromOperation(operation, operation.viewHint);
+        const schema = this.extractSchemaFromOperation(operation, operation.viewHint, resource.slug);
         
         // Merge schema into resource schema
         if (schema) {
@@ -397,13 +397,21 @@ export class Resource_Extractor {
    * 
    * Algorithm:
    * 1. Split path by '/' and filter out empty segments and path parameters
-   * 2. Skip version prefix (v1, v2, etc.) if present
-   * 3. Return the deepest (last) static segment as the resource name
+   * 2. Skip common prefixes: 'api', version (v1, v2, etc.)
+   * 3. Detect nested resource patterns (/{resource1}/{id}/{resource2})
+   * 4. For nested patterns, return the parent resource (resource1)
+   * 5. Otherwise, return the deepest (last) static segment as the resource name
+   * 
+   * **Nested Resource Handling:**
+   * Paths like /meetings/{id}/templates are association/relationship endpoints.
+   * They should be grouped under the parent resource (meetings), not the child (templates).
+   * This prevents Association schemas from polluting the child resource.
    * 
    * Examples:
-   * - /v1/Services → Services
-   * - /v1/Services/{sid} → Services
-   * - /v1/Services/{sid}/AlphaSenders → AlphaSenders
+   * - /api/v1/Services → Services
+   * - /api/v1/Services/{sid} → Services
+   * - /api/v1/Services/{sid}/AlphaSenders → Services (parent, not AlphaSenders)
+   * - /api/v1/meetings/{id}/templates → meetings (parent, not templates)
    * - /{id} → null
    * 
    * @param path - The API path to analyze
@@ -413,6 +421,12 @@ export class Resource_Extractor {
     // Split path by '/' and filter out empty segments and path parameters (starting with '{')
     const segments = path.split('/').filter(s => s && !s.startsWith('{'));
 
+    // Skip common API prefixes
+    // Remove 'api' prefix if present
+    if (segments.length > 0 && segments[0].toLowerCase() === 'api') {
+      segments.shift();
+    }
+    
     // Skip version prefix (v1, v2, etc.)
     const versionPrefixPattern = /^v\d+$/i;
     if (segments.length > 0 && versionPrefixPattern.test(segments[0])) {
@@ -422,12 +436,35 @@ export class Resource_Extractor {
     // Return null if no static segments remain
     if (segments.length === 0) return null;
 
-    // Use the deepest static segment as the resource name.
-    // This correctly separates sub-resources:
-    //   /v1/Services              -> Services
-    //   /v1/Services/{sid}        -> Services
-    //   /v1/Services/{sid}/AlphaSenders -> AlphaSenders
-    //   /v1/Services/{sid}/AlphaSenders/{sid} -> AlphaSenders
+    // Detect nested resource pattern: /{resource1}/{id}/{resource2}
+    // Split path into all parts (including parameters)
+    const allParts = path.split('/').filter(s => s);
+    
+    // Check if we have a parameter followed by more segments
+    // This indicates a nested resource pattern
+    let hasNestedPattern = false;
+    for (let i = 0; i < allParts.length - 1; i++) {
+      if (allParts[i].startsWith('{') && i > 0) {
+        // Found a parameter that's not at the end
+        // Check if there are static segments after it
+        const hasStaticAfter = allParts.slice(i + 1).some(part => !part.startsWith('{'));
+        if (hasStaticAfter) {
+          hasNestedPattern = true;
+          break;
+        }
+      }
+    }
+    
+    // For nested patterns with multiple static segments, return the first (parent resource)
+    // This groups /meetings/{id}/templates under "meetings", not "templates"
+    if (hasNestedPattern && segments.length >= 2) {
+      return segments[0];
+    }
+
+    // Default: use the deepest static segment as the resource name
+    // This correctly handles simple paths:
+    //   /api/v1/Services              -> Services
+    //   /api/v1/Services/{sid}        -> Services
     return segments[segments.length - 1];
   }
 
@@ -438,22 +475,48 @@ export class Resource_Extractor {
    * - For 'detail' and 'list' operations: extract from response (200, 201)
    * - For 'create' and 'update' operations: extract from both request body and response
    * 
+   * **Association Filtering:**
+   * Skips schema extraction for operations that access nested resources or associations.
+   * Example: /meetings/{id}/templates returns Association schema, not Meeting schema.
+   * 
    * The extracted schema is used to build the complete resource schema by merging
    * schemas from multiple operations.
    * 
    * @param operation - The IR Operation object with responses and requestBody
    * @param viewHint - The classified view hint for this operation
+   * @param resourceSlug - The slug of the resource this operation belongs to
    * @returns The extracted SchemaNode, or undefined if no schema found
    * 
    * @example
    * ```typescript
-   * const schema = this.extractSchemaFromOperation(operation, 'detail');
+   * const schema = this.extractSchemaFromOperation(operation, 'detail', 'meetings');
    * if (schema) {
    *   resource.schema = this.mergeSchemas(resource.schema, schema);
    * }
    * ```
    */
-  private extractSchemaFromOperation(operation: Operation, viewHint: ViewHint): SchemaNode | undefined {
+  private extractSchemaFromOperation(operation: Operation, viewHint: ViewHint, resourceSlug: string): SchemaNode | undefined {
+    // Skip schema extraction for nested resource operations
+    // Pattern: /{resourceSlug}/{id}/something
+    // Example: /meetings/{id}/templates should not merge into Meetings schema
+    const pathParts = operation.path.split('/').filter(s => s);
+    const resourceIndex = pathParts.findIndex(part => part.toLowerCase() === resourceSlug.toLowerCase());
+    
+    if (resourceIndex >= 0) {
+      // Check if there are any static segments after the resource and its ID parameter
+      // /meetings/{id} → OK (just resource + ID)
+      // /meetings/{id}/templates → SKIP (has additional segment)
+      const partsAfterResource = pathParts.slice(resourceIndex + 1);
+      const hasStaticAfterResourceId = partsAfterResource.some((part, index) => 
+        index > 0 && !part.startsWith('{')
+      );
+      
+      if (hasStaticAfterResourceId) {
+        // This is a nested resource operation, skip schema extraction
+        return undefined;
+      }
+    }
+    
     // For detail and list operations, extract from response
     if (viewHint === 'detail' || viewHint === 'list') {
       return operation.responses['200']?.schema || operation.responses['201']?.schema;
