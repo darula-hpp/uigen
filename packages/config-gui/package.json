@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/config-gui",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "Visual GUI for managing UIGen annotation configurations",
   "license": "MIT",
   "repository": {

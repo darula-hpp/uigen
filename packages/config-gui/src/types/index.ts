@@ -15,6 +15,21 @@ export { IgnoreStateCalculator } from '../lib/ignore-state-calculator.js';
 // Re-export annotation filter utilities
 export { getApplicableAnnotations } from '../lib/annotation-filter.js';
 
+// Re-export plugin types
+export type {
+  UIGenPlugin,
+  PluginContext,
+  PluginComponents,
+  PluginApiMiddleware,
+  CustomTab,
+  HeaderActionsProps,
+  AnnotationFormExtrasProps,
+  SettingsPanelProps,
+  CustomTabProps,
+  PluginEvent,
+  PluginEventListener
+} from './plugins.js';
+
 // Import FieldType for use in AnnotationMetadata
 import type { FieldType } from '@uigen-dev/core';
 

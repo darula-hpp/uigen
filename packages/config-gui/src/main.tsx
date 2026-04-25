@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App.js';
 import { AppProvider } from './contexts/AppContext.js';
 import { KeyboardNavigationProvider } from './contexts/KeyboardNavigationContext.js';
+import { PluginProvider } from './contexts/PluginContext.js';
 import './index.css';
 
 /**
@@ -11,6 +12,7 @@ import './index.css';
  * Sets up:
  * - React root
  * - Global state provider (AppProvider)
+ * - Plugin system provider (PluginProvider)
  * - Keyboard navigation provider (KeyboardNavigationProvider)
  * - App component
  * 
@@ -19,9 +21,11 @@ import './index.css';
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <AppProvider>
-      <KeyboardNavigationProvider>
-        <App />
-      </KeyboardNavigationProvider>
+      <PluginProvider>
+        <KeyboardNavigationProvider>
+          <App />
+        </KeyboardNavigationProvider>
+      </PluginProvider>
     </AppProvider>
   </React.StrictMode>
 );
