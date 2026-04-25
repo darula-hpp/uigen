@@ -383,13 +383,17 @@ Appsmith is the best open-source alternative to Retool. It is not as mature, but
 ### When to Use UIGen
 
 UIGen is the best choice when:
-- **You already have a backend API**: UIGen generates frontends for existing APIs. If you have FastAPI, Express, Django, or Rails, UIGen works out of the box.
-- **You want minimal frontend code**: UIGen generates the entire UI from your OpenAPI spec. You use the visual config GUI to refine it, but you write zero React code.
+- **You already have a backend API**: UIGen renders frontends for existing APIs. If you have FastAPI, Express, Django, or Rails, UIGen works out of the box.
+- **You want minimal frontend code**: UIGen renders the entire UI from your OpenAPI spec at runtime. You use the visual config GUI to refine it, but you write zero React code.
+- **You value automatic API synchronization**: Because UIGen uses runtime rendering instead of code generation, your UI stays in sync with your API automatically. Add an endpoint, change a field type, update validation rules, and the UI reflects the changes instantly without regeneration or manual updates.
+- **You want no vendor lock-in**: UIGen renders standard React applications. The renderer is open source. Your config is plain YAML. You can fork the renderer, customize it, or migrate away at any time. No proprietary platform, no database lock-in, no export limitations.
 - **You value speed with visual refinement**: Run `uigen serve` for a basic UI in seconds. Run `uigen config` to refine it visually with the config GUI. No component wiring, no JavaScript glue code.
 - **You want full control over your backend**: UIGen does not touch your backend. All business logic, data access, and integrations stay in your API.
 - **You want standard version control**: UIGen uses plain text files (OpenAPI spec, config YAML). Use Git, code review, CI/CD. The config GUI generates YAML, not binary blobs.
 - **You need a lightweight solution**: UIGen is a CLI tool, not a platform. No database, no user accounts, no infrastructure to maintain.
-- **You are comfortable with a two-step workflow**: Generate from spec, then refine with config GUI. This is faster than building from scratch but requires learning the config tool.
+- **You are comfortable with a two-step workflow**: Render from spec, then refine with config GUI. This is faster than building from scratch but requires learning the config tool.
+
+**Runtime rendering advantage:** Unlike code generators that produce thousands of lines of code you must maintain, UIGen's renderer interprets your spec at runtime. This means zero generated code to maintain, automatic synchronization with API changes, and the ability to update the renderer itself to get new features across all your applications instantly.
 
 UIGen is the best choice for teams that already have a backend API and want to skip frontend development. It is not a pure visual builder like Retool/Appsmith, but it is also not fully automatic. It is a hybrid: automatic generation + visual refinement.
 
@@ -414,11 +418,12 @@ UIGen is the best choice for teams that already have a backend API and want to s
 ### UIGen Limitations
 
 - **Requires a backend API**: UIGen does not query databases directly. You must build an API first.
-- **Less control over layout**: UIGen generates a sensible default UI. You can configure relationships, labels, and visibility through the config GUI, but you cannot drag components around a canvas or create custom layouts.
-- **Two-step workflow required**: The raw generated UI is basic. You must use the config GUI to add relationships, hide fields, and customize labels to get a production-ready result. This is faster than building from scratch but not as instant as it sounds.
+- **Less control over layout**: UIGen renders a sensible default UI from your API structure. You can configure relationships, labels, and visibility through the config GUI, but you cannot drag components around a canvas or create custom layouts without modifying the renderer.
+- **Two-step workflow required**: The raw rendered UI is basic. You must use the config GUI to add relationships, hide fields, and customize labels to get a production-ready result. This is faster than building from scratch but not as instant as it sounds.
 - **Config GUI learning curve**: The config GUI is intuitive but has five tabs (annotations, visual editor, relationships, theme, preview). You need to learn what each does and how they interact.
 - **Early stage**: UIGen is pre-v1. The API is stable, but some features are missing (advanced layouts, custom component overrides).
-- **You own the build process**: UIGen generates the frontend, but you deploy and maintain it.
+- **Runtime rendering tradeoff**: While runtime rendering eliminates code generation problems, it means the renderer must be included in your deployed application. This adds ~200KB to your bundle (gzipped). For most applications this is negligible, but for extremely size-constrained environments, code generation might be preferred.
+- **You own the deployment**: UIGen renders the frontend, but you deploy and maintain it.
 
 ---
 
