@@ -8,7 +8,7 @@ tags: ["features", "config", "annotations", "developer-experience"]
 
 ## Introduction
 
-UIGen generates fully functional frontends from OpenAPI and Swagger specs with zero configuration. But real-world APIs are messy. Field names are inconsistent. Some endpoints should be hidden. Others need custom labels. Authentication flows vary wildly.
+UIGen renders fully functional frontends from OpenAPI and Swagger specs with zero configuration. But real-world APIs are messy. Field names are inconsistent. Some endpoints should be hidden. Others need custom labels. Authentication flows vary wildly.
 
 That is where x-uigen annotations come in. These vendor extensions let you control how UIGen interprets your spec: which fields to hide, which endpoints handle login, how to label form inputs, and how to link related resources.
 
@@ -16,7 +16,7 @@ Until now, adding these annotations meant manually editing your spec file. If yo
 
 The new `uigen config` command solves this. It opens a visual interface where you can manage all annotation configurations without touching your spec file. Changes are saved to a separate `.uigen/config.yaml` file that the `serve` command reads automatically. Your source spec stays pristine.
 
-This post walks through how the config command works, the design decisions behind it, and how the enhanced ignore support makes it easy to control exactly what appears in your generated UI.
+This post walks through how the config command works, the design decisions behind it, and how the enhanced ignore support makes it easy to control exactly what appears in your rendered UI.
 
 ---
 
@@ -144,7 +144,7 @@ The config GUI provides specialized controls for each annotation type. This is w
 
 ### x-uigen-ignore: Toggle Switches
 
-The ignore annotation controls which elements appear in the generated UI. The GUI displays toggle switches on every supported element type:
+The ignore annotation controls which elements appear in the rendered UI. The GUI displays toggle switches on every supported element type:
 
 - Schema properties (individual fields)
 - Schema objects (entire models)
@@ -169,7 +169,7 @@ The GUI provides drag-and-drop linking: drag from the `categoryId` field to the 
 
 ### x-uigen-login: Operation Selector
 
-The login annotation marks which operation handles authentication. The GUI provides a dropdown of all POST operations. Select the login endpoint, and UIGen generates a login form that redirects to the dashboard on success.
+The login annotation marks which operation handles authentication. The GUI provides a dropdown of all POST operations. Select the login endpoint, and UIGen renders a login form that redirects to the dashboard on success.
 
 ### Future Annotations
 
@@ -181,7 +181,7 @@ This follows the open-closed principle: the GUI is open for extension (new annot
 
 ## Enhanced Ignore Support
 
-The ignore annotation was recently enhanced to support fine-grained control over what appears in the generated UI. The config GUI provides excellent visual feedback for understanding and managing ignore behavior.
+The ignore annotation was recently enhanced to support fine-grained control over what appears in the rendered UI. The config GUI provides excellent visual feedback for understanding and managing ignore behavior.
 
 ### Supported Element Types
 
@@ -337,7 +337,7 @@ This architecture makes UIGen extensible by design. Contributors can add new ann
 
 ## Live Preview
 
-The config GUI includes a live preview that shows how your annotation settings affect the generated UI. When you change an annotation, the preview updates within 500ms.
+The config GUI includes a live preview that shows how your annotation settings affect the rendered UI. When you change an annotation, the preview updates within 500ms.
 
 The preview uses the same rendering logic as the main `serve` command, so what you see is exactly what you get. It shows at least one example of each view type affected by the changed annotation: forms, lists, and detail views.
 
@@ -467,7 +467,7 @@ The config command is actively being developed. Upcoming features include:
 
 ## Conclusion
 
-The `uigen config` command solves a real problem: how to customize generated UIs without modifying source files. The visual interface makes annotation management intuitive, the config file keeps customizations separate from the spec, and the reconciler merges them at runtime.
+The `uigen config` command solves a real problem: how to customize rendered UIs without modifying source files. The visual interface makes annotation management intuitive, the config file keeps customizations separate from the spec, and the reconciler merges them at runtime.
 
 The enhanced ignore support provides fine-grained control over what appears in the UI, with excellent visual feedback for understanding precedence, pruning, and overrides. The auto-discovery system makes the GUI extensible without code changes.
 

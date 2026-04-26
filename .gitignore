@@ -14,11 +14,3 @@ AGENTS.md
 implementation_plan.md
 apps/docs/AGENTS.md
 apps/docs/CLAUDE.md
-
-# Plugin system - SaaS/Enterprise specific plugins
-# Keep the index.ts stubs, ignore everything else
-packages/config-gui/src/plugins/saas/*
-!packages/config-gui/src/plugins/saas/index.ts
-packages/config-gui/src/plugins/enterprise/*
-!packages/config-gui/src/plugins/enterprise/index.ts
-packages/config-gui/src/plugins/custom/
