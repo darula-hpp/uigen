@@ -8,6 +8,7 @@ import { SignUpHandler } from './sign-up-handler.js';
 import { ActiveServerHandler } from './active-server-handler.js';
 import { FileTypesHandler } from './file-types-handler.js';
 import { MaxFileSizeHandler } from './max-file-size-handler.js';
+import { ChartHandler } from './chart-handler.js';
 
 /**
  * Initialize and register all annotation handlers.
@@ -37,6 +38,7 @@ function registerHandlers(): void {
   // Register field-level handlers
   registry.register(new FileTypesHandler());
   registry.register(new MaxFileSizeHandler());
+  registry.register(new ChartHandler());
   
   // Register server-level handlers (Requirement 1.5)
   registry.register(new ActiveServerHandler());
@@ -55,3 +57,4 @@ export { SignUpHandler } from './sign-up-handler.js';
 export { ActiveServerHandler } from './active-server-handler.js';
 export { FileTypesHandler } from './file-types-handler.js';
 export { MaxFileSizeHandler } from './max-file-size-handler.js';
+export { ChartHandler } from './chart-handler.js';

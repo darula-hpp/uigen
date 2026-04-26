@@ -187,6 +187,11 @@ export interface SchemaNode {
   deprecated?: boolean;
   fileMetadata?: FileMetadata;
   refConfig?: RefConfig;
+  /**
+   * Chart visualization configuration (optional)
+   * Set by ChartHandler when x-uigen-chart annotation is present
+   */
+  chartConfig?: ChartConfig;
 }
 
 export interface ValidationRule {
@@ -214,4 +219,97 @@ export interface RefConfig {
   valueField: string;
   labelField: string;
   filter: Record<string, string | number | boolean>;
+}
+
+/**
+ * Supported chart visualization types
+ */
+export type ChartType = 
+  | 'line'      // Time-series and continuous data
+  | 'bar'       // Categorical comparisons
+  | 'pie'       // Part-to-whole relationships
+  | 'scatter'   // Correlation analysis
+  | 'area'      // Cumulative trends
+  | 'radar'     // Multivariate data
+  | 'donut';    // Part-to-whole with emphasis on total
+
+/**
+ * Configuration for a single data series in a multi-series chart
+ */
+export interface SeriesConfig {
+  /** Field name to use for this series data */
+  field: string;
+  
+  /** Display label for this series */
+  label?: string;
+  
+  /** Color for this series (hex, rgb, or named color) */
+  color?: string;
+  
+  /** Override chart type for this series (for mixed charts) */
+  type?: ChartType;
+}
+
+/**
+ * Chart display and behavior options
+ */
+export interface ChartOptions {
+  /** Chart title */
+  title?: string;
+  
+  /** Legend configuration */
+  legend?: {
+    show?: boolean;
+    position?: 'top' | 'bottom' | 'left' | 'right';
+  };
+  
+  /** Tooltip configuration */
+  tooltip?: {
+    enabled?: boolean;
+    format?: string;
+  };
+  
+  /** Responsive behavior */
+  responsive?: boolean;
+  
+  /** X-axis specific options */
+  xAxis?: {
+    showGrid?: boolean;
+    showLabels?: boolean;
+    label?: string;
+  };
+  
+  /** Y-axis specific options */
+  yAxis?: {
+    showGrid?: boolean;
+    showLabels?: boolean;
+    label?: string;
+    scale?: 'linear' | 'logarithmic';
+  };
+  
+  /** Additional library-specific options */
+  [key: string]: unknown;
+}
+
+/**
+ * Complete chart configuration stored in SchemaNode
+ */
+export interface ChartConfig {
+  /** Type of chart to render */
+  chartType: ChartType;
+  
+  /** Field name to use for x-axis */
+  xAxis: string;
+  
+  /** Field name(s) to use for y-axis (string for single series, array for multi-series) */
+  yAxis: string | string[];
+  
+  /** Configuration for multiple data series (optional, auto-generated if yAxis is array) */
+  series?: SeriesConfig[];
+  
+  /** Field name to use for data point labels (optional, defaults to xAxis) */
+  labels?: string;
+  
+  /** Chart display and behavior options (optional) */
+  options?: ChartOptions;
 }
