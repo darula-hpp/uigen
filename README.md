@@ -1,6 +1,6 @@
 # UIGen
 
-> Point it at an OpenAPI spec. Get a fully functional frontend. Zero boilerplate.
+> Turn your API into an application. Automatically.
 
 ![UIGen Demo](https://github.com/darula-hpp/uigen/raw/main/examples/output.gif)
 
@@ -13,14 +13,22 @@
 ### Quick Start (npx)
 
 ```bash
-# Configure your spec (optional but helpful - Includes theme config)
+# Step 1: Configure your spec (recommended)
 npx @uigen-dev/cli config openapi.yaml
 
-# Serve your UI
+# In the Config GUI:
+# - Define relationships between resources
+# - Customize labels and visibility
+# - Configure charts and theme
+# All saved as YAML, not code
+
+# Step 2: Serve your configured UI
 npx @uigen-dev/cli serve openapi.yaml
 ```
 
 Visit `http://localhost:4400` to see your app.
+
+**What's happening:** UIGen renders a complete UI from your OpenAPI spec, then you configure it through a visual tool that generates YAML. When your API changes, the UI updates automatically - no regeneration, no code to maintain.
 
 ### Try the Example App
 
@@ -43,7 +51,7 @@ pnpm run test:serve
 
 ## What Just Happened?
 
-UIGen transforms your OpenAPI spec into a complete, interactive frontend in seconds. Here's the flow:
+UIGen uses **runtime rendering** to transform your OpenAPI spec into a complete, interactive frontend. Unlike code generators, UIGen interprets your spec at runtime - which means your UI stays in sync with API changes automatically. Here's the flow:
 
 ```
 CLI Command
@@ -71,7 +79,7 @@ UIGen reconciles your config with the spec, then parses it into a framework-agno
 - Authentication flows
 - Pagination strategies
 
-The React renderer reads this IR and generates:
+The React renderer interprets this IR at runtime (not code generation) and creates:
 - **Table views** with sorting, filtering, pagination
 - **Create & edit forms** with validation
 - **Detail views** with related resource links
@@ -81,6 +89,8 @@ The React renderer reads this IR and generates:
 - **Custom action buttons** for non-CRUD endpoints
 - **Dashboard** with resource overview
 - **Dark/light theme** toggle
+
+**Key advantage:** Because UIGen uses runtime rendering instead of code generation, your UI automatically updates when your API changes. No regeneration step, no code to maintain, no drift between spec and UI.
 
 Because the IR is framework-agnostic, you can swap renderers. The same spec works with `@uigen-dev/react`, `@uigen-dev/svelte`, or `@uigen-dev/vue` (coming soon).
 
