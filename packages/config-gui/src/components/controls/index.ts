@@ -7,3 +7,8 @@
 
 export { FileSizeInput, type FileSizeInputProps } from './FileSizeInput.js';
 export { MultiSelect, type MultiSelectProps } from './MultiSelect.js';
+export { FieldDropdown, type FieldDropdownProps } from './FieldDropdown.js';
+export { FieldMultiSelect, type FieldMultiSelectProps } from './FieldMultiSelect.js';
+export { JSONEditor, type JSONEditorProps } from './JSONEditor.js';
+export { SeriesEditor, type SeriesEditorProps } from './SeriesEditor.js';
+
