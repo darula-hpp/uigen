@@ -1,0 +1,1013 @@
+# Skill: Applying Styles to UIGen Generated React SPA
+
+## Overview
+This skill guides AI agents through generating custom CSS styles for the UIGen-generated React SPA. The goal is to **eliminate the need for users to manually configure styles** in the config-gui by having AI agents generate production-ready CSS that works with the generated application.
+
+## Critical Understanding
+
+### The Two SPAs
+1. **Config GUI** (`packages/config-gui`) - Tool for configuring annotations and styles
+2. **React SPA** (`packages/react`) - The actual generated application that users deploy
+
+**This skill is about styling the React SPA (#2), not the config-gui itself.**
+
+### How Styling Works
+
+```
+User Project
+└── .uigen/
+    └── theme.css  ← AI agents write CSS here
+                   ↓
+                   CLI injects at runtime
+                   ↓
+    Generated React SPA loads and applies the CSS
+```
+
+## Architecture
+
+### Style Loading Flow
+
+1. **Base Styles** (Bundled in React SPA)
+   - Location: `packages/react/src/index.css`
+   - Contains Tailwind CSS v4 + theme variables
+   - Bundled into the generated SPA
+   - Cannot be modified at runtime
+
+2. **Custom Theme** (Runtime Injection)
+   - Location: `.uigen/theme.css` (per project)
+   - Written by AI agents or users
+   - Injected by CLI via `window.__UIGEN_CSS__`
+   - Applied after base styles load
+
+3. **Injection Mechanism**
+   ```typescript
+   // In packages/react/src/main.tsx
+   const customCSS = window.__UIGEN_CSS__;
+   if (customCSS) {
+     const styleElement = document.createElement('style');
+     styleElement.id = 'uigen-custom-css';
+     styleElement.textContent = customCSS;
+     document.head.appendChild(styleElement);
+   }
+   ```
+
+### CSS Variable System
+
+The React SPA uses a comprehensive CSS variable system for theming:
+
+```css
+/* Light theme (default) */
+--background: #ffffff;
+--foreground: #0a0a0a;
+--primary: #0a0a0a;
+--primary-foreground: #fafafa;
+--secondary: #f5f5f5;
+--secondary-foreground: #1a1a1a;
+--muted: #f5f5f5;
+--muted-foreground: #737373;
+--accent: #f5f5f5;
+--accent-foreground: #1a1a1a;
+--destructive: #ef4444;
+--destructive-foreground: #fafafa;
+--border: #e5e5e5;
+--input: #e5e5e5;
+--ring: #0a0a0a;
+--radius: 0.5rem;
+
+/* Dark theme */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #e5e5e5;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  /* ... etc */
+}
+```
+
+### Available Utility Classes
+
+The React SPA includes custom utility classes:
+
+```css
+/* Background colors */
+.bg-background, .bg-foreground, .bg-card, .bg-primary, .bg-secondary,
+.bg-muted, .bg-accent, .bg-destructive, .bg-border, .bg-input, .bg-ring
+
+/* Text colors */
+.text-background, .text-foreground, .text-card, .text-primary, .text-secondary,
+.text-muted, .text-accent, .text-destructive, .text-border, .text-input, .text-ring
+
+/* Border colors */
+.border-background, .border-foreground, .border-card, .border-primary, .border-secondary,
+.border-muted, .border-accent, .border-destructive, .border-border, .border-input, .border-ring
+
+/* Ring colors */
+.ring-background, .ring-foreground, .ring-card, .ring-primary, .ring-secondary,
+.ring-muted, .ring-accent, .ring-destructive, .ring-border, .ring-input, .ring-ring
+```
+
+## AI Agent Workflow
+
+### Step 1: Understand the User's Requirements
+
+Ask clarifying questions:
+- What is the desired color scheme?
+- Should it support dark mode?
+- Are there specific brand colors?
+- What components need custom styling?
+- Any specific design system (Material, Fluent, etc.)?
+
+### Step 2: Generate CSS for `.uigen/theme.css`
+
+Create CSS that overrides or extends the base styles:
+
+```css
+/* Example: Custom brand colors */
+:root {
+  --primary: #10b981;
+  --primary-foreground: #ffffff;
+  --secondary: #3b82f6;
+  --secondary-foreground: #ffffff;
+  --accent: #8b5cf6;
+  --accent-foreground: #ffffff;
+}
+
+.dark {
+  --primary: #34d399;
+  --primary-foreground: #0a0a0a;
+  --secondary: #60a5fa;
+  --secondary-foreground: #0a0a0a;
+  --accent: #a78bfa;
+  --accent-foreground: #0a0a0a;
+}
+```
+
+### Step 3: Write the CSS File
+
+```bash
+# Create or update the theme file
+.uigen/theme.css
+```
+
+### Step 4: Test with the Serve Command
+
+```bash
+# User runs this to see the styled SPA
+@uigen-dev/cli serve openapi.yaml
+```
+
+## Common Styling Tasks
+
+### Task 1: Change Brand Colors
+
+```css
+/* Override primary brand color */
+:root {
+  --primary: #ff6b6b;
+  --primary-foreground: #ffffff;
+}
+
+.dark {
+  --primary: #ff8787;
+  --primary-foreground: #0a0a0a;
+}
+
+/* Buttons will automatically use these colors via .bg-primary */
+```
+
+### Task 2: Customize Component Appearance
+
+```css
+/* Style buttons */
+button {
+  border-radius: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Style cards */
+.bg-card {
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark .bg-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+```
+
+### Task 3: Style Forms
+
+```css
+/* Input fields */
+input,
+select,
+textarea {
+  border-radius: 0.5rem;
+  border: 2px solid var(--border);
+  padding: 0.75rem 1rem;
+  transition: border-color 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--primary), 0.1);
+}
+
+/* Labels */
+label {
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+```
+
+### Task 4: Style Tables (ListView)
+
+```css
+/* Table styling */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+thead {
+  background-color: var(--muted);
+}
+
+thead th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--foreground);
+  border-bottom: 2px solid var(--border);
+}
+
+tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+tbody tr:hover {
+  background-color: var(--accent);
+}
+
+tbody td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Alternating row colors */
+tbody tr:nth-child(even) {
+  background-color: var(--muted);
+}
+
+tbody tr:nth-child(even):hover {
+  background-color: var(--accent);
+}
+```
+
+### Task 5: Style Navigation
+
+```css
+/* Sidebar navigation */
+nav {
+  background-color: var(--card);
+  border-right: 1px solid var(--border);
+}
+
+nav a {
+  display: block;
+  padding: 0.75rem 1rem;
+  color: var(--foreground);
+  text-decoration: none;
+  border-radius: 0.5rem;
+  margin: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+}
+
+nav a:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+nav a.active {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 600;
+}
+```
+
+### Task 6: Add Animations
+
+```css
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apply to cards */
+.bg-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-in-out;
+}
+```
+
+### Task 7: Responsive Design
+
+```css
+/* Mobile-first approach */
+.container {
+  padding: 1rem;
+}
+
+/* Tablet */
+@media (min-width: 768px) {
+  .container {
+    padding: 2rem;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .container {
+    padding: 3rem;
+  }
+  
+  nav {
+    width: 250px;
+  }
+}
+
+/* Large screens */
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+}
+```
+
+## Design System Examples
+
+### Example 1: Material Design Inspired
+
+```css
+:root {
+  --primary: #6200ee;
+  --primary-foreground: #ffffff;
+  --secondary: #03dac6;
+  --secondary-foreground: #000000;
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --border: #e0e0e0;
+  --radius: 0.25rem;
+}
+
+.dark {
+  --primary: #bb86fc;
+  --primary-foreground: #000000;
+  --secondary: #03dac6;
+  --secondary-foreground: #000000;
+  --background: #121212;
+  --foreground: #ffffff;
+  --card: #1e1e1e;
+  --border: #2c2c2c;
+}
+
+button {
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.0892857143em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+button:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.bg-card {
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+```
+
+### Example 2: Fluent Design Inspired
+
+```css
+:root {
+  --primary: #0078d4;
+  --primary-foreground: #ffffff;
+  --secondary: #605e5c;
+  --secondary-foreground: #ffffff;
+  --background: #faf9f8;
+  --foreground: #323130;
+  --card: #ffffff;
+  --border: #edebe9;
+  --radius: 0.125rem;
+}
+
+.dark {
+  --primary: #4cc2ff;
+  --primary-foreground: #000000;
+  --secondary: #8a8886;
+  --secondary-foreground: #ffffff;
+  --background: #1b1a19;
+  --foreground: #ffffff;
+  --card: #252423;
+  --border: #3b3a39;
+}
+
+button {
+  border-radius: 0.125rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+button:hover {
+  background-color: var(--accent);
+}
+
+.bg-card {
+  border-radius: 0.125rem;
+  border: 1px solid var(--border);
+  box-shadow: 0 1.6px 3.6px rgba(0, 0, 0, 0.13);
+}
+```
+
+### Example 3: Minimalist/Clean
+
+```css
+:root {
+  --primary: #000000;
+  --primary-foreground: #ffffff;
+  --secondary: #666666;
+  --secondary-foreground: #ffffff;
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --border: #e5e5e5;
+  --radius: 0;
+}
+
+.dark {
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #999999;
+  --secondary-foreground: #000000;
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0a0a0a;
+  --border: #1a1a1a;
+}
+
+button {
+  border-radius: 0;
+  border: 2px solid var(--foreground);
+  background-color: transparent;
+  color: var(--foreground);
+  font-weight: 600;
+  padding: 0.75rem 2rem;
+}
+
+button:hover {
+  background-color: var(--foreground);
+  color: var(--background);
+}
+
+.bg-card {
+  border-radius: 0;
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+input,
+select,
+textarea {
+  border-radius: 0;
+  border: 1px solid var(--border);
+  border-bottom: 2px solid var(--foreground);
+}
+```
+
+## Best Practices for AI Agents
+
+### 1. Always Support Dark Mode
+
+```css
+/* Define both light and dark variants */
+:root {
+  --custom-color: #3b82f6;
+}
+
+.dark {
+  --custom-color: #60a5fa;
+}
+```
+
+### 2. Use CSS Variables for Consistency
+
+```css
+/* Good: Uses theme variables */
+button {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Bad: Hardcoded colors */
+button {
+  background-color: #3b82f6;
+  color: white;
+}
+```
+
+### 3. Maintain Accessibility
+
+```css
+/* Ensure sufficient contrast */
+:root {
+  --primary: #0066cc; /* 4.5:1 contrast ratio */
+}
+
+/* Visible focus states */
+button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Don't rely solely on color */
+.error {
+  color: var(--destructive);
+  border-left: 4px solid var(--destructive);
+}
+```
+
+### 4. Keep Specificity Low
+
+```css
+/* Good: Low specificity */
+button {
+  padding: 0.5rem 1rem;
+}
+
+/* Bad: High specificity */
+div.container > div.row > button.primary {
+  padding: 0.5rem 1rem;
+}
+```
+
+### 5. Use Transitions for Smooth UX
+
+```css
+/* Add transitions to interactive elements */
+button,
+input,
+select,
+a {
+  transition: all 0.2s ease;
+}
+```
+
+### 6. Test Responsive Behavior
+
+```css
+/* Mobile first */
+.grid {
+  grid-template-columns: 1fr;
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop and up */
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+```
+
+## Testing Your Generated CSS
+
+### 1. Create the theme file
+
+```bash
+# AI agent writes to:
+.uigen/theme.css
+```
+
+### 2. Run the serve command
+
+```bash
+# User tests with:
+@uigen-dev/cli serve openapi.yaml
+```
+
+### 3. Verify in browser
+
+- Check light mode appearance
+- Toggle to dark mode (if supported by the SPA)
+- Test responsive behavior (resize browser)
+- Verify all components (forms, tables, buttons, navigation)
+- Check accessibility (keyboard navigation, focus states)
+
+## Common Component Selectors
+
+### Layout Components
+
+```css
+/* Main container */
+main {
+  /* Main content area */
+}
+
+/* Sidebar navigation */
+nav {
+  /* Navigation sidebar */
+}
+
+/* Header */
+header {
+  /* Page header */
+}
+```
+
+### Form Components
+
+```css
+/* All inputs */
+input, select, textarea {
+  /* Form inputs */
+}
+
+/* Specific input types */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  /* Text inputs */
+}
+
+/* Form labels */
+label {
+  /* Input labels */
+}
+
+/* Form groups */
+.form-group {
+  /* Form field containers */
+}
+```
+
+### Table Components
+
+```css
+/* Table container */
+table {
+  /* Data tables */
+}
+
+/* Table headers */
+thead th {
+  /* Column headers */
+}
+
+/* Table rows */
+tbody tr {
+  /* Data rows */
+}
+
+/* Table cells */
+tbody td {
+  /* Data cells */
+}
+```
+
+### Button Components
+
+```css
+/* All buttons */
+button {
+  /* Generic buttons */
+}
+
+/* Primary buttons */
+button.bg-primary {
+  /* Primary action buttons */
+}
+
+/* Secondary buttons */
+button.bg-secondary {
+  /* Secondary action buttons */
+}
+
+/* Destructive buttons */
+button.bg-destructive {
+  /* Delete/remove buttons */
+}
+```
+
+### Card Components
+
+```css
+/* Card containers */
+.bg-card {
+  /* Card components */
+}
+
+/* Card headers */
+.bg-card header {
+  /* Card titles */
+}
+
+/* Card content */
+.bg-card main {
+  /* Card body */
+}
+```
+
+## Troubleshooting
+
+### Styles Not Applying
+
+1. **Check file location**: Ensure `.uigen/theme.css` exists
+2. **Verify CLI command**: Run `uigen serve openapi.yaml`
+3. **Check browser console**: Look for CSS injection errors
+4. **Inspect element**: Use DevTools to see if styles are loaded
+5. **Clear cache**: Hard refresh (Cmd+Shift+R / Ctrl+Shift+F5)
+
+### Specificity Issues
+
+```css
+/* If your styles aren't applying, increase specificity */
+
+/* Low specificity (might not work) */
+button { background: red; }
+
+/* Higher specificity (more likely to work) */
+button.bg-primary { background: red; }
+
+/* Even higher (use sparingly) */
+button.bg-primary:not(.disabled) { background: red; }
+
+/* Nuclear option (avoid if possible) */
+button { background: red !important; }
+```
+
+### Dark Mode Not Working
+
+```css
+/* Ensure you define dark mode variants */
+:root {
+  --custom-color: #3b82f6;
+}
+
+.dark {
+  --custom-color: #60a5fa; /* Don't forget this! */
+}
+```
+
+## Complete Example: E-commerce Theme
+
+```css
+/* E-commerce themed styling for UIGen React SPA */
+
+/* Brand colors */
+:root {
+  --primary: #ff6b6b;
+  --primary-foreground: #ffffff;
+  --secondary: #4ecdc4;
+  --secondary-foreground: #ffffff;
+  --accent: #ffe66d;
+  --accent-foreground: #000000;
+  --background: #ffffff;
+  --foreground: #2d3436;
+  --card: #ffffff;
+  --border: #dfe6e9;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --primary: #ff7675;
+  --primary-foreground: #000000;
+  --secondary: #55efc4;
+  --secondary-foreground: #000000;
+  --accent: #ffeaa7;
+  --accent-foreground: #000000;
+  --background: #2d3436;
+  --foreground: #dfe6e9;
+  --card: #34495e;
+  --border: #4a5568;
+}
+
+/* Buttons */
+button {
+  border-radius: 0.5rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+button.bg-primary {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+}
+
+/* Cards (Product cards) */
+.bg-card {
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.bg-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Forms */
+input,
+select,
+textarea {
+  border-radius: 0.5rem;
+  border: 2px solid var(--border);
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+}
+
+/* Tables (Order lists) */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+thead {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+}
+
+thead th {
+  padding: 1rem;
+  font-weight: 600;
+}
+
+tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+tbody tr:hover {
+  background-color: var(--accent);
+}
+
+tbody td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Navigation */
+nav {
+  background-color: var(--card);
+  border-right: 1px solid var(--border);
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+}
+
+nav a {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: var(--foreground);
+  text-decoration: none;
+  border-radius: 0.5rem;
+  margin: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+}
+
+nav a:hover {
+  background-color: var(--accent);
+  transform: translateX(4px);
+}
+
+nav a.active {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  font-weight: 600;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.bg-card {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  button {
+    width: 100%;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+  
+  nav {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+```
+
+## Conclusion
+
+As an AI agent, your role is to:
+
+1. **Understand user requirements** for styling
+2. **Generate production-ready CSS** in `.uigen/theme.css`
+3. **Use the CSS variable system** for consistency
+4. **Support both light and dark modes**
+5. **Ensure accessibility** (contrast, focus states)
+6. **Test responsive behavior**
+7. **Follow best practices** (low specificity, transitions, etc.)
+
+The CSS you generate will be injected into the React SPA at runtime via `window.__UIGEN_CSS__`, extending the base Tailwind styles and theme variables.
+
+**Key Files:**
+- Write CSS to: `.uigen/theme.css`
+- Base styles (reference): `packages/react/src/index.css`
+- Injection point: `packages/react/src/main.tsx`
+
+**Testing:**
+```bash
+@uigen-dev/cli serve openapi.yaml
+```
+
+By following this skill, AI agents can generate beautiful, accessible, and production-ready styles for UIGen applications without requiring users to manually configure anything in the config-gui.
