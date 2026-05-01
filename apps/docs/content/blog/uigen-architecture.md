@@ -27,26 +27,28 @@ CLI Command
     |
     v
 +----------------+     +----------------+     +----------+     +------+     +--------+     +--------------+
-| API Document   |---->| Reconciler     |---->| Adapter  |---->|  IR  |---->| Engine |---->|  React SPA   |
-| (YAML/JSON)    |     | (Config Merge) |     | (Parser) |     |      |     |        |     | (served)     |
-+----------------+     +----------------+     +----------+     +------+     +--------+     +--------------+
-       |                      ^                                                                    ^
-       |                      |                                                                    |
-       |               +----------------+                                                          |
-       |               | Config File    |                                                          |
-       |               | (.uigen/       |                                                          |
-       |               |  config.yaml)  |                                          +-----------+   |
-       |               +----------------+                                          | API Proxy |---+
-       |                                                                           +-----------+   |
-       |                                                                                           |
-       +---> (Source spec unchanged on disk)                                                      |
-                                                                                                   |
-                                                                                                   |
-+----------------+                                                                                 |
-| Custom CSS     |     CLI reads and injects directly via window.__UIGEN_CSS__                    |
-| (.uigen/       |     (no preprocessing)                                                         |
-|  theme.css)    |----------------------------------------------------------------------------------+
+| API Document   |---->| Reconciler     |---->| Adapter  |---->|  IR  |---->| Engine |---->|  React SPA   |<---+
+| (YAML/JSON)    |     | (Config Merge) |     | (Parser) |     |      |     |        |     | (served)     |    |
++----------------+     +----------------+     +----------+     +------+     +--------+     +--------------+    |
+       |                      ^                                                                    ^           |
+       |                      |                                                                    |           |
+       |               +----------------+                                                          |           |
+       |               | Config File    |                                          +-----------+   |           |
+       |               | (.uigen/       |                                          | API Proxy |---+           |
+       |               |  config.yaml)  |                                          | (Runtime) |               |
+       |               +----------------+                                          +-----------+---------------+
+       |                                                                                 |
+       +---> (Source spec unchanged on disk)                                            v
+                                                                                   Real API Backend
+
 +----------------+
+| Custom CSS     |     CLI reads and injects directly via window.__UIGEN_CSS__
+| (.uigen/       |     (no preprocessing)
+|  theme.css)    |---------------------------------------------------------------------------------+
++----------------+                                                                                  |
+                                                                                                    |
+                                                                                                    v
+                                                                                          (injected into SPA)
 ```
 
 **Stage 1: API Document Ingestion.** The CLI reads the spec file from disk. It auto-detects whether the file is OpenAPI 3.x or Swagger 2.0 based on the `openapi` or `swagger` version field. The raw YAML or JSON is parsed into a plain JavaScript object.
