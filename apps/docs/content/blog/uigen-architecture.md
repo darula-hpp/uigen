@@ -35,19 +35,20 @@ CLI Command
        |                      ^                                                                    ^
        |                      |                                                                    |
        |               +----------------+                                                          |
-       |               | Config File    |                                                +---------+
-       |               | (.uigen/       |                                                |
-       |               |  config.yaml)  |                                          +-----------+
-       |               +----------------+                                          | API Proxy |---> Real API
-       |                                                                           +-----------+
-       |
-       +---> (Source spec unchanged on disk)
-
+       |               | Config File    |                                                          |
+       |               | (.uigen/       |                                                          |
+       |               |  config.yaml)  |                                          +-----------+   |
+       |               +----------------+                                          | API Proxy |---+
+       |                                                                           +-----------+   |
+       |                                                                                           |
+       +---> (Source spec unchanged on disk)                                                      |
+                                                                                                   |
+                                                                                                   |
++----------------+                                                                                 |
+| Custom CSS     |     CLI reads and injects directly via window.__UIGEN_CSS__                    |
+| (.uigen/       |     (no preprocessing)                                                         |
+|  theme.css)    |----------------------------------------------------------------------------------+
 +----------------+
-| Custom CSS     |     CLI reads and injects directly via window.__UIGEN_CSS__
-| (.uigen/       |     (no preprocessing)
-|  theme.css)    |                                                                                  |
-+----------------+-----------------------------------------------------------------------------------+
 ```
 
 **Stage 1: API Document Ingestion.** The CLI reads the spec file from disk. It auto-detects whether the file is OpenAPI 3.x or Swagger 2.0 based on the `openapi` or `swagger` version field. The raw YAML or JSON is parsed into a plain JavaScript object.
