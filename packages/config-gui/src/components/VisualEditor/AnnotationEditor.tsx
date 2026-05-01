@@ -1,9 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { ConfigFile } from '@uigen-dev/core';
+import type { ConfigFile, SchemaNode, ChartConfig } from '@uigen-dev/core';
 import { useAppContext } from '../../contexts/AppContext.js';
 import type { AnnotationMetadata } from '../../types/index.js';
 import { MultiSelect } from '../controls/MultiSelect.js';
 import { FileSizeInput } from '../controls/FileSizeInput.js';
+import { ChartConfigModal } from './ChartConfigModal.js';
 import { MIME_TYPE_OPTIONS } from '../../lib/mime-types.js';
 
 /**
@@ -34,6 +35,17 @@ export interface AnnotationEditorProps {
     type: string;
     format?: string;
   };
+  /** Field node for accessing schema information (optional, for array fields with chart annotation) */
+  fieldNode?: {
+    type: string;
+    children?: Array<{
+      key: string;
+      label: string;
+      type: string;
+      format?: string;
+      children?: any[];
+    }>;
+  };
 }
 
 /**
@@ -53,7 +65,8 @@ export function AnnotationEditor({
   elementType,
   currentAnnotations,
   onAnnotationsChange,
-  fieldInfo
+  fieldInfo,
+  fieldNode
 }: AnnotationEditorProps) {
   const { state } = useAppContext();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -65,6 +78,7 @@ export function AnnotationEditor({
   const [showObjectModal, setShowObjectModal] = useState(false);
   const [pendingObjectAnnotation, setPendingObjectAnnotation] = useState<AnnotationMeta | null>(null);
   const [objectValue, setObjectValue] = useState<any>(null);
+  const [showChartModal, setShowChartModal] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const modalInputRef = useRef<HTMLInputElement>(null);
@@ -114,6 +128,11 @@ export function AnnotationEditor({
   // Filter annotations based on field type if fieldInfo is provided
   const fieldTypeFilteredAnnotations = fieldInfo && elementType === 'field'
     ? allAnnotations.filter(ann => {
+        // Always include annotations that are already applied (so we can render their badges)
+        if (ann.name in currentAnnotations) {
+          return true;
+        }
+        
         // If annotation has no applicability rules, it applies to all fields
         if (!ann.applicableWhen) {
           return true;
@@ -237,7 +256,16 @@ export function AnnotationEditor({
       setIsDropdownOpen(false);
       setSearchQuery('');
     } else if (annotation.valueType === 'object') {
-      // For object/array/number annotations, show custom modal
+      // Check if this is the chart annotation
+      if (annotation.name === 'x-uigen-chart') {
+        // Open chart modal
+        setShowChartModal(true);
+        setIsDropdownOpen(false);
+        setSearchQuery('');
+        return;
+      }
+      
+      // For other object/array/number annotations, show custom modal
       setPendingObjectAnnotation(annotation);
       
       // Get the annotation metadata to determine the type
@@ -282,6 +310,12 @@ export function AnnotationEditor({
   
   // Handle editing an object annotation
   const handleEditObjectAnnotation = useCallback((annotationName: string, currentValue: any) => {
+    // Check if this is the chart annotation
+    if (annotationName === 'x-uigen-chart') {
+      setShowChartModal(true);
+      return;
+    }
+    
     const meta = getAnnotationMeta(annotationName);
     if (meta) {
       setPendingObjectAnnotation(meta);
@@ -346,6 +380,45 @@ export function AnnotationEditor({
   const getAnnotationMeta = (name: string) => 
     AVAILABLE_ANNOTATIONS.find(ann => ann.name === name);
   
+  // Convert FieldNode to SchemaNode for ChartConfigModal
+  const convertFieldNodeToSchemaNode = (fieldNode: any): SchemaNode => {
+    return {
+      type: fieldNode.type as any,
+      key: fieldNode.key,
+      label: fieldNode.label,
+      required: fieldNode.required || false,
+      children: fieldNode.children?.map(convertFieldNodeToSchemaNode),
+      format: fieldNode.format
+    };
+  };
+  
+  // Get array item schema for chart configuration
+  const getArrayItemSchema = (): SchemaNode | null => {
+    if (!fieldNode || fieldNode.type !== 'array') {
+      return null;
+    }
+    
+    // For array fields, the first child represents the item schema
+    if (fieldNode.children && fieldNode.children.length > 0) {
+      return convertFieldNodeToSchemaNode(fieldNode.children[0]);
+    }
+    
+    return null;
+  };
+  
+  // Handle chart modal save
+  const handleSaveChartConfig = useCallback((config: ChartConfig) => {
+    const newAnnotations = { ...currentAnnotations };
+    newAnnotations['x-uigen-chart'] = config;
+    onAnnotationsChange(newAnnotations);
+    setShowChartModal(false);
+  }, [currentAnnotations, onAnnotationsChange]);
+  
+  // Handle chart modal close
+  const handleCloseChartModal = useCallback(() => {
+    setShowChartModal(false);
+  }, []);
+  
   return (
     <div className="flex items-center gap-1.5 flex-wrap">
       {/* Applied annotation badges */}
@@ -389,7 +462,25 @@ export function AnnotationEditor({
         }
         
         if (meta.valueType === 'object') {
-          // Format display value based on type
+          // Special handling for chart annotation
+          if (name === 'x-uigen-chart') {
+            return (
+              <button
+                key={name}
+                onClick={() => handleEditObjectAnnotation(name, value)}
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
+                title="Chart visualization configured (click to edit)"
+                aria-label="Edit Chart configuration"
+              >
+                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Chart: configured
+              </button>
+            );
+          }
+          
+          // Format display value based on type for other object annotations
           let displayValue = '';
           if (Array.isArray(value)) {
             displayValue = `${value.length} selected`;
@@ -605,6 +696,44 @@ export function AnnotationEditor({
           </div>
         </div>
       )}
+      
+      {/* Chart configuration modal */}
+      {showChartModal && (() => {
+        const arrayItemSchema = getArrayItemSchema();
+        if (!arrayItemSchema) {
+          return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-96 max-w-full mx-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Chart Configuration Error
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Chart annotation can only be configured on array fields with object items.
+                </p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleCloseChartModal}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        
+        return (
+          <ChartConfigModal
+            isOpen={true}
+            onClose={handleCloseChartModal}
+            onSave={handleSaveChartConfig}
+            initialConfig={currentAnnotations['x-uigen-chart'] as ChartConfig | undefined}
+            arrayItemSchema={arrayItemSchema}
+            elementPath={elementPath}
+          />
+        );
+      })()}
     </div>
   );
 }
