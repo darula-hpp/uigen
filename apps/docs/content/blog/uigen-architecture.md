@@ -30,15 +30,21 @@ CLI Command
 | API Document   |---->| Reconciler     |---->| Adapter  |---->|  IR  |---->| Engine |---->|  React SPA   |
 | (YAML/JSON)    |     | (Config Merge) |     | (Parser) |     |      |     |        |     | (served)     |
 +----------------+     +----------------+     +----------+     +------+     +--------+     +--------------+
-       |                      ^                                                                    |
+       |                      ^                                                                    ^
        |                      |                                                          +---------+
-       |               +----------------+                                                v
+       |               +----------------+                                                |
        |               | Config File    |                                          +-----------+
        |               | (.uigen/       |                                          | API Proxy |---> Real API
        |               |  config.yaml)  |                                          +-----------+
        |               +----------------+
        |
-       +---> (Source spec unchanged on disk)
+       |               +----------------+     +----------+
+       +-------------->| Custom CSS     |---->| Injected |
+                       | (.uigen/       |     | via      |
+                       |  theme.css)    |     | window   |
+                       +----------------+     +----------+
+       
+       (Source spec unchanged on disk)
 ```
 
 **Stage 1: API Document Ingestion.** The CLI reads the spec file from disk. It auto-detects whether the file is OpenAPI 3.x or Swagger 2.0 based on the `openapi` or `swagger` version field. The raw YAML or JSON is parsed into a plain JavaScript object.
@@ -52,6 +58,8 @@ CLI Command
 **Stage 5: Engine.** The Engine maps IR nodes to component descriptors. It decides which React component to render for each field type, which view layout to use for each operation, and how to wire up data fetching.
 
 **Stage 6: React SPA.** The IR is injected into the React SPA as `window.__UIGEN_CONFIG__`. The SPA reads this config at startup and renders the full UI. In dev mode, a Vite dev server handles hot reloading. In static mode, a pre-built `dist/` is served by a plain Node.js HTTP server.
+
+**Parallel Path: Custom Styling.** Alongside the IR flow, the CLI also reads `.uigen/theme.css` (if it exists) and injects it into the React SPA via `window.__UIGEN_CSS__`. The SPA applies this CSS at runtime, extending the base Tailwind styles. This parallel path allows visual customization without rebuilding the application.
 
 The key insight is that each stage has a single responsibility and communicates through well-defined interfaces. This makes the system testable, extensible, and easy to reason about.
 
@@ -500,6 +508,158 @@ The `enabled` section declares which annotation types are active. The `defaults`
 
 ---
 
+## Styling System
+
+While the IR defines what components to render and how they behave, the Styling System controls how they look. UIGen uses a three-layer architecture that separates base styles, custom themes, and runtime injection.
+
+### Three-Layer Architecture
+
+**Layer 1: Base Styles (Bundled).** The React SPA ships with a base stylesheet (`packages/react/src/index.css`) that includes Tailwind CSS v4 and a comprehensive CSS variable system. These styles are bundled into the SPA at build time and provide the default look and feel. The base layer defines semantic color tokens like `--primary`, `--secondary`, `--background`, `--foreground`, and layout utilities.
+
+**Layer 2: Custom Theme (Per-Project).** Each project can define custom styles in `.uigen/theme.css`. This file overrides or extends the base styles using the same CSS variable system. Users can change brand colors, adjust component styling, add animations, or completely restyle the application. The custom theme is project-specific and lives alongside the spec file and config.
+
+**Layer 3: Runtime Injection (CLI).** The CLI reads `.uigen/theme.css` at startup and injects it into the React SPA via `window.__UIGEN_CSS__`. The SPA applies this CSS after the base styles load, ensuring custom styles take precedence. This happens at runtime, not build time, which means style changes are instant and require no rebuild.
+
+### Runtime Injection Mechanism
+
+The injection happens in the React SPA's entry point:
+
+```typescript
+// packages/react/src/main.tsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { App } from './App';
+import './index.css'; // Base styles (Layer 1)
+
+// IR injected by CLI
+const config = window.__UIGEN_CONFIG__;
+
+// Custom CSS injected by CLI (Layer 2)
+const customCSS = window.__UIGEN_CSS__;
+if (customCSS) {
+  try {
+    const styleElement = document.createElement('style');
+    styleElement.id = 'uigen-custom-css';
+    styleElement.textContent = customCSS;
+    document.head.appendChild(styleElement); // Layer 3: Runtime injection
+  } catch (error) {
+    console.warn('Failed to apply custom CSS:', error);
+  }
+}
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App config={config} />
+  </StrictMode>
+);
+```
+
+The CLI reads the theme file from disk and injects it as a string:
+
+```typescript
+// Simplified CLI injection logic
+const themeCSS = fs.existsSync('.uigen/theme.css')
+  ? fs.readFileSync('.uigen/theme.css', 'utf-8')
+  : null;
+
+const injectedHTML = indexHTML.replace(
+  '</head>',
+  `<script>window.__UIGEN_CSS__ = ${JSON.stringify(themeCSS)};</script></head>`
+);
+```
+
+### CSS Variable System
+
+The base styles define a comprehensive set of CSS variables that control the entire visual theme:
+
+```css
+/* Base theme variables (packages/react/src/index.css) */
+:root {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --primary: #0a0a0a;
+  --primary-foreground: #fafafa;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #1a1a1a;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --accent: #f5f5f5;
+  --accent-foreground: #1a1a1a;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #0a0a0a;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #e5e5e5;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  /* ... dark mode variants */
+}
+```
+
+Custom themes override these variables:
+
+```css
+/* .uigen/theme.css */
+:root {
+  --primary: #10b981;
+  --primary-foreground: #ffffff;
+  --secondary: #3b82f6;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --primary: #34d399;
+  --primary-foreground: #0a0a0a;
+}
+```
+
+Components reference these variables, so changing a variable instantly updates all components that use it:
+
+```css
+/* Button component uses CSS variables */
+button.bg-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: var(--radius);
+}
+```
+
+### Why Runtime Injection?
+
+The decision to inject styles at runtime rather than at build time has several architectural benefits:
+
+**Instant Updates.** Style changes take effect immediately when you restart the CLI. No rebuild, no recompile, no waiting for Vite to process assets. This makes the styling workflow as fast as the config workflow.
+
+**No Build Dependency.** The React SPA does not need to know about the theme file at build time. The pre-built `dist/` that ships with the npm package works with any theme. This keeps the distribution simple and the runtime footprint minimal.
+
+**Separation of Concerns.** The styling system is completely independent of the IR pipeline. You can change styles without touching the spec, the config, or the adapter logic. The CLI orchestrates both flows but they do not interact.
+
+**Config GUI Integration.** The Config GUI can read and write `.uigen/theme.css` directly, allowing visual theme editing without leaving the browser. The file is just CSS, so any text editor or CSS tool can work with it.
+
+### Integration with Config GUI
+
+The Config GUI provides a visual interface for editing styles. It reads `.uigen/theme.css` via the CLI's file API and presents a color picker, typography controls, and spacing adjustments. Changes are written back to the file, and the user refreshes the preview to see the result.
+
+This workflow mirrors the annotation workflow: the Config GUI is a convenience layer on top of a plain text file. Users can edit `.uigen/theme.css` directly if they prefer, and the Config GUI will reflect those changes.
+
+### Design Decisions
+
+**CSS over JavaScript.** Styles are defined in CSS, not JavaScript objects or CSS-in-JS. This keeps the styling layer framework-agnostic and allows standard CSS tooling (linters, formatters, preprocessors) to work without modification.
+
+**Variables over Hardcoded Values.** The base styles use CSS variables for all theme-related values. This makes theming a matter of overriding variables rather than rewriting selectors. It also enables runtime theme switching (light/dark mode) without JavaScript.
+
+**Tailwind as Foundation.** The base styles include Tailwind CSS, which provides utility classes for layout, spacing, and typography. Custom themes extend Tailwind rather than replacing it, so users get the full power of utility-first CSS without writing it from scratch.
+
+**No Build-Time Preprocessing.** The theme file is plain CSS, not SCSS or Less. This eliminates a build step and keeps the CLI simple. Modern CSS features (variables, nesting, color functions) provide most of what preprocessors offered.
+
+---
+
 ## View Types
 
 UIGen auto-generates seven distinct view types, each optimized for a different interaction pattern. The view type is inferred from the operation's HTTP method, path structure, and response schema.
@@ -593,6 +753,8 @@ The six-phase adapter refactoring transformed a monolithic ~1400-line "God class
 Each component has a single responsibility and communicates through well-defined interfaces. The Adapter pattern means adding support for a new spec format (GraphQL, gRPC, AsyncAPI) is a matter of writing a new adapter that produces the same IR. The Strategy pattern means adding a new authentication detection strategy or view type is a matter of implementing the strategy interface. The Visitor pattern means adding new schema processing operations requires only a new visitor. The Facade pattern means the adapter remains a simple orchestrator.
 
 The Config Reconciliation System solves the real-world problem of customization without spec modification. The generic annotation handling means the system is open for extension without requiring code changes.
+
+The Styling System provides instant visual customization through runtime CSS injection. The three-layer architecture (base styles, custom theme, runtime injection) keeps styling independent of the IR pipeline while enabling powerful theming capabilities through CSS variables.
 
 The IR is the key to the renderer ecosystem. Because the IR is framework-agnostic, the same parsing and reconciliation infrastructure can drive React, Svelte, Vue, or any future renderer. The rendering layer is a plugin, not a core dependency.
 
