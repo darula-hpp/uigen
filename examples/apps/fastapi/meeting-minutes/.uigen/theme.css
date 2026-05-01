@@ -1,11 +1,530 @@
-/* UIGen Custom Theme
- * 
- * Add your custom CSS overrides here.
- * These styles will be applied after the base styles, allowing you to override defaults.
- * 
- * Example:
- * .btn-primary {
- *   background-color: #your-brand-color;
- * }
- */
+/* Warm & Friendly Theme for Meeting Minutes App */
+/* Orange and yellow accents with soft rounded corners */
+/* Perfect for collaborative tools - welcoming and approachable */
 
+/* Light Theme - Warm and inviting */
+:root {
+  --primary: #f97316;
+  --primary-foreground: #ffffff;
+  --secondary: #fbbf24;
+  --secondary-foreground: #78350f;
+  --accent: #fef3c7;
+  --accent-foreground: #78350f;
+  --muted: #fef3c7;
+  --muted-foreground: #92400e;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #fed7aa;
+  --input: #fed7aa;
+  --ring: #f97316;
+  --radius: 1rem;
+  --background: #fffbeb;
+  --foreground: #78350f;
+  --card: #ffffff;
+}
+
+/* Dark Theme - Warm dark with orange glow */
+.dark {
+  --primary: #fb923c;
+  --primary-foreground: #431407;
+  --secondary: #fcd34d;
+  --secondary-foreground: #451a03;
+  --accent: #78350f;
+  --accent-foreground: #fef3c7;
+  --muted: #451a03;
+  --muted-foreground: #fdba74;
+  --destructive: #f87171;
+  --destructive-foreground: #ffffff;
+  --border: #78350f;
+  --input: #78350f;
+  --ring: #fb923c;
+  --background: #1c0a00;
+  --foreground: #fef3c7;
+  --card: #292524;
+}
+
+/* Buttons - Soft, rounded, and friendly */
+button {
+  border-radius: 1rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.15);
+}
+
+button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 16px rgba(249, 115, 22, 0.25);
+}
+
+button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Primary buttons with warm glow */
+button.bg-primary {
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+button.bg-primary:hover {
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.4);
+}
+
+/* Secondary buttons with yellow accent */
+button.bg-secondary {
+  background: linear-gradient(135deg, #fbbf24 0%, #fcd34d 100%);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+button.bg-secondary:hover {
+  box-shadow: 0 8px 20px rgba(251, 191, 36, 0.4);
+}
+
+/* Focus states - warm and friendly */
+button:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+
+/* Forms - Soft and inviting */
+input,
+select,
+textarea {
+  border-radius: 0.75rem;
+  border: 2px solid var(--border);
+  padding: 0.875rem 1.25rem;
+  transition: all 0.3s ease;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-size: 1rem;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--secondary);
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.1);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15);
+  transform: scale(1.01);
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  box-shadow: 0 0 0 4px rgba(251, 146, 60, 0.2);
+}
+
+/* Labels - Friendly and clear */
+label {
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+  display: block;
+  font-size: 0.95rem;
+}
+
+/* Tables - Warm and welcoming */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(249, 115, 22, 0.08);
+}
+
+thead {
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  color: white;
+}
+
+thead th {
+  padding: 1.25rem;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+tbody tr {
+  transition: all 0.3s ease;
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr:hover {
+  background-color: var(--accent);
+  transform: scale(1.005);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.1);
+}
+
+.dark tbody tr:hover {
+  background-color: var(--accent);
+}
+
+tbody td {
+  padding: 1.25rem;
+}
+
+/* Alternating row colors - soft and subtle */
+tbody tr:nth-child(even) {
+  background-color: rgba(254, 243, 199, 0.3);
+}
+
+.dark tbody tr:nth-child(even) {
+  background-color: rgba(120, 53, 15, 0.2);
+}
+
+tbody tr:nth-child(even):hover {
+  background-color: var(--accent);
+}
+
+/* Cards - Soft, rounded, and inviting */
+.bg-card {
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.1);
+  transition: all 0.3s ease;
+  border: 2px solid var(--border);
+}
+
+.bg-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.15);
+  border-color: var(--primary);
+}
+
+.dark .bg-card {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  border-color: var(--border);
+}
+
+.dark .bg-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Navigation - Warm and welcoming */
+nav {
+  background-color: var(--card);
+  border-right: 2px solid var(--border);
+  padding: 1rem;
+}
+
+nav a {
+  display: flex;
+  align-items: center;
+  padding: 0.875rem 1.25rem;
+  color: var(--foreground);
+  text-decoration: none;
+  border-radius: 0.75rem;
+  margin: 0.25rem 0;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+nav a:hover {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--muted) 100%);
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.1);
+}
+
+nav a.active {
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+nav a:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+
+/* Links - Warm and friendly */
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+a:hover {
+  color: var(--secondary);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+a:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
+/* Smooth, friendly transitions */
+* {
+  transition-property: background-color, border-color, color, transform;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
+}
+
+/* Welcoming animations */
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.02) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+main {
+  animation: bounce-in 0.5s ease-out;
+}
+
+/* Friendly hover effects for cards */
+@keyframes gentle-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.1);
+  }
+  50% {
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.15);
+  }
+}
+
+.bg-card:hover {
+  animation: gentle-pulse 2s ease-in-out infinite;
+}
+
+/* Responsive Design - Mobile first, friendly on all devices */
+@media (max-width: 768px) {
+  button {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+  
+  thead th,
+  tbody td {
+    padding: 0.875rem;
+  }
+  
+  nav {
+    border-right: none;
+    border-bottom: 2px solid var(--border);
+    padding: 0.75rem;
+  }
+  
+  nav a {
+    margin: 0.25rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .bg-card {
+    border-radius: 1rem;
+  }
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .container {
+    padding: 2rem;
+  }
+  
+  button {
+    padding: 0.875rem 1.75rem;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .container {
+    padding: 3rem;
+  }
+  
+  nav {
+    width: 280px;
+  }
+}
+
+/* Accessibility - Warm and clear focus indicators */
+*:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+  border-radius: 0.5rem;
+}
+
+/* High contrast text for readability */
+.text-muted {
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+/* Error states - Clear but not harsh */
+.error,
+[aria-invalid="true"] {
+  border-color: var(--destructive);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.error:focus,
+[aria-invalid="true"]:focus {
+  border-color: var(--destructive);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+}
+
+/* Success states - Warm and positive */
+.success {
+  border-color: #10b981;
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.success:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+}
+
+/* Loading states - Friendly spinner */
+@keyframes warm-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
+  position: relative;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border: 3px solid var(--muted);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: warm-spin 0.8s linear infinite;
+}
+
+/* Disabled states - Soft and clear */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.3);
+}
+
+/* Badges and tags - Warm accents */
+.badge {
+  display: inline-block;
+  padding: 0.375rem 0.875rem;
+  border-radius: 2rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);
+  color: var(--secondary-foreground);
+  box-shadow: 0 2px 6px rgba(251, 191, 36, 0.2);
+}
+
+/* Tooltips - Friendly and helpful */
+[data-tooltip] {
+  position: relative;
+  cursor: help;
+}
+
+[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  background-color: var(--foreground);
+  color: var(--background);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+}
+
+/* Dividers - Soft and subtle */
+hr {
+  border: none;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 2rem 0;
+}
+
+/* Headings - Warm and welcoming */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--foreground);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, #f97316 0%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Collaborative feel - Team avatars */
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid var(--primary);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.2);
+  transition: all 0.3s ease;
+}
+
+.avatar:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+/* Status indicators - Warm colors */
+.status-online {
+  background-color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.status-away {
+  background-color: #fbbf24;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+}
+
+.status-offline {
+  background-color: #6b7280;
+  box-shadow: 0 0 8px rgba(107, 114, 128, 0.5);
+}

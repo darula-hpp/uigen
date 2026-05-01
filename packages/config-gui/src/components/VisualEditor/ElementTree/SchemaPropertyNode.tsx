@@ -125,6 +125,7 @@ export function SchemaPropertyNode({
               type: field.type,
               format: field.format
             }}
+            fieldNode={field}
           />
         </div>
       </div>
