@@ -25,9 +25,7 @@ At the highest level, UIGen transforms a static API description into a live, int
 ```
 CLI Command
     |
-    +------------------------------------------+
-    |                                          |
-    v                                          v
+    v
 +----------------+     +----------------+     +----------+     +------+     +--------+     +--------------+
 | API Document   |---->| Reconciler     |---->| Adapter  |---->|  IR  |---->| Engine |---->|  React SPA   |
 | (YAML/JSON)    |     | (Config Merge) |     | (Parser) |     |      |     |        |     | (served)     |
