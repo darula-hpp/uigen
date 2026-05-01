@@ -25,26 +25,29 @@ At the highest level, UIGen transforms a static API description into a live, int
 ```
 CLI Command
     |
-    v
+    +------------------------------------------+
+    |                                          |
+    v                                          v
 +----------------+     +----------------+     +----------+     +------+     +--------+     +--------------+
 | API Document   |---->| Reconciler     |---->| Adapter  |---->|  IR  |---->| Engine |---->|  React SPA   |
 | (YAML/JSON)    |     | (Config Merge) |     | (Parser) |     |      |     |        |     | (served)     |
 +----------------+     +----------------+     +----------+     +------+     +--------+     +--------------+
        |                      ^                                                                    ^
-       |                      |                                                          +---------+
-       |               +----------------+                                                |
-       |               | Config File    |                                          +-----------+
-       |               | (.uigen/       |                                          | API Proxy |---> Real API
+       |                      |                                                                    |
+       |               +----------------+                                                          |
+       |               | Config File    |                                                +---------+
+       |               | (.uigen/       |                                                |
        |               |  config.yaml)  |                                          +-----------+
-       |               +----------------+
+       |               +----------------+                                          | API Proxy |---> Real API
+       |                                                                           +-----------+
        |
-       |               +----------------+     +----------+
-       +-------------->| Custom CSS     |---->| Injected |
-                       | (.uigen/       |     | via      |
-                       |  theme.css)    |     | window   |
-                       +----------------+     +----------+
-       
-       (Source spec unchanged on disk)
+       +---> (Source spec unchanged on disk)
+
++----------------+
+| Custom CSS     |     CLI reads and injects directly via window.__UIGEN_CSS__
+| (.uigen/       |     (no preprocessing)
+|  theme.css)    |                                                                                  |
++----------------+-----------------------------------------------------------------------------------+
 ```
 
 **Stage 1: API Document Ingestion.** The CLI reads the spec file from disk. It auto-detects whether the file is OpenAPI 3.x or Swagger 2.0 based on the `openapi` or `swagger` version field. The raw YAML or JSON is parsed into a plain JavaScript object.
