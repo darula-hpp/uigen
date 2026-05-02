@@ -292,7 +292,76 @@ export class Resource_Extractor {
     // Ensure operation IDs are unique across all resources
     this.ensureUniqueOperationIds(resourcesWithOperations);
     
+    // Apply operation labels to single-operation resources
+    // For resources with only one operation, if the operation has a label but the resource doesn't,
+    // copy the operation label to the resource for intuitive UX
+    for (const resource of resourcesWithOperations) {
+      if (resource.operations.length === 1 && !resource.label) {
+        const operation = resource.operations[0];
+        // Check if operation has a summary or description that could serve as a label
+        // Priority: operation's explicit label > summary > description
+        if (operation.summary) {
+          resource.label = operation.summary;
+        } else if (operation.description) {
+          resource.label = operation.description;
+        }
+      }
+    }
+    
+    // Process resource-level annotations from config using base paths
+    if (this.currentIR) {
+      for (const resource of resourcesWithOperations) {
+        // Find a representative operation to get the base path
+        const firstOp = resource.operations[0];
+        if (firstOp) {
+          // Extract base path by finding the common path prefix for this resource
+          // For example: /api/v1/templates, /api/v1/meetings
+          const basePath = this.extractBasePath(firstOp.path, resource.slug);
+          
+          const context = {
+            element: {}, // Empty element for resource-level annotations
+            path: basePath,
+            utils: this.adapterUtils,
+            ir: this.currentIR,
+            resource: resource
+          };
+          this.annotationRegistry.processAnnotations(context);
+        }
+      }
+    }
+    
     return resourcesWithOperations;
+  }
+
+  /**
+   * Extract the base path for a resource from an operation path.
+   * Removes path parameters and trailing segments to get the resource base path.
+   * 
+   * Examples:
+   * - /api/v1/templates/{id} → /api/v1/templates
+   * - /api/v1/meetings/{meeting_id}/templates → /api/v1/meetings
+   * 
+   * @param operationPath - Full operation path
+   * @param resourceSlug - Resource slug to match
+   * @returns Base path for the resource
+   */
+  private extractBasePath(operationPath: string, resourceSlug: string): string {
+    const segments = operationPath.split('/').filter(Boolean);
+    
+    // Find the index of the resource slug in the path
+    const resourceIndex = segments.findIndex(seg => seg.toLowerCase() === resourceSlug.toLowerCase());
+    
+    if (resourceIndex === -1) {
+      // Fallback: return path up to first parameter
+      const paramIndex = segments.findIndex(seg => seg.startsWith('{'));
+      if (paramIndex > 0) {
+        return '/' + segments.slice(0, paramIndex).join('/');
+      }
+      return operationPath;
+    }
+    
+    // Return path up to and including the resource slug
+    return '/' + segments.slice(0, resourceIndex + 1).join('/');
   }
 
   /**

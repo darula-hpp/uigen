@@ -7,7 +7,6 @@ dist
 .vscode
 coverage
 *.tsbuildinfo
-annotations.json
 
 # Kiro IDE files
 .kiro/specs

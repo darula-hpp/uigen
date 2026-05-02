@@ -84,7 +84,7 @@ function ResourceCard({ resource, navigate }: ResourceCardProps) {
           </div>
           <div>
             {/* Requirement 13.1: Display resource name */}
-            <h3 className="text-lg font-semibold">{resource.name}</h3>
+            <h3 className="text-lg font-semibold">{resource.label || resource.name}</h3>
             {/* Requirement 13.2: Show record count when list operation exists */}
             {listOp && (
               <p className="text-sm text-muted-foreground">

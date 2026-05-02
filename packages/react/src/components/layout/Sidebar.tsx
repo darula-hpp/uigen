@@ -104,7 +104,7 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
                       : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                   )}
                 >
-                  {resource.name}
+                  {resource.label || resource.name}
                 </Link>
 
                 {/* Child resources — only shown when on a parent detail page */}
@@ -127,7 +127,7 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
                               : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                           )}
                         >
-                          {child.name}
+                          {child.label || child.name}
                         </Link>
                       );
                     })}

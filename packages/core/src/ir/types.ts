@@ -112,6 +112,7 @@ export interface Resource {
   name: string;
   slug: string;
   uigenId: string;
+  label?: string; // Custom display label from x-uigen-label annotation
   schemaName?: string; // The actual OpenAPI schema name (e.g., "Template" from components/schemas)
   description?: string;
   operations: Operation[];
