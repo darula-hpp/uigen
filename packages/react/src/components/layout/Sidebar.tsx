@@ -1,8 +1,7 @@
-import { Link, useLocation, useParams, useMatch } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import type { UIGenApp, Resource } from '@uigen-dev/core';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { useState } from 'react';
 import { filterAuthResources } from '@/lib/auth-resources';
 import { findProfileResource, filterProfileResources } from '@/lib/profile-resources';
 import { User } from 'lucide-react';
@@ -82,7 +81,7 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
         )}
       >
         {/* Header */}
-        <div className="p-6 border-b flex items-center justify-between">
+        <div className="p-4 border-b flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">{config.meta.title}</h1>
           </div>

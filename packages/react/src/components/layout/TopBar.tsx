@@ -98,8 +98,8 @@ export function TopBar({ config, onMenuClick }: TopBarProps) {
               type="text"
               value={searchQuery}
               onChange={handleSearchChange}
-              placeholder="Search across all resources..."
-              className="w-full h-9 pl-10 pr-10 border rounded-md bg-background text-sm"
+              placeholder="Search..."
+              className="w-full h-9 pl-10 pr-10 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
             {searchQuery && (
               <button

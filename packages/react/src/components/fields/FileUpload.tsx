@@ -117,10 +117,6 @@ export function FileUpload({ schema, register, errors }: FieldProps) {
 
   return (
     <div className="space-y-2">
-      <label htmlFor={schema.key} className="text-sm font-medium">
-        {schema.label}
-      </label>
-
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}

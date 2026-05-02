@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AuthConfig, LoginEndpoint } from '@uigen-dev/core';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { ThemeToggle } from '../ThemeToggle';
 import {
   CredentialStrategy,
   BearerStrategy,
