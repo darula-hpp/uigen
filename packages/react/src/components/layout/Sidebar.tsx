@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { useState } from 'react';
 import { filterAuthResources } from '@/lib/auth-resources';
+import { findProfileResource, filterProfileResources } from '@/lib/profile-resources';
+import { User } from 'lucide-react';
 
 interface SidebarProps {
   config: UIGenApp;
@@ -38,7 +40,10 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
   const location = useLocation();
 
   // Filter out auth resources (login, signup, password reset)
-  const visibleResources = filterAuthResources(config.resources, config);
+  const authFilteredResources = filterAuthResources(config.resources, config);
+  
+  // Filter out profile resources from regular navigation
+  const visibleResources = filterProfileResources(authFilteredResources);
 
   // Detect if we're on a parent detail page — extract the current resource slug and ID
   // e.g. /Services/MG123 → parentSlug=Services, parentId=MG123
@@ -137,6 +142,25 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
             );
           })}
         </nav>
+
+        {/* Profile link - appears at bottom of sidebar */}
+        {findProfileResource(config) && (
+          <div className="p-4 border-t">
+            <Link
+              to="/profile"
+              onClick={onClose}
+              className={cn(
+                'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                location.pathname === '/profile'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-accent hover:text-accent-foreground'
+              )}
+            >
+              <User className="w-4 h-4" />
+              Profile
+            </Link>
+          </div>
+        )}
       </aside>
     </>
   );

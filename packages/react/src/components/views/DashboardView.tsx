@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import type { UIGenApp, Resource } from '@uigen-dev/core';
 import { Database, ArrowRight } from 'lucide-react';
 import { filterAuthResources } from '@/lib/auth-resources';
+import { filterProfileResources } from '@/lib/profile-resources';
 
 interface DashboardViewProps {
   config: UIGenApp;
@@ -17,7 +18,10 @@ export function DashboardView({ config }: DashboardViewProps) {
   const navigate = useNavigate();
 
   // Filter out auth resources (login, signup, password reset)
-  const visibleResources = filterAuthResources(config.resources, config);
+  const authFilteredResources = filterAuthResources(config.resources, config);
+  
+  // Filter out profile resources from dashboard
+  const visibleResources = filterProfileResources(authFilteredResources);
 
   return (
     <div className="space-y-6">

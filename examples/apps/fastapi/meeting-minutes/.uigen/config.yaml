@@ -15,6 +15,7 @@ annotations:
     x-uigen-signup: true
     x-uigen-label: Create Account
   GET:/api/v1/auth/me:
+    x-uigen-profile: true
     x-uigen-label: My Profile
   GET:/health:
     x-uigen-ignore: true

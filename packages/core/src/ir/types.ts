@@ -120,6 +120,7 @@ export interface Resource {
   relationships: Relationship[];
   pagination?: PaginationHint;
   isLibrary?: boolean; // Marks resources as reusable libraries that can be referenced by multiple consumer resources
+  __profileAnnotation?: boolean; // Marks resource as profile resource for specialized rendering (x-uigen-profile)
 }
 
 export interface Relationship {

@@ -47,6 +47,20 @@ export interface RelationshipConfig {
 }
 
 /**
+ * Annotation configuration for a single element
+ * Defines the structure of annotation values that can be applied to spec elements
+ */
+export interface AnnotationConfig {
+  'x-uigen-profile'?: boolean;
+  'x-uigen-ignore'?: boolean;
+  'x-uigen-label'?: string;
+  'x-uigen-login'?: boolean;
+  'x-uigen-chart'?: Record<string, unknown>;
+  'x-uigen-ref'?: Record<string, unknown>;
+  [key: string]: unknown; // Allow other annotations
+}
+
+/**
  * Configuration file structure
  *
  * @property version       - Config file format version (e.g., "1.0")
@@ -60,7 +74,7 @@ export interface ConfigFile {
   version: string;
   enabled: Record<string, boolean>;
   defaults: Record<string, Record<string, unknown>>;
-  annotations: Record<string, Record<string, unknown>>;
+  annotations: Record<string, AnnotationConfig>;
   relationships?: RelationshipConfig[];
   canvasLayout?: CanvasLayout;
 }

@@ -491,4 +491,235 @@ describe('DashboardView', () => {
     expect(screen.getByText('2 records')).toBeInTheDocument();
     expect(screen.getByText('1 record')).toBeInTheDocument();
   });
+
+  describe('Task 10.1: Filter profile resources from dashboard', () => {
+    it('should filter out profile resources from dashboard', async () => {
+      const { getAuthCredentials } = await import('@/lib/auth');
+      const { getSelectedServer } = await import('@/lib/server');
+      const { useApiCall } = await import('@/hooks/useApiCall');
+
+      const configWithProfile: UIGenApp = {
+        ...mockConfig,
+        resources: [
+          ...mockConfig.resources,
+          {
+            name: 'Profile',
+            slug: 'profile',
+            __profileAnnotation: true,
+            operations: [
+              {
+                id: 'getProfile',
+                method: 'GET',
+                path: '/profile',
+                viewHint: 'detail',
+                parameters: [],
+                responses: {},
+              },
+            ],
+            schema: {
+              type: 'object',
+              key: 'profile',
+              label: 'Profile',
+              required: false,
+              description: 'User profile information',
+              children: [],
+            },
+            relationships: [],
+          },
+        ],
+      };
+
+      vi.mocked(getAuthCredentials).mockReturnValue(null);
+      vi.mocked(getSelectedServer).mockReturnValue('https://api.example.com');
+      vi.mocked(useApiCall).mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        error: null,
+        refetch: vi.fn(),
+        isError: false,
+        isSuccess: false,
+      } as any);
+
+      render(
+        <BrowserRouter>
+          <DashboardView config={configWithProfile} />
+        </BrowserRouter>
+      );
+
+      // Profile resource should not be displayed
+      expect(screen.queryByText('Profile')).not.toBeInTheDocument();
+      expect(screen.queryByText('User profile information')).not.toBeInTheDocument();
+
+      // Other resources should still be displayed
+      expect(screen.getByText('Users')).toBeInTheDocument();
+      expect(screen.getByText('Products')).toBeInTheDocument();
+    });
+
+    it('should display non-profile resources normally', async () => {
+      const { getAuthCredentials } = await import('@/lib/auth');
+      const { getSelectedServer } = await import('@/lib/server');
+      const { useApiCall } = await import('@/hooks/useApiCall');
+
+      vi.mocked(getAuthCredentials).mockReturnValue(null);
+      vi.mocked(getSelectedServer).mockReturnValue('https://api.example.com');
+      vi.mocked(useApiCall).mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        error: null,
+        refetch: vi.fn(),
+        isError: false,
+        isSuccess: false,
+      } as any);
+
+      render(
+        <BrowserRouter>
+          <DashboardView config={mockConfig} />
+        </BrowserRouter>
+      );
+
+      expect(screen.getByText('Users')).toBeInTheDocument();
+      expect(screen.getByText('Products')).toBeInTheDocument();
+    });
+
+    it('should handle multiple profile resources correctly', async () => {
+      const { getAuthCredentials } = await import('@/lib/auth');
+      const { getSelectedServer } = await import('@/lib/server');
+      const { useApiCall } = await import('@/hooks/useApiCall');
+
+      const configWithMultipleProfiles: UIGenApp = {
+        ...mockConfig,
+        resources: [
+          ...mockConfig.resources,
+          {
+            name: 'Profile',
+            slug: 'profile',
+            __profileAnnotation: true,
+            operations: [],
+            schema: {
+              type: 'object',
+              key: 'profile',
+              label: 'Profile',
+              required: false,
+              description: 'User profile',
+              children: [],
+            },
+            relationships: [],
+          },
+          {
+            name: 'Account',
+            slug: 'account',
+            __profileAnnotation: true,
+            operations: [],
+            schema: {
+              type: 'object',
+              key: 'account',
+              label: 'Account',
+              required: false,
+              description: 'User account',
+              children: [],
+            },
+            relationships: [],
+          },
+        ],
+      };
+
+      vi.mocked(getAuthCredentials).mockReturnValue(null);
+      vi.mocked(getSelectedServer).mockReturnValue('https://api.example.com');
+      vi.mocked(useApiCall).mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        error: null,
+        refetch: vi.fn(),
+        isError: false,
+        isSuccess: false,
+      } as any);
+
+      render(
+        <BrowserRouter>
+          <DashboardView config={configWithMultipleProfiles} />
+        </BrowserRouter>
+      );
+
+      // Both profile resources should be filtered out
+      expect(screen.queryByText('Profile')).not.toBeInTheDocument();
+      expect(screen.queryByText('Account')).not.toBeInTheDocument();
+
+      // Non-profile resources should still be displayed
+      expect(screen.getByText('Users')).toBeInTheDocument();
+      expect(screen.getByText('Products')).toBeInTheDocument();
+    });
+
+    it('should work with auth resource filtering', async () => {
+      const { getAuthCredentials } = await import('@/lib/auth');
+      const { getSelectedServer } = await import('@/lib/server');
+      const { useApiCall } = await import('@/hooks/useApiCall');
+
+      const configWithAuthAndProfile: UIGenApp = {
+        ...mockConfig,
+        resources: [
+          ...mockConfig.resources,
+          {
+            name: 'Login',
+            slug: 'login',
+            operations: [
+              {
+                id: 'login',
+                method: 'POST',
+                path: '/login',
+                viewHint: 'create',
+                parameters: [],
+                responses: {},
+              },
+            ],
+            schema: { type: 'object', key: 'login', label: 'Login', required: false },
+            relationships: [],
+          },
+          {
+            name: 'Profile',
+            slug: 'profile',
+            __profileAnnotation: true,
+            operations: [],
+            schema: { type: 'object', key: 'profile', label: 'Profile', required: false },
+            relationships: [],
+          },
+        ],
+        auth: {
+          schemes: [],
+          globalRequired: false,
+          loginEndpoints: [
+            {
+              path: '/login',
+              method: 'POST',
+              resourceSlug: 'login',
+            },
+          ],
+        },
+      };
+
+      vi.mocked(getAuthCredentials).mockReturnValue(null);
+      vi.mocked(getSelectedServer).mockReturnValue('https://api.example.com');
+      vi.mocked(useApiCall).mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        error: null,
+        refetch: vi.fn(),
+        isError: false,
+        isSuccess: false,
+      } as any);
+
+      render(
+        <BrowserRouter>
+          <DashboardView config={configWithAuthAndProfile} />
+        </BrowserRouter>
+      );
+
+      // Both auth and profile resources should be filtered out
+      expect(screen.queryByText('Login')).not.toBeInTheDocument();
+      expect(screen.queryByText('Profile')).not.toBeInTheDocument();
+
+      // Other resources should still be displayed
+      expect(screen.getByText('Users')).toBeInTheDocument();
+      expect(screen.getByText('Products')).toBeInTheDocument();
+    });
+  });
 });
