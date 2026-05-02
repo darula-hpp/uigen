@@ -3,6 +3,9 @@ import type { UIGenApp, Resource } from '@uigen-dev/core';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { useState } from 'react';
+import { filterAuthResources } from '@/lib/auth-resources';
+import { findProfileResource, filterProfileResources } from '@/lib/profile-resources';
+import { User } from 'lucide-react';
 
 interface SidebarProps {
   config: UIGenApp;
@@ -36,6 +39,12 @@ function getParentSlug(resource: Resource, allResources: Resource[]): string | n
 export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
   const location = useLocation();
 
+  // Filter out auth resources (login, signup, password reset)
+  const authFilteredResources = filterAuthResources(config.resources, config);
+  
+  // Filter out profile resources from regular navigation
+  const visibleResources = filterProfileResources(authFilteredResources);
+
   // Detect if we're on a parent detail page — extract the current resource slug and ID
   // e.g. /Services/MG123 → parentSlug=Services, parentId=MG123
   const detailMatch = location.pathname.match(/^\/([^/]+)\/([^/]+)$/);
@@ -46,8 +55,8 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
   const childrenByParent = new Map<string, Resource[]>();
   const subResourceSlugs = new Set<string>();
 
-  for (const resource of config.resources) {
-    const parentSlug = getParentSlug(resource, config.resources);
+  for (const resource of visibleResources) {
+    const parentSlug = getParentSlug(resource, visibleResources);
     if (parentSlug) {
       subResourceSlugs.add(resource.slug);
       if (!childrenByParent.has(parentSlug)) childrenByParent.set(parentSlug, []);
@@ -56,7 +65,7 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
   }
 
   // Top-level resources (not sub-resources)
-  const topLevelResources = config.resources.filter(r => !subResourceSlugs.has(r.slug));
+  const topLevelResources = visibleResources.filter(r => !subResourceSlugs.has(r.slug));
 
   return (
     <>
@@ -76,7 +85,6 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
         <div className="p-6 border-b flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">{config.meta.title}</h1>
-            <p className="text-sm text-muted-foreground">{config.meta.version}</p>
           </div>
           <Button variant="ghost" size="sm" className="md:hidden" onClick={onClose}>✕</Button>
         </div>
@@ -101,7 +109,7 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
                       : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                   )}
                 >
-                  {resource.name}
+                  {resource.label || resource.name}
                 </Link>
 
                 {/* Child resources — only shown when on a parent detail page */}
@@ -124,7 +132,7 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
                               : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                           )}
                         >
-                          {child.name}
+                          {child.label || child.name}
                         </Link>
                       );
                     })}
@@ -134,6 +142,25 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
             );
           })}
         </nav>
+
+        {/* Profile link - appears at bottom of sidebar */}
+        {findProfileResource(config) && (
+          <div className="p-4 border-t">
+            <Link
+              to="/profile"
+              onClick={onClose}
+              className={cn(
+                'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                location.pathname === '/profile'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-accent hover:text-accent-foreground'
+              )}
+            >
+              <User className="w-4 h-4" />
+              Profile
+            </Link>
+          </div>
+        )}
       </aside>
     </>
   );

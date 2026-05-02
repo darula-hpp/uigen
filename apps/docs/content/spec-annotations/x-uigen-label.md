@@ -23,6 +23,42 @@ Use `x-uigen-label` when:
 | Schema object | Overrides the resource name in the sidebar and headings |
 | Operation | Overrides the operation label in action buttons and page titles |
 | Path item | Overrides the label for all operations on that path |
+| Resource (via config) | Overrides the resource name in the sidebar (for multi-operation resources) |
+
+## Resource-level label behavior
+
+**Single-operation resources**: When a resource has only one operation, the operation label automatically applies to both the operation AND the resource.
+
+Example:
+```yaml
+# In config.yaml
+annotations:
+  GET:/api/v1/auth/me:
+    x-uigen-label: My Profile
+```
+Result: The "Me" resource in the sidebar shows as "My Profile"
+
+**Multi-operation resources**: For resources with multiple operations, operation labels apply ONLY to the operations, not the resource.
+
+Example:
+```yaml
+# In config.yaml
+annotations:
+  DELETE:/api/v1/templates/{id}:
+    x-uigen-label: Delete Template
+```
+Result: The "Templates" resource keeps its name, only the delete operation shows "Delete Template"
+
+**Explicit resource labels**: To override a multi-operation resource name, use the base path without an HTTP method prefix:
+
+Example:
+```yaml
+# In config.yaml
+annotations:
+  /api/v1/templates:
+    x-uigen-label: Document Templates
+```
+Result: The resource shows as "Document Templates" in the sidebar
 
 ## Precedence
 

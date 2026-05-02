@@ -13,5 +13,6 @@ export type {
   ConfigValidationError,
   RelationshipConfig,
   NodePosition,
-  CanvasLayout
+  CanvasLayout,
+  AnnotationConfig
 } from './types.js';

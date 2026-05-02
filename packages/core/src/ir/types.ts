@@ -112,6 +112,7 @@ export interface Resource {
   name: string;
   slug: string;
   uigenId: string;
+  label?: string; // Custom display label from x-uigen-label annotation
   schemaName?: string; // The actual OpenAPI schema name (e.g., "Template" from components/schemas)
   description?: string;
   operations: Operation[];
@@ -119,6 +120,7 @@ export interface Resource {
   relationships: Relationship[];
   pagination?: PaginationHint;
   isLibrary?: boolean; // Marks resources as reusable libraries that can be referenced by multiple consumer resources
+  __profileAnnotation?: boolean; // Marks resource as profile resource for specialized rendering (x-uigen-profile)
 }
 
 export interface Relationship {

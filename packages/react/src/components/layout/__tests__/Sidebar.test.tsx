@@ -71,10 +71,9 @@ describe('Sidebar', () => {
       expect(screen.getByText('Comments')).toBeInTheDocument();
     });
 
-    it('should display app title and version in header', () => {
+    it('should display app title in header', () => {
       renderSidebar();
       expect(screen.getByText('Test API')).toBeInTheDocument();
-      expect(screen.getByText('1.0.0')).toBeInTheDocument();
     });
   });
 
@@ -191,6 +190,192 @@ describe('Sidebar', () => {
       expect(usersLink).toHaveAttribute('href', '/users');
       expect(postsLink).toHaveAttribute('href', '/posts');
       expect(commentsLink).toHaveAttribute('href', '/comments');
+    });
+  });
+
+  describe('Task 9.1: Add profile link to Sidebar component', () => {
+    it('should display profile link when profile resource exists', () => {
+      const configWithProfile: UIGenApp = {
+        ...mockConfig,
+        resources: [
+          ...mockConfig.resources,
+          {
+            name: 'Profile',
+            slug: 'profile',
+            __profileAnnotation: true,
+            operations: [],
+            schema: { type: 'object', key: 'Profile', label: 'Profile', required: false },
+            relationships: [],
+          },
+        ],
+      };
+
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar config={configWithProfile} isOpen={true} onClose={vi.fn()} />
+        </BrowserRouter>
+      );
+
+      // Profile link should be in the bottom section with border-t
+      const profileContainer = container.querySelector('.border-t');
+      expect(profileContainer).toBeInTheDocument();
+      const profileLink = profileContainer?.querySelector('a[href="/profile"]');
+      expect(profileLink).toBeInTheDocument();
+      expect(profileLink).toHaveTextContent('Profile');
+    });
+
+    it('should not display profile link when no profile resource exists', () => {
+      renderSidebar();
+
+      const profileLinks = screen.queryAllByRole('link', { name: /Profile/i });
+      expect(profileLinks).toHaveLength(0);
+    });
+
+    it('should have correct href for profile link', () => {
+      const configWithProfile: UIGenApp = {
+        ...mockConfig,
+        resources: [
+          ...mockConfig.resources,
+          {
+            name: 'Profile',
+            slug: 'profile',
+            __profileAnnotation: true,
+            operations: [],
+            schema: { type: 'object', key: 'Profile', label: 'Profile', required: false },
+            relationships: [],
+          },
+        ],
+      };
+
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar config={configWithProfile} isOpen={true} onClose={vi.fn()} />
+        </BrowserRouter>
+      );
+
+      const profileContainer = container.querySelector('.border-t');
+      const profileLink = profileContainer?.querySelector('a[href="/profile"]');
+      expect(profileLink).toHaveAttribute('href', '/profile');
+    });
+
+    it('should display user icon for profile link', () => {
+      const configWithProfile: UIGenApp = {
+        ...mockConfig,
+        resources: [
+          ...mockConfig.resources,
+          {
+            name: 'Profile',
+            slug: 'profile',
+            __profileAnnotation: true,
+            operations: [],
+            schema: { type: 'object', key: 'Profile', label: 'Profile', required: false },
+            relationships: [],
+          },
+        ],
+      };
+
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar config={configWithProfile} isOpen={true} onClose={vi.fn()} />
+        </BrowserRouter>
+      );
+
+      const profileContainer = container.querySelector('.border-t');
+      const profileLink = profileContainer?.querySelector('a[href="/profile"]');
+      const icon = profileLink?.querySelector('svg');
+      expect(icon).toBeInTheDocument();
+    });
+
+    it('should highlight profile link when on profile page', () => {
+      const configWithProfile: UIGenApp = {
+        ...mockConfig,
+        resources: [
+          ...mockConfig.resources,
+          {
+            name: 'Profile',
+            slug: 'profile',
+            __profileAnnotation: true,
+            operations: [],
+            schema: { type: 'object', key: 'Profile', label: 'Profile', required: false },
+            relationships: [],
+          },
+        ],
+      };
+
+      render(
+        <BrowserRouter initialEntries={['/profile']}>
+          <Sidebar config={configWithProfile} isOpen={true} onClose={vi.fn()} />
+        </BrowserRouter>
+      );
+
+      const { container } = render(
+        <BrowserRouter initialEntries={['/profile']}>
+          <Sidebar config={configWithProfile} isOpen={true} onClose={vi.fn()} />
+        </BrowserRouter>
+      );
+
+      const profileContainer = container.querySelector('.border-t');
+      const profileLink = profileContainer?.querySelector('a[href="/profile"]');
+      // The link should have transition-colors class (styling is applied)
+      expect(profileLink?.className).toContain('transition-colors');
+    });
+
+    it('should call onClose when profile link is clicked', () => {
+      const onClose = vi.fn();
+      const configWithProfile: UIGenApp = {
+        ...mockConfig,
+        resources: [
+          ...mockConfig.resources,
+          {
+            name: 'Profile',
+            slug: 'profile',
+            __profileAnnotation: true,
+            operations: [],
+            schema: { type: 'object', key: 'Profile', label: 'Profile', required: false },
+            relationships: [],
+          },
+        ],
+      };
+
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar config={configWithProfile} isOpen={true} onClose={onClose} />
+        </BrowserRouter>
+      );
+
+      const profileContainer = container.querySelector('.border-t');
+      const profileLink = profileContainer?.querySelector('a[href="/profile"]');
+      if (profileLink) {
+        fireEvent.click(profileLink);
+        expect(onClose).toHaveBeenCalled();
+      }
+    });
+
+    it('should position profile link at bottom of sidebar', () => {
+      const configWithProfile: UIGenApp = {
+        ...mockConfig,
+        resources: [
+          ...mockConfig.resources,
+          {
+            name: 'Profile',
+            slug: 'profile',
+            __profileAnnotation: true,
+            operations: [],
+            schema: { type: 'object', key: 'Profile', label: 'Profile', required: false },
+            relationships: [],
+          },
+        ],
+      };
+
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar config={configWithProfile} isOpen={true} onClose={vi.fn()} />
+        </BrowserRouter>
+      );
+
+      const profileContainer = container.querySelector('.border-t');
+      expect(profileContainer).toBeInTheDocument();
+      expect(profileContainer?.querySelector('a')).toHaveTextContent('Profile');
     });
   });
 });

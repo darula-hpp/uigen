@@ -52,7 +52,7 @@ Load the annotations metadata from `annotations.json`:
   "x-uigen-password-reset": { "targetType": "operation", "type": "boolean" },
   "x-uigen-signup": { "targetType": "operation", "type": "boolean" },
   "x-uigen-ignore": { "targetType": ["field", "operation", "resource"], "type": "boolean" },
-  "x-uigen-label": { "targetType": ["field", "operation"], "type": "string" },
+  "x-uigen-label": { "targetType": ["field", "operation", "resource"], "type": "string" },
   "x-uigen-file-types": { "targetType": "field", "type": "array", "applicableWhen": { "type": "file" } },
   "x-uigen-max-file-size": { "targetType": "field", "type": "number", "applicableWhen": { "type": "file" } },
   "x-uigen-ref": { "targetType": "field", "type": "object" },
@@ -297,23 +297,41 @@ Post.category_id:
 ### Rule 8: Custom Labels (x-uigen-label)
 
 **Pattern detection:**
-- Apply human-readable labels to operations and fields
+- Apply human-readable labels to operations, fields, and resources
 - Convert snake_case/camelCase to Title Case
 - Use operation summary if available
 
+**Label Behavior:**
+- **Single-operation resources**: Operation label applies to BOTH operation AND resource
+  - Example: `GET:/api/v1/auth/me` with label "My Profile" → resource shows "My Profile"
+- **Multi-operation resources**: Operation labels apply ONLY to operations, NOT the resource
+  - Example: `DELETE:/api/v1/templates/{id}` with label "Delete Template" → resource still shows "Templates"
+- **Explicit resource labels**: Use base path without HTTP method prefix
+  - Example: `/api/v1/templates` with label "Document Templates" → resource shows "Document Templates"
+
 **Examples:**
 ```yaml
+# Operation labels
 POST:/api/v1/users:
   x-uigen-label: Create User
 
 GET:/api/v1/users/{id}:
   x-uigen-label: View User Details
 
+# Single-operation resource (label applies to both operation and resource)
+GET:/api/v1/auth/me:
+  x-uigen-label: My Profile
+
+# Field labels
 User.first_name:
   x-uigen-label: First Name
 
 User.email_address:
   x-uigen-label: Email Address
+
+# Explicit resource label (for multi-operation resources)
+/api/v1/templates:
+  x-uigen-label: Document Templates
 ```
 
 ### Rule 9: Active Server (x-uigen-active-server)

@@ -13,6 +13,7 @@ import { DashboardView } from './components/views/DashboardView';
 import { LoginView } from './components/views/LoginView';
 import { SignUpView } from './components/views/SignUpView';
 import { PasswordResetView } from './components/views/PasswordResetView';
+import { ProfileView } from './components/views/ProfileView';
 import { ToastProvider } from './components/Toast';
 import { AppProvider } from './contexts/AppContext';
 import { isAuthenticated } from './lib/auth';
@@ -128,6 +129,13 @@ export function App({ config }: AppProps) {
             <Route path="/" element={
               <ProtectedRoute config={config} requiresAuth={requiresAuth}>
                 <DashboardView config={config} />
+              </ProtectedRoute>
+            } />
+            
+            {/* Profile route - protected with layout */}
+            <Route path="/profile" element={
+              <ProtectedRoute config={config} requiresAuth={requiresAuth}>
+                <ProfileView config={config} />
               </ProtectedRoute>
             } />
             

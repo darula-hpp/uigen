@@ -84,10 +84,9 @@ export function TopBar({ config, onMenuClick }: TopBarProps) {
         ☰
       </Button>
 
-      {/* App title and version - Requirement 30.1, 30.2 */}
+      {/* App title - Requirement 30.1 */}
       <div className="flex-shrink-0">
         <h1 className="text-lg font-bold">{config.meta.title}</h1>
-        <p className="text-xs text-muted-foreground">{config.meta.version}</p>
       </div>
 
       {/* Requirement 54.1: Global search input in top bar */}

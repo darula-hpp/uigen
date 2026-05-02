@@ -3,6 +3,8 @@ import { useApiCall } from '@/hooks/useApiCall';
 import { Button } from '@/components/ui/button';
 import type { UIGenApp, Resource } from '@uigen-dev/core';
 import { Database, ArrowRight } from 'lucide-react';
+import { filterAuthResources } from '@/lib/auth-resources';
+import { filterProfileResources } from '@/lib/profile-resources';
 
 interface DashboardViewProps {
   config: UIGenApp;
@@ -14,6 +16,12 @@ interface DashboardViewProps {
  */
 export function DashboardView({ config }: DashboardViewProps) {
   const navigate = useNavigate();
+
+  // Filter out auth resources (login, signup, password reset)
+  const authFilteredResources = filterAuthResources(config.resources, config);
+  
+  // Filter out profile resources from dashboard
+  const visibleResources = filterProfileResources(authFilteredResources);
 
   return (
     <div className="space-y-6">
@@ -29,7 +37,7 @@ export function DashboardView({ config }: DashboardViewProps) {
       <div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Requirement 13.1, 13.2: Display card for each resource with name and description */}
-          {config.resources.map((resource) => (
+          {visibleResources.map((resource) => (
             <ResourceCard key={resource.slug} resource={resource} navigate={navigate} />
           ))}
         </div>
@@ -80,7 +88,7 @@ function ResourceCard({ resource, navigate }: ResourceCardProps) {
           </div>
           <div>
             {/* Requirement 13.1: Display resource name */}
-            <h3 className="text-lg font-semibold">{resource.name}</h3>
+            <h3 className="text-lg font-semibold">{resource.label || resource.name}</h3>
             {/* Requirement 13.2: Show record count when list operation exists */}
             {listOp && (
               <p className="text-sm text-muted-foreground">

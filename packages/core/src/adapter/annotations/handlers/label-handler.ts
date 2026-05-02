@@ -34,8 +34,8 @@ export class LabelHandler implements AnnotationHandler<string> {
 
   public static readonly metadata: AnnotationMetadata = {
     name: 'x-uigen-label',
-    description: 'Applies custom labels to schema properties, objects, and operations',
-    targetType: ['field', 'operation'],
+    description: 'Applies custom labels to schema properties, objects, operations, and resources',
+    targetType: ['field', 'operation', 'resource'],
     parameterSchema: {
       type: 'string'
     },
@@ -51,6 +51,10 @@ export class LabelHandler implements AnnotationHandler<string> {
       {
         description: 'Custom label for operation',
         value: 'User Login'
+      },
+      {
+        description: 'Custom label for resource',
+        value: 'My Profile'
       }
     ]
   };
@@ -96,15 +100,45 @@ export class LabelHandler implements AnnotationHandler<string> {
   }
   
   /**
-   * Apply the label annotation by setting the label on the schema node.
+   * Apply the label annotation by setting the label on the schema node or resource.
+   * 
+   * For single-operation resources: Apply operation label to both operation AND resource
+   * Example: `GET:/api/v1/auth/me` with `x-uigen-label: My Profile` → resource shows "My Profile"
+   * 
+   * For multi-operation resources: Apply operation labels ONLY to operations
+   * Example: `DELETE:/api/v1/templates/{id}` with `x-uigen-label: Delete Template` → resource still shows "Templates"
+   * 
+   * For explicit resource labels: Apply when path has no HTTP method prefix
+   * Example: `/api/v1/templates` with `x-uigen-label: Document Templates` → resource shows "Document Templates"
+   * 
+   * Note: Single-operation resource label inheritance happens in post-processing after all operations are added.
    * 
    * @param value - The validated string value
    * @param context - The annotation context
    */
   apply(value: string, context: AnnotationContext): void {
-    // Apply label to schema node
+    // Apply label to schema node (for fields and operations)
     if (context.schemaNode) {
       context.schemaNode.label = value;
+    }
+    
+    // Apply label to operation summary (for operation-level annotations)
+    if (context.operation) {
+      context.operation.summary = value;
+    }
+    
+    // Determine if this is an operation-level annotation
+    // Operation-level if:
+    // 1. context.method is present (processing an operation), OR
+    // 2. path starts with HTTP method prefix (from config annotations)
+    const httpMethods = ['GET:', 'POST:', 'PUT:', 'PATCH:', 'DELETE:'];
+    const isOperationLevel = context.method || httpMethods.some(method => context.path.startsWith(method));
+    
+    // Apply label to resource only for explicit resource-level annotations
+    // (no method prefix, no context.method, path starts with '/')
+    // Single-operation resource label inheritance is handled in post-processing
+    if (context.resource && !isOperationLevel && context.path.startsWith('/')) {
+      context.resource.label = value;
     }
   }
 }

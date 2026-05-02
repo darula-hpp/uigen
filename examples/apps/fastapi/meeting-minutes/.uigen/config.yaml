@@ -9,11 +9,13 @@ annotations:
     x-uigen-password-reset: true
     x-uigen-label: Reset Password
   POST:/api/v1/auth/password-reset/confirm:
+    x-uigen-ignore: true
     x-uigen-label: Confirm Password Reset
   POST:/api/v1/auth/sign-up:
     x-uigen-signup: true
     x-uigen-label: Create Account
   GET:/api/v1/auth/me:
+    x-uigen-profile: true
     x-uigen-label: My Profile
   GET:/health:
     x-uigen-ignore: true

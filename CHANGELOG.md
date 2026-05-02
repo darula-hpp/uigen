@@ -11,6 +11,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 **Core engine (`@uigen-dev/core`)**
+- **Resource-level `x-uigen-label` support** - Labels can now be applied at the resource level to customize resource display names in the dashboard and sidebar
+  - Added optional `label` field to Resource interface
+  - Updated LabelHandler to support 'resource' as a target type
+  - Smart label application based on resource operation count:
+    - **Single-operation resources**: Operation labels automatically apply to both operation AND resource (e.g., `GET:/api/v1/auth/me` with label "My Profile" → resource shows "My Profile")
+    - **Multi-operation resources**: Operation labels apply ONLY to operations, not the resource (e.g., `DELETE:/api/v1/templates/{id}` with label "Delete Template" → resource still shows "Templates")
+    - **Explicit resource labels**: Use base path without HTTP method prefix (e.g., `/api/v1/templates` with label "Document Templates")
+  - Backward compatible - resources without labels use inferred names (capitalized slug)
+  - Fixes intuitive behavior where single-operation resources inherit their operation's label
 - **`x-uigen-chart` annotation** - Declarative data visualization configuration for array fields
   - Specify chart type: line, bar, pie, scatter, area, radar, donut
   - Map schema fields to chart axes (xAxis, yAxis)
@@ -106,6 +115,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated Quick Start guide to feature init command as primary workflow
 - Updated Installation guide with init command examples
 - Updated main README with init command in getting started section
+
+### Improved
+
+**React renderer (`@uigen-dev/react`)**
+- **Cleaner UI** - Removed version display from top bar and sidebar for a more streamlined interface
+- **Auth resource filtering** - Login, signup, and password reset resources now hidden from navigation and dashboard
+  - Auth endpoints accessible only through dedicated auth flows, not as CRUD resources
+  - Reduces UI clutter and improves user experience
+  - Automatic detection based on auth endpoint configuration
+  - 11 unit tests ensuring correct filtering behavior
 
 ### Changed
 
