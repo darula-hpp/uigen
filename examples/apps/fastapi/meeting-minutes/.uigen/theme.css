@@ -1,43 +1,43 @@
 /* Modern SaaS Theme for Meeting Minutes App */
-/* Vibrant orange palette with clean, modern styling */
-/* Perfect for SaaS applications - energetic and professional */
+/* Sophisticated amber/gold palette with clean, modern styling */
+/* Perfect for SaaS applications - warm, professional, and easy on the eyes */
 
-/* Light Theme - Vibrant orange with clean whites */
+/* Light Theme - Sophisticated muted orange with clean whites */
 :root {
-  --primary: #f97316;
+  --primary: #d97706;
   --primary-foreground: #ffffff;
-  --secondary: #fb923c;
+  --secondary: #f59e0b;
   --secondary-foreground: #ffffff;
-  --accent: #ffedd5;
-  --accent-foreground: #9a3412;
+  --accent: #fef3c7;
+  --accent-foreground: #78350f;
   --muted: #f9fafb;
   --muted-foreground: #6b7280;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --border: #e5e7eb;
   --input: #f3f4f6;
-  --ring: #f97316;
+  --ring: #d97706;
   --radius: 0.75rem;
   --background: #ffffff;
   --foreground: #111827;
   --card: #ffffff;
 }
 
-/* Dark Theme - Deep slate with bright orange accents */
+/* Dark Theme - Deep slate with warm amber accents */
 .dark {
-  --primary: #fb923c;
+  --primary: #f59e0b;
   --primary-foreground: #ffffff;
-  --secondary: #fdba74;
+  --secondary: #fbbf24;
   --secondary-foreground: #1f2937;
-  --accent: #431407;
-  --accent-foreground: #fed7aa;
+  --accent: #451a03;
+  --accent-foreground: #fde68a;
   --muted: #1f2937;
   --muted-foreground: #9ca3af;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --border: #374151;
   --input: #1f2937;
-  --ring: #fb923c;
+  --ring: #f59e0b;
   --background: #111827;
   --foreground: #f9fafb;
   --card: #1f2937;
@@ -63,26 +63,26 @@ button:active {
   transform: translateY(0);
 }
 
-/* Primary buttons with vibrant orange gradient */
+/* Primary buttons with sophisticated amber gradient */
 button.bg-primary {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  box-shadow: 0 4px 6px rgba(249, 115, 22, 0.3), 0 2px 4px rgba(249, 115, 22, 0.2);
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  box-shadow: 0 4px 6px rgba(217, 119, 6, 0.25), 0 2px 4px rgba(217, 119, 6, 0.15);
 }
 
 button.bg-primary:hover {
-  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
-  box-shadow: 0 10px 20px rgba(249, 115, 22, 0.4), 0 6px 8px rgba(249, 115, 22, 0.3);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 10px 20px rgba(217, 119, 6, 0.3), 0 6px 8px rgba(217, 119, 6, 0.2);
 }
 
-/* Secondary buttons with lighter orange */
+/* Secondary buttons with lighter amber */
 button.bg-secondary {
-  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
-  box-shadow: 0 4px 6px rgba(251, 146, 60, 0.3), 0 2px 4px rgba(251, 146, 60, 0.2);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 6px rgba(245, 158, 11, 0.25), 0 2px 4px rgba(245, 158, 11, 0.15);
 }
 
 button.bg-secondary:hover {
-  background: linear-gradient(135deg, #fdba74 0%, #fb923c 100%);
-  box-shadow: 0 10px 20px rgba(251, 146, 60, 0.4), 0 6px 8px rgba(251, 146, 60, 0.3);
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3), 0 6px 8px rgba(245, 158, 11, 0.2);
 }
 
 /* Focus states */
@@ -145,7 +145,7 @@ table {
 }
 
 thead {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   color: white;
 }
 
@@ -242,10 +242,10 @@ nav a:hover {
 }
 
 nav a.active {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   color: white;
   font-weight: 700;
-  box-shadow: 0 4px 6px rgba(249, 115, 22, 0.3), 0 2px 4px rgba(249, 115, 22, 0.2);
+  box-shadow: 0 4px 6px rgba(217, 119, 6, 0.25), 0 2px 4px rgba(217, 119, 6, 0.15);
 }
 
 nav a:focus-visible {
@@ -428,23 +428,23 @@ textarea:disabled {
   filter: grayscale(0.5);
 }
 
-/* Badges - Orange gradient style */
+/* Badges - Amber gradient style */
 .badge {
   display: inline-block;
   padding: 0.25rem 0.625rem;
   border-radius: 0.375rem;
   font-size: 0.75rem;
   font-weight: 600;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   color: var(--primary-foreground);
   text-transform: uppercase;
   letter-spacing: 0.025em;
-  box-shadow: 0 2px 4px rgba(249, 115, 22, 0.2);
+  box-shadow: 0 2px 4px rgba(217, 119, 6, 0.15);
 }
 
 .badge:hover {
-  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
-  box-shadow: 0 4px 6px rgba(249, 115, 22, 0.3);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 6px rgba(217, 119, 6, 0.25);
 }
 
 /* Tooltips */
@@ -477,7 +477,7 @@ hr {
   margin: 1.5rem 0;
 }
 
-/* Headings - Orange gradient text effect */
+/* Headings - Amber gradient text effect */
 h1, h2, h3, h4, h5, h6 {
   color: var(--foreground);
   font-weight: 700;
@@ -486,14 +486,14 @@ h1, h2, h3, h4, h5, h6 {
 
 h1 {
   font-size: 2rem;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .dark h1 {
-  background: linear-gradient(135deg, #fb923c 0%, #fdba74 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -540,7 +540,7 @@ h3 {
   box-shadow: 0 0 6px rgba(107, 114, 128, 0.4);
 }
 
-/* Meeting-specific styles with orange theme */
+/* Meeting-specific styles with amber theme */
 .meeting-card {
   border-left: 4px solid var(--primary);
   background: linear-gradient(135deg, var(--card) 0%, var(--muted) 100%);
@@ -559,14 +559,14 @@ h3 {
 }
 
 .meeting-status.scheduled {
-  background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
-  color: #9a3412;
-  box-shadow: 0 2px 4px rgba(251, 146, 60, 0.2);
+  background: linear-gradient(135deg, #fde68a 0%, #fbbf24 100%);
+  color: #78350f;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.15);
 }
 
 .dark .meeting-status.scheduled {
-  background: linear-gradient(135deg, #9a3412 0%, #7c2d12 100%);
-  color: #fed7aa;
+  background: linear-gradient(135deg, #78350f 0%, #451a03 100%);
+  color: #fde68a;
 }
 
 .meeting-status.completed {
@@ -624,7 +624,7 @@ h3 {
   }
 }
 
-/* Stats cards - Orange accents and gradients */
+/* Stats cards - Amber accents and gradients */
 .stat-card {
   padding: 1.25rem;
   border-radius: 0.75rem;
@@ -643,7 +643,7 @@ h3 {
 .stat-value {
   font-size: 2rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -651,7 +651,7 @@ h3 {
 }
 
 .dark .stat-value {
-  background: linear-gradient(135deg, #fb923c 0%, #fdba74 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

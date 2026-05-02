@@ -9,6 +9,7 @@ annotations:
     x-uigen-password-reset: true
     x-uigen-label: Reset Password
   POST:/api/v1/auth/password-reset/confirm:
+    x-uigen-ignore: true
     x-uigen-label: Confirm Password Reset
   POST:/api/v1/auth/sign-up:
     x-uigen-signup: true
