@@ -9,7 +9,7 @@ UIGen ships as three separate packages. Install only what you need.
 
 ## `@uigen-dev/cli`
 
-The CLI is the fastest way to get started. Use it to serve a generated UI directly from a spec file.
+The CLI is the fastest way to get started. Use it to initialize projects, serve generated UIs, and configure annotations visually.
 
 ```bash
 npm install -g @uigen-dev/cli
@@ -18,10 +18,23 @@ npm install -g @uigen-dev/cli
 Or use it without installing via `npx`:
 
 ```bash
+# Initialize a new project
+npx @uigen-dev/cli init my-admin-ui
+
+# Serve a generated UI
 npx @uigen-dev/cli serve ./openapi.yaml
+
+# Open the config GUI
+npx @uigen-dev/cli config ./openapi.yaml
 ```
 
-**Use this when** you want to spin up a UI for an existing API without writing any code.
+**Use this when** you want to spin up a UI for an existing API without writing any code, or when you want a complete project scaffold with configuration and AI agent skills.
+
+### CLI commands
+
+- `init` - Initialize a new UIGen project with scaffolded structure
+- `serve` - Start a development server with the generated UI
+- `config` - Open a visual GUI for managing annotations
 
 ## `@uigen-dev/core`
 
@@ -57,6 +70,8 @@ npm install @uigen-dev/react @uigen-dev/core
 
 ## Next steps
 
-- [Quick Start](/docs/getting-started/quick-start): run UIGen in under a minute
-- [CLI Reference](/docs/cli-reference/serve): all available flags for `uigen serve`
+- [Quick Start](/docs/getting-started/quick-start): create a project and run UIGen in under a minute
+- [CLI Reference: init](/docs/cli-reference/init): initialize new projects
+- [CLI Reference: serve](/docs/cli-reference/serve): all available flags for `uigen serve`
+- [CLI Reference: config](/docs/cli-reference/config): visual configuration GUI
 - [Override System](/docs/override-system/overview): customise the generated UI

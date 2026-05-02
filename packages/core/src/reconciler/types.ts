@@ -113,7 +113,7 @@ export interface Logger {
  */
 export interface ResolvedElement {
   /** Type of the resolved element */
-  type: 'operation' | 'schema-property' | 'parameter';
+  type: 'operation' | 'schema-property' | 'parameter' | 'response-body' | 'response-field';
   
   /** Location information for the element */
   location: ElementLocation;

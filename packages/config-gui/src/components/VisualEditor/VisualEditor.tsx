@@ -513,6 +513,15 @@ function ResourceSection({ resource }: ResourceSectionProps) {
                         ))}
                       </div>
                     )}
+                    {/* Show response fields if present */}
+                    {operation.responseFields && operation.responseFields.length > 0 && (
+                      <div className="ml-8 mt-1 space-y-1 border-l-2 border-green-200 dark:border-green-700 pl-3">
+                        <div className="text-xs text-green-600 dark:text-green-400 mb-1">Response Fields:</div>
+                        {operation.responseFields.map(field => (
+                          <SchemaPropertyNode key={field.path} field={field} level={0} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -580,5 +580,173 @@ describe('SpecParser', () => {
       expect(result.resources[0].fields[0].format).toBeUndefined();
       expect(result.resources[0].fields[0].fileMetadata).toBeUndefined();
     });
+    
+    it('should extract response fields with JSON Pointer paths for GET operations', () => {
+      const operation: Operation = {
+        id: 'getUsers',
+        uigenId: 'getUsers',
+        method: 'GET',
+        path: '/api/v1/users',
+        summary: 'Get all users',
+        parameters: [],
+        responses: {
+          '200': {
+            description: 'Success',
+            schema: {
+              type: 'array',
+              key: 'response',
+              label: 'Response',
+              required: false,
+              items: {
+                type: 'object',
+                key: 'User',
+                label: 'User',
+                required: false,
+                children: [
+                  {
+                    type: 'integer',
+                    key: 'id',
+                    label: 'ID',
+                    required: true
+                  },
+                  {
+                    type: 'string',
+                    key: 'name',
+                    label: 'Name',
+                    required: true
+                  }
+                ]
+              }
+            }
+          }
+        },
+        viewHint: 'list'
+      };
+      
+      const app: UIGenApp = {
+        meta: { title: 'Test API', version: '1.0' },
+        resources: [
+          {
+            name: 'User',
+            slug: 'user',
+            uigenId: 'user',
+            operations: [operation],
+            schema: {
+              type: 'object',
+              key: 'User',
+              label: 'User',
+              required: false,
+              children: []
+            },
+            relationships: []
+          }
+        ],
+        auth: { schemes: [], globalRequired: false },
+        dashboard: { enabled: false, widgets: [] },
+        servers: []
+      };
+      
+      const result = parser.parse(app);
+      
+      // Check that response fields are extracted
+      expect(result.resources[0].operations[0].responseFields).toBeDefined();
+      expect(result.resources[0].operations[0].responseFields).toHaveLength(1);
+      
+      // Check that the response field has JSON Pointer path
+      const responseField = result.resources[0].operations[0].responseFields![0];
+      expect(responseField.key).toBe('response');
+      expect(responseField.type).toBe('array');
+      expect(responseField.path).toBe('#/paths/~1api~1v1~1users/get/responses/200/content/application~1json/schema');
+      
+      // Check that array items have proper JSON Pointer paths
+      expect(responseField.children).toBeDefined();
+      expect(responseField.children).toHaveLength(2);
+      expect(responseField.children![0].key).toBe('id');
+      expect(responseField.children![0].path).toBe('#/paths/~1api~1v1~1users/get/responses/200/content/application~1json/schema/properties/id');
+      expect(responseField.children![1].key).toBe('name');
+      expect(responseField.children![1].path).toBe('#/paths/~1api~1v1~1users/get/responses/200/content/application~1json/schema/properties/name');
+    });
+    
+    it('should handle response fields with nested objects using JSON Pointer paths', () => {
+      const operation: Operation = {
+        id: 'getUser',
+        uigenId: 'getUser',
+        method: 'GET',
+        path: '/api/v1/users/123',
+        summary: 'Get user by ID',
+        parameters: [],
+        responses: {
+          '200': {
+            description: 'Success',
+            schema: {
+              type: 'object',
+              key: 'User',
+              label: 'User',
+              required: false,
+              children: [
+                {
+                  type: 'integer',
+                  key: 'id',
+                  label: 'ID',
+                  required: true
+                },
+                {
+                  type: 'object',
+                  key: 'address',
+                  label: 'Address',
+                  required: false,
+                  children: [
+                    {
+                      type: 'string',
+                      key: 'street',
+                      label: 'Street',
+                      required: true
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        viewHint: 'detail'
+      };
+      
+      const app: UIGenApp = {
+        meta: { title: 'Test API', version: '1.0' },
+        resources: [
+          {
+            name: 'User',
+            slug: 'user',
+            uigenId: 'user',
+            operations: [operation],
+            schema: {
+              type: 'object',
+              key: 'User',
+              label: 'User',
+              required: false,
+              children: []
+            },
+            relationships: []
+          }
+        ],
+        auth: { schemes: [], globalRequired: false },
+        dashboard: { enabled: false, widgets: [] },
+        servers: []
+      };
+      
+      const result = parser.parse(app);
+      
+      // Check that response fields are extracted
+      expect(result.resources[0].operations[0].responseFields).toBeDefined();
+      expect(result.resources[0].operations[0].responseFields).toHaveLength(2);
+      
+      // Check JSON Pointer paths for nested objects
+      const addressField = result.resources[0].operations[0].responseFields![1];
+      expect(addressField.key).toBe('address');
+      expect(addressField.path).toBe('#/paths/~1api~1v1~1users~1123/get/responses/200/content/application~1json/schema/properties/address');
+      expect(addressField.children).toHaveLength(1);
+      expect(addressField.children![0].key).toBe('street');
+      expect(addressField.children![0].path).toBe('#/paths/~1api~1v1~1users~1123/get/responses/200/content/application~1json/schema/properties/address/properties/street');
+    });
   });
 });

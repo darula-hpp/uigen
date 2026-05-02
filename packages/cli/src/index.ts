@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { serve } from './commands/serve.js';
 import { config } from './commands/config.js';
+import { init } from './commands/init.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -21,6 +22,9 @@ program
   .version(packageJson.version)
   .addHelpText('after', `
 Examples:
+  $ uigen init
+  $ uigen init my-project
+  $ uigen init --spec openapi.yaml
   $ uigen serve petstore.yaml
   $ uigen serve petstore.yaml --port 3000
   $ uigen serve petstore.yaml --proxy-base https://api.example.com
@@ -28,6 +32,42 @@ Examples:
   $ uigen config petstore.yaml
   $ uigen config petstore.yaml --port 4401
 `);
+
+program
+  .command('init')
+  .description('Initialize a new UIGen project')
+  .argument('[project-name]', 'Name of the project directory')
+  .option('--spec <path>', 'Path to existing OpenAPI spec file')
+  .option('--no-git', 'Skip git repository initialization')
+  .option('--dir <path>', 'Custom directory path (overrides project-name)')
+  .option('-y, --yes', 'Skip prompts and use defaults')
+  .option('--verbose', 'Show detailed output')
+  .addHelpText('after', `
+Examples:
+  $ uigen init
+  $ uigen init my-project
+  $ uigen init --spec openapi.yaml
+  $ uigen init my-project --spec api.yaml --yes
+  $ uigen init --dir ./custom-path --no-git
+
+The init command scaffolds a complete UIGen project with:
+  - Project structure (.uigen/, .agents/skills/)
+  - Configuration files (config.yaml, theme.css)
+  - AI agent skills for automation
+  - Git repository (optional)
+  - Example OpenAPI spec (if not provided)
+
+After initialization, use 'uigen serve' to start the development server.
+`)
+  .action(async (projectName, options) => {
+    await init(projectName, {
+      spec: options.spec,
+      git: options.git,
+      dir: options.dir,
+      yes: options.yes,
+      verbose: options.verbose,
+    });
+  });
 
 program
   .command('serve')

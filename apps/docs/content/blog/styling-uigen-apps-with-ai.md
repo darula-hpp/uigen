@@ -391,6 +391,61 @@ Use media queries for responsive styling:
 
 ---
 
+## Performance and Tradeoffs
+
+### Runtime Injection Performance
+
+You might wonder: "Isn't runtime CSS injection slower than bundled CSS?" The short answer is no.
+
+**The browser does the same work either way.** Whether CSS comes from a `<link>` tag, a bundled file, or a `<style>` tag (what UIGen uses), the browser still has to:
+
+1. Parse the CSS into the CSSOM (CSS Object Model)
+2. Combine CSSOM with DOM to create the render tree
+3. Calculate layout
+4. Paint pixels to screen
+
+The style computation is identical. The only difference is the delivery mechanism.
+
+**Runtime injection is actually faster in some ways:**
+
+- **No additional HTTP request** - The CSS is embedded in the HTML, so there's no separate network round trip for a stylesheet
+- **No FOUC (Flash of Unstyled Content)** - Because the CSS is injected synchronously before React renders, styles are applied before the first paint
+- **Smaller than you think** - Most theme files are 2-10KB. Even a large custom theme is 20-30KB, which is tiny compared to the JavaScript bundle
+
+**What you give up:**
+
+- **No minification** - The CSS is not minified (but modern CSS is already compact)
+- **No preprocessing** - No autoprefixer or SCSS compilation (but modern CSS features work in all target browsers)
+- **No tree-shaking** - Unused CSS rules aren't removed (but theme files are small enough that this doesn't matter)
+
+**What you gain:**
+
+- **Instant updates** - Change CSS, restart CLI, see results. No rebuild needed
+- **Zero build dependency** - The pre-built React SPA works with any theme
+- **Simplicity** - The CLI just reads a file and passes it through. No bundler configuration
+- **Separation of concerns** - Styling is independent of the IR pipeline
+
+For UIGen's use case (rapid prototyping, internal tools, admin panels), the tradeoff is worth it. The developer experience of instant style updates outweighs the tiny performance cost of unminified CSS.
+
+### When Runtime Injection Makes Sense
+
+Runtime CSS injection is ideal when:
+
+- You need fast iteration on styles
+- You're building internal tools or prototypes
+- Your theme files are small (under 50KB)
+- You want to avoid build complexity
+
+It's less ideal when:
+
+- You need aggressive optimization for production
+- You have very large stylesheets (100KB+)
+- You need advanced CSS preprocessing (though modern CSS covers most use cases)
+
+For most UIGen applications, runtime injection is the right choice.
+
+---
+
 ## Best Practices
 
 **1. Use CSS Variables**

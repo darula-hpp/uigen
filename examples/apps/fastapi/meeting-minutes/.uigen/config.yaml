@@ -7,15 +7,109 @@ annotations:
     x-uigen-label: User Login
   POST:/api/v1/auth/password-reset:
     x-uigen-password-reset: true
+    x-uigen-label: Reset Password
+  POST:/api/v1/auth/password-reset/confirm:
+    x-uigen-label: Confirm Password Reset
   POST:/api/v1/auth/sign-up:
     x-uigen-signup: true
+    x-uigen-label: Create Account
+  GET:/api/v1/auth/me:
+    x-uigen-label: My Profile
   GET:/health:
     x-uigen-ignore: true
+  GET:/:
+    x-uigen-ignore: true
   Body_create_meeting_api_v1_meetings_post.recording:
+    x-uigen-file-types:
+      - audio/mpeg
+      - audio/wav
+      - audio/mp3
+      - audio/m4a
+      - audio/ogg
     x-uigen-max-file-size: 62914560
   Body_upload_template_api_v1_templates_post.file:
+    x-uigen-file-types:
+      - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      - application/msword
     x-uigen-max-file-size: 62914560
-relationships: []
+  Association.meeting_id:
+    x-uigen-ref:
+      resource: Meeting
+      valueField: id
+      labelField: title
+  Association.template_id:
+    x-uigen-ref:
+      resource: Template
+      valueField: id
+      labelField: name
+  AssociationCreate.template_id:
+    x-uigen-ref:
+      resource: Template
+      valueField: id
+      labelField: name
+  GeneratedDocumentSchema.meeting_id:
+    x-uigen-ref:
+      resource: Meeting
+      valueField: id
+      labelField: title
+  GeneratedDocumentSchema.template_id:
+    x-uigen-ref:
+      resource: Template
+      valueField: id
+      labelField: name
+  POST:/api/v1/templates:
+    x-uigen-label: Upload Template
+  GET:/api/v1/templates:
+    x-uigen-label: List Templates
+  GET:/api/v1/templates/{template_id}:
+    x-uigen-label: View Template
+  DELETE:/api/v1/templates/{template_id}:
+    x-uigen-label: Delete Template
+  POST:/api/v1/meetings:
+    x-uigen-label: Create Meeting
+  GET:/api/v1/meetings:
+    x-uigen-label: List Meetings
+  GET:/api/v1/meetings/{meeting_id}:
+    x-uigen-label: View Meeting
+  PUT:/api/v1/meetings/{meeting_id}:
+    x-uigen-label: Update Meeting
+  DELETE:/api/v1/meetings/{meeting_id}:
+    x-uigen-label: Delete Meeting
+  POST:/api/v1/meetings/{meeting_id}/templates:
+    x-uigen-label: Associate Template
+  GET:/api/v1/meetings/{meeting_id}/templates:
+    x-uigen-label: View Template Associations
+  DELETE:/api/v1/meetings/{meeting_id}/templates/{template_id}:
+    x-uigen-label: Remove Template Association
+  POST:/api/v1/meetings/{meeting_id}/generate-ai-data:
+    x-uigen-label: Generate AI Data
+  POST:/api/v1/meetings/{meeting_id}/templates/{template_id}/data:
+    x-uigen-label: Submit Manual Data
+  GET:/api/v1/meetings/{meeting_id}/templates/{template_id}/data:
+    x-uigen-label: Get Filled Data
+  POST:/api/v1/meetings/{meeting_id}/generate-documents:
+    x-uigen-label: Generate Documents
+  POST:/api/v1/meetings/{meeting_id}/convert-to-pdf:
+    x-uigen-label: Convert to PDF
+  GET:/api/v1/meetings/{meeting_id}/download-pdf:
+    x-uigen-label: Download Merged PDF
+  '#/paths/~1api~1v1~1templates/get/responses/200/content/application~1json/schema':
+    x-uigen-chart:
+      chartType: line
+      xAxis: created_at
+      yAxis: id
+  '#/paths/~1api~1v1~1meetings/get/responses/200/content/application~1json/schema':
+    x-uigen-chart:
+      chartType: line
+      xAxis: created_at
+      yAxis: id
+      options:
+        title: Meetings Over Time
+relationships:
+  - source: meetings
+    target: templates
+    path: /api/v1/meetings/{meeting_id}/templates
+    type: hasMany
 canvasLayout:
   positions:
     me:

@@ -6,6 +6,116 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.6.0] - 2026-05-02
+
+### Added
+
+**Core engine (`@uigen-dev/core`)**
+- **`x-uigen-chart` annotation** - Declarative data visualization configuration for array fields
+  - Specify chart type: line, bar, pie, scatter, area, radar, donut
+  - Map schema fields to chart axes (xAxis, yAxis)
+  - Configure multiple data series with custom styling (field, label, color, type)
+  - Optional labels field for custom data point labels
+  - Chart display options (title, legend, tooltip, responsive, axis configuration)
+  - Automatic series generation when yAxis is an array
+  - Validation ensures annotation is applied only to array fields with object items
+  - Field reference validation checks that xAxis, yAxis, and labels fields exist in array items schema
+  - ChartHandler registered in AnnotationHandlerRegistry for automatic processing
+  - ChartConfig metadata stored in SchemaNode IR structure
+  - Full TypeScript type definitions (ChartType, SeriesConfig, ChartOptions, ChartConfig)
+  - 50+ unit tests covering extraction, validation, and application
+  - 15 property-based tests (100 iterations each) verifying correctness properties
+  ```yaml
+  # Example: Line chart for time-series data
+  properties:
+    salesData:
+      type: array
+      x-uigen-chart:
+        chartType: line
+        xAxis: date
+        yAxis: revenue
+        options:
+          title: Revenue Trend
+          responsive: true
+  
+  # Example: Multi-series bar chart
+  properties:
+    metrics:
+      type: array
+      x-uigen-chart:
+        chartType: bar
+        xAxis: month
+        yAxis: [revenue, expenses, profit]
+        series:
+          - field: revenue
+            label: Revenue
+            color: "#4CAF50"
+          - field: expenses
+            label: Expenses
+            color: "#F44336"
+          - field: profit
+            label: Profit
+            color: "#2196F3"
+  ```
+
+**Config GUI (`@uigen-dev/config-gui`)**
+- **Chart configuration modal** - Visual interface for configuring x-uigen-chart annotations
+  - Basic tab: chart type selector, axis field dropdowns
+  - Options tab: title, legend, tooltip, responsive settings
+  - Field multi-select for yAxis (supports single or multiple series)
+  - JSON editor for advanced options
+  - Real-time validation with error messages
+  - 25+ unit tests covering all configuration scenarios
+
+**React renderer (`@uigen-dev/react`)**
+- **Chart utilities** - Helper functions for chart data transformation and configuration
+  - `transformChartData()` - transforms API response data for chart rendering
+  - `getYAxisFields()` - normalizes single field or array of fields
+  - `generateChartColors()` - generates default colors for chart series
+  - `getSeriesConfig()` - generates series configuration from chart config
+  - Full test coverage with 20+ unit tests
+
+**CLI (`@uigen-dev/cli`)**
+- **`uigen init` command** - Scaffold complete UIGen projects with zero-friction onboarding
+  - Interactive mode with guided prompts for project setup
+  - Non-interactive mode with CLI flags for automation (`--yes`, `--spec`, `--no-git`)
+  - Project scaffolding with all necessary files and directories
+  - Git repository initialization (when git is available)
+  - AI agent skills integration - copies skills to `.agents/skills/` directory
+    - `auto-annotate.md` - Automatic annotation detection skill (use with AI agents)
+  - Base styles copied to `.uigen/base-styles.css` (Tailwind CSS v4 setup)
+  - Starter theme template in `.uigen/theme.css` for customization
+  - Default config structure in `.uigen/config.yaml`
+  - Annotations registry in `annotations.json`
+  - `.gitignore` file with sensible defaults (node_modules, .env, etc.)
+  - Quick start README with next steps and documentation links
+  - Example OpenAPI spec generation when no spec provided
+  - Success output with visual project structure and next steps
+  - Error handling with helpful messages and suggestions
+  - Cross-platform support (macOS, Linux, Windows)
+  - Command signatures:
+    - `uigen init` - Interactive mode
+    - `uigen init my-project` - With project name
+    - `uigen init --spec openapi.yaml` - With spec file
+    - `uigen init my-project --spec openapi.yaml --yes` - Non-interactive
+    - `uigen init --dir ./my-app` - Custom directory
+    - `uigen init --no-git` - Skip git initialization
+
+**Documentation**
+- Added CLI reference documentation for `uigen init` command
+- Updated Quick Start guide to feature init command as primary workflow
+- Updated Installation guide with init command examples
+- Updated main README with init command in getting started section
+
+### Changed
+
+**CLI (`@uigen-dev/cli`)**
+- Enhanced project setup workflow with automated scaffolding
+- Improved onboarding experience for new users
+- Auto-annotation now handled by AI agent skill (not built into CLI)
+
+---
+
 ## [0.5.5] - 2026-04-25
 
 ### Added
