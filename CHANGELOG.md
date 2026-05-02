@@ -107,6 +107,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated Installation guide with init command examples
 - Updated main README with init command in getting started section
 
+### Improved
+
+**React renderer (`@uigen-dev/react`)**
+- **Cleaner UI** - Removed version display from top bar and sidebar for a more streamlined interface
+- **Auth resource filtering** - Login, signup, and password reset resources now hidden from navigation and dashboard
+  - Auth endpoints accessible only through dedicated auth flows, not as CRUD resources
+  - Reduces UI clutter and improves user experience
+  - Automatic detection based on auth endpoint configuration
+  - 11 unit tests ensuring correct filtering behavior
+
 ### Changed
 
 **CLI (`@uigen-dev/cli`)**

@@ -3,6 +3,7 @@ import type { UIGenApp, Resource } from '@uigen-dev/core';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { useState } from 'react';
+import { filterAuthResources } from '@/lib/auth-resources';
 
 interface SidebarProps {
   config: UIGenApp;
@@ -36,6 +37,9 @@ function getParentSlug(resource: Resource, allResources: Resource[]): string | n
 export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
   const location = useLocation();
 
+  // Filter out auth resources (login, signup, password reset)
+  const visibleResources = filterAuthResources(config.resources, config);
+
   // Detect if we're on a parent detail page — extract the current resource slug and ID
   // e.g. /Services/MG123 → parentSlug=Services, parentId=MG123
   const detailMatch = location.pathname.match(/^\/([^/]+)\/([^/]+)$/);
@@ -46,8 +50,8 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
   const childrenByParent = new Map<string, Resource[]>();
   const subResourceSlugs = new Set<string>();
 
-  for (const resource of config.resources) {
-    const parentSlug = getParentSlug(resource, config.resources);
+  for (const resource of visibleResources) {
+    const parentSlug = getParentSlug(resource, visibleResources);
     if (parentSlug) {
       subResourceSlugs.add(resource.slug);
       if (!childrenByParent.has(parentSlug)) childrenByParent.set(parentSlug, []);
@@ -56,7 +60,7 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
   }
 
   // Top-level resources (not sub-resources)
-  const topLevelResources = config.resources.filter(r => !subResourceSlugs.has(r.slug));
+  const topLevelResources = visibleResources.filter(r => !subResourceSlugs.has(r.slug));
 
   return (
     <>
@@ -76,7 +80,6 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
         <div className="p-6 border-b flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">{config.meta.title}</h1>
-            <p className="text-sm text-muted-foreground">{config.meta.version}</p>
           </div>
           <Button variant="ghost" size="sm" className="md:hidden" onClick={onClose}>✕</Button>
         </div>

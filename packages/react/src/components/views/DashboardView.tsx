@@ -3,6 +3,7 @@ import { useApiCall } from '@/hooks/useApiCall';
 import { Button } from '@/components/ui/button';
 import type { UIGenApp, Resource } from '@uigen-dev/core';
 import { Database, ArrowRight } from 'lucide-react';
+import { filterAuthResources } from '@/lib/auth-resources';
 
 interface DashboardViewProps {
   config: UIGenApp;
@@ -14,6 +15,9 @@ interface DashboardViewProps {
  */
 export function DashboardView({ config }: DashboardViewProps) {
   const navigate = useNavigate();
+
+  // Filter out auth resources (login, signup, password reset)
+  const visibleResources = filterAuthResources(config.resources, config);
 
   return (
     <div className="space-y-6">
@@ -29,7 +33,7 @@ export function DashboardView({ config }: DashboardViewProps) {
       <div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Requirement 13.1, 13.2: Display card for each resource with name and description */}
-          {config.resources.map((resource) => (
+          {visibleResources.map((resource) => (
             <ResourceCard key={resource.slug} resource={resource} navigate={navigate} />
           ))}
         </div>
