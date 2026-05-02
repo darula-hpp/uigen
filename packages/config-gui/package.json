@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/config-gui",
-  "version": "0.6.0",
+  "version": "0.6.2",
   "description": "Visual GUI for managing UIGen annotation configurations",
   "license": "MIT",
   "repository": {
@@ -29,7 +29,7 @@
     "postpack": "rm -f ./README.md"
   },
   "dependencies": {
-    "@uigen-dev/core": "workspace:*",
+    "@uigen-dev/core": "0.6.2",
     "clsx": "^2.1.1",
     "js-yaml": "^4.1.0",
     "prismjs": "^1.30.0",

@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.6.1] - 2026-05-03
+
+### Fixed
+
+**CLI (`@uigen-dev/cli`)**
+- Fixed renderer resolution for global and npx installations
+  - Added `@uigen-dev/react` as a proper runtime dependency instead of bundling
+  - Renderer package now correctly resolved via npm's dependency resolution
+  - Eliminates complex path resolution and bundling during build
+  - Works correctly in all installation scenarios (global, npx, monorepo)
+  - Cleaner architecture with standard npm dependency management
+
+---
+
 ## [0.6.0] - 2026-05-02
 
 ### Added
@@ -895,6 +909,8 @@ This is the first release of UIGen — point it at an OpenAPI spec, get a fully 
 
 ---
 
+[0.6.1]: https://github.com/darula-hpp/uigen/releases/tag/v0.6.1
+[0.6.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.6.0
 [0.3.1]: https://github.com/darula-hpp/uigen/releases/tag/v0.3.1
 [0.3.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.3.0
 [0.2.5]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.5

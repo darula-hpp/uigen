@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/core",
-  "version": "0.6.0",
+  "version": "0.6.2",
   "description": "Framework-agnostic engine for spec-driven frontends",
   "license": "MIT",
   "repository": {
