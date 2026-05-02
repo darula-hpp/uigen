@@ -263,4 +263,42 @@ class AuthService:
         
         # Clear reset token
         await user_repo.clear_reset_token(user_id)
+    
+    async def update_profile(
+        self,
+        user_id: int,
+        username: Optional[str] = None,
+        email: Optional[str] = None
+    ) -> User:
+        """
+        Update a user's profile information.
+        
+        Validates:
+        - Requirements 2.1: Accepts PUT requests with authentication
+        - Requirements 2.2: Updates user profile in database
+        - Requirements 2.3: Returns updated UserResponse
+        - Requirements 2.6: Email format validation (handled by Pydantic)
+        - Requirements 2.7: Username validation (handled by Pydantic)
+        
+        Args:
+            user_id: User identifier
+            username: Optional new username
+            email: Optional new email
+            
+        Returns:
+            User: Updated user instance
+            
+        Raises:
+            HTTPException: If username or email already exists (409)
+        """
+        user_repo = UserRepository(self.session)
+        
+        try:
+            updated_user = await user_repo.update_profile(user_id, username, email)
+            return updated_user
+        except ValueError as e:
+            error_msg = str(e)
+            if "already exists" in error_msg:
+                raise HTTPException(status_code=409, detail=error_msg)
+            raise HTTPException(status_code=400, detail=error_msg)
 

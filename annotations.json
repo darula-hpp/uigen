@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-05-02T10:00:33.376Z",
-  "totalAnnotations": 10,
+  "generatedAt": "2026-05-02T18:36:00.560Z",
+  "totalAnnotations": 11,
   "annotations": [
     {
       "name": "x-uigen-active-server",
@@ -312,6 +312,24 @@
         },
         {
           "description": "Explicitly exclude from auto-detection",
+          "value": false
+        }
+      ]
+    },
+    {
+      "name": "x-uigen-profile",
+      "description": "Marks a resource as a profile resource for specialized rendering. Can be applied to operations (marks parent resource) or resources directly.",
+      "targetType": "operation",
+      "parameterSchema": {
+        "type": "boolean"
+      },
+      "examples": [
+        {
+          "description": "Mark user profile endpoint as profile resource",
+          "value": true
+        },
+        {
+          "description": "Explicitly exclude from profile treatment",
           "value": false
         }
       ]

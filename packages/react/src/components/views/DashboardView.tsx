@@ -27,7 +27,7 @@ export function DashboardView({ config }: DashboardViewProps) {
     <div className="space-y-6">
       {/* Header - Simplified for user-facing app */}
       <div>
-        <h1 className="text-3xl font-bold">Resources</h1>
+        <h1 className="text-3xl font-bold">Dashboard</h1>
       </div>
 
       {/* Status Cards - Hidden for user-facing apps */}
@@ -107,9 +107,9 @@ function ResourceCard({ resource, navigate }: ResourceCardProps) {
       </div>
 
       {/* Requirement 13.1: Display resource description */}
-      {resource.schema.description && (
+      {resource.description && (
         <p className="text-sm text-muted-foreground mb-4">
-          {resource.schema.description}
+          {resource.description}
         </p>
       )}
 

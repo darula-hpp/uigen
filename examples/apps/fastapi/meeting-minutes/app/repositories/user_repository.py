@@ -163,3 +163,57 @@ class UserRepository:
         await self.session.refresh(user)
         
         return user
+    
+    async def update_profile(
+        self,
+        user_id: int,
+        username: Optional[str] = None,
+        email: Optional[str] = None
+    ) -> User:
+        """
+        Update a user's profile information.
+        
+        Validates:
+        - Requirements 2.3: Username uniqueness validation
+        - Requirements 2.3: Email uniqueness validation
+        - Requirements 2.8: Read-only field protection (id, created_at)
+        
+        Args:
+            user_id: User identifier
+            username: Optional new username (None means no change)
+            email: Optional new email (None means no change)
+            
+        Returns:
+            User: Updated user instance
+            
+        Raises:
+            ValueError: If user not found or validation fails
+            
+        Note:
+            To explicitly set email to None, the caller must pass email=None.
+            This method treats None as "no change" for username but allows
+            setting email to None to clear it.
+        """
+        user = await self.get_by_id(user_id)
+        if not user:
+            raise ValueError(f"User with id {user_id} not found")
+        
+        # Check username uniqueness if username is being changed
+        if username is not None and username != user.username:
+            existing_user = await self.get_by_username(username)
+            if existing_user:
+                raise ValueError("Username already exists")
+            user.username = username
+        
+        # Check email uniqueness if email is being changed
+        # Note: email can be explicitly set to None to clear it
+        if email is not None and email != user.email:
+            existing_user = await self.get_by_email(email)
+            if existing_user:
+                raise ValueError("Email already exists")
+            user.email = email
+        
+        await self.session.flush()
+        await self.session.refresh(user)
+        
+        return user

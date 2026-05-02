@@ -107,6 +107,14 @@ annotations:
       yAxis: id
       options:
         title: Meetings Over Time
+  '#/paths/~1api~1v1~1auth~1me/put/responses/200/content/application~1json/schema/properties/created_at':
+    x-uigen-ignore: true
+  '#/paths/~1api~1v1~1auth~1me/get/responses/200/content/application~1json/schema/properties/created_at':
+    x-uigen-ignore: true
+  '#/paths/~1api~1v1~1auth~1me/put/responses/200/content/application~1json/schema/properties/id':
+    x-uigen-ignore: true
+  '#/paths/~1api~1v1~1auth~1me/get/responses/200/content/application~1json/schema/properties/id':
+    x-uigen-ignore: true
 relationships:
   - source: meetings
     target: templates

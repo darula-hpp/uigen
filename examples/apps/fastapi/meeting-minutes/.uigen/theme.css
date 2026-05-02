@@ -92,7 +92,8 @@ button:focus-visible {
 }
 
 /* Forms - Clean and modern */
-input,
+/* Exclude search input and other special inputs from global styling */
+input:not([type="text"][placeholder*="Search"]):not([class*="pl-"]),
 select,
 textarea {
   border-radius: 0.5rem;
@@ -104,13 +105,13 @@ textarea {
   font-size: 0.875rem;
 }
 
-input:hover,
+input:not([type="text"][placeholder*="Search"]):not([class*="pl-"]):hover,
 select:hover,
 textarea:hover {
   border-color: var(--primary);
 }
 
-input:focus,
+input:not([type="text"][placeholder*="Search"]):not([class*="pl-"]):focus,
 select:focus,
 textarea:focus {
   outline: none;
@@ -118,7 +119,7 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.dark input:focus,
+.dark input:not([type="text"][placeholder*="Search"]):not([class*="pl-"]):focus,
 .dark select:focus,
 .dark textarea:focus {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
@@ -216,59 +217,25 @@ tbody tr:nth-child(even):hover {
 }
 
 /* Navigation - Modern SaaS sidebar */
-nav {
-  background: linear-gradient(180deg, var(--card) 0%, var(--muted) 100%);
-  border-right: 1px solid var(--border);
-  padding: 1.5rem 1rem;
-}
-
-nav a {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  color: var(--foreground);
-  text-decoration: none;
-  border-radius: 0.75rem;
-  margin: 0.25rem 0;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  font-weight: 500;
-  font-size: 0.875rem;
-}
-
-nav a:hover {
-  background-color: var(--accent);
-  color: var(--accent-foreground);
-  transform: translateX(4px);
-}
-
-nav a.active {
-  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-  color: white;
-  font-weight: 700;
-  box-shadow: 0 4px 6px rgba(217, 119, 6, 0.25), 0 2px 4px rgba(217, 119, 6, 0.15);
-}
-
-nav a:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
-}
+/* Note: Sidebar component uses Tailwind classes, so these styles are for other nav elements */
 
 /* Links */
-a {
+/* Exclude navigation links from global link styling */
+a:not(nav a):not(aside a) {
   color: var(--primary);
   text-decoration: none;
   transition: all 0.2s ease;
   font-weight: 500;
 }
 
-a:hover {
+a:not(nav a):not(aside a):hover {
   color: var(--secondary);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 2px;
 }
 
-a:focus-visible {
+a:not(nav a):not(aside a):focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
   border-radius: 0.25rem;

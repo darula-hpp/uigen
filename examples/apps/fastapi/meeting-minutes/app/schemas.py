@@ -1,8 +1,9 @@
 """Pydantic schemas for request/response models."""
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from pydantic import BaseModel, Field, EmailStr, ConfigDict, field_validator
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 from enum import Enum
+import re
 
 
 class PopulationType(str, Enum):
@@ -126,67 +127,55 @@ class UserLogin(BaseModel):
     password: str
 
 
-class PasswordResetRequest(BaseModel):
-    """Schema for requesting a password reset."""
-    username: Optional[str] = None
-    email: Optional[EmailStr] = None
-
-
-class PasswordResetConfirm(BaseModel):
-    """Schema for confirming a password reset."""
-    token: str
-    new_password: str = Field(min_length=8, max_length=72)
-
-
-class UserResponse(BaseModel):
-    """Schema for user response."""
-    id: int
-    username: str
-    email: Optional[str] = None
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class TokenResponse(BaseModel):
-    """Schema for authentication token response."""
-    access_token: str
-    token_type: str = "bearer"
-
-
-# Authentication Schemas
-class UserRegister(BaseModel):
-    """Schema for user registration."""
-    username: str = Field(min_length=3, max_length=50)
-    password: str = Field(min_length=8, max_length=72)
-    email: Optional[EmailStr] = None
-
-
-class UserLogin(BaseModel):
-    """Schema for user login."""
-    username: str
-    password: str
-
-
-class PasswordResetRequest(BaseModel):
-    """Schema for requesting a password reset."""
-    username: Optional[str] = None
-    email: Optional[EmailStr] = None
-
-
-class PasswordResetConfirm(BaseModel):
-    """Schema for confirming a password reset."""
-    token: str
-    new_password: str = Field(min_length=8, max_length=72)
-
-
-class UserResponse(BaseModel):
-    """Schema for user response."""
-    id: int
-    username: str
-    email: Optional[str] = None
-    created_at: datetime
+class UserUpdate(BaseModel):
+    """Schema for updating user profile.
     
+    Validates:
+    - Requirements 2.6: Username pattern (alphanumeric and underscores)
+    - Requirements 2.7: Min/max length constraints (username: 3-50 chars, email: max 255 chars)
+    """
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    email: Optional[EmailStr] = Field(None, max_length=255)
+    
+    @field_validator('username')
+    @classmethod
+    def validate_username_pattern(cls, v: Optional[str]) -> Optional[str]:
+        """Validate username contains only alphanumeric characters and underscores.
+        
+        Args:
+            v: Username value to validate
+            
+        Returns:
+            Validated username value
+            
+        Raises:
+            ValueError: If username contains invalid characters
+        """
+        if v is not None:
+            if not re.match(r'^[a-zA-Z0-9_]+$', v):
+                raise ValueError('Username must contain only letters, numbers, and underscores')
+        return v
+
+
+class PasswordResetRequest(BaseModel):
+    """Schema for requesting a password reset."""
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+
+class PasswordResetConfirm(BaseModel):
+    """Schema for confirming a password reset."""
+    token: str
+    new_password: str = Field(min_length=8, max_length=72)
+
+
+class UserResponse(BaseModel):
+    """Schema for user response."""
+    id: int
+    username: str
+    email: Optional[str] = None
+    created_at: datetime
+
     model_config = ConfigDict(from_attributes=True)
 
 

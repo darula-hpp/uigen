@@ -8,6 +8,7 @@ from app.services.auth_service import AuthService
 from app.schemas import (
     UserRegister,
     UserLogin,
+    UserUpdate,
     PasswordResetRequest,
     PasswordResetConfirm,
     UserResponse,
@@ -116,3 +117,47 @@ async def get_me(
         Current user profile
     """
     return current_user
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_me(
+    user_update: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Update current authenticated user profile.
+    
+    Validates:
+    - Requirements 2.1: Accepts PUT requests at /api/v1/auth/me with authentication
+    - Requirements 2.2: Updates user profile in database with valid data
+    - Requirements 2.3: Returns updated UserResponse
+    - Requirements 2.4: Returns 422 for invalid data
+    - Requirements 2.5: Returns 401 without authentication (handled by dependency)
+    - Requirements 2.6: Validates email format (handled by Pydantic)
+    - Requirements 2.7: Validates username requirements (handled by Pydantic)
+    - Requirements 2.8: Prevents modification of read-only fields
+    
+    Args:
+        user_update: Profile update data (username, email)
+        current_user: Authenticated user from dependency
+        db: Database session
+        
+    Returns:
+        Updated user profile
+        
+    Raises:
+        HTTPException 401: If not authenticated (handled by dependency)
+        HTTPException 409: If username or email already exists
+        HTTPException 422: If validation fails (handled by Pydantic)
+    """
+    settings = get_settings()
+    service = AuthService(db, settings)
+    
+    updated_user = await service.update_profile(
+        current_user.id,
+        user_update.username,
+        user_update.email
+    )
+    
+    return updated_user

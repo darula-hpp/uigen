@@ -4,6 +4,8 @@ import type { AuthConfig, SignUpEndpoint } from '@uigen-dev/core';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { ThemeToggle } from '../ThemeToggle';
+import { useThemeInitializer } from '@/hooks/useThemeInitializer';
 import { useToast } from '../Toast';
 
 interface SignUpViewProps {
@@ -27,6 +29,9 @@ export function SignUpView({ config, appTitle }: SignUpViewProps) {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize theme on mount (prevents FOUC)
+  useThemeInitializer();
 
   // Redirect if no sign-up endpoints configured
   if (signUpEndpoints.length === 0) {
@@ -88,6 +93,11 @@ export function SignUpView({ config, appTitle }: SignUpViewProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      {/* Theme toggle in top-right corner */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+      
       <div className="w-full max-w-md space-y-8">
         {/* Header */}
         <div className="text-center">

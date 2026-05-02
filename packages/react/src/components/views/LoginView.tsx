@@ -4,6 +4,8 @@ import type { AuthConfig, LoginEndpoint } from '@uigen-dev/core';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { ThemeToggle } from '../ThemeToggle';
+import { useThemeInitializer } from '@/hooks/useThemeInitializer';
 import {
   CredentialStrategy,
   BearerStrategy,
@@ -66,6 +68,9 @@ export function LoginView({ config, appTitle }: LoginViewProps) {
 
   // Shared error state
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize theme on mount (prevents FOUC)
+  useThemeInitializer();
 
   // Redirect synchronously (no useEffect) if nothing to authenticate with
   if (!hasCredential && !hasBearer && !hasApiKey && !hasBasic) {
@@ -167,6 +172,11 @@ export function LoginView({ config, appTitle }: LoginViewProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      {/* Theme toggle in top-right corner */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+      
       <div className="w-full max-w-md space-y-8">
         {/* Header */}
         <div className="text-center">
