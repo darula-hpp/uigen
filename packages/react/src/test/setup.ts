@@ -1,6 +1,10 @@
 /// <reference types="@testing-library/jest-dom" />
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { vi, expect } from 'vitest';
+import { toHaveNoViolations } from 'jest-axe';
+
+// Extend Vitest matchers with jest-axe
+expect.extend(toHaveNoViolations);
 
 // Mock window.matchMedia for theme tests
 Object.defineProperty(window, 'matchMedia', {

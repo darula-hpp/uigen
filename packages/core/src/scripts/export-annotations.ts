@@ -20,6 +20,7 @@ import { ActiveServerHandler } from '../adapter/annotations/handlers/active-serv
 import { FileTypesHandler } from '../adapter/annotations/handlers/file-types-handler.js';
 import { MaxFileSizeHandler } from '../adapter/annotations/handlers/max-file-size-handler.js';
 import { ChartHandler } from '../adapter/annotations/handlers/chart-handler.js';
+import { ProfileHandler } from '../adapter/annotations/handlers/profile-handler.js';
 
 /**
  * Interface for annotation metadata
@@ -52,7 +53,8 @@ const handlerClasses = [
   ActiveServerHandler,
   FileTypesHandler,
   MaxFileSizeHandler,
-  ChartHandler
+  ChartHandler,
+  ProfileHandler
 ];
 
 /**

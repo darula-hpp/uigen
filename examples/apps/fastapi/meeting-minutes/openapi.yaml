@@ -844,6 +844,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      x-uigen-profile: true
+    put:
+      tags:
+      - auth
+      summary: Update Me
+      description: "Update current authenticated user profile.\n\nValidates:\n- Requirements\
+        \ 2.1: Accepts PUT requests at /api/v1/auth/me with authentication\n- Requirements\
+        \ 2.2: Updates user profile in database with valid data\n- Requirements 2.3:\
+        \ Returns updated UserResponse\n- Requirements 2.4: Returns 422 for invalid\
+        \ data\n- Requirements 2.5: Returns 401 without authentication (handled by\
+        \ dependency)\n- Requirements 2.6: Validates email format (handled by Pydantic)\n\
+        - Requirements 2.7: Validates username requirements (handled by Pydantic)\n\
+        - Requirements 2.8: Prevents modification of read-only fields\n\nArgs:\n \
+        \   user_update: Profile update data (username, email)\n    current_user:\
+        \ Authenticated user from dependency\n    db: Database session\n    \nReturns:\n\
+        \    Updated user profile\n    \nRaises:\n    HTTPException 401: If not authenticated\
+        \ (handled by dependency)\n    HTTPException 409: If username or email already\
+        \ exists\n    HTTPException 422: If validation fails (handled by Pydantic)"
+      operationId: update_me_api_v1_auth_me_put
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Unauthorized
+        '409':
+          description: Conflict - Username or email already exists
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-uigen-profile: true
   /:
     get:
       summary: Root
@@ -1153,7 +1205,7 @@ components:
       - username
       - password
       title: UserLogin
-      description: Schema for user login.
+      description: Schema for user login request.
     UserRegister:
       properties:
         username:
@@ -1177,7 +1229,7 @@ components:
       - username
       - password
       title: UserRegister
-      description: Schema for user registration.
+      description: Schema for user registration request.
     UserResponse:
       properties:
         id:
@@ -1202,6 +1254,33 @@ components:
       - created_at
       title: UserResponse
       description: Schema for user response.
+    UserUpdate:
+      properties:
+        username:
+          anyOf:
+          - type: string
+            maxLength: 50
+            minLength: 3
+          - type: 'null'
+          title: Username
+        email:
+          anyOf:
+          - type: string
+            maxLength: 255
+            format: email
+          - type: 'null'
+          title: Email
+      type: object
+      title: UserUpdate
+      description: 'Schema for updating user profile.
+
+
+        Validates:
+
+        - Requirements 2.6: Username pattern (alphanumeric and underscores)
+
+        - Requirements 2.7: Min/max length constraints (username: 3-50 chars, email:
+        max 255 chars)'
     ValidationError:
       properties:
         loc:

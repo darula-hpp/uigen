@@ -37,8 +37,8 @@ export class ProfileHandler implements AnnotationHandler<boolean> {
 
   public static readonly metadata: AnnotationMetadata = {
     name: 'x-uigen-profile',
-    description: 'Marks a resource as a profile resource for specialized rendering',
-    targetType: 'resource',
+    description: 'Marks a resource as a profile resource for specialized rendering. Can be applied to operations (marks parent resource) or resources directly.',
+    targetType: 'operation',
     parameterSchema: {
       type: 'boolean'
     },
@@ -94,16 +94,24 @@ export class ProfileHandler implements AnnotationHandler<boolean> {
    * Apply the profile annotation by setting __profileAnnotation flag on the resource.
    * The React SPA will use this to render profile resources differently.
    * 
+   * Can be applied at operation level (marks the parent resource) or resource level.
+   * 
    * @param value - The validated boolean value
    * @param context - The annotation context
    */
   apply(value: boolean, context: AnnotationContext): void {
-    if (!context.resource) {
-      return; // Only applies to resources
+    // If applied at operation level, mark the parent resource
+    if (context.operation && context.resource) {
+      (context.resource as any).__profileAnnotation = value;
+      return;
     }
     
-    // Mark resource with profile annotation status
-    // The React SPA will use this to identify profile resources
-    (context.resource as any).__profileAnnotation = value;
+    // If applied at resource level, mark the resource directly
+    if (context.resource) {
+      (context.resource as any).__profileAnnotation = value;
+      return;
+    }
+    
+    // No resource context - cannot apply
   }
 }

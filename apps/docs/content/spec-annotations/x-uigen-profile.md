@@ -26,7 +26,9 @@ When a resource is marked with `x-uigen-profile: true`, UIGen:
 3. Filters the profile resource from the dashboard resource cards
 4. Groups related fields visually (personal info, contact info, etc.)
 5. Displays avatar images when an image field is present
-6. Provides inline edit functionality when update operations are available
+6. Provides inline edit functionality when PUT/PATCH operations are available
+7. Enables real-time client-side validation during editing
+8. Handles profile updates with proper error handling and success feedback
 
 The resource remains accessible via its standard routes (e.g., `/users/me`) in addition to the `/profile` route.
 
@@ -74,7 +76,7 @@ Standard resources display data in table-based list views:
 
 ### Profile view (profile resources)
 
-Profile resources display data in card-based layouts with visual grouping:
+Profile resources display data in card-based layouts with visual grouping and inline editing:
 
 ```
 ┌─────────────────────────────────────┐
@@ -96,6 +98,22 @@ Profile resources display data in card-based layouts with visual grouping:
 │  │ Phone: +1234567890          │   │
 │  └─────────────────────────────┘   │
 └─────────────────────────────────────┘
+
+When Edit button is clicked:
+┌─────────────────────────────────────┐
+│  Edit Profile                       │
+│  ┌─────┐                            │
+│  │ Img │                            │
+│  └─────┘                            │
+├─────────────────────────────────────┤
+│  Username                           │
+│  [johndoe____________]              │
+│                                     │
+│  Email                              │
+│  [john@example.com___]              │
+│                                     │
+│  [Save Changes] [Cancel]            │
+└─────────────────────────────────────┘
 ```
 
 Key differences:
@@ -105,13 +123,132 @@ Key differences:
 - **Navigation**: Dedicated `/profile` route vs resource list route
 - **Dashboard**: Hidden from dashboard vs displayed as resource card
 - **Avatar**: Image fields displayed as avatar vs table cell
-- **Edit**: Inline edit form vs separate edit page
+- **Edit**: Inline edit form with real-time validation vs separate edit page
+- **Validation**: Client-side validation with immediate feedback
+- **Error handling**: Field-specific error messages displayed inline
 
 ## OpenAPI 3.x examples
 
-### Inline annotation
+### Complete profile with edit functionality
 
-Mark a user profile endpoint as a profile resource directly in the spec:
+This example shows a full profile resource with GET and PUT operations:
+
+```yaml
+paths:
+  /api/v1/users/me:
+    x-uigen-profile: true
+    get:
+      summary: Get current user profile
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Unauthorized
+    
+    put:
+      summary: Update current user profile
+      operationId: updateCurrentUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Unauthorized
+        '409':
+          description: Conflict - Username or email already exists
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+components:
+  schemas:
+    UserUpdate:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_]+$'
+          description: Username (alphanumeric and underscores only)
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Email address
+    
+    UserResponse:
+      type: object
+      required:
+        - id
+        - username
+        - created_at
+      properties:
+        id:
+          type: integer
+          description: User ID (read-only)
+        username:
+          type: string
+          description: Username
+        email:
+          type: string
+          nullable: true
+          description: Email address
+        created_at:
+          type: string
+          format: date-time
+          description: Account creation date (read-only)
+    
+    HTTPValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc:
+                type: array
+                items:
+                  anyOf:
+                    - type: string
+                    - type: integer
+              msg:
+                type: string
+              type:
+                type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+```
+
+### Inline annotation (legacy example)
+
+Mark a user profile endpoint as a profile resource directly in the spec (without edit functionality):
 
 ```yaml
 paths:
@@ -123,21 +260,6 @@ paths:
       responses:
         '200':
           description: User profile
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-    patch:
-      summary: Update current user profile
-      operationId: updateCurrentUser
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserUpdate'
-      responses:
-        '200':
-          description: Updated user profile
           content:
             application/json:
               schema:
@@ -322,6 +444,71 @@ When a profile resource exists, UIGen adds a "Profile" link to the sidebar:
 - **Route**: Links to `/profile`
 - **Visibility**: Only appears when a profile resource exists
 
+## Profile editing
+
+When a PUT or PATCH operation exists for the profile resource, UIGen enables inline editing:
+
+### Edit mode activation
+
+- An "Edit" button appears in the profile header
+- Clicking "Edit" switches to edit mode with form inputs
+- Current values are pre-filled in the form
+- Focus moves to the first editable field
+
+### Form validation
+
+The edit form provides real-time validation:
+
+**Client-side validation**:
+- Email format validation (RFC 5322 compliant)
+- Required field validation
+- Username pattern validation (alphanumeric and underscores)
+- Min/max length constraints
+- Custom validation rules from schema
+
+**Server-side validation**:
+- Uniqueness checks (username, email)
+- Business logic validation
+- Database constraint validation
+
+**Error display**:
+- Field-specific errors appear below inputs
+- Validation errors prevent form submission
+- Errors clear when user corrects input
+
+### Save and cancel
+
+**Save button**:
+- Submits update request to PUT/PATCH endpoint
+- Disabled when validation errors exist
+- Shows loading state during submission
+- Displays success message on completion
+- Returns to view mode after successful save
+
+**Cancel button**:
+- Discards all changes
+- Returns to view mode
+- Restores original values
+- Can also be triggered by pressing Escape key
+
+### Error handling
+
+The profile edit form handles various error scenarios:
+
+**Network errors**: Displays user-friendly message with retry option
+
+**Validation errors (422)**: Parses and displays field-specific errors inline
+
+**Conflict errors (409)**: Shows "already exists" message on relevant field
+
+**Authentication errors (401)**: Redirects to login page
+
+### Keyboard shortcuts
+
+- **Enter**: Submit form (when in edit mode)
+- **Escape**: Cancel edit mode and return to view mode
+- **Tab**: Navigate between form fields
+
 ## Dashboard integration
 
 Profile resources are automatically filtered from the dashboard resource cards:
@@ -484,7 +671,7 @@ UIGen validates `x-uigen-profile` values and provides feedback:
 
 ## Use cases
 
-### User account settings
+### User account settings with edit
 
 ```yaml
 paths:
@@ -492,11 +679,28 @@ paths:
     x-uigen-profile: true
     get:
       summary: Get current user
-    patch:
+      security:
+        - bearerAuth: []
+    put:
       summary: Update current user
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                email:
+                  type: string
+                  format: email
 ```
 
-### Customer profile
+### Customer profile (read-only)
 
 ```yaml
 paths:
@@ -504,11 +708,12 @@ paths:
     x-uigen-profile: true
     get:
       summary: Get customer profile
-    put:
-      summary: Update customer profile
+      security:
+        - bearerAuth: []
+    # No PUT/PATCH - Edit button will not appear
 ```
 
-### Organization settings
+### Organization settings with validation
 
 ```yaml
 paths:
@@ -516,8 +721,28 @@ paths:
     x-uigen-profile: true
     get:
       summary: Get organization settings
+      security:
+        - bearerAuth: []
     patch:
       summary: Update organization settings
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                website:
+                  type: string
+                  format: uri
+                industry:
+                  type: string
+                  enum: [technology, finance, healthcare, retail, other]
 ```
 
 ## Limitations

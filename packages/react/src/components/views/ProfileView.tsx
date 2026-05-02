@@ -2,11 +2,23 @@ import { useApiCall } from '@/hooks/useApiCall';
 import { useParams } from 'react-router-dom';
 import type { UIGenApp, Resource, Operation, SchemaNode } from '@uigen-dev/core';
 import { findProfileResource } from '@/lib/profile-resources';
-import { useState } from 'react';
-import { Edit2, User, Save, X } from 'lucide-react';
+import { useState, useEffect, useRef, forwardRef } from 'react';
+import { Edit2, User, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { ProfileEditForm } from '@/components/ProfileEditForm';
+import { useProfileUpdate } from '@/hooks/useProfileUpdate';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+/**
+ * API Error type with status and response
+ */
+interface ApiError extends Error {
+  status?: number;
+  response?: {
+    detail?: Array<{ loc: string[]; msg: string }> | string;
+    message?: string;
+  };
+}
 
 /**
  * Maps the React Router :id param to the actual path parameter name in the operation.
@@ -163,101 +175,36 @@ function ProfileFieldGroup({ fields, data }: { fields: SchemaNode[]; data: Recor
 /**
  * ProfileEditButton - triggers edit mode
  * Requirement 4.5: Edit functionality when update operation available
+ * Requirement 7.2: ARIA labels for buttons
  */
-function ProfileEditButton({ onClick, isEditing }: { onClick: () => void; isEditing: boolean }) {
-  return (
-    <Button
-      onClick={onClick}
-      variant="outline"
-      size="sm"
-      className="gap-2"
-      aria-label={isEditing ? 'Cancel editing' : 'Edit profile'}
-    >
-      {isEditing ? (
-        <>
-          <X className="w-4 h-4" />
-          Cancel
-        </>
-      ) : (
-        <>
-          <Edit2 className="w-4 h-4" />
-          Edit
-        </>
-      )}
-    </Button>
-  );
-}
+const ProfileEditButton = forwardRef<HTMLButtonElement, { onClick: () => void; isEditing: boolean }>(
+  ({ onClick, isEditing }, ref) => {
+    return (
+      <Button
+        ref={ref}
+        onClick={onClick}
+        variant="outline"
+        size="sm"
+        className="gap-2"
+        aria-label={isEditing ? 'Cancel editing' : 'Edit profile'}
+      >
+        {isEditing ? (
+          <>
+            <X className="w-4 h-4" />
+            Cancel
+          </>
+        ) : (
+          <>
+            <Edit2 className="w-4 h-4" />
+            Edit
+          </>
+        )}
+      </Button>
+    );
+  }
+);
 
-/**
- * ProfileEditForm - inline edit form for profile fields
- * Requirement 4.5: Edit functionality
- */
-function ProfileEditForm({ 
-  fields, 
-  data, 
-  onSave, 
-  onCancel 
-}: { 
-  fields: SchemaNode[]; 
-  data: Record<string, unknown>;
-  onSave: (data: Record<string, unknown>) => void;
-  onCancel: () => void;
-}) {
-  const [formData, setFormData] = useState<Record<string, unknown>>(data);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  const handleChange = (key: string, value: unknown) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {fields.map((field) => (
-        <div key={field.key} className="space-y-2">
-          <Label htmlFor={field.key}>
-            {field.label || field.key}
-          </Label>
-          <Input
-            id={field.key}
-            type={getInputType(field)}
-            value={String(formData[field.key] || '')}
-            onChange={(e) => handleChange(field.key, e.target.value)}
-            className="w-full"
-          />
-          {field.description && (
-            <p className="text-xs text-muted-foreground">{field.description}</p>
-          )}
-        </div>
-      ))}
-      <div className="flex gap-2 pt-2">
-        <Button type="submit" size="sm" className="gap-2">
-          <Save className="w-4 h-4" />
-          Save Changes
-        </Button>
-        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-/**
- * Get appropriate input type for field
- */
-function getInputType(field: SchemaNode): string {
-  if (field.format === 'email') return 'email';
-  if (field.format === 'uri' || field.format === 'url') return 'url';
-  if (field.format === 'date') return 'date';
-  if (field.format === 'date-time') return 'datetime-local';
-  if (field.type === 'number' || field.type === 'integer') return 'number';
-  if (field.type === 'boolean') return 'checkbox';
-  return 'text';
-}
 
 /**
  * ProfileView component - displays profile resources with a card-based layout
@@ -267,7 +214,13 @@ function getInputType(field: SchemaNode): string {
  */
 export function ProfileView({ config, resourceSlug }: ProfileViewProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
+  const [announcement, setAnnouncement] = useState<string>(''); // Requirement 7.3: Screen reader announcements
   const { id } = useParams<{ id: string }>();
+  
+  // Ref for Edit button - Requirement 7.4: Focus management
+  const editButtonRef = useRef<HTMLButtonElement>(null);
   
   // Find the profile resource to display
   // If resourceSlug is provided, use that; otherwise find the first profile resource
@@ -299,7 +252,9 @@ export function ProfileView({ config, resourceSlug }: ProfileViewProps) {
   }
   
   // Find the detail operation (GET) for fetching profile data
-  const detailOp = resource.operations.find(op => op.viewHint === 'detail');
+  // Profile endpoints may not have path parameters (e.g., /api/v1/auth/me)
+  // so we look for any GET operation, not just those with viewHint === 'detail'
+  const detailOp = resource.operations.find(op => op.method === 'GET');
   
   // Find the update operation (PUT/PATCH) for editing
   const updateOp = resource.operations.find(op => 
@@ -334,18 +289,153 @@ export function ProfileView({ config, resourceSlug }: ProfileViewProps) {
     enabled: !!detailOp,
   });
 
+  // Initialize profile update mutation
+  const { updateProfile, isUpdating, error: updateError, isSuccess, reset } = useProfileUpdate(updateOp);
+
+  /**
+   * Handle Escape key to exit edit mode
+   * Requirement 7.1: Support Escape key to cancel edit mode
+   */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isEditing && !isUpdating) {
+        e.preventDefault();
+        setIsEditing(false);
+        setServerErrors({});
+        setAnnouncement('Edit mode cancelled'); // Requirement 7.3: Announce mode change
+        
+        // Return focus to Edit button
+        setTimeout(() => {
+          if (editButtonRef.current) {
+            editButtonRef.current.focus();
+          }
+        }, 0);
+      }
+    };
+
+    // Add event listener when in edit mode
+    if (isEditing) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditing, isUpdating]);
+
+  // Parse validation errors from API response
+  const parseValidationErrors = (error: ApiError): Record<string, string> => {
+    const errors: Record<string, string> = {};
+    
+    // Handle 422 validation errors
+    if (error?.status === 422 && error?.response?.detail) {
+      const details = error.response.detail;
+      if (Array.isArray(details)) {
+        details.forEach((err: { loc: string[]; msg: string }) => {
+          // Extract field name from location array (last element)
+          const field = err.loc && err.loc.length > 0 ? err.loc[err.loc.length - 1] : 'unknown';
+          errors[field] = err.msg || 'Validation error';
+        });
+      }
+    }
+    // Handle 409 conflict errors
+    else if (error?.status === 409) {
+      const message = error?.response?.message || error?.message || 'This value is already in use';
+      // Try to determine which field caused the conflict
+      if (message.toLowerCase().includes('username')) {
+        errors.username = message;
+      } else if (message.toLowerCase().includes('email')) {
+        errors.email = message;
+      } else {
+        errors._general = message;
+      }
+    }
+    
+    return errors;
+  };
+
+  // Handle successful update
+  useEffect(() => {
+    if (isSuccess && isEditing) { // Only handle success when in edit mode
+      // Show success message
+      setShowSuccessMessage(true);
+      
+      // Exit edit mode
+      setIsEditing(false);
+      
+      // Clear any server errors
+      setServerErrors({});
+      
+      // Announce success - Requirement 7.3
+      setAnnouncement('Profile updated successfully');
+      
+      // Refetch profile data to ensure UI consistency
+      refetch();
+      
+      // Return focus to Edit button - Requirement 7.4
+      setTimeout(() => {
+        if (editButtonRef.current) {
+          editButtonRef.current.focus();
+        }
+      }, 0);
+      
+      // Hide success message after 5 seconds
+      const timer = setTimeout(() => {
+        setShowSuccessMessage(false);
+        reset(); // Reset mutation state
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, isEditing, refetch, reset]);
+
+  // Handle update errors
+  useEffect(() => {
+    if (updateError) {
+      const errors = parseValidationErrors(updateError as ApiError);
+      setServerErrors(errors);
+      
+      // Announce error - Requirement 7.3
+      if (errors._general) {
+        setAnnouncement(`Error: ${errors._general}`);
+      } else {
+        const errorCount = Object.keys(errors).length;
+        setAnnouncement(`Form has ${errorCount} validation ${errorCount === 1 ? 'error' : 'errors'}`);
+      }
+    }
+  }, [updateError]);
+
   // Handle save
   const handleSave = async (updatedData: Record<string, unknown>) => {
     if (!updateOp) return;
     
-    try {
-      // TODO: Implement actual API call for update
-      // For now, just close edit mode and refetch
-      setIsEditing(false);
-      await refetch();
-    } catch (err) {
-      console.error('Failed to update profile:', err);
-    }
+    // Clear previous errors
+    setServerErrors({});
+    
+    // Call the update mutation
+    const pathParams = resolvePathParams(updateOp, id);
+    updateProfile(updatedData, pathParams);
+  };
+  
+  // Handle cancel - Requirement 7.4: Return focus to Edit button
+  const handleCancel = () => {
+    setIsEditing(false);
+    setServerErrors({});
+    setAnnouncement('Edit mode cancelled'); // Requirement 7.3: Announce mode change
+    
+    // Return focus to Edit button
+    setTimeout(() => {
+      if (editButtonRef.current) {
+        editButtonRef.current.focus();
+      }
+    }, 0);
+  };
+  
+  // Handle entering edit mode - Requirement 7.3: Announce mode change
+  const handleEnterEditMode = () => {
+    setIsEditing(true);
+    setAnnouncement('Entering edit mode');
   };
   
   // Requirement 4.6: Handle error state
@@ -390,9 +480,13 @@ export function ProfileView({ config, resourceSlug }: ProfileViewProps) {
     );
   }
   
-  // Get schema fields from response schema
+  // Get schema fields from response schema for display
   const schema = detailOp.responses['200']?.schema || detailOp.responses['2XX']?.schema || resource.schema;
   const fields = schema.children || [];
+  
+  // Get schema fields from update operation's request body for editing
+  // This ensures we only show editable fields in the form
+  const editFields = updateOp?.requestBody?.children || fields;
   
   // Find avatar field
   const avatarField = findAvatarField(fields);
@@ -404,7 +498,60 @@ export function ProfileView({ config, resourceSlug }: ProfileViewProps) {
   
   return (
     <div className="p-4">
+      {/* Screen reader announcements - Requirement 7.3 */}
+      <div 
+        role="status" 
+        aria-live="polite" 
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {announcement}
+      </div>
+      
+      {/* Loading state announcement - Requirement 7.3 */}
+      {isUpdating && (
+        <div 
+          role="status" 
+          aria-live="assertive" 
+          aria-atomic="true"
+          className="sr-only"
+        >
+          Saving profile changes, please wait
+        </div>
+      )}
+      
       <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
+        {/* Success Message */}
+        {showSuccessMessage && (
+          <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
+            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <AlertTitle className="text-green-800 dark:text-green-200">Success</AlertTitle>
+            <AlertDescription className="text-green-700 dark:text-green-300">
+              Your profile has been updated successfully.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Network Error Message */}
+        {updateError && !(updateError as ApiError).status && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Network Error</AlertTitle>
+            <AlertDescription>
+              Unable to connect to the server. Please check your internet connection and try again.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* General Error Message (non-field-specific) */}
+        {serverErrors._general && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{serverErrors._general}</AlertDescription>
+          </Alert>
+        )}
+        
         {/* Profile Header - Requirement 4.4: Avatar display */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
           <div className="flex items-center gap-4">
@@ -425,13 +572,14 @@ export function ProfileView({ config, resourceSlug }: ProfileViewProps) {
           {/* Requirement 4.5: Edit button when update operation available */}
           {updateOp && !isEditing && (
             <ProfileEditButton 
-              onClick={() => setIsEditing(true)} 
+              ref={editButtonRef}
+              onClick={handleEnterEditMode} 
               isEditing={false}
             />
           )}
           {isEditing && (
             <ProfileEditButton 
-              onClick={() => setIsEditing(false)} 
+              onClick={handleCancel} 
               isEditing={true}
             />
           )}
@@ -443,10 +591,12 @@ export function ProfileView({ config, resourceSlug }: ProfileViewProps) {
             {isEditing ? (
               <ProfileCard title="Edit Profile">
                 <ProfileEditForm
-                  fields={displayFields}
+                  fields={editFields}
                   data={data}
+                  errors={serverErrors}
                   onSave={handleSave}
-                  onCancel={() => setIsEditing(false)}
+                  onCancel={handleCancel}
+                  isLoading={isUpdating}
                 />
               </ProfileCard>
             ) : (

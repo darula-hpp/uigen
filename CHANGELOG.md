@@ -10,6 +10,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+**React package (`@uigen-dev/react`)**
+- **Profile editing functionality** - ProfileView component now supports inline editing with full validation
+  - Edit button appears when PUT/PATCH operation exists in OpenAPI spec
+  - Inline edit mode with form inputs pre-filled with current values
+  - Real-time client-side validation (email format, required fields, username pattern, length constraints)
+  - Dynamic input type selection based on field schema (email, url, date, number, text)
+  - Field-specific error messages displayed inline below inputs
+  - Save and Cancel buttons with proper loading states
+  - Keyboard shortcuts (Enter to submit, Escape to cancel)
+  - Full accessibility support (ARIA labels, focus management, screen reader announcements)
+  - ProfileEditForm component for reusable edit form functionality
+  - useProfileUpdate hook for simplified profile update mutations with cache invalidation
+  - Comprehensive error handling (network errors, validation errors, conflict errors, auth errors)
+  - Responsive design adapting to mobile, tablet, and desktop screen sizes
+  - 135/135 tests passing including unit, integration, and E2E tests
+
+**Backend (FastAPI example)**
+- **Profile update endpoint** - PUT /api/v1/auth/me for updating user profiles
+  - UserUpdate Pydantic schema with validation rules (username: 3-50 chars alphanumeric+underscores, email: valid format)
+  - Username and email uniqueness validation with 409 Conflict responses
+  - Read-only field protection (id, created_at cannot be modified)
+  - Comprehensive error responses (401 Unauthorized, 409 Conflict, 422 Validation Error)
+  - Full test coverage with unit and integration tests
+
+**Documentation**
+- **Profile View documentation** - Complete guide for profile view and editing functionality
+  - Component API documentation (ProfileView, ProfileEditForm, useProfileUpdate)
+  - Backend API endpoint specification with request/response examples
+  - Validation rules and error handling documentation
+  - OpenAPI specification examples
+  - Usage examples for common scenarios
+  - Accessibility and responsive design documentation
+- **Updated x-uigen-profile annotation** - Enhanced with profile editing details
+  - Edit mode activation and behavior
+  - Form validation (client-side and server-side)
+  - Save and cancel functionality
+  - Error handling scenarios
+  - Keyboard shortcuts
+
 **Core engine (`@uigen-dev/core`)**
 - **Resource-level `x-uigen-label` support** - Labels can now be applied at the resource level to customize resource display names in the dashboard and sidebar
   - Added optional `label` field to Resource interface

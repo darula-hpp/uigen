@@ -770,6 +770,207 @@ button.bg-destructive {
 }
 ```
 
+## Discovering Component-Specific Selectors
+
+**IMPORTANT**: The React SPA contains many components (ProfileView, ListView, DetailView, DashboardView, etc.). Rather than documenting every component's selectors, use this discovery workflow:
+
+### Step 1: Inspect the Running Application
+
+When a user asks to style a specific component or view:
+
+1. **Ask the user to run the application**:
+   ```bash
+   uigen serve openapi.yaml
+   ```
+
+2. **Instruct them to use browser DevTools**:
+   - Right-click on the element they want to style
+   - Select "Inspect" or "Inspect Element"
+   - Look at the HTML structure and CSS classes in the Elements/Inspector panel
+
+3. **Identify the selectors**:
+   - Look for Tailwind utility classes (e.g., `rounded-lg`, `bg-card`, `text-muted-foreground`)
+   - Look for semantic HTML elements (e.g., `dl`, `dt`, `dd`, `button`, `table`)
+   - Look for ARIA attributes (e.g., `aria-label`, `role`)
+   - Look for data attributes if present
+
+### Step 2: Use Semantic HTML Selectors
+
+UIGen components use semantic HTML, so you can target elements by their purpose:
+
+```css
+/* Definition lists (used in detail views, profile views) */
+dl { /* Field list container */ }
+dt { /* Field labels */ }
+dd { /* Field values */ }
+
+/* Tables (used in list views) */
+table { /* Data tables */ }
+thead { /* Table headers */ }
+tbody { /* Table body */ }
+tr { /* Table rows */ }
+td { /* Table cells */ }
+
+/* Forms (used in create/edit views) */
+form { /* Form containers */ }
+fieldset { /* Field groups */ }
+legend { /* Group labels */ }
+
+/* Buttons with semantic meaning */
+button[type="submit"] { /* Submit buttons */ }
+button[type="button"] { /* Action buttons */ }
+button[aria-label*="Edit"] { /* Edit buttons */ }
+button[aria-label*="Delete"] { /* Delete buttons */ }
+button[aria-label*="Cancel"] { /* Cancel buttons */ }
+
+/* Alerts and messages */
+[role="alert"] { /* Alert messages */ }
+[role="status"] { /* Status messages */ }
+```
+
+### Step 3: Use Tailwind Utility Class Patterns
+
+UIGen uses consistent Tailwind patterns across all components:
+
+```css
+/* Rounded elements (avatars, cards, buttons) */
+.rounded-full { /* Circular elements */ }
+.rounded-lg { /* Rounded cards */ }
+.rounded-md { /* Rounded inputs */ }
+
+/* Spacing patterns */
+.space-y-4 { /* Vertical spacing */ }
+.gap-4 { /* Flex/grid gaps */ }
+.p-4, .p-6 { /* Padding */ }
+.m-4, .m-6 { /* Margins */ }
+
+/* Text styles */
+.text-sm { /* Small text */ }
+.text-base { /* Normal text */ }
+.text-lg { /* Large text */ }
+.font-medium { /* Medium weight */ }
+.font-semibold { /* Semibold weight */ }
+
+/* Colors using theme variables */
+.bg-card { /* Card backgrounds */ }
+.bg-muted { /* Muted backgrounds */ }
+.text-muted-foreground { /* Muted text */ }
+.border-border { /* Border colors */ }
+
+/* Interactive states */
+.hover\:bg-accent:hover { /* Hover backgrounds */ }
+.focus\:ring-2:focus { /* Focus rings */ }
+```
+
+### Step 4: Target by Component Context
+
+When styling a specific view or component, use contextual selectors:
+
+```css
+/* Style elements only within a specific context */
+
+/* Example: Style tables only in list views */
+main > div > table {
+  /* List view tables */
+}
+
+/* Example: Style forms only in edit mode */
+form fieldset {
+  /* Edit form field groups */
+}
+
+/* Example: Style cards in a specific layout */
+.max-w-2xl .border.rounded-lg {
+  /* Cards in narrow layouts (like profile view) */
+}
+
+/* Example: Style buttons in specific contexts */
+header button {
+  /* Header action buttons */
+}
+
+footer button {
+  /* Footer action buttons */
+}
+```
+
+### Step 5: Use Attribute Selectors for Specificity
+
+```css
+/* Target by ARIA labels (semantic and accessible) */
+button[aria-label="Edit profile"] {
+  /* Specific edit button */
+}
+
+/* Target by data attributes if present */
+[data-view="profile"] {
+  /* Profile view container */
+}
+
+/* Target by role */
+[role="navigation"] {
+  /* Navigation elements */
+}
+
+/* Target by type */
+input[type="email"] {
+  /* Email inputs */
+}
+```
+
+### Example Workflow: Styling a Specific Component
+
+**User Request**: "I want to style the profile view avatar with a gradient border"
+
+**AI Agent Response**:
+
+1. **Discover the selector**:
+   ```
+   Please run `uigen serve openapi.yaml` and navigate to the profile view.
+   Right-click on the avatar and select "Inspect".
+   What CSS classes do you see on the avatar element?
+   ```
+
+2. **User provides**: "It has classes `w-20 h-20 rounded-full object-cover border-2 border-border`"
+
+3. **Generate CSS**:
+   ```css
+   /* Profile avatar with gradient border */
+   .w-20.h-20.rounded-full {
+     border: 3px solid transparent;
+     background-image: 
+       linear-gradient(white, white),
+       linear-gradient(135deg, var(--primary), var(--secondary));
+     background-origin: border-box;
+     background-clip: padding-box, border-box;
+   }
+   
+   .dark .w-20.h-20.rounded-full {
+     background-image: 
+       linear-gradient(var(--background), var(--background)),
+       linear-gradient(135deg, var(--primary), var(--secondary));
+   }
+   ```
+
+### Best Practices for Component Discovery
+
+1. **Start broad, then narrow**: Begin with element selectors (e.g., `button`), then add classes for specificity
+2. **Use semantic HTML**: Prefer `dl`, `dt`, `dd`, `table`, `form` over generic `div` selectors
+3. **Leverage ARIA attributes**: They're semantic and won't change with styling updates
+4. **Combine selectors**: Use descendant selectors for context (e.g., `form button`)
+5. **Test in browser**: Always verify selectors in DevTools before writing CSS
+6. **Keep specificity low**: Avoid overly specific selectors that are hard to override
+
+### When You Can't Inspect
+
+If the user can't run the application or inspect elements:
+
+1. **Ask for a screenshot**: Visual context helps identify components
+2. **Ask which view/page**: Profile, List, Detail, Dashboard, etc.
+3. **Ask what element**: Button, card, table, form, etc.
+4. **Use common patterns**: Apply the semantic HTML and Tailwind patterns above
+5. **Provide multiple options**: Give 2-3 selector variations to try
+
 ## Troubleshooting
 
 ### Styles Not Applying
