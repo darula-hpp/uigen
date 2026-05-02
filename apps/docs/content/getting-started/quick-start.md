@@ -1,37 +1,80 @@
 ---
 title: Quick Start
-description: Run UIGen against your OpenAPI spec in under a minute.
+description: Create a UIGen project and run it in under a minute.
 ---
 
 # Quick Start
 
-The fastest way to try UIGen is with `npx` (no installation required).
+The fastest way to get started with UIGen is using the `init` command (no installation required).
 
-## Step 1: Run the CLI
+## Step 1: Initialize a project
 
-Point UIGen at any OpenAPI 3.x or Swagger 2.0 spec file:
+Create a new UIGen project with a single command:
 
 ```bash
-npx @uigen-dev/cli serve ./openapi.yaml
+npx @uigen-dev/cli init my-admin-ui
+```
+
+You'll be prompted for:
+- Path to your existing OpenAPI spec (optional)
+- Whether to initialize a git repository
+
+Or skip prompts with the `-y` flag:
+
+```bash
+npx @uigen-dev/cli init my-admin-ui -y
 ```
 
 You should see output like:
 
 ```
-🚀 UIGen starting...
+✨ UIGen Project Initialization
 
-Reading spec: ./openapi.yaml
-✓ Parsed spec: Petstore API v1.0.0
-  Resources: pets, users
+Creating project: my-admin-ui
 
-API proxy target: http://localhost:3000
+✓ Created directory structure
+✓ Copied AI agent skills
+✓ Copied base styles
+✓ Created configuration files
+✓ Git repository initialized
 
-✓ Server running at http://localhost:4400
+✨ Created UIGen project: my-admin-ui
 
-Press Ctrl+C to stop
+📁 Project structure:
+   ├── .git/
+   ├── .gitignore
+   ├── .agents/skills/
+   ├── .uigen/
+   │   ├── config.yaml
+   │   ├── base-styles.css
+   │   └── theme.css
+   ├── openapi.yaml
+   ├── annotations.json
+   └── README.md
+
+✓ Git repository initialized
+✓ AI agent skills installed
+✓ Base styles copied
+✓ Configuration scaffolded
+
+🚀 Next steps:
+
+   cd my-admin-ui
+   uigen serve openapi.yaml
 ```
 
-## Step 2: Open the browser
+## Step 2: Start the development server
+
+Navigate to your project and start the server:
+
+```bash
+cd my-admin-ui
+npx @uigen-dev/cli serve openapi.yaml
+```
+
+The server will start at [http://localhost:4400](http://localhost:4400).
+
+## Step 3: Open the browser
 
 Navigate to [http://localhost:4400](http://localhost:4400). UIGen serves a complete React SPA with:
 
@@ -39,7 +82,7 @@ Navigate to [http://localhost:4400](http://localhost:4400). UIGen serves a compl
 - A dashboard overview with resource counts
 - Fully functional list, detail, create, edit, and delete views
 
-## Step 3: Navigate the generated UI
+## Step 4: Navigate the generated UI
 
 Click any resource in the sidebar to open its list view. From there you can:
 
@@ -48,30 +91,77 @@ Click any resource in the sidebar to open its list view. From there you can:
 - Use the **New** button to open the create form
 - Edit or delete records inline
 
-## Using a remote spec
+## Alternative: Quick test without init
 
-UIGen also accepts a URL:
+If you just want to quickly test UIGen with an existing spec:
+
+```bash
+npx @uigen-dev/cli serve ./openapi.yaml
+```
+
+Or with a remote spec:
 
 ```bash
 npx @uigen-dev/cli serve https://petstore3.swagger.io/api/v3/openapi.json
 ```
 
-## Custom port
+## Customization
+
+### Open the config GUI
+
+Visually configure annotations and settings:
 
 ```bash
-npx @uigen-dev/cli serve ./openapi.yaml --port 8080
+npx @uigen-dev/cli config openapi.yaml
 ```
 
-## Custom proxy base
+Opens at [http://localhost:4401](http://localhost:4401) with a drag-and-drop interface.
+
+### Auto-annotate with AI
+
+Use the included AI agent skill to automatically add UIGen annotations:
+
+1. Open your AI agent (Kiro, Claude, ChatGPT, etc.)
+2. Ask: "Use the auto-annotate skill to add UIGen annotations to my OpenAPI spec"
+3. The agent will read `.agents/skills/auto-annotate.md` and intelligently annotate your spec
+
+### Customize the theme
+
+Edit `.uigen/theme.css` to match your brand:
+
+```css
+:root {
+  --primary-color: #your-brand-color;
+  --font-family: 'Your Font', sans-serif;
+}
+```
+
+## Custom options
+
+### Custom port
+
+```bash
+npx @uigen-dev/cli serve openapi.yaml --port 8080
+```
+
+### Custom proxy base
 
 If your API runs on a different host than what's declared in the spec's `servers` field:
 
 ```bash
-npx @uigen-dev/cli serve ./openapi.yaml --proxy-base http://localhost:3001
+npx @uigen-dev/cli serve openapi.yaml --proxy-base http://localhost:3001
+```
+
+### Verbose logging
+
+```bash
+npx @uigen-dev/cli serve openapi.yaml --verbose
 ```
 
 ## Next steps
 
-- [Installation](/docs/getting-started/installation): install packages for programmatic use
-- [CLI Reference](/docs/cli-reference/serve): all available flags
+- [CLI Reference: init](/docs/cli-reference/init): all init command options
+- [CLI Reference: serve](/docs/cli-reference/serve): all serve command flags
+- [CLI Reference: config](/docs/cli-reference/config): visual configuration GUI
 - [Authentication](/docs/authentication/overview): how UIGen handles auth
+- [Annotations](/docs/spec-annotations/overview): customize the generated UI

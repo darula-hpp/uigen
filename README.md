@@ -13,22 +13,32 @@
 ### Quick Start (npx)
 
 ```bash
-# Step 1: Configure your spec (recommended)
-npx @uigen-dev/cli config openapi.yaml
+# Initialize a new UIGen project
+npx @uigen-dev/cli init my-admin-ui
 
-# In the Config GUI:
-# - Define relationships between resources
-# - Customize labels and visibility
-# - Configure charts and theme
-# All saved as YAML, not code
+# Navigate to your project
+cd my-admin-ui
 
-# Step 2: Serve your configured UI
+# Start the development server
 npx @uigen-dev/cli serve openapi.yaml
 ```
 
 Visit `http://localhost:4400` to see your app.
 
-**What's happening:** UIGen renders a complete UI from your OpenAPI spec, then you configure it through a visual tool that generates YAML. When your API changes, the UI updates automatically - no regeneration, no code to maintain.
+**What's happening:** UIGen scaffolds a complete project with configuration, AI agent skills, and an example spec. It then renders a complete UI from your OpenAPI spec at runtime. When your API changes, the UI updates automatically - no regeneration, no code to maintain.
+
+### Configure Your UI
+
+```bash
+# Open the visual config GUI
+npx @uigen-dev/cli config openapi.yaml
+```
+
+In the Config GUI:
+- Define relationships between resources
+- Customize labels and visibility
+- Configure charts and theme
+- All saved as YAML, not code
 
 ### Try the Example App
 

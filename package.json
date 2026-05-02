@@ -24,7 +24,8 @@
     "typecheck": "pnpm -r typecheck",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "export:annotations": "pnpm --filter @uigen-dev/core build && node packages/core/dist/scripts/export-annotations.js"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",

@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/cli",
-  "version": "0.5.5",
+  "version": "0.6.0",
   "description": "Auto-generate frontends from OpenAPI specs",
   "license": "MIT",
   "repository": {
@@ -20,13 +20,15 @@
     "dist/**/*.d.ts",
     "dist/renderer/**/*",
     "dist/assets/base-styles.css",
+    "dist/skills/**/*.md",
+    "dist/annotations.json",
     "!dist/**/__tests__/**",
     "!dist/**/*.test.js",
     "!dist/**/*.test.d.ts",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && mkdir -p dist/renderer && cp -r ../react/dist/* dist/renderer/ && mkdir -p dist/assets && cp ../react/src/index.css dist/assets/base-styles.css",
+    "build": "tsc && mkdir -p dist/renderer && cp -r ../react/dist/* dist/renderer/ && mkdir -p dist/assets && cp ../react/src/index.css dist/assets/base-styles.css && mkdir -p dist/skills && cp -r ../../SKILLS/* dist/skills/ && cp ../../annotations.json dist/annotations.json",
     "dev": "tsc --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit",

@@ -7,9 +7,10 @@ dist
 .vscode
 coverage
 *.tsbuildinfo
+annotations.json
 
 # Kiro IDE files
-.kiro
+.kiro/specs
 AGENTS.md
 implementation_plan.md
 apps/docs/AGENTS.md

@@ -39,6 +39,11 @@ export class ElementPathResolver {
   /**
    * Resolve an element path to its corresponding element in the spec
    * 
+   * Supported path formats:
+   * - #/paths/~1api~1v1~1users/get/responses/200/content/application~1json/schema - JSON Pointer (RFC 6901)
+   * - METHOD:/path/to/endpoint - Operation (legacy shorthand)
+   * - SchemaName.propertyName - Schema property (legacy shorthand)
+   * 
    * @param spec - The OpenAPI/Swagger specification
    * @param elementPath - The element path to resolve
    * @returns The resolved element, or null if not found
@@ -56,11 +61,14 @@ export class ElementPathResolver {
     // Determine path type and delegate to appropriate resolver
     let resolved: ResolvedElement | null = null;
 
-    if (elementPath.includes(':')) {
-      // Operation path: METHOD:/path/to/endpoint
+    if (elementPath.startsWith('#/')) {
+      // JSON Pointer (RFC 6901): #/paths/~1api~1v1~1users/get/responses/200/content/application~1json/schema
+      resolved = this.resolveJsonPointer(spec, elementPath);
+    } else if (elementPath.includes(':')) {
+      // Legacy operation path: METHOD:/path/to/endpoint
       resolved = this.resolveOperationPath(spec, elementPath);
     } else if (elementPath.includes('.')) {
-      // Schema property path: SchemaName.propertyName
+      // Legacy schema property path: SchemaName.propertyName
       resolved = this.resolveSchemaPropertyPath(spec, elementPath);
     } else {
       // Invalid path format
@@ -108,6 +116,69 @@ export class ElementPathResolver {
       type: 'operation',
       location: { path: `paths.${path}.${normalizedMethod}` },
       object: operation as Record<string, unknown>,
+    };
+  }
+
+  /**
+   * Resolve a JSON Pointer (RFC 6901)
+   * 
+   * Examples:
+   * - #/paths/~1api~1v1~1templates/get/responses/200/content/application~1json/schema
+   * - #/components/schemas/User/properties/email
+   * 
+   * JSON Pointer escaping rules:
+   * - ~ must be escaped as ~0
+   * - / must be escaped as ~1
+   */
+  private resolveJsonPointer(
+    spec: OpenAPIV3.Document | Swagger2Document,
+    pointer: string
+  ): ResolvedElement | null {
+    // Remove leading #
+    if (!pointer.startsWith('#/')) {
+      return null;
+    }
+
+    const path = pointer.slice(2); // Remove '#/'
+    const tokens = path.split('/');
+
+    let current: any = spec;
+    const resolvedPath: string[] = [];
+
+    for (const token of tokens) {
+      // Unescape JSON Pointer tokens (RFC 6901)
+      // ~1 becomes / and ~0 becomes ~
+      const unescaped = token.replace(/~1/g, '/').replace(/~0/g, '~');
+      
+      if (current && typeof current === 'object' && unescaped in current) {
+        current = current[unescaped];
+        resolvedPath.push(unescaped);
+      } else {
+        return null; // Path not found
+      }
+    }
+
+    if (!current || typeof current !== 'object') {
+      return null;
+    }
+
+    // Determine element type based on path
+    let elementType: 'operation' | 'schema-property' | 'parameter' | 'response-body' | 'response-field' = 'response-field';
+    
+    if (path.includes('/responses/')) {
+      elementType = path.includes('/schema/properties/') ? 'response-field' : 'response-body';
+    } else if (path.startsWith('paths/') && !path.includes('/responses/')) {
+      elementType = 'operation';
+    } else if (path.startsWith('components/schemas/') || path.startsWith('definitions/')) {
+      elementType = 'schema-property';
+    } else if (path.includes('/parameters/')) {
+      elementType = 'parameter';
+    }
+
+    return {
+      type: elementType,
+      location: { path: resolvedPath.join('.') },
+      object: current as Record<string, unknown>,
     };
   }
 

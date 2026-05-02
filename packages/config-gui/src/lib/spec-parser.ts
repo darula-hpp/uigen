@@ -31,6 +31,7 @@ export interface OperationNode {
   summary?: string;
   description?: string;
   requestBodyFields?: FieldNode[];
+  responseFields?: FieldNode[];
   annotations: Record<string, unknown>;
 }
 
@@ -115,7 +116,7 @@ export class SpecParser {
   
   /**
    * Parse an operation and extract its annotations.
-   * Also extracts fields from request body if present.
+   * Also extracts fields from request body and response if present.
    * 
    * @param operation - The operation to parse
    * @returns The operation node for the visual editor
@@ -141,6 +142,57 @@ export class SpecParser {
       requestBodyFields = this.parseFields(operation.requestBody, schemaName);
     }
     
+    // Extract fields from response if present (use 200 response by default)
+    let responseFields: FieldNode[] | undefined;
+    const successResponse = operation.responses['200'] || operation.responses['201'];
+    if (successResponse?.schema) {
+      // For response fields, we use JSON Pointer (RFC 6901) format
+      // This is the OpenAPI-native way to reference elements in the spec
+      // Example: #/paths/~1api~1v1~1templates/get/responses/200/content/application~1json/schema
+      
+      // Escape the path for JSON Pointer (/ becomes ~1, ~ becomes ~0)
+      const escapedPath = operation.path.replace(/~/g, '~0').replace(/\//g, '~1');
+      const responseCode = operation.responses['200'] ? '200' : '201';
+      const responseBasePath = `#/paths/${escapedPath}/${operation.method.toLowerCase()}/responses/${responseCode}/content/application~1json/schema`;
+      
+      // Handle top-level array responses (e.g., GET /api/v1/templates returns array)
+      if (successResponse.schema.type === 'array' && successResponse.schema.items) {
+        // Create a virtual field node representing the array response
+        // The array itself gets the base response path
+        const arrayField: FieldNode = {
+          key: 'response',
+          label: 'Response',
+          type: 'array',
+          path: responseBasePath,
+          required: false,
+          // For array items, create a single child representing the item schema
+          children: successResponse.schema.items.children 
+            ? [{
+                key: 'items',
+                label: 'Items',
+                type: successResponse.schema.items.type,
+                path: `${responseBasePath}/items`,
+                required: false,
+                // The actual item properties are children of this items node
+                children: successResponse.schema.items.children.map(child => 
+                  this.parseResponseField(child, `${responseBasePath}/items`)
+                ),
+                annotations: {}
+              }]
+            : undefined,
+          annotations: this.extractAnnotations(successResponse.schema as unknown as Record<string, unknown>)
+        };
+        responseFields = [arrayField];
+      } else {
+        // Handle object responses with children
+        responseFields = successResponse.schema.children
+          ? successResponse.schema.children.map(child =>
+              this.parseResponseField(child, responseBasePath)
+            )
+          : undefined;
+      }
+    }
+    
     return {
       id: operation.id,
       uigenId: operation.uigenId,
@@ -149,6 +201,7 @@ export class SpecParser {
       summary: operation.summary,
       description: operation.description,
       requestBodyFields,
+      responseFields,
       annotations
     };
   }
@@ -234,6 +287,75 @@ export class SpecParser {
     };
   }
   
+  /**
+   * Parse a response field with JSON Pointer path format.
+   * 
+   * Response fields use JSON Pointer (RFC 6901) format for paths, which is the
+   * OpenAPI-native way to reference elements in the spec.
+   * 
+   * Example path: #/paths/~1api~1v1~1templates/get/responses/200/content/application~1json/schema/properties/id
+   * 
+   * @param schema - The schema node representing the field
+   * @param parentPath - The JSON Pointer path of the parent (response schema)
+   * @returns The field node with JSON Pointer path
+   */
+  private parseResponseField(
+    schema: SchemaNode,
+    parentPath: string
+  ): FieldNode {
+    // Build JSON Pointer path for this field
+    // Escape special characters: ~ becomes ~0, / becomes ~1
+    const escapedKey = schema.key.replace(/~/g, '~0').replace(/\//g, '~1');
+    const path = `${parentPath}/properties/${escapedKey}`;
+    
+    // Extract field-level annotations
+    const annotations = this.extractAnnotations(schema as unknown as Record<string, unknown>);
+    
+    // Parse nested fields for object types
+    let children: FieldNode[] | undefined;
+    if (schema.type === 'object' && schema.children && schema.children.length > 0) {
+      children = schema.children.map(child => 
+        this.parseResponseField(child, path)
+      );
+    }
+    
+    // Parse array item fields
+    if (schema.type === 'array' && schema.items) {
+      // For arrays, we create a virtual child representing the array items
+      // The items path uses /items (not /properties/items)
+      const itemsPath = `${path}/items`;
+      
+      // If items is an object with children, create a child node with those properties
+      if (schema.items.type === 'object' && schema.items.children) {
+        const itemField: FieldNode = {
+          key: 'items',
+          label: 'Items',
+          type: 'object',
+          path: itemsPath,
+          required: false,
+          children: schema.items.children.map(child =>
+            this.parseResponseField(child, itemsPath)
+          ),
+          annotations: {}
+        };
+        children = [itemField];
+      }
+    }
+    
+    return {
+      key: schema.key,
+      label: schema.label,
+      type: schema.type,
+      format: schema.format,
+      path,
+      required: schema.required,
+      description: schema.description,
+      fileMetadata: schema.fileMetadata,
+      children,
+      annotations
+    };
+  }
+
   /**
    * Extract x-uigen-* annotations from a schema node or operation.
    * 

@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, memo, useCallback } from 'react';
 import type { FieldNode as FieldNodeType } from '../../types/index.js';
-import type { ConfigFile } from '@uigen-dev/core';
+import type { ConfigFile, ChartConfig, SchemaNode } from '@uigen-dev/core';
 import { useAppContext } from '../../contexts/AppContext.js';
 import { useKeyboardNavigation } from '../../contexts/KeyboardNavigationContext.js';
+import { ChartConfigModal } from './ChartConfigModal.js';
 
 /**
  * Props for FieldNode component
@@ -39,6 +40,7 @@ export const FieldNode = memo(function FieldNode({ field, onDragStart }: FieldNo
   const { state: navState } = useKeyboardNavigation();
   const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [labelDraft, setLabelDraft] = useState('');
+  const [showChartModal, setShowChartModal] = useState(false);
   const labelInputRef = useRef<HTMLInputElement>(null);
   const nodeRef = useRef<HTMLDivElement>(null);
 
@@ -46,6 +48,10 @@ export const FieldNode = memo(function FieldNode({ field, onDragStart }: FieldNo
   const currentLabel = currentAnnotations['x-uigen-label'] as string | undefined;
   const isIgnored = Boolean(currentAnnotations['x-uigen-ignore']);
   const hasRef = Boolean(currentAnnotations['x-uigen-ref']);
+  const hasChart = Boolean(currentAnnotations['x-uigen-chart']);
+  
+  // Check if this field is an array (chart annotation only applies to arrays)
+  const isArrayField = field.type === 'array';
 
   // Check if this field is focused
   // Requirements: 21.2, 21.4
@@ -84,6 +90,39 @@ export const FieldNode = memo(function FieldNode({ field, onDragStart }: FieldNo
     const updated = buildUpdatedAnnotations(state.config, field.path, 'x-uigen-ignore', newValue);
     actions.saveConfig(updated);
   }, [isIgnored, state.config, field.path, actions]);
+
+  const handleChartClick = useCallback(() => {
+    setShowChartModal(true);
+  }, []);
+
+  const handleChartSave = useCallback((config: ChartConfig) => {
+    const updated = buildUpdatedAnnotations(state.config, field.path, 'x-uigen-chart', config);
+    actions.saveConfig(updated);
+    setShowChartModal(false);
+  }, [state.config, field.path, actions]);
+
+  const handleChartClose = useCallback(() => {
+    setShowChartModal(false);
+  }, []);
+  
+  // Convert FieldNode children to SchemaNode for ChartConfigModal
+  const getArrayItemSchema = useCallback((): SchemaNode | null => {
+    if (!isArrayField || !field.children || field.children.length === 0) {
+      return null;
+    }
+    
+    // For array fields, the first child represents the item schema
+    const convertToSchemaNode = (node: FieldNodeType): SchemaNode => ({
+      type: node.type as any,
+      key: node.key,
+      label: node.label,
+      required: node.required || false,
+      children: node.children?.map(convertToSchemaNode),
+      format: node.format
+    });
+    
+    return convertToSchemaNode(field.children[0]);
+  }, [isArrayField, field.children]);
 
   const handleDragStart = useCallback((e: React.DragEvent) => {
     // dataTransfer may be unavailable in test environments (jsdom)
@@ -182,6 +221,37 @@ export const FieldNode = memo(function FieldNode({ field, onDragStart }: FieldNo
           </button>
         )}
 
+        {/* x-uigen-chart button (only for array fields) */}
+        {isArrayField && (
+          hasChart ? (
+            <button
+              onClick={handleChartClick}
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
+              title="Chart visualization configured (click to edit)"
+              aria-label="Edit chart configuration"
+              data-testid="chart-badge"
+            >
+              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              chart
+            </button>
+          ) : (
+            <button
+              onClick={handleChartClick}
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-purple-100 dark:hover:bg-purple-900 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+              title="Add chart visualization"
+              aria-label="Add chart annotation"
+              data-testid="add-chart-button"
+            >
+              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              + chart
+            </button>
+          )
+        )}
+
         {/* x-uigen-ignore toggle */}
         <button
           role="switch"
@@ -204,6 +274,44 @@ export const FieldNode = memo(function FieldNode({ field, onDragStart }: FieldNo
           <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">ignored</span>
         )}
       </div>
+      
+      {/* Chart configuration modal */}
+      {showChartModal && (() => {
+        const arrayItemSchema = getArrayItemSchema();
+        if (!arrayItemSchema) {
+          return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-96 max-w-full mx-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Chart Configuration Error
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Chart annotation can only be configured on array fields with object items.
+                </p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleChartClose}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        
+        return (
+          <ChartConfigModal
+            isOpen={true}
+            onClose={handleChartClose}
+            onSave={handleChartSave}
+            initialConfig={currentAnnotations['x-uigen-chart'] as ChartConfig | undefined}
+            arrayItemSchema={arrayItemSchema}
+            elementPath={field.path}
+          />
+        );
+      })()}
     </div>
   );
 }, (prevProps, nextProps) => {

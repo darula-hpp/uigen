@@ -16,6 +16,7 @@ import {
 } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
+import { ChartVisualization } from '@/components/ChartVisualization';
 
 interface ListViewProps {
   resource: Resource;
@@ -305,6 +306,15 @@ export function ListView({ resource, operation }: ListViewProps) {
           <Button onClick={() => navigate(`/${resource.slug}/new`)}>Create {resource.name}</Button>
         )}
       </div>
+
+      {/* Chart Visualization - Display when chartConfig exists on schema */}
+      {resource.schema.chartConfig && items.length > 0 && (
+        <ChartVisualization 
+          data={items} 
+          chartConfig={resource.schema.chartConfig}
+          className="mb-6"
+        />
+      )}
 
       {/* Sub-resource requires parent context */}
       {listOp.path.includes('{') && !parentId && (
