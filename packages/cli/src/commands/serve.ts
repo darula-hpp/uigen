@@ -30,9 +30,10 @@ const MIME: Record<string, string> = {
 function resolveRendererRoot(renderer: Renderer): string {
   const pkgName = `@uigen-dev/${renderer}`;
   const candidates = [
-    resolve(__dirname, '../../..', pkgName),               // npm/npx sibling
+    resolve(__dirname, '../../node_modules', pkgName),       // cli's own node_modules (global install)
+    resolve(__dirname, '../../..', pkgName),                 // npm/npx sibling
     resolve(__dirname, '../../../../node_modules', pkgName), // monorepo hoisted
-    resolve(__dirname, '../node_modules', pkgName),          // cli-local
+    resolve(__dirname, '../node_modules', pkgName),          // cli-local (shouldn't exist but check anyway)
   ];
   for (const candidate of candidates) {
     if (existsSync(resolve(candidate, 'package.json'))) return candidate;
