@@ -30,17 +30,17 @@ export default function Home() {
               <code>
                 <span className="text-gray-500">$</span>{" "}
                 <span className="text-[var(--primary)]">npx</span>{" "}
-                <span className="text-white">@uigen-dev/cli config</span>{" "}
-                <span className="text-yellow-300">./openapi.yaml</span>
+                <span className="text-white">@uigen-dev/cli@latest init</span>{" "}
+                <span className="text-yellow-300">my-app</span>
                 {"\n"}
                 <span className="text-gray-500">
-                  # → Configure your UI at http://localhost:4401
+                  # → Scaffolds project with config, theme, and AI skills
                 </span>
                 {"\n\n"}
                 <span className="text-gray-500">$</span>{" "}
                 <span className="text-[var(--primary)]">npx</span>{" "}
-                <span className="text-white">@uigen-dev/cli serve</span>{" "}
-                <span className="text-yellow-300">./openapi.yaml</span>
+                <span className="text-white">@uigen-dev/cli@latest serve</span>{" "}
+                <span className="text-yellow-300">openapi.yaml</span>
                 {"\n"}
                 <span className="text-gray-500">
                   # → Your UI is live at http://localhost:4400
@@ -242,8 +242,10 @@ const roadmap = [
   { label: "Swagger 2.0 support", done: true },
   { label: "Override system", done: true },
   { label: "Docs site", done: true },
-  { label: "x-uigen-* spec annotations", done: false },
-  { label: "uigen.config.json", done: false },
+  { label: "x-uigen-* spec annotations", done: true },
+  { label: ".uigen/config.yaml system", done: true },
+  { label: "Config GUI", done: true },
+  { label: "AI agent skills", done: true },
   { label: "OAuth2 PKCE flow", done: false },
   { label: "Svelte & Vue renderers", done: false },
 ];
