@@ -32,6 +32,8 @@ export interface UIGenApp {
   servers: ServerConfig[];
   activeServer?: ServerConfig;
   parsingErrors?: ParsingError[];
+  /** Global layout configuration */
+  layoutConfig?: LayoutConfig;
 }
 
 export interface ParsingError {
@@ -121,6 +123,8 @@ export interface Resource {
   pagination?: PaginationHint;
   isLibrary?: boolean; // Marks resources as reusable libraries that can be referenced by multiple consumer resources
   __profileAnnotation?: boolean; // Marks resource as profile resource for specialized rendering (x-uigen-profile)
+  /** Layout override for this resource (overrides global layout configuration) */
+  layoutOverride?: LayoutConfig;
 }
 
 export interface Relationship {
@@ -314,4 +318,62 @@ export interface ChartConfig {
   
   /** Chart display and behavior options (optional) */
   options?: ChartOptions;
+}
+
+/**
+ * Supported layout types
+ */
+export type LayoutType = 
+  | 'sidebar'           // Default: sidebar + topbar + content
+  | 'centered'          // Centered container (auth pages)
+  | 'dashboard-grid'    // Grid layout for dashboards
+  | string;             // Allow custom layouts via plugins
+
+/**
+ * Responsive column configuration for grid layouts
+ */
+export interface ResponsiveColumns {
+  mobile?: number;
+  tablet?: number;
+  desktop?: number;
+}
+
+/**
+ * Layout metadata (strategy-specific configuration)
+ */
+export interface LayoutMetadata {
+  // Sidebar layout options
+  sidebarWidth?: number;
+  sidebarCollapsible?: boolean;
+  sidebarDefaultCollapsed?: boolean;
+  
+  // Centered layout options
+  maxWidth?: number;
+  showHeader?: boolean;
+  verticalCenter?: boolean;
+  
+  // Dashboard grid options
+  columns?: ResponsiveColumns;
+  gap?: number;
+  
+  // Responsive breakpoints
+  breakpoints?: {
+    mobile?: number;
+    tablet?: number;
+    desktop?: number;
+  };
+  
+  // Allow arbitrary metadata for custom layouts
+  [key: string]: unknown;
+}
+
+/**
+ * Layout configuration in the IR
+ */
+export interface LayoutConfig {
+  /** Layout strategy type identifier */
+  type: LayoutType;
+  
+  /** Layout-specific configuration metadata */
+  metadata?: LayoutMetadata;
 }
