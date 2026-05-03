@@ -60,7 +60,7 @@ docker compose exec app alembic upgrade head
 
 # Initialize and start
 npx @uigen-dev/cli@latest init --spec openapi.yaml
-npx @uigen-dev/cli@latest serve openapi.yaml
+npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8000
 ```
 
 Visit `http://localhost:4400` to explore a full meeting minutes application with CRUD operations, authentication, file uploads, and relationships.
