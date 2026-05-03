@@ -55,53 +55,87 @@ Appsmith targets teams that want Retool's capabilities without vendor lock-in or
 
 Like Retool, Appsmith's visual builder is powerful for simple apps but becomes unwieldy for complex workflows. The JavaScript glue code problem is identical.
 
-### UIGen: Spec-First Generation with Visual Config
+### UIGen: Runtime Rendering with AI Configuration
 
-### UIGen: Runtime Rendering with Visual Config
-
-UIGen takes a completely different approach. Instead of building UIs visually or generating code, UIGen uses **runtime rendering**. It parses your OpenAPI specification into an Intermediate Representation (IR) that an intelligent React renderer interprets at runtime. You refine the output through a visual config GUI, but you never touch React code.
+UIGen takes a completely different approach. Instead of building UIs visually or generating code, UIGen uses **runtime rendering** with **AI-powered configuration**. It parses your OpenAPI specification into an Intermediate Representation (IR) that an intelligent React renderer interprets at runtime. You configure and style the output using AI agents that understand your requirements in natural language.
 
 The core workflow is:
 1. Build your backend API (FastAPI, Express, Django, Rails, anything)
 2. Export an OpenAPI spec (auto-generated or hand-written)
-3. Run `uigen config openapi.yaml` to open the visual config GUI
-4. Add annotations, define relationships, customize labels, and configure theme
-5. Run `uigen serve openapi.yaml` to see your configured UI
+3. Run `uigen serve openapi.yaml` to see your initial UI
+4. **Use AI to configure and style**: Tell an AI agent what you want in natural language
+   - "Hide the password field and mark email as required"
+   - "Product.categoryId is a foreign key to Category"
+   - "Style this with a modern blue theme and dark mode support"
+5. AI writes configuration to `.uigen/config.yaml` and styles to `.uigen/theme.css`
+6. **Optional**: Open `uigen config openapi.yaml` to visualize and manually adjust AI output
 
-UIGen's philosophy is that a well-designed API describes most of the UI, but you need a visual tool to add the finishing touches. The spec defines resources, operations, field types, and validation rules. The config GUI lets you hide sensitive fields, rename labels, define foreign key relationships, and customize the theme without writing code or modifying your spec file.
+UIGen's philosophy is that AI can configure and style UIs faster than humans clicking through GUIs. The spec defines resources, operations, field types, and validation rules. AI agents understand UIGen's configuration system and can add annotations, define relationships, customize labels, and generate production-ready CSS by understanding your requirements in natural language. The config GUI exists to visualize what AI generated and make manual adjustments if needed, not as the primary workflow.
 
-**The key difference:** Retool and Appsmith are visual builders where you construct UIs component by component. UIGen is a runtime renderer where the UI is automatically derived from your API structure and refined through visual configuration. No code generation, no component wiring, no vendor lock-in. When your API changes, the UI updates automatically because it is rendered from the spec at runtime, not generated once and frozen.
+**The key difference:** Retool and Appsmith are visual builders where you construct UIs component by component through their GUIs. UIGen is an AI-configured runtime renderer where you describe what you want in natural language and AI generates the configuration and styling. No GUI clicking, no component wiring, no vendor lock-in. When your API changes, the UI updates automatically because it is rendered from the spec at runtime, not generated once and frozen.
 
-**The honest truth:** The raw rendered UI from just the spec is functional but basic. To get a production-ready UI, you need to run the config command and add annotations for relationships, labels, and field visibility. The config GUI makes this fast and visual, but it is a required step, not optional.
+**AI-first advantage:** Unlike Retool and Appsmith where you manually click through GUIs to configure every detail, UIGen lets you describe everything in natural language. Tell an AI agent "Hide sensitive fields, make Product.categoryId a foreign key to Category, and style with Material Design" and it generates the configuration and CSS in seconds. The config GUI exists to visualize and adjust AI output, not as the primary workflow.
 
-The tradeoff is control. Retool and Appsmith give you pixel-perfect control over layout and behavior. UIGen gives you a sensible default UI that you refine through the config GUI. You cannot drag components around a canvas, but you can configure everything that matters: relationships, labels, visibility, validation, and theme.
+**The honest truth:** The raw rendered UI from just the spec is functional but basic. To get a production-ready UI, you need AI to add annotations for relationships, labels, field visibility, and styling. AI makes this fast (seconds vs minutes of GUI clicking), but it is a required step, not optional. If you don't have AI agents available, you can use the config GUI manually, but it's slower.
+
+The tradeoff is control. Retool and Appsmith give you pixel-perfect control over layout and behavior through their visual builders. UIGen gives you a sensible default UI that you configure through AI or the config GUI. You cannot drag components around a canvas, but you can configure everything that matters: relationships, labels, visibility, validation, and theme. And with AI, you get professional results in seconds instead of minutes of clicking.
 
 ---
 
-## The UIGen Config GUI: A Key Differentiator
+## AI Configuration: The Key Differentiator
 
-UIGen's config GUI is what makes the tool practical for production use. It is a visual interface with five tabs that let you refine the generated UI without writing code or modifying your spec file.
+UIGen's AI-powered configuration is what makes the tool practical for production use. Instead of clicking through a GUI, you describe what you want in natural language and AI generates the configuration and styling.
 
-### Annotations Tab
-Enable or disable specific annotations (`x-uigen-ignore`, `x-uigen-label`, `x-uigen-ref`) and set project-wide defaults. For example, you can set a default to ignore all fields named `password` or `secret`.
+### How AI Configuration Works
 
-### Visual Editor Tab
-Configure specific fields and operations in your spec. Click on a field to hide it, rename its label, or mark it as required. Click on an operation to mark it as a login endpoint or hide it from the UI. All changes are applied to `.uigen/config.yaml`, not your spec file.
+AI agents understand UIGen's configuration system and can:
 
-### Relationships Tab
-The most powerful feature. A visual canvas where you define foreign key relationships between resources. Drag from a field on one resource to another resource to create a relationship. UIGen uses these relationships to generate dropdown selectors and linked detail views.
+**1. Add Annotations**
+Tell AI: "Hide all password fields and mark email as required"
+AI writes to `.uigen/config.yaml`:
+```yaml
+annotations:
+  x-uigen-ignore:
+    enabled: true
+    patterns: ["*password*", "*secret*"]
+```
 
-For example, if you have a `Product` resource with a `categoryId` field and a `Category` resource, you can drag from `Product.categoryId` to `Category` to tell UIGen that this is a foreign key. The generated UI will show a dropdown of category names instead of a raw ID field.
+**2. Define Relationships**
+Tell AI: "Product.categoryId is a foreign key to Category, Order.userId links to User"
+AI writes relationship configuration that generates dropdown selectors and linked detail views.
 
-### Theme Tab
-Customize the CSS and appearance of your generated UI. Edit colors, fonts, spacing, and component styles. The theme editor provides syntax highlighting and live preview.
+**3. Customize Labels and Visibility**
+Tell AI: "Rename 'created_at' to 'Date Created' and hide internal_id from all views"
+AI updates field configurations across your spec.
 
-### Preview Tab
-See your changes in real-time without running `uigen serve`. The preview tab renders the UI with your current config, so you can iterate quickly.
+**4. Generate Styling**
+Tell AI: "Apply Material Design with blue primary colors and dark mode support"
+AI writes production-ready CSS to `.uigen/theme.css` with proper CSS variables, component selectors, and accessibility.
 
-**Why this matters:** Retool and Appsmith require you to build everything in their visual builder. UIGen renders 80% of the UI automatically from your API structure and gives you a visual tool to refine the remaining 20%. This is faster than building from scratch but more flexible than pure automatic generation. And because UIGen uses runtime rendering instead of code generation, your UI stays in sync with your API automatically. Change an endpoint, add a field, modify validation rules, and the UI updates instantly without regeneration.
+### The Config GUI: Visualization, Not Primary Workflow
 
-The config GUI outputs plain YAML that you can version control with Git. This means you get the benefits of a visual tool (speed, discoverability) with the benefits of code (version control, code review, CI/CD).
+The config GUI exists to **visualize and adjust** what AI generated, not as the primary way to configure UIGen. It has five tabs:
+
+- **Annotations**: See which annotations AI enabled and their patterns
+- **Visual Editor**: See which fields AI configured and make manual adjustments
+- **Relationships**: Visualize the relationship graph AI created (drag-and-drop to adjust)
+- **Theme**: See the CSS AI generated (edit if needed)
+- **Preview**: See your configured UI in real-time
+
+**When to use the config GUI:**
+- Visualize what AI generated
+- Make small manual adjustments
+- Explore the relationship graph visually
+- Debug configuration issues
+- Learn UIGen's configuration system
+
+**When to use AI:**
+- Initial configuration (faster than GUI)
+- Bulk changes (AI can update multiple fields at once)
+- Styling (AI generates complete themes in seconds)
+- Complex relationships (describe in natural language vs clicking)
+
+**Why this matters:** Retool and Appsmith require you to build everything by clicking through their GUIs. UIGen lets you describe what you want in natural language and AI generates the configuration in seconds. The config GUI is there when you need it, but AI is 10x faster for most tasks.
 
 ---
 
@@ -215,14 +249,15 @@ Retool Cloud is the easiest option. Self-hosted is for teams with strict data re
 
 Appsmith's self-hosted community edition is the most popular option. It is free, open source, and gives you full control. The cloud option is convenient but less common because self-hosting is so easy.
 
-**UIGen** is a CLI tool, not a hosted platform. You run it locally or deploy it yourself:
+**UIGen** is a CLI tool, not a hosted platform. You run it locally during development:
 - **Local development**: Run `uigen serve openapi.yaml` on your machine. UIGen starts a dev server at `http://localhost:4400`.
-- **Static deployment**: Run `uigen build openapi.yaml` to generate a static site. Deploy the `dist/` folder to any static host (Vercel, Netlify, S3, Nginx).
-- **Docker**: Build a Docker image with your spec and UIGen. Deploy to any container platform.
+- **Production deployment**: UIGen uses runtime rendering, not code generation. The pre-built React SPA (from `@uigen-dev/react`) is deployed with your spec and config files. The renderer interprets your spec at runtime.
+- **Docker**: Build a Docker image with your backend API, spec, config files, and the UIGen React package. The serve command runs in production mode.
+- **UIGen Cloud** (coming soon): Managed hosting platform where you upload your spec and UIGen handles deployment, CDN, and scaling.
 
-UIGen does not provide hosting. You deploy the generated frontend wherever you want. This gives you complete control but requires you to manage infrastructure.
+UIGen does not generate static files to deploy. Instead, you deploy the pre-built React renderer along with your spec and config files. The renderer interprets your spec at runtime, which means your UI stays in sync with API changes automatically. This gives you complete control but requires you to manage infrastructure (or use UIGen Cloud when available).
 
-The advantage is simplicity and cost. There is no platform to maintain, no database to back up, no user accounts to manage. UIGen is just a build tool. The disadvantage is that you are responsible for deployment, SSL, CDN, and monitoring.
+The advantage is simplicity and flexibility. There is no platform to maintain, no database to back up, no user accounts to manage. UIGen is a runtime renderer that you deploy alongside your backend. The disadvantage is that you are responsible for deployment, SSL, CDN, and monitoring (though UIGen Cloud will handle this when it launches).
 
 ### Business Models and Vendor Lock-In
 
@@ -279,13 +314,13 @@ Retool's visual builder is intuitive for simple apps. The learning curve steepen
 Appsmith's interface is nearly identical to Retool's, so the learning curve is similar. The documentation is less comprehensive, but the community is active and helpful.
 
 **UIGen** has a different learning curve:
-- **Day 1**: Run `uigen serve openapi.yaml`. Get a basic UI in seconds. Run `uigen config openapi.yaml` to open the visual config GUI.
-- **Week 1**: Learn the config GUI tabs (annotations, visual editor, relationships, theme). Add relationships between resources, hide sensitive fields, customize labels. Get a production-ready UI.
-- **Month 1**: Master OpenAPI annotations, understand the config reconciliation system, and build custom plugins.
+- **Day 1**: Run `uigen serve openapi.yaml`. Get a basic UI in seconds. Use AI to configure: "Hide sensitive fields, add relationships, style with modern theme". Get a production-ready UI in minutes.
+- **Week 1**: Learn to communicate with AI effectively. Understand UIGen's configuration system by exploring what AI generates in the config GUI. Iterate on AI prompts for better results.
+- **Month 1**: Master OpenAPI annotations, understand the config reconciliation system, build custom plugins, and fine-tune AI prompts for consistent results across projects.
 
-UIGen's initial experience is fast but requires configuration. The raw generated UI is functional but basic. The config GUI is where you refine it into a production-ready interface. The learning curve is about using the visual config tool, not writing code.
+UIGen's initial experience is fast with AI. The raw generated UI is functional but basic. AI configuration makes it production-ready in minutes (vs hours of GUI clicking). The learning curve is about communicating intent to AI, not learning a GUI or writing code. The config GUI is there to visualize and adjust AI output, not as the primary workflow.
 
-The advantage is speed with control. You get a working UI instantly and refine it visually. The disadvantage is that you must learn the config GUI and OpenAPI annotations to get a polished result. The config GUI is intuitive, but it is a required step.
+The advantage is speed with AI. You get a working UI instantly and configure it in natural language. The disadvantage is that you need AI agents to get the best experience. Without AI, you can use the config GUI manually, but it's slower than the AI workflow.
 
 ### Iteration Speed
 
@@ -303,13 +338,16 @@ Appsmith's Git sync feature helps with version control. You can commit app chang
 
 **UIGen** iteration speed is different:
 - **Initial rendering**: Instant. Run `uigen serve`, get a basic UI in seconds.
-- **Config GUI changes**: Instant. The config GUI has a preview tab that shows changes in real-time. Add a relationship, see it immediately.
+- **AI configuration**: Seconds. Tell AI what you want, it writes config, refresh to see results.
+- **AI styling**: Seconds. Describe design in natural language, AI generates CSS, refresh to see results.
+- **Config GUI changes**: Instant. The config GUI has a preview tab that shows changes in real-time (use for manual adjustments).
 - **Spec changes**: Instant. UIGen watches the spec file and re-renders the UI automatically. Because UIGen uses runtime rendering instead of code generation, there is no regeneration step. The renderer interprets the updated spec immediately.
 - **Config file changes**: Instant. UIGen watches the `.uigen/config.yaml` file and applies changes live.
+- **Theme changes**: Instant. Edit `.uigen/theme.css` (manually or via AI), restart CLI, see results.
 - **Renderer updates**: Instant across all apps. Because the renderer is a runtime dependency, not generated code, updating the renderer package gives you new features and bug fixes across all your applications without touching any app-specific code.
 - **Custom components**: Moderate. Requires modifying the renderer and rebuilding.
 
-UIGen's iteration speed is fast for config-driven changes. The config GUI's preview tab gives you instant feedback. If you add a new endpoint or field to your API, the UI updates automatically because it is rendered from the spec at runtime, not frozen as generated code. The bottleneck is custom components, which require code changes to the renderer.
+UIGen's iteration speed is fastest with AI. Describe changes in natural language, AI writes config/CSS, refresh. The config GUI is there for visualization and manual tweaks, but AI is 10x faster for most changes. If you add a new endpoint or field to your API, the UI updates automatically because it is rendered from the spec at runtime, not frozen as generated code. The bottleneck is custom components, which require code changes to the renderer.
 
 ### Version Control and Collaboration
 
@@ -367,7 +405,7 @@ UIGen is open source and free:
 - **Self-hosted**: Deploy wherever you want. No licensing fees.
 - **No platform costs**: UIGen is a CLI tool, not a hosted platform. No infrastructure to pay for.
 
-UIGen's total cost of ownership is the cost of hosting the generated frontend. If you deploy to Vercel or Netlify, the cost is $0-$20/month for most apps. If you deploy to your own infrastructure, the cost is marginal (a few MB of static files).
+UIGen's total cost of ownership is the cost of hosting the React application. If you deploy to Vercel or Netlify, the cost is $0-$20/month for most apps. If you deploy to your own infrastructure, the cost is marginal (the React bundle plus your spec and config files).
 
 For a team of 100 developers, UIGen costs $0 in licensing fees. The only cost is developer time to build and maintain the API.
 
@@ -419,18 +457,21 @@ Appsmith is the best open-source alternative to Retool. It is not as mature, but
 
 UIGen is the best choice when:
 - **You already have a backend API**: UIGen renders frontends for existing APIs. If you have FastAPI, Express, Django, or Rails, UIGen works out of the box.
-- **You want minimal frontend code**: UIGen renders the entire UI from your OpenAPI spec at runtime. You use the visual config GUI to refine it, but you write zero React code.
+- **You want AI-powered configuration**: Describe what you want in natural language and AI generates configuration and styling in seconds. 10x faster than clicking through GUIs.
+- **You want minimal frontend work**: UIGen renders the entire UI from your OpenAPI spec at runtime. AI configures and styles it. You write zero React code and do minimal GUI clicking.
 - **You value automatic API synchronization**: Because UIGen uses runtime rendering instead of code generation, your UI stays in sync with your API automatically. Add an endpoint, change a field type, update validation rules, and the UI reflects the changes instantly without regeneration or manual updates.
-- **You want no vendor lock-in**: UIGen renders standard React applications. The renderer is open source. Your config is plain YAML. You can fork the renderer, customize it, or migrate away at any time. No proprietary platform, no database lock-in, no export limitations.
-- **You value speed with visual refinement**: Run `uigen serve` for a basic UI in seconds. Run `uigen config` to refine it visually with the config GUI. No component wiring, no JavaScript glue code.
+- **You want no vendor lock-in**: UIGen renders standard React applications. The renderer is open source. Your config is plain YAML. Your styles are plain CSS. You can fork the renderer, customize it, or migrate away at any time. No proprietary platform, no database lock-in, no export limitations.
+- **You value speed**: Run `uigen serve` for a basic UI in seconds. Use AI to configure and style in minutes. No component wiring, no JavaScript glue code, no hours of GUI clicking.
 - **You want full control over your backend**: UIGen does not touch your backend. All business logic, data access, and integrations stay in your API.
-- **You want standard version control**: UIGen uses plain text files (OpenAPI spec, config YAML). Use Git, code review, CI/CD. The config GUI generates YAML, not binary blobs.
+- **You want standard version control**: UIGen uses plain text files (OpenAPI spec, config YAML, CSS). Use Git, code review, CI/CD. AI generates YAML and CSS, not binary blobs or proprietary formats.
 - **You need a lightweight solution**: UIGen is a CLI tool, not a platform. No database, no user accounts, no infrastructure to maintain.
-- **You are comfortable with a two-step workflow**: Render from spec, then refine with config GUI. This is faster than building from scratch but requires learning the config tool.
+- **You have access to AI agents**: UIGen's best experience requires AI agents (Kiro, Cursor, GitHub Copilot, etc.). Without AI, you can use the config GUI manually, but it's slower.
 
 **Runtime rendering advantage:** Unlike code generators that produce thousands of lines of code you must maintain, UIGen's renderer interprets your spec at runtime. This means zero generated code to maintain, automatic synchronization with API changes, and the ability to update the renderer itself to get new features across all your applications instantly.
 
-UIGen is the best choice for teams that already have a backend API and want to skip frontend development. It is not a pure visual builder like Retool/Appsmith, but it is also not fully automatic. It is a hybrid: automatic generation + visual refinement.
+**AI configuration advantage:** Unlike Retool and Appsmith where you manually click through GUIs to configure every detail, UIGen lets you describe everything in natural language. AI understands UIGen's configuration system, relationship definitions, CSS variable system, component selectors, dark mode requirements, and accessibility best practices, producing production-ready configuration and styling in seconds.
+
+UIGen is the best choice for teams that already have a backend API and want to skip frontend development. It is not a pure visual builder like Retool/Appsmith, and it is not fully automatic. It is AI-configured: automatic rendering + AI configuration + optional GUI visualization.
 
 ---
 
@@ -453,12 +494,12 @@ UIGen is the best choice for teams that already have a backend API and want to s
 ### UIGen Limitations
 
 - **Requires a backend API**: UIGen does not query databases directly. You must build an API first.
-- **Less control over layout**: UIGen renders a sensible default UI from your API structure. You can configure relationships, labels, and visibility through the config GUI, but you cannot drag components around a canvas or create custom layouts without modifying the renderer.
-- **Two-step workflow required**: The raw rendered UI is basic. You must use the config GUI to add relationships, hide fields, and customize labels to get a production-ready result. This is faster than building from scratch but not as instant as it sounds.
-- **Config GUI learning curve**: The config GUI is intuitive but has five tabs (annotations, visual editor, relationships, theme, preview). You need to learn what each does and how they interact.
+- **Less control over layout**: UIGen renders a sensible default UI from your API structure. You can configure relationships, labels, and visibility through AI or the config GUI, and style it with AI or manual CSS, but you cannot drag components around a canvas or create custom layouts without modifying the renderer.
+- **AI-first workflow**: UIGen's best experience requires AI agents (Kiro, Cursor, GitHub Copilot, etc.). Without AI, you can use the config GUI manually, but it's significantly slower (minutes of clicking vs seconds of natural language).
+- **Configuration required**: The raw rendered UI is basic. You need AI (or the config GUI) to add relationships, hide fields, and customize labels to get a production-ready result. This is faster than building from scratch but not as instant as it sounds.
 - **Early stage**: UIGen is pre-v1. The API is stable, but some features are missing (advanced layouts, custom component overrides).
 - **Runtime rendering tradeoff**: While runtime rendering eliminates code generation problems, it means the renderer must be included in your deployed application. This adds ~200KB to your bundle (gzipped). For most applications this is negligible, but for extremely size-constrained environments, code generation might be preferred.
-- **You own the deployment**: UIGen renders the frontend, but you deploy and maintain it.
+- **You own the deployment**: UIGen renders the frontend, but you deploy and maintain it (or use UIGen Cloud when available).
 
 ---
 
@@ -483,13 +524,13 @@ Use this framework to choose the right tool for your team:
 ### Choose UIGen if:
 - You already have a backend API with an OpenAPI spec
 - You want automatic API synchronization (runtime rendering keeps UI in sync with API changes)
-- You want zero vendor lock-in (open source renderer, standard React output, plain YAML config)
-- You want to skip writing frontend code (but are willing to use a visual config GUI)
-- You value speed with visual refinement over pixel-perfect control
+- You want zero vendor lock-in (open source renderer, standard React output, plain YAML config, plain CSS styles)
+- You want AI-powered configuration (describe what you want in natural language, get config and styling in seconds)
+- You have access to AI agents (Kiro, Cursor, GitHub Copilot, etc.) for the best experience
+- You value speed over pixel-perfect control (AI configuration is 10x faster than GUI clicking)
 - You want standard version control (Git, code review, CI/CD)
 - You want a lightweight solution with no platform to maintain
-- You are comfortable with a two-step workflow: render from spec, refine with config GUI
-- You need to define relationships between resources (the config GUI has a visual relationship editor)
+- You need to define relationships between resources (AI can do this from natural language descriptions)
 - You want zero generated code to maintain (runtime rendering eliminates code generation problems)
 
 ---
@@ -502,7 +543,7 @@ Retool, Appsmith, and UIGen solve the same problem with different philosophies. 
 
 **Appsmith** is the open-source alternative. It is free for unlimited users, self-hostable, and improving rapidly. Choose Appsmith if cost or data control is a priority.
 
-**UIGen** is the runtime rendering alternative. It renders frontends automatically from your OpenAPI spec at runtime, not through code generation. This means your UI stays in sync with your API automatically, you have zero generated code to maintain, and you have complete freedom to fork, customize, or migrate away. Choose UIGen if you already have a backend API and want to skip frontend development entirely.
+**UIGen** is the AI-configured runtime rendering alternative. It renders frontends automatically from your OpenAPI spec at runtime, not through code generation. This means your UI stays in sync with your API automatically, you have zero generated code to maintain, and you have complete freedom to fork, customize, or migrate away. AI-powered configuration lets you describe what you want in natural language and get production-ready configuration and styling in seconds, 10x faster than clicking through GUIs. Choose UIGen if you already have a backend API, have access to AI agents, and want to skip frontend development entirely.
 
 The right choice depends on your team's needs, budget, and existing infrastructure. If you have a backend API, try UIGen first. If you need to query databases directly, try Appsmith Community. If you need enterprise features and have budget, try Retool.
 
@@ -524,19 +565,27 @@ If you have an OpenAPI spec, you can try UIGen in 5 minutes:
 # Install UIGen
 npm install -g @uigen-dev/cli
 
-# Open the visual config GUI (recommended first step)
-uigen config openapi.yaml
-
-# In the config GUI:
-# 1. Relationships tab: Define foreign key relationships between resources
-# 2. Visual Editor tab: Hide sensitive fields, customize labels
-# 3. Theme tab: Customize colors and appearance
-# 4. Preview tab: See your changes in real-time
-
-# Serve your configured UI
+# Serve your initial UI
 uigen serve openapi.yaml
 
-# Visit http://localhost:4400
+# Visit http://localhost:4400 to see the basic UI
+
+# Use AI to configure and style (recommended workflow):
+# Tell an AI agent:
+# "Hide password and secret fields, mark email as required"
+# "Product.categoryId is a foreign key to Category"
+# "Style with modern blue theme, rounded buttons, dark mode support"
+# AI writes to .uigen/config.yaml and .uigen/theme.css
+
+# Optional: Visualize AI output in the config GUI
+uigen config openapi.yaml
+
+# In the config GUI you can:
+# - See which annotations AI enabled
+# - Visualize the relationship graph AI created
+# - See the CSS AI generated
+# - Make manual adjustments if needed
+# - Preview changes in real-time
 ```
 
 **Important:** UIGen uses runtime rendering, not code generation. The renderer interprets your spec at runtime, which means:
@@ -545,7 +594,9 @@ uigen serve openapi.yaml
 - Renderer updates give you new features across all apps instantly
 - Complete freedom to fork, customize, or migrate away
 
-The raw `uigen serve` output is functional but basic. The config GUI is where you refine it into a production-ready UI. The config GUI is visual and intuitive, with five tabs:
+**The AI-first workflow:** The fastest way to get a production-ready UI is to use AI for configuration and styling. AI writes plain YAML to `.uigen/config.yaml` and plain CSS to `.uigen/theme.css` that you can version control with Git. The config GUI is there to visualize and adjust AI output, not as the primary workflow.
+
+**Without AI:** You can use the config GUI manually to configure UIGen, but it's significantly slower (minutes of clicking vs seconds of natural language). The config GUI has five tabs:
 
 - **Annotations**: Enable/disable annotations and set defaults
 - **Visual Editor**: Configure specific fields and operations
@@ -553,10 +604,12 @@ The raw `uigen serve` output is functional but basic. The config GUI is where yo
 - **Theme**: Customize CSS and appearance
 - **Preview**: See changes in real-time
 
-All changes are saved to `.uigen/config.yaml`, a plain text file you can version control with Git.
+All changes are saved to `.uigen/config.yaml` and `.uigen/theme.css`, plain text files you can version control with Git.
 
 The full documentation is available at [uigen-docs.vercel.app](https://uigen-docs.vercel.app). The source code is on [GitHub](https://github.com/darula-hpp/uigen) under the MIT license.
 
-If you are building internal tools and already have a backend API, UIGen might be the fastest path to a production-ready UI. No frontend code. No component wiring. No code generation. Just runtime rendering that stays in sync with your API automatically. Configure visually and deploy.
+If you are building internal tools and already have a backend API, UIGen might be the fastest path to a production-ready UI. No frontend code. No component wiring. No code generation. Just runtime rendering that stays in sync with your API automatically. Configure with AI in seconds, visualize in the config GUI if needed, and deploy.
 
 For a deep dive into why runtime rendering is superior to code generation, read: [Why UIGen Doesn't Generate Code (And Why That's Better)](/blog/runtime-rendering-vs-code-generation)
+
+For a guide on AI-powered configuration and styling, read: [How to Style UIGen Applications](/blog/styling-uigen-apps-with-ai)
