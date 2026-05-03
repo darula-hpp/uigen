@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.6.3] - 2026-05-03
+
+### Fixed
+
+**CLI (`@uigen-dev/cli`)**
+- Fixed renderer resolution for global installations
+  - Added check for renderer in CLI's own `node_modules` folder (global install location)
+  - Renderer now correctly found when CLI is installed globally with `npm install -g @uigen-dev/cli`
+  - Resolution order: CLI's node_modules → npm sibling → monorepo hoisted → cli-local
+  - Works correctly in all installation scenarios (global, npx, monorepo)
+
+---
+
+## [0.6.2] - 2026-05-03
+
+### Fixed
+
+**CLI (`@uigen-dev/cli`)**
+- Fixed renderer resolution for global and npx installations
+  - Added `@uigen-dev/react` as a proper runtime dependency instead of bundling
+  - Renderer package now correctly resolved via npm's dependency resolution
+  - Removed bundled renderer assets from CLI package (reduced package size from 35MB to ~500KB)
+  - Eliminated complex path resolution and bundling during build
+  - Works correctly in all installation scenarios (global, npx, monorepo)
+  - Cleaner architecture with standard npm dependency management
+- Fixed workspace protocol in dependencies for npm publishing
+  - Changed all `workspace:*` dependencies to explicit version numbers
+  - Packages now publish correctly to npm registry
+
+**All packages**
+- Bumped versions to 0.6.2 with proper dependency version references
+
+---
+
 ## [0.6.0] - 2026-05-02
 
 ### Added
@@ -895,6 +929,8 @@ This is the first release of UIGen — point it at an OpenAPI spec, get a fully 
 
 ---
 
+[0.6.1]: https://github.com/darula-hpp/uigen/releases/tag/v0.6.1
+[0.6.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.6.0
 [0.3.1]: https://github.com/darula-hpp/uigen/releases/tag/v0.3.1
 [0.3.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.3.0
 [0.2.5]: https://github.com/darula-hpp/uigen/releases/tag/v0.2.5

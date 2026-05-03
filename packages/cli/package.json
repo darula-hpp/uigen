@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/cli",
-  "version": "0.6.0",
+  "version": "0.6.3",
   "description": "Auto-generate frontends from OpenAPI specs",
   "license": "MIT",
   "repository": {
@@ -18,7 +18,6 @@
   "files": [
     "dist/**/*.js",
     "dist/**/*.d.ts",
-    "dist/renderer/**/*",
     "dist/assets/base-styles.css",
     "dist/skills/**/*.md",
     "dist/annotations.json",
@@ -28,7 +27,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && mkdir -p dist/renderer && cp -r ../react/dist/* dist/renderer/ && mkdir -p dist/assets && cp ../react/src/index.css dist/assets/base-styles.css && mkdir -p dist/skills && cp -r ../../SKILLS/* dist/skills/ && cp ../../annotations.json dist/annotations.json",
+    "build": "tsc && mkdir -p dist/assets && cp ../react/src/index.css dist/assets/base-styles.css && mkdir -p dist/skills && cp -r ../../SKILLS/* dist/skills/ && cp ../../annotations.json dist/annotations.json",
     "dev": "tsc --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
@@ -36,8 +35,9 @@
     "postpack": "rm -f ./README.md"
   },
   "dependencies": {
-    "@uigen-dev/config-gui": "workspace:*",
-    "@uigen-dev/core": "workspace:*",
+    "@uigen-dev/config-gui": "0.6.2",
+    "@uigen-dev/core": "0.6.2",
+    "@uigen-dev/react": "0.6.2",
     "commander": "^12.1.0",
     "js-yaml": "^4.1.0",
     "picocolors": "^1.1.1",
@@ -45,7 +45,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "@uigen-dev/react": "workspace:*",
     "fast-check": "^4.6.0",
     "vitest": "^2.0.0"
   },
