@@ -2,8 +2,8 @@
 title: "Customizing Your UIGen Theme: Brand Your Generated UI"
 author: "Olebogeng Mbedzi"
 date: "2026-04-19"
-excerpt: "Learn how to customize the appearance of your UIGen-generated frontend with the new Theme Editor. Apply your brand colors, adjust spacing, and create a polished UI without touching React code."
-tags: ["features", "theming", "customization", "css", "developer-experience"]
+excerpt: "Learn how to customize the appearance of your UIGen-generated frontend using AI agents or manual CSS. Apply your brand colors, adjust spacing, and create a polished UI without touching React code."
+tags: ["features", "theming", "customization", "css", "developer-experience", "ai"]
 ---
 
 ## Introduction
@@ -12,9 +12,9 @@ UIGen generates fully functional frontends from OpenAPI specs with sensible defa
 
 But every product has its own brand identity. Your company colors are not UIGen's default blue. Your design system uses different spacing. Your forms need custom styling to match your existing applications.
 
-Until now, customizing the appearance meant forking the React package or writing complex CSS overrides. The new Theme Editor changes that. It provides a visual interface for writing custom CSS that is automatically applied to your generated UI. Your theme lives in a separate file that is version controlled alongside your config, making it easy to maintain and share across your team.
+**The fastest way to customize UIGen's appearance is using AI agents.** Describe what you want in natural language, and AI generates production-ready CSS in seconds. For manual control, you can edit `.uigen/theme.css` directly or use the Theme Editor in the config GUI to visualize your changes.
 
-This post walks through how the Theme Editor works, the two-file architecture that keeps base styles separate from your customizations, and practical examples of common theming scenarios.
+This post walks through both approaches: AI-powered styling (recommended) and manual CSS editing, along with practical examples of common theming scenarios.
 
 ---
 
@@ -32,13 +32,114 @@ Traditional approaches have significant drawbacks:
 
 **Preprocessing.** You run a build step that modifies the generated code before serving it. This adds complexity and makes debugging harder.
 
-UIGen takes a different approach: provide a Theme Editor where you write standard CSS that is automatically injected into the generated UI. Your theme file is separate from the base styles, making it easy to understand what you have customized and what is default behavior.
+UIGen takes a different approach: **AI agents generate CSS based on your natural language descriptions**, or you write standard CSS that is automatically injected into the generated UI. Your theme file is separate from the base styles, making it easy to understand what you have customized and what is default behavior.
 
 ---
 
-## How It Works
+## Approach 1: AI-Powered Styling (Recommended)
 
-The Theme Editor is part of the config GUI. When you run `uigen config`, you get access to four tabs: Annotations, Visual Editor, Preview, and Theme.
+The fastest way to style your UIGen application is using AI agents. AI understands UIGen's CSS variable system, component selectors, dark mode requirements, and accessibility best practices.
+
+### How It Works
+
+```bash
+# Start the server
+uigen serve openapi.yaml
+
+# Tell an AI agent what you want:
+# "Style this with Material Design: blue primary (#2196F3), rounded corners, shadows on cards"
+# "Use our brand colors: primary #00A651, secondary #003B5C, with dark mode support"
+# "Make buttons more rounded, add hover effects, style tables with alternating rows"
+
+# AI writes to .uigen/theme.css
+# Refresh browser to see changes
+```
+
+### What AI Can Do
+
+AI agents can generate:
+
+**Brand colors with dark mode:**
+```
+"Use primary color #FF6B6B, secondary #4ECDC4, with proper dark mode variants"
+```
+
+**Complete design systems:**
+```
+"Apply Material Design styling with elevation shadows and ripple effects"
+```
+
+**Component-specific styling:**
+```
+"Style buttons with gradients, tables with hover effects, forms with floating labels"
+```
+
+**Responsive design:**
+```
+"Make the layout mobile-friendly with collapsible sidebar and stacked forms"
+```
+
+### Example AI Workflow
+
+1. **Start with your requirements:**
+   ```
+   "I need a corporate theme with:
+   - Primary color: #00A651 (green)
+   - Secondary color: #003B5C (navy blue)
+   - Rounded buttons with shadows
+   - Tables with alternating row colors
+   - Dark mode support"
+   ```
+
+2. **AI generates `.uigen/theme.css`:**
+   ```css
+   :root {
+     --primary: #00A651;
+     --primary-foreground: #ffffff;
+     --secondary: #003B5C;
+     --secondary-foreground: #ffffff;
+   }
+   
+   .dark {
+     --primary: #00C766;
+     --secondary: #004A73;
+   }
+   
+   button {
+     border-radius: 0.5rem;
+     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+   }
+   
+   tbody tr:nth-child(even) {
+     background-color: var(--muted);
+   }
+   ```
+
+3. **Refresh browser to see results**
+
+4. **Iterate with AI:**
+   ```
+   "Make the buttons more rounded"
+   "Add hover effects to cards"
+   "Increase spacing in forms"
+   ```
+
+### Advantages of AI Styling
+
+- **Speed:** Seconds vs minutes of manual CSS writing
+- **Consistency:** AI ensures dark mode variants and accessibility
+- **Best practices:** AI applies proper CSS variable usage and specificity
+- **Iteration:** Describe changes in natural language, no CSS knowledge needed
+
+---
+
+## Approach 2: Manual CSS Editing
+
+If you prefer manual control or don't have AI agents available, you can edit `.uigen/theme.css` directly or use the Theme Editor.
+
+### Using the Theme Editor
+
+The Theme Editor is part of the config GUI and provides a visual interface for viewing and editing your theme:
 
 ```bash
 uigen config openapi.yaml
@@ -52,7 +153,26 @@ The Theme tab provides:
 4. Auto-save with debouncing (saves 500ms after you stop typing)
 5. Status indicators showing save state
 
-When you save changes, they are written to `.uigen/theme.css` in your project directory. The next time you run `uigen serve`, the theme is automatically loaded and injected into the generated UI. The base styles are always included, and your theme is applied on top, allowing you to override any default styling.
+When you save changes, they are written to `.uigen/theme.css` in your project directory. The next time you run `uigen serve`, the theme is automatically loaded and injected into the generated UI.
+
+### Direct File Editing
+
+You can also edit `.uigen/theme.css` directly in your code editor:
+
+```css
+/* .uigen/theme.css */
+
+:root {
+  --primary: #your-brand-color;
+  --font-family: 'Your Font', sans-serif;
+}
+
+button {
+  border-radius: 0.75rem;
+}
+```
+
+Save the file and refresh your browser to see changes.
 
 ---
 
@@ -81,6 +201,8 @@ Your customizations live in `.uigen/theme.css`. This file starts empty with a he
  * Add your custom CSS overrides here.
  * These styles will be applied after the base styles, allowing you to override defaults.
  * 
+ * Tip: Use AI to generate this CSS by describing what you want in natural language.
+ * 
  * Example:
  * .btn-primary {
  *   background-color: #your-brand-color;
@@ -88,7 +210,7 @@ Your customizations live in `.uigen/theme.css`. This file starts empty with a he
  */
 ```
 
-This is where you write your CSS. The theme file is injected into the generated UI via a `<style>` tag in the HTML head, so your styles have higher specificity than the base styles.
+This is where you write your CSS (or where AI writes it for you). The theme file is injected into the generated UI via a `<style>` tag in the HTML head, so your styles have higher specificity than the base styles.
 
 ### Why Two Files?
 
@@ -567,7 +689,7 @@ If the theme file does not exist, the UI uses only the base styles. This is the 
 
 When you edit your theme file while the serve command is running, the changes are not automatically reloaded. You need to refresh the browser to see updates.
 
-For a better development experience, use the config GUI's live preview. Changes in the Theme Editor are immediately visible in the Preview tab without needing to restart the serve command.
+**Recommended workflow:** Use AI to generate CSS, refresh browser to see results, iterate with AI for adjustments. For manual editing, use the config GUI's live preview where changes in the Theme Editor are immediately visible in the Preview tab without needing to restart the serve command.
 
 ---
 

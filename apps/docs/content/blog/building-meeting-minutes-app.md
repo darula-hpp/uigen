@@ -749,33 +749,43 @@ All of these interactions are handled by the auto-generated UI. The forms valida
 
 UIGen provides several ways to customize the generated interface without modifying your spec file.
 
-### Using the Config Command
+### Using AI to Configure (Recommended)
 
-Start the visual config editor:
+The fastest way to customize UIGen is using AI agents:
+
+```bash
+# Start the server
+uigen serve openapi.yaml
+
+# Tell an AI agent what you want:
+# "Hide User.password field and internal endpoints"
+# "Rename template_id to Template, meeting_id to Meeting, order_index to Display Order"
+# "Mark POST /auth/login as the login endpoint"
+# "MeetingTemplateAssociation.template_id is a foreign key to Template"
+# "MeetingTemplateAssociation.meeting_id is a foreign key to Meeting"
+
+# AI writes to .uigen/config.yaml
+# Refresh browser to see changes
+```
+
+AI understands UIGen's configuration system and can:
+- Hide sensitive fields
+- Customize labels
+- Mark authentication endpoints
+- Define relationships between resources
+- Generate styling
+
+All in seconds, without clicking through a GUI.
+
+### Visualizing with Config GUI (Optional)
+
+If you want to see what AI generated or make manual adjustments:
 
 ```bash
 uigen config openapi.yaml
 ```
 
-This opens a GUI at http://localhost:4401 where you can:
-
-**Hide sensitive fields:**
-- Toggle `x-uigen-ignore: true` on `User.password`
-- Toggle `x-uigen-ignore: true` on internal endpoints
-
-**Customize labels:**
-- Change "template_id" to "Template"
-- Change "meeting_id" to "Meeting"
-- Change "order_index" to "Display Order"
-
-**Mark authentication endpoints:**
-- Set `x-uigen-login: true` on `POST /auth/login`
-
-**Define relationships:**
-- Link `MeetingTemplateAssociation.template_id` to `Template` resource
-- Link `MeetingTemplateAssociation.meeting_id` to `Meeting` resource
-
-All changes are saved to `.uigen/config.yaml` and applied automatically when you run `uigen serve`.
+This opens a GUI at http://localhost:4401 where you can visualize and adjust AI-generated configuration.
 
 ### Adding Spec Annotations
 
@@ -971,10 +981,10 @@ That is it. No frontend code required.
 - Real AI integration (OpenAI, Anthropic) instead of Faker
 
 **Customize the UI:**
-- Use the config command to hide internal fields
-- Add custom labels for better UX
-- Define relationships between resources
-- Create custom themes with CSS overrides
+- Use AI to hide internal fields and customize labels
+- Define relationships between resources with natural language
+- Generate custom themes with AI styling
+- Visualize configuration in the config GUI if needed
 
 **Deploy to production:**
 - Set up CI/CD pipeline

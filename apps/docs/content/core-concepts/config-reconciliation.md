@@ -290,15 +290,29 @@ If the config file has syntax errors:
 - Error logged
 - Server exits with non-zero status
 
-## Integration with Config GUI
+## Integration with AI and Config GUI
 
-The config-gui (visual annotation editor) automatically saves to `.uigen/config.yaml`. When you:
+The config system supports both AI-generated and manually-edited configurations:
 
-1. Open the config-gui in your browser
-2. Toggle annotations on/off
+### AI Workflow (Recommended)
+
+AI agents write directly to `.uigen/config.yaml`:
+
+1. Tell AI what you want: "Hide password fields, Product.categoryId is FK to Category"
+2. AI writes to `.uigen/config.yaml`
+3. Refresh browser to see changes applied via reconciliation
+
+### Config GUI Workflow (Visualization)
+
+The config GUI reads and writes `.uigen/config.yaml`:
+
+1. Open the config GUI in your browser
+2. Visualize what AI generated or make manual adjustments
 3. Save your changes
 
 The config file is updated, and on next server restart, your changes are applied via reconciliation.
+
+Both workflows use the same `.uigen/config.yaml` file and reconciliation system.
 
 ## Example Workflow
 
