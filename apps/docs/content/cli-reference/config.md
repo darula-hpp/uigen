@@ -1,11 +1,11 @@
 ---
 title: uigen config
-description: Visual interface for managing UIGen annotation configurations.
+description: Visual interface for viewing and adjusting AI-generated UIGen configurations.
 ---
 
 # uigen config
 
-The `config` command opens a visual interface for managing UIGen annotations without modifying your spec file. All customizations are saved to a separate `.uigen/config.yaml` file.
+The `config` command opens a visual interface for viewing and manually adjusting UIGen configurations. **The recommended workflow is to use AI agents to generate configuration**, and use this GUI to visualize and fine-tune the results.
 
 ## Usage
 
@@ -25,7 +25,7 @@ uigen config <spec-file> [options]
 ## Examples
 
 ```bash
-# Start config GUI for an OpenAPI spec
+# Visualize AI-generated config
 uigen config openapi.yaml
 
 # Use a custom port
@@ -35,39 +35,66 @@ uigen config openapi.yaml --port 3000
 uigen config openapi.yaml --no-open
 ```
 
+## Recommended Workflow
+
+**1. Use AI to configure (fastest):**
+
+```bash
+# Start serve
+uigen serve openapi.yaml
+
+# Tell AI what you want:
+# "Hide password fields, Product.categoryId is FK to Category, style with blue theme"
+
+# AI writes to .uigen/config.yaml and .uigen/theme.css
+# Refresh browser to see changes
+```
+
+**2. Visualize with config GUI (optional):**
+
+```bash
+# Open GUI to see what AI generated
+uigen config openapi.yaml
+
+# Make manual adjustments if needed
+# GUI saves to same .uigen/config.yaml file
+```
+
 ## What It Does
 
 1. Validates the spec file exists and is readable
 2. Starts a local development server with the config GUI
 3. Opens your default browser to the GUI interface
-4. Provides visual controls for managing annotations
+4. Provides visual controls for viewing and adjusting annotations
 5. Saves changes to `.uigen/config.yaml`
 
 ## Config GUI Features
 
+The config GUI is designed to **visualize and adjust** what AI agents generate. It's faster to describe what you want to AI than to click through the GUI.
+
 ### Annotations Tab
 
-Manage default values for all registered annotations:
+View which annotations AI enabled and their default values:
 
-- **x-uigen-ignore** - Hide operations, resources, or fields
-- **x-uigen-label** - Customize display labels
-- **x-uigen-ref** - Define relationships between resources
-- **x-uigen-login** - Mark login operations
-- **x-uigen-signup** - Mark signup operations
+- **x-uigen-ignore** - See which operations, resources, or fields AI hid
+- **x-uigen-label** - See custom display labels AI created
+- **x-uigen-ref** - See relationships AI defined
+- **x-uigen-login** - See which operations AI marked as login
+- **x-uigen-signup** - See which operations AI marked as signup
 - And more...
 
 ### Visual Editor Tab
 
-Apply annotations to specific elements in your spec:
+See annotations AI applied to specific elements:
 
 - Browse your spec structure as a tree
 - Click any operation, resource, or field
-- Configure annotations with visual controls
-- See immediate feedback on changes
+- View AI-generated annotations
+- Make manual adjustments if needed
 
 ### Preview Tab
 
-See how your annotations affect the generated UI:
+See how your configuration affects the generated UI:
 
 - Live preview of forms, lists, and detail views
 - Updates within 500ms of changes
@@ -75,20 +102,20 @@ See how your annotations affect the generated UI:
 
 ### Theme Tab
 
-Customize the appearance of your generated UI:
+View and edit CSS AI generated:
 
-- Edit CSS variables for colors, spacing, typography
+- See CSS variables for colors, spacing, typography
 - Live preview of theme changes
-- Export theme to `.uigen/theme.css`
+- Make manual adjustments to AI-generated styles
 
 ### Relationships Tab
 
-Define relationships between resources:
+Visualize relationships AI defined:
 
-- Visual canvas for drawing relationships
-- Drag and drop to position resources
-- Connect resources with relationship lines
-- Configure relationship types (one-to-many, many-to-many)
+- Visual canvas showing resource connections
+- Drag and drop to reposition (layout only)
+- See relationship types (one-to-many, many-to-many)
+- Manually add relationships if AI missed any
 
 ## Config File
 

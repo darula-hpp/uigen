@@ -107,15 +107,32 @@ npx @uigen-dev/cli serve https://petstore3.swagger.io/api/v3/openapi.json
 
 ## Customization
 
-### Open the config GUI
+### Use AI to Configure (Recommended)
 
-Visually configure annotations and settings:
+The fastest way to configure UIGen is using AI agents:
+
+```bash
+# Start the server
+npx @uigen-dev/cli serve openapi.yaml
+
+# Tell an AI agent what you want:
+# "Hide password fields and mark email as required"
+# "Product.categoryId is a foreign key to Category"  
+# "Style with modern blue theme and dark mode"
+
+# AI writes to .uigen/config.yaml and .uigen/theme.css
+# Refresh browser to see changes
+```
+
+### Visualize with Config GUI (Optional)
+
+Open the config GUI to see what AI generated and make manual adjustments:
 
 ```bash
 npx @uigen-dev/cli config openapi.yaml
 ```
 
-Opens at [http://localhost:4401](http://localhost:4401) with a drag-and-drop interface.
+Opens at [http://localhost:4401](http://localhost:4401) with tabs to visualize annotations, relationships, and styling.
 
 ### Auto-annotate with AI
 
@@ -127,7 +144,7 @@ Use the included AI agent skill to automatically add UIGen annotations:
 
 ### Customize the theme
 
-Edit `.uigen/theme.css` to match your brand:
+AI can generate themes, or edit `.uigen/theme.css` manually:
 
 ```css
 :root {
@@ -162,6 +179,6 @@ npx @uigen-dev/cli serve openapi.yaml --verbose
 
 - [CLI Reference: init](/docs/cli-reference/init): all init command options
 - [CLI Reference: serve](/docs/cli-reference/serve): all serve command flags
-- [CLI Reference: config](/docs/cli-reference/config): visual configuration GUI
+- [CLI Reference: config](/docs/cli-reference/config): visualize AI-generated configuration
 - [Authentication](/docs/authentication/overview): how UIGen handles auth
 - [Annotations](/docs/spec-annotations/overview): customize the generated UI
