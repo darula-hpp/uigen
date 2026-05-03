@@ -13,65 +13,44 @@
 ### Quick Start
 
 ```bash
-# 1. Initialize a new UIGen project
+# Initialize a new UIGen project
 npx @uigen-dev/cli@latest init my-app
 
-# 2. Navigate to your project
+# Navigate to your project
 cd my-app
 
-# 3. Start the development server
+# Start the development server
 npx @uigen-dev/cli@latest serve openapi.yaml
 ```
 
 Visit `http://localhost:4400` to see your app.
 
-**What just happened?**
-1. UIGen scaffolded a complete project with:
-   - `.uigen/config.yaml` - Configuration file for annotations
-   - `.uigen/theme.css` - Custom styling (Tailwind CSS v4)
-   - `.uigen/base-styles.css` - Base styles
-   - `.agents/skills/` - AI agent skills for automation
-   - `openapi.yaml` - Example API spec (if you didn't provide one)
-2. The serve command renders a complete UI from your OpenAPI spec at runtime
-3. When your API changes, the UI updates automatically - no regeneration, no code to maintain
+UIGen scaffolds a complete project with configuration files (`.uigen/config.yaml`, `.uigen/theme.css`), AI agent skills (`.agents/skills/`), and an example spec if needed. The serve command renders a complete UI from your OpenAPI spec at runtime. When your API changes, the UI updates automatically with no regeneration or code maintenance required.
 
-### Customize with AI Agents (Recommended)
+### Configuration Options
 
-UIGen includes AI agent skills that automate configuration. Use them with your favorite AI coding assistant (Cursor, Windsurf, Cline, etc.):
+**Option 1: AI-Powered (Recommended)**
 
-**Auto-annotate your API** (detects login, file uploads, relationships, etc.):
+Use AI agent skills with your favorite coding assistant (Cursor, Windsurf, Cline, etc.):
+
 ```
 Ask your AI: "Use the auto-annotate skill to configure my OpenAPI spec"
-```
-
-**Apply custom styling**:
-```
 Ask your AI: "Use the applying-styles skill to create a modern dark theme"
 ```
 
-The skills are located in `.agents/skills/` and contain detailed instructions for AI agents. They eliminate manual configuration by intelligently analyzing your spec and generating the right annotations and styles.
+Skills are located in `.agents/skills/` and automate pattern detection, annotation generation, and styling.
 
-### Manual Configuration (Optional)
-
-If you prefer manual control, use the visual config GUI:
+**Option 2: Visual Config GUI**
 
 ```bash
 npx @uigen-dev/cli@latest config openapi.yaml
 ```
 
-In the Config GUI you can:
-- Define relationships between resources
-- Customize labels and visibility
-- Configure charts and file uploads
-- Edit theme CSS visually
-- All changes saved to `.uigen/config.yaml`
+Define relationships, customize labels, configure charts and file uploads, edit theme CSS visually. All changes saved to `.uigen/config.yaml`.
 
 ### Try the Example App
 
-Want to see UIGen in action with a real backend?
-
 ```bash
-# Clone the repository
 git clone https://github.com/darula-hpp/uigen
 cd uigen/examples/apps/fastapi/meeting-minutes
 
@@ -79,97 +58,57 @@ cd uigen/examples/apps/fastapi/meeting-minutes
 docker compose up -d
 docker compose exec app alembic upgrade head
 
-# Initialize UIGen project
+# Initialize and start
 npx @uigen-dev/cli@latest init --spec openapi.yaml
-
-# Start the UI
 npx @uigen-dev/cli@latest serve openapi.yaml
 ```
 
-Visit `http://localhost:4400` to explore the meeting minutes application with full CRUD operations, authentication, file uploads, and relationships.
+Visit `http://localhost:4400` to explore a full meeting minutes application with CRUD operations, authentication, file uploads, and relationships.
 
 ---
 
 ## AI Agent Skills
 
-UIGen includes powerful AI agent skills that automate configuration. When you run `uigen init`, these skills are copied to `.agents/skills/` in your project.
+UIGen includes AI agent skills that automate configuration through intelligent analysis of your OpenAPI spec.
 
 ### Available Skills
 
-#### 1. Auto-Annotate (`auto-annotate.md`)
-Automatically analyzes your OpenAPI spec and applies intelligent annotations:
-- **Detects auth endpoints** → Marks login, signup, password reset
-- **Detects file uploads** → Configures file types and size limits
-- **Detects relationships** → Links foreign keys to resources
-- **Detects internal endpoints** → Hides debug/health check endpoints
-- **Detects chart opportunities** → Adds visualizations for array data
-- **Applies smart labels** → Converts technical names to human-readable
+**Auto-Annotate** (`auto-annotate.md`)
+- Detects auth endpoints (login, signup, password reset)
+- Configures file uploads (types, size limits)
+- Links relationships (foreign keys to resources)
+- Hides internal endpoints (debug, health checks)
+- Adds chart visualizations for array data
+- Applies smart labels (technical names to human-readable)
 
-**Usage with AI assistant:**
-```
-"Use the auto-annotate skill to configure my OpenAPI spec"
-```
+**Applying Styles** (`applying-styles-to-react-spa.md`)
+- Brand colors and dark mode support
+- Component styling (buttons, forms, tables, cards)
+- Animations and transitions
+- Responsive design (mobile, tablet, desktop)
 
-The AI will read your spec, detect patterns, and write annotations to `.uigen/config.yaml`.
+### Usage
 
-#### 2. Applying Styles (`applying-styles-to-react-spa.md`)
-Generates custom CSS for your application:
-- **Brand colors** → Applies your color scheme
-- **Dark mode** → Full dark theme support
-- **Component styling** → Buttons, forms, tables, cards
-- **Animations** → Smooth transitions and effects
-- **Responsive design** → Mobile, tablet, desktop layouts
+Skills work with any AI coding assistant that can read files:
 
-**Usage with AI assistant:**
-```
-"Use the applying-styles skill to create a modern dark theme with blue accents"
-```
+- **Cursor**: Reference with `@.agents/skills/auto-annotate.md`
+- **Windsurf**: Ask "Use the auto-annotate skill"
+- **Cline**: Provide skill file path in context
+- **GitHub Copilot Chat**: Reference skill files in prompts
 
-The AI will generate CSS and write it to `.uigen/theme.css`.
-
-### How It Works
-
-1. **Skills are markdown files** with detailed instructions for AI agents
-2. **AI agents read the skills** and follow the workflows
-3. **Skills eliminate manual work** by automating pattern detection and configuration
-4. **You stay in control** - review changes before committing
-
-### Using Skills with AI Coding Assistants
-
-UIGen skills work with any AI coding assistant that can read files and execute commands:
-
-- **Cursor** - Reference skills with `@.agents/skills/auto-annotate.md`
-- **Windsurf** - Ask "Use the auto-annotate skill"
-- **Cline** - Provide skill file path in context
-- **GitHub Copilot Chat** - Reference skill files in prompts
-- **Any AI assistant** - Copy skill content into your prompt
-
-### Example Workflow
-
+Example workflow:
 ```bash
-# 1. Initialize project
 npx @uigen-dev/cli@latest init my-app --spec openapi.yaml
-
-# 2. Ask AI to auto-annotate
-"Use the auto-annotate skill to configure my spec"
-
-# 3. Ask AI to apply styling
-"Use the applying-styles skill to create a professional theme"
-
-# 4. Start the server
+# Ask AI: "Use the auto-annotate skill to configure my spec"
+# Ask AI: "Use the applying-styles skill to create a professional theme"
 npx @uigen-dev/cli@latest serve openapi.yaml
-
-# 5. Iterate with AI
-"Make the buttons more rounded and add hover animations"
 ```
-
-The AI reads the skills, understands your OpenAPI spec, and generates the right configuration automatically.
 
 ---
 
-## What Just Happened?
+## How It Works
 
-UIGen uses **runtime rendering** to transform your OpenAPI spec into a complete, interactive frontend. Unlike code generators, UIGen interprets your spec at runtime - which means your UI stays in sync with API changes automatically. Here's the flow:
+UIGen uses **runtime rendering** to transform your OpenAPI spec into a complete, interactive frontend. Unlike code generators, UIGen interprets your spec at runtime, keeping your UI automatically in sync with API changes.
 
 ```
 CLI Command
@@ -190,27 +129,20 @@ CLI Command
        +---> (Source spec unchanged on disk)
 ```
 
-UIGen reconciles your config with the spec, then parses it into a framework-agnostic Intermediate Representation containing:
-- Resources and their relationships
-- Operations (CRUD + custom actions)
-- Schemas with validation rules
-- Authentication flows
-- Pagination strategies
+UIGen reconciles your config with the spec, then parses it into a framework-agnostic Intermediate Representation (IR) containing resources, operations, schemas, authentication flows, and pagination strategies.
 
-The React renderer interprets this IR at runtime (not code generation) and creates:
-- **Table views** with sorting, filtering, pagination
-- **Create & edit forms** with validation
-- **Detail views** with related resource links
-- **Search interfaces** from query parameters
-- **Authentication flows** (Bearer, API Key, HTTP Basic, credential-based login)
-- **Multi-step wizards** for complex forms
-- **Custom action buttons** for non-CRUD endpoints
-- **Dashboard** with resource overview
-- **Dark/light theme** toggle
+The React renderer interprets this IR at runtime and creates:
+- Table views with sorting, filtering, pagination
+- Create & edit forms with validation
+- Detail views with related resource links
+- Search interfaces from query parameters
+- Authentication flows (Bearer, API Key, HTTP Basic, credential-based login)
+- Multi-step wizards for complex forms
+- Custom action buttons for non-CRUD endpoints
+- Dashboard with resource overview
+- Dark/light theme toggle
 
-**Key advantage:** Because UIGen uses runtime rendering instead of code generation, your UI automatically updates when your API changes. No regeneration step, no code to maintain, no drift between spec and UI.
-
-Because the IR is framework-agnostic, you can swap renderers. The same spec works with `@uigen-dev/react`, `@uigen-dev/svelte`, or `@uigen-dev/vue` (coming soon).
+**Key advantage:** Runtime rendering means no regeneration step, no code to maintain, no drift between spec and UI. Because the IR is framework-agnostic, you can swap renderers. The same spec works with `@uigen-dev/react`, `@uigen-dev/svelte`, or `@uigen-dev/vue` (coming soon).
 
 ---
 
