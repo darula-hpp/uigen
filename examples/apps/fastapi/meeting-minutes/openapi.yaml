@@ -3,6 +3,7 @@ info:
   title: Meeting Minutes
   description: Automated meeting minutes document generation API
   version: 1.0.0
+
 paths:
   /api/v1/templates:
     post:

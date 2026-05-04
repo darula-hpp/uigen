@@ -15,7 +15,7 @@ interface TopBarProps {
 
 /**
  * Top bar component with app title, server selector, auth status, and theme toggle
- * Implements Requirements 30.1-30.6, 54.1-54.6
+ * Implements Requirements 30.1-30.6, 54.1-54.6, 14.3
  */
 export function TopBar({ config, onMenuClick }: TopBarProps) {
   const navigate = useNavigate();
@@ -24,6 +24,14 @@ export function TopBar({ config, onMenuClick }: TopBarProps) {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Requirement 14.3: Handle keyboard navigation for menu toggle (Enter, Space)
+  const handleMenuKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onMenuClick();
+    }
+  };
 
   // Requirement 54.6: Debounce input to avoid excessive API calls
   useEffect(() => {
@@ -72,7 +80,10 @@ export function TopBar({ config, onMenuClick }: TopBarProps) {
   };
 
   return (
-    <header className="h-16 border-b bg-card flex items-center px-4 gap-4">
+    <header 
+      role="banner"
+      className="h-16 border-b bg-card flex items-center px-4 gap-4"
+    >
       {/* Requirement 30.1: Display app title */}
       {/* Mobile menu button */}
       <Button
@@ -80,6 +91,9 @@ export function TopBar({ config, onMenuClick }: TopBarProps) {
         size="sm"
         className="md:hidden"
         onClick={onMenuClick}
+        onKeyDown={handleMenuKeyDown}
+        aria-label="Open navigation menu"
+        aria-expanded={false}
       >
         ☰
       </Button>
@@ -91,7 +105,7 @@ export function TopBar({ config, onMenuClick }: TopBarProps) {
 
       {/* Requirement 54.1: Global search input in top bar */}
       {searchableResources.length > 0 && (
-        <div className="flex-1 max-w-md relative" ref={searchRef}>
+        <div className="flex-1 max-w-md relative" ref={searchRef} role="search">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -99,11 +113,13 @@ export function TopBar({ config, onMenuClick }: TopBarProps) {
               value={searchQuery}
               onChange={handleSearchChange}
               placeholder="Search..."
+              aria-label="Search across all resources"
               className="w-full h-9 pl-10 pr-10 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
             {searchQuery && (
               <button
                 onClick={handleClearSearch}
+                aria-label="Clear search"
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-4 w-4" />

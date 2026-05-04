@@ -21,6 +21,7 @@ import { FileTypesHandler } from '../adapter/annotations/handlers/file-types-han
 import { MaxFileSizeHandler } from '../adapter/annotations/handlers/max-file-size-handler.js';
 import { ChartHandler } from '../adapter/annotations/handlers/chart-handler.js';
 import { ProfileHandler } from '../adapter/annotations/handlers/profile-handler.js';
+import { LayoutHandler } from '../adapter/annotations/handlers/layout-handler.js';
 
 /**
  * Interface for annotation metadata
@@ -54,7 +55,8 @@ const handlerClasses = [
   FileTypesHandler,
   MaxFileSizeHandler,
   ChartHandler,
-  ProfileHandler
+  ProfileHandler,
+  LayoutHandler
 ];
 
 /**

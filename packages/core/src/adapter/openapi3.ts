@@ -135,6 +135,9 @@ export class OpenAPI3Adapter {
     // Set currentIR on resourceExtractor so annotations can be processed
     this.resourceExtractor.setCurrentIR(this.currentIR);
     
+    // Process document-level annotations (including x-uigen-layout)
+    this.processDocumentAnnotations();
+    
     // Process server annotations after IR is initialized
     this.processServerAnnotations();
     
@@ -183,6 +186,20 @@ export class OpenAPI3Adapter {
       );
       this.annotationRegistry.processAnnotations(context);
     });
+  }
+
+  /**
+   * Process annotations on the document object (e.g., x-uigen-layout at document level).
+   * This must be called after the IR is initialized.
+   */
+  private processDocumentAnnotations(): void {
+    const context = {
+      element: this.spec,
+      path: 'document',
+      utils: this.adapterUtils,
+      ir: this.currentIR!
+    };
+    this.annotationRegistry.processAnnotations(context);
   }
 
   private extractAuth() {

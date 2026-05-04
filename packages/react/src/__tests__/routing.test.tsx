@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Layout } from '../components/layout/Layout';
+import { LayoutContainer } from '../components/layout/LayoutContainer';
 import { ListView } from '../components/views/ListView';
 import { DetailView } from '../components/views/DetailView';
 import { FormView } from '../components/views/FormView';
 import { DashboardView } from '../components/views/DashboardView';
-import type { UIGenApp, Resource } from '@uigen-dev/core';
+import { AppProvider } from '../contexts/AppContext';
+import { registerLayoutStrategies } from '../lib/layout-strategies';
+import type { UIGenApp, Resource, LayoutConfig } from '@uigen-dev/core';
 
 // Mock hooks
 vi.mock('@/hooks/useApiCall', () => ({
@@ -196,33 +198,60 @@ const SearchViewPlaceholder = () => (
   <div className="p-4 text-muted-foreground">Search view coming soon</div>
 );
 
-// Create routes configuration
+// Create routes configuration using LayoutContainer with sidebar layout
 const createRoutes = (config: UIGenApp) => {
+  // Use sidebar layout (default) for all routes
+  const sidebarLayout: LayoutConfig = { type: 'sidebar' };
+  
   return [
     {
       path: '/',
-      element: <Layout config={config}><DashboardView config={config} /></Layout>,
+      element: (
+        <LayoutContainer layoutConfig={sidebarLayout}>
+          <DashboardView config={config} />
+        </LayoutContainer>
+      ),
     },
     ...config.resources.flatMap(resource => [
       {
         path: `/${resource.slug}`,
-        element: <Layout config={config}><ListView resource={resource} /></Layout>,
+        element: (
+          <LayoutContainer layoutConfig={sidebarLayout}>
+            <ListView resource={resource} />
+          </LayoutContainer>
+        ),
       },
       {
         path: `/${resource.slug}/new`,
-        element: <Layout config={config}><FormView resource={resource} mode="create" /></Layout>,
+        element: (
+          <LayoutContainer layoutConfig={sidebarLayout}>
+            <FormView resource={resource} mode="create" />
+          </LayoutContainer>
+        ),
       },
       {
         path: `/${resource.slug}/search`,
-        element: <Layout config={config}><SearchViewPlaceholder /></Layout>,
+        element: (
+          <LayoutContainer layoutConfig={sidebarLayout}>
+            <SearchViewPlaceholder />
+          </LayoutContainer>
+        ),
       },
       {
         path: `/${resource.slug}/:id`,
-        element: <Layout config={config}><DetailView resource={resource} /></Layout>,
+        element: (
+          <LayoutContainer layoutConfig={sidebarLayout}>
+            <DetailView resource={resource} />
+          </LayoutContainer>
+        ),
       },
       {
         path: `/${resource.slug}/:id/edit`,
-        element: <Layout config={config}><FormView resource={resource} mode="edit" /></Layout>,
+        element: (
+          <LayoutContainer layoutConfig={sidebarLayout}>
+            <FormView resource={resource} mode="edit" />
+          </LayoutContainer>
+        ),
       },
     ]),
   ];
@@ -233,6 +262,9 @@ describe('Routing', () => {
   let mockConfig: UIGenApp;
 
   beforeEach(() => {
+    // Register layout strategies before each test
+    registerLayoutStrategies();
+    
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -254,16 +286,19 @@ describe('Routing', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AppProvider config={mockConfig}>
+            <RouterProvider router={router} />
+          </AppProvider>
         </QueryClientProvider>
       );
 
-      // Should show dashboard with app title
+      // Should show dashboard with app title and Dashboard heading
       await waitFor(() => {
-        // Multiple headings with the app title exist (sidebar, header, dashboard)
+        // Multiple headings with the app title exist (sidebar, header)
         const headings = screen.getAllByRole('heading', { name: 'Test API' });
         expect(headings.length).toBeGreaterThan(0);
-        expect(screen.getByText('Resources')).toBeInTheDocument();
+        // Dashboard view renders a "Dashboard" heading
+        expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
       });
     });
 
@@ -274,7 +309,9 @@ describe('Routing', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AppProvider config={mockConfig}>
+            <RouterProvider router={router} />
+          </AppProvider>
         </QueryClientProvider>
       );
 
@@ -291,7 +328,9 @@ describe('Routing', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AppProvider config={mockConfig}>
+            <RouterProvider router={router} />
+          </AppProvider>
         </QueryClientProvider>
       );
 
@@ -307,7 +346,9 @@ describe('Routing', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AppProvider config={mockConfig}>
+            <RouterProvider router={router} />
+          </AppProvider>
         </QueryClientProvider>
       );
 
@@ -323,7 +364,9 @@ describe('Routing', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AppProvider config={mockConfig}>
+            <RouterProvider router={router} />
+          </AppProvider>
         </QueryClientProvider>
       );
 
@@ -339,7 +382,9 @@ describe('Routing', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AppProvider config={mockConfig}>
+            <RouterProvider router={router} />
+          </AppProvider>
         </QueryClientProvider>
       );
 
@@ -361,7 +406,9 @@ describe('Routing', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AppProvider config={mockConfig}>
+            <RouterProvider router={router} />
+          </AppProvider>
         </QueryClientProvider>
       );
 
@@ -394,7 +441,9 @@ describe('Routing', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AppProvider config={mockConfig}>
+            <RouterProvider router={router} />
+          </AppProvider>
         </QueryClientProvider>
       );
 
@@ -425,7 +474,9 @@ describe('Routing', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AppProvider config={mockConfig}>
+            <RouterProvider router={router} />
+          </AppProvider>
         </QueryClientProvider>
       );
 
@@ -453,7 +504,9 @@ describe('Routing', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AppProvider config={mockConfig}>
+            <RouterProvider router={router} />
+          </AppProvider>
         </QueryClientProvider>
       );
 
@@ -480,7 +533,9 @@ describe('Routing', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AppProvider config={mockConfig}>
+            <RouterProvider router={router} />
+          </AppProvider>
         </QueryClientProvider>
       );
 
@@ -530,7 +585,9 @@ describe('Routing', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AppProvider config={mockConfig}>
+            <RouterProvider router={router} />
+          </AppProvider>
         </QueryClientProvider>
       );
 
@@ -550,7 +607,9 @@ describe('Routing', () => {
 
       render(
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AppProvider config={mockConfig}>
+            <RouterProvider router={router} />
+          </AppProvider>
         </QueryClientProvider>
       );
 

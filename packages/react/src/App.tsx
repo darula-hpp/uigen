@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { reconcile } from './overrides';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Layout } from './components/layout/Layout';
+import { LayoutContainer } from './components/layout/LayoutContainer';
 import { ListView } from './components/views/ListView';
 import { DetailView } from './components/views/DetailView';
 import { FormView } from './components/views/FormView';
@@ -18,10 +18,14 @@ import { ToastProvider } from './components/Toast';
 import { AppProvider } from './contexts/AppContext';
 import { isAuthenticated } from './lib/auth';
 import { registerDefaultStrategies } from './lib/file-upload';
-import type { UIGenApp } from '@uigen-dev/core';
+import { registerLayoutStrategies } from './lib/layout-strategies';
+import type { UIGenApp, LayoutConfig } from '@uigen-dev/core';
 
 // Register default file upload strategies on module load
 registerDefaultStrategies();
+
+// Register layout strategies on module load
+registerLayoutStrategies();
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,10 +44,12 @@ interface AppProps {
 function ProtectedRoute({ 
   config,
   requiresAuth,
+  layoutOverride,
   children
 }: { 
   config: UIGenApp;
   requiresAuth: boolean;
+  layoutOverride?: LayoutConfig;
   children: React.ReactNode;
 }) {
   const location = useLocation();
@@ -52,10 +58,13 @@ function ProtectedRoute({
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
   
+  // Use layoutOverride if provided, otherwise use global layoutConfig
+  const layoutConfig = layoutOverride || config.layoutConfig;
+  
   return (
-    <Layout config={config}>
+    <LayoutContainer layoutConfig={layoutConfig}>
       {children}
-    </Layout>
+    </LayoutContainer>
   );
 }
 
@@ -74,7 +83,20 @@ function LoginRoute({ config }: { config: UIGenApp }) {
     return <Navigate to="/" replace />;
   }
   
-  return <LoginView config={config.auth} appTitle={config.meta.title} />;
+  // Use centered layout for login page without header
+  const centeredLayout: LayoutConfig = { 
+    type: 'centered',
+    metadata: {
+      showHeader: false,
+      verticalCenter: true
+    }
+  };
+  
+  return (
+    <LayoutContainer layoutConfig={centeredLayout}>
+      <LoginView config={config.auth} appTitle={config.meta.title} />
+    </LayoutContainer>
+  );
 }
 
 // Sign-up route wrapper - redirects to dashboard if already authenticated
@@ -90,7 +112,20 @@ function SignUpRoute({ config }: { config: UIGenApp }) {
     return <Navigate to="/" replace />;
   }
   
-  return <SignUpView config={config.auth} appTitle={config.meta.title} />;
+  // Use centered layout for signup page without header
+  const centeredLayout: LayoutConfig = { 
+    type: 'centered',
+    metadata: {
+      showHeader: false,
+      verticalCenter: true
+    }
+  };
+  
+  return (
+    <LayoutContainer layoutConfig={centeredLayout}>
+      <SignUpView config={config.auth} appTitle={config.meta.title} />
+    </LayoutContainer>
+  );
 }
 
 // Password reset route wrapper - redirects to dashboard if already authenticated
@@ -106,7 +141,20 @@ function PasswordResetRoute({ config }: { config: UIGenApp }) {
     return <Navigate to="/" replace />;
   }
   
-  return <PasswordResetView config={config.auth} appTitle={config.meta.title} />;
+  // Use centered layout for password reset page without header
+  const centeredLayout: LayoutConfig = { 
+    type: 'centered',
+    metadata: {
+      showHeader: false,
+      verticalCenter: true
+    }
+  };
+  
+  return (
+    <LayoutContainer layoutConfig={centeredLayout}>
+      <PasswordResetView config={config.auth} appTitle={config.meta.title} />
+    </LayoutContainer>
+  );
 }
 
 export function App({ config }: AppProps) {
@@ -278,27 +326,27 @@ export function App({ config }: AppProps) {
                 return (
                   <Route key={resource.slug} path={`/${resource.slug}`}>
                     <Route index element={
-                      <ProtectedRoute config={config} requiresAuth={requiresAuth}>
+                      <ProtectedRoute config={config} requiresAuth={requiresAuth} layoutOverride={resource.layoutOverride}>
                         {indexElement}
                       </ProtectedRoute>
                     } />
                     <Route path="new" element={
-                      <ProtectedRoute config={config} requiresAuth={requiresAuth}>
+                      <ProtectedRoute config={config} requiresAuth={requiresAuth} layoutOverride={resource.layoutOverride}>
                         {createElement}
                       </ProtectedRoute>
                     } />
                     <Route path="search" element={
-                      <ProtectedRoute config={config} requiresAuth={requiresAuth}>
+                      <ProtectedRoute config={config} requiresAuth={requiresAuth} layoutOverride={resource.layoutOverride}>
                         {searchElement}
                       </ProtectedRoute>
                     } />
                     <Route path=":id" element={
-                      <ProtectedRoute config={config} requiresAuth={requiresAuth}>
+                      <ProtectedRoute config={config} requiresAuth={requiresAuth} layoutOverride={resource.layoutOverride}>
                         {detailElement}
                       </ProtectedRoute>
                     } />
                     <Route path=":id/edit" element={
-                      <ProtectedRoute config={config} requiresAuth={requiresAuth}>
+                      <ProtectedRoute config={config} requiresAuth={requiresAuth} layoutOverride={resource.layoutOverride}>
                         {editElement}
                       </ProtectedRoute>
                     } />
