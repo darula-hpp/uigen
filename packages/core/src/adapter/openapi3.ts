@@ -26,7 +26,6 @@ import { Resource_Extractor } from './resource-extractor.js';
 import { Parameter_Processor } from './parameter-processor.js';
 import { Body_Processor } from './body-processor.js';
 import { Operation_Processor } from './operation-processor.js';
-import { LayoutParser } from './layout-parser.js';
 
 export class OpenAPI3Adapter {
   private spec: OpenAPIV3.Document;
@@ -45,7 +44,6 @@ export class OpenAPI3Adapter {
   private parameterProcessor: Parameter_Processor;
   private bodyProcessor: Body_Processor;
   private operationProcessor: Operation_Processor;
-  private layoutParser: LayoutParser;
 
   constructor(spec: OpenAPIV3.Document) {
     this.spec = spec;
@@ -83,9 +81,6 @@ export class OpenAPI3Adapter {
       this.schemaProcessor
     );
     
-    // Instantiate LayoutParser
-    this.layoutParser = new LayoutParser();
-    
     // Instantiate Resource_Extractor
     this.resourceExtractor = new Resource_Extractor(
       spec,
@@ -94,8 +89,7 @@ export class OpenAPI3Adapter {
       this.viewHintClassifier,
       this.relationshipDetector,
       this.paginationDetector,
-      this.schemaProcessor,
-      this.layoutParser
+      this.schemaProcessor
     );
     
     // Instantiate Parameter_Processor
@@ -132,8 +126,7 @@ export class OpenAPI3Adapter {
       auth: this.extractAuth(),
       dashboard: { enabled: true, widgets: [] },
       servers: this.extractServers(),
-      parsingErrors: this.parsingErrors.length > 0 ? this.parsingErrors : undefined,
-      layoutConfig: this.layoutParser.parseDocumentLayout(this.spec)
+      parsingErrors: this.parsingErrors.length > 0 ? this.parsingErrors : undefined
     };
     
     // Set currentIR on schemaProcessor so annotations can be processed
@@ -141,6 +134,9 @@ export class OpenAPI3Adapter {
     
     // Set currentIR on resourceExtractor so annotations can be processed
     this.resourceExtractor.setCurrentIR(this.currentIR);
+    
+    // Process document-level annotations (including x-uigen-layout)
+    this.processDocumentAnnotations();
     
     // Process server annotations after IR is initialized
     this.processServerAnnotations();
@@ -190,6 +186,20 @@ export class OpenAPI3Adapter {
       );
       this.annotationRegistry.processAnnotations(context);
     });
+  }
+
+  /**
+   * Process annotations on the document object (e.g., x-uigen-layout at document level).
+   * This must be called after the IR is initialized.
+   */
+  private processDocumentAnnotations(): void {
+    const context = {
+      element: this.spec,
+      path: 'document',
+      utils: this.adapterUtils,
+      ir: this.currentIR!
+    };
+    this.annotationRegistry.processAnnotations(context);
   }
 
   private extractAuth() {
