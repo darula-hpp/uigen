@@ -17,6 +17,7 @@ import { RelationshipDetector } from './relationship-detector.js';
 import { PaginationDetector } from './pagination-detector.js';
 import { SchemaProcessor } from './schema-processor.js';
 import { deriveRelationshipType } from './relationship-type-deriver.js';
+import { LayoutParser } from './layout-parser.js';
 
 /**
  * Callback type for adapting OpenAPI operations to IR operations.
@@ -69,6 +70,7 @@ export class Resource_Extractor {
   private relationshipDetector: RelationshipDetector;
   private paginationDetector: PaginationDetector;
   private schemaProcessor: SchemaProcessor;
+  private layoutParser: LayoutParser;
   private currentIR?: UIGenApp;
 
   /**
@@ -81,6 +83,7 @@ export class Resource_Extractor {
    * @param relationshipDetector - Detector for resource relationships
    * @param paginationDetector - Detector for pagination strategies
    * @param schemaProcessor - Processor for converting OpenAPI schemas to IR SchemaNodes
+   * @param layoutParser - Parser for extracting layout configuration from x-uigen-layout annotations
    */
   constructor(
     spec: OpenAPIV3.Document,
@@ -89,7 +92,8 @@ export class Resource_Extractor {
     viewHintClassifier: ViewHintClassifier,
     relationshipDetector: RelationshipDetector,
     paginationDetector: PaginationDetector,
-    schemaProcessor: SchemaProcessor
+    schemaProcessor: SchemaProcessor,
+    layoutParser: LayoutParser
   ) {
     this.spec = spec;
     this.adapterUtils = adapterUtils;
@@ -98,6 +102,7 @@ export class Resource_Extractor {
     this.relationshipDetector = relationshipDetector;
     this.paginationDetector = paginationDetector;
     this.schemaProcessor = schemaProcessor;
+    this.layoutParser = layoutParser;
   }
 
   /**
@@ -420,6 +425,18 @@ export class Resource_Extractor {
         if (!operation) continue;
 
         try {
+          // Parse operation-level layout configuration
+          const operationLayout = this.layoutParser.parseOperationLayout(
+            operation,
+            path,
+            method.toUpperCase()
+          );
+          
+          // If operation has a layout override and resource doesn't have one yet, apply it
+          if (operationLayout && !resource.layoutOverride) {
+            resource.layoutOverride = operationLayout;
+          }
+          
           // Adapt the operation using the callback
           const op = adaptOperation(method.toUpperCase() as HttpMethod, path, operation, pathItem);
           

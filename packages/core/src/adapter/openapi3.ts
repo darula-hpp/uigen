@@ -26,6 +26,7 @@ import { Resource_Extractor } from './resource-extractor.js';
 import { Parameter_Processor } from './parameter-processor.js';
 import { Body_Processor } from './body-processor.js';
 import { Operation_Processor } from './operation-processor.js';
+import { LayoutParser } from './layout-parser.js';
 
 export class OpenAPI3Adapter {
   private spec: OpenAPIV3.Document;
@@ -44,6 +45,7 @@ export class OpenAPI3Adapter {
   private parameterProcessor: Parameter_Processor;
   private bodyProcessor: Body_Processor;
   private operationProcessor: Operation_Processor;
+  private layoutParser: LayoutParser;
 
   constructor(spec: OpenAPIV3.Document) {
     this.spec = spec;
@@ -81,6 +83,9 @@ export class OpenAPI3Adapter {
       this.schemaProcessor
     );
     
+    // Instantiate LayoutParser
+    this.layoutParser = new LayoutParser();
+    
     // Instantiate Resource_Extractor
     this.resourceExtractor = new Resource_Extractor(
       spec,
@@ -89,7 +94,8 @@ export class OpenAPI3Adapter {
       this.viewHintClassifier,
       this.relationshipDetector,
       this.paginationDetector,
-      this.schemaProcessor
+      this.schemaProcessor,
+      this.layoutParser
     );
     
     // Instantiate Parameter_Processor
@@ -126,7 +132,8 @@ export class OpenAPI3Adapter {
       auth: this.extractAuth(),
       dashboard: { enabled: true, widgets: [] },
       servers: this.extractServers(),
-      parsingErrors: this.parsingErrors.length > 0 ? this.parsingErrors : undefined
+      parsingErrors: this.parsingErrors.length > 0 ? this.parsingErrors : undefined,
+      layoutConfig: this.layoutParser.parseDocumentLayout(this.spec)
     };
     
     // Set currentIR on schemaProcessor so annotations can be processed

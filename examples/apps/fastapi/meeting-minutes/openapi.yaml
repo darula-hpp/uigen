@@ -3,6 +3,15 @@ info:
   title: Meeting Minutes
   description: Automated meeting minutes document generation API
   version: 1.0.0
+
+# Global layout configuration - applies to all pages by default
+x-uigen-layout:
+  type: centered
+  metadata:
+    maxWidth: 600
+    verticalCenter: true
+    showHeader: true
+
 paths:
   /api/v1/templates:
     post:

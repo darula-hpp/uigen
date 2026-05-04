@@ -16,6 +16,7 @@ export { IgnoreHandler, LabelHandler, RefHandler } from './annotations/handlers/
 export { AnnotationHandlerRegistry } from './annotations/index.js';
 export type { AnnotationHandler } from './annotations/index.js';
 export { deriveRelationshipType } from './relationship-type-deriver.js';
+export { LayoutParser } from './layout-parser.js';
 
 export async function parseSpec(content: string): Promise<UIGenApp> {
   let doc: unknown;

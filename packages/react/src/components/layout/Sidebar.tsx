@@ -70,12 +70,19 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={onClose} />
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+          onClick={onClose}
+          aria-hidden="true"
+        />
       )}
 
       <aside
+        role="navigation"
+        aria-label="Main navigation"
         className={cn(
-          'fixed md:static inset-y-0 left-0 z-50 w-64 bg-card border-r flex flex-col transition-transform duration-300',
+          'fixed md:static inset-y-0 left-0 z-50 w-full bg-card border-r flex flex-col h-full',
+          'transition-transform duration-300 ease-in-out',
           'md:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
@@ -85,11 +92,19 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
           <div>
             <h1 className="text-xl font-bold">{config.meta.title}</h1>
           </div>
-          <Button variant="ghost" size="sm" className="md:hidden" onClick={onClose}>✕</Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="md:hidden" 
+            onClick={onClose}
+            aria-label="Close navigation menu"
+          >
+            ✕
+          </Button>
         </div>
 
         {/* Navigation */}
-        <nav className="p-4 space-y-1 flex-1 overflow-auto">
+        <nav className="p-4 space-y-1 flex-1 overflow-auto" aria-label="Resources">
           {topLevelResources.map(resource => {
             const isActive = location.pathname.startsWith(`/${resource.slug}`);
             const children = childrenByParent.get(resource.slug) || [];
