@@ -6,6 +6,130 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.7.0] - 2026-05-05
+
+### Added
+
+**Core package (`@uigen-dev/core`)**
+- **Layout system annotation** - New `x-uigen-layout` annotation for configuring application layout strategies
+  - Document-level annotation for global layout configuration (sidebar, centered, dashboard-grid)
+  - Operation-level annotation for per-resource layout overrides
+  - Three built-in layout strategies:
+    - `sidebar` - Traditional admin panel with left navigation sidebar
+    - `centered` - Centered content for auth flows (login, signup, password reset)
+    - `dashboard-grid` - Grid-based dashboard layout for analytics and metrics
+  - Extensible metadata pattern for layout-specific configuration (maxWidth, columns, gap, etc.)
+  - LayoutHandler registered in AnnotationHandlerRegistry for automatic processing
+  - Full TypeScript type definitions in IR (LayoutConfig, LayoutType, LayoutMetadata)
+  - Comprehensive validation with helpful error messages
+  - 45+ unit tests covering extraction, validation, and application
+  - 12 property-based tests verifying correctness properties
+  ```yaml
+  # Document-level: Global sidebar layout
+  x-uigen-layout:
+    type: sidebar
+    metadata:
+      collapsible: true
+      defaultOpen: true
+  
+  # Operation-level: Centered layout for login
+  paths:
+    /auth/login:
+      post:
+        x-uigen-layout:
+          type: centered
+          metadata:
+            maxWidth: 400
+  ```
+- **Landing page annotation support** - New `x-uigen-landing-page` annotation for automatic landing page generation
+  - Document-level annotation with enable/disable toggle
+  - 8 pre-built section types: hero, features, how-it-works, testimonials, pricing, FAQ, CTA, footer
+  - Comprehensive validation for all section configurations
+  - Extensible metadata pattern for future section types
+  - Full TypeScript type definitions in IR
+  - 105 unit tests covering all validation scenarios
+  ```yaml
+  # Document-level landing page configuration
+  x-uigen-landing-page:
+    enabled: true
+    sections:
+      hero:
+        title: "Build Admin Panels in Minutes"
+        subtitle: "Point UIGen at your OpenAPI spec and get a fully functional frontend"
+        primaryCTA:
+          text: "Get Started"
+          href: "/dashboard"
+      features:
+        title: "Why UIGen?"
+        items:
+          - title: "Zero Configuration"
+            description: "Works out of the box with any OpenAPI spec"
+            icon: "zap"
+  ```
+
+**React package (`@uigen-dev/react`)**
+- **Layout system implementation** - Complete layout strategy system with automatic routing
+  - `LayoutContainer` component orchestrates layout selection and rendering
+  - Three layout strategy implementations:
+    - `SidebarLayoutStrategy` - Renders sidebar navigation with collapsible support
+    - `CenteredLayoutStrategy` - Renders centered content with configurable max width
+    - `DashboardGridLayoutStrategy` - Renders grid-based dashboard with configurable columns
+  - Layout strategies extracted from IR and applied automatically
+  - Operation-level layouts override document-level layouts
+  - Graceful fallback to sidebar layout when no layout specified
+  - Layout metadata (maxWidth, columns, gap) passed to strategy components
+  - 28 component tests and 15 routing integration tests
+- **Landing page rendering** - LandingPageView component with automatic routing
+  - Renders all 8 section types with theme-aware styling
+  - Landing page appears at "/" when enabled
+  - Dashboard automatically moves to "/dashboard" when landing page is enabled
+  - Backward compatible: dashboard stays at "/" when landing page is disabled
+  - Graceful handling of missing/disabled sections
+  - Responsive design adapting to mobile, tablet, and desktop
+  - 18 component tests and 7 routing integration tests
+
+**Documentation**
+- **Complete layout system documentation** - Reference docs and core concepts guide
+  - Comprehensive annotation reference at `spec-annotations/x-uigen-layout.md`
+  - Core concepts guide at `core-concepts/layout-system.md`
+  - Examples for all 3 layout types with complete configuration
+  - Layout strategy architecture and extension guide
+  - Best practices and troubleshooting
+- **Complete landing page documentation** - Reference docs and tutorial guide
+  - Comprehensive annotation reference at `spec-annotations/x-uigen-landing-page.md`
+  - Step-by-step tutorial at `guides/creating-landing-pages.md`
+  - Examples for all 8 section types with complete configuration
+  - Styling and theming guide
+  - Best practices and troubleshooting
+
+**Skills**
+- **AI content generation skill** - `generate-landing-page-content.md` for automatic content generation
+  - Analyzes OpenAPI spec to generate appropriate landing page content
+  - Infers features from API resources and operations
+  - Generates pricing tiers based on API complexity
+  - Creates placeholder testimonials and FAQ items
+  - Two complete usage examples (simple and complex APIs)
+- **Enhanced auto-annotate skill** - Updated with layout detection rules
+  - Detects auth operations and applies centered layout
+  - Detects dashboard/analytics operations and applies dashboard-grid layout
+  - Detects standard CRUD operations and applies sidebar layout
+  - Comprehensive examples for all layout scenarios
+
+### Changed
+
+**React package (`@uigen-dev/react`)**
+- Refactored App.tsx to use LayoutContainer for all routing
+- Layout strategies now receive metadata from IR for customization
+- Auth views (login, signup, password reset) automatically use centered layout
+- Dashboard view automatically uses dashboard-grid layout when configured
+
+**Core package (`@uigen-dev/core`)**
+- Enhanced IR types with LayoutConfig interface
+- Layout configuration now part of IntermediateRepresentation root object
+- Operation interface extended with optional layoutOverride field
+
+---
+
 ## [0.6.3] - 2026-05-03
 
 ### Fixed
@@ -929,7 +1053,9 @@ This is the first release of UIGen — point it at an OpenAPI spec, get a fully 
 
 ---
 
-[0.6.1]: https://github.com/darula-hpp/uigen/releases/tag/v0.6.1
+[0.7.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.7.0
+[0.6.3]: https://github.com/darula-hpp/uigen/releases/tag/v0.6.3
+[0.6.2]: https://github.com/darula-hpp/uigen/releases/tag/v0.6.2
 [0.6.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.6.0
 [0.3.1]: https://github.com/darula-hpp/uigen/releases/tag/v0.3.1
 [0.3.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.3.0

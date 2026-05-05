@@ -121,9 +121,9 @@ describe('CenteredLayoutStrategy', () => {
       
       const { container } = renderWithContext(rendered);
       
-      // Content wrapper should have max-width style
-      const contentWrapper = container.querySelector('.w-full');
-      expect(contentWrapper).toHaveStyle({ maxWidth: '480px' });
+      // Content wrapper should have max-width via CSS variable
+      const main = container.querySelector('main');
+      expect(main).toHaveStyle({ '--max-width': '480px' });
     });
 
     it('should apply vertical centering by default', () => {
@@ -148,8 +148,8 @@ describe('CenteredLayoutStrategy', () => {
       
       const { container } = renderWithContext(rendered);
       
-      const contentWrapper = container.querySelector('.w-full');
-      expect(contentWrapper).toHaveStyle({ maxWidth: '600px' });
+      const main = container.querySelector('main');
+      expect(main).toHaveStyle({ '--max-width': '600px' });
     });
 
     it('should hide header when showHeader is false', () => {
@@ -221,9 +221,9 @@ describe('CenteredLayoutStrategy', () => {
       const header = container.querySelector('header');
       expect(header).not.toBeInTheDocument();
       
-      // Max width should be applied
-      const contentWrapper = container.querySelector('.w-full');
-      expect(contentWrapper).toHaveStyle({ maxWidth: '500px' });
+      // Max width should be applied via CSS variable
+      const main = container.querySelector('main');
+      expect(main).toHaveStyle({ '--max-width': '500px' });
       
       // Vertical centering should be disabled
       const main = container.querySelector('main');
@@ -364,9 +364,9 @@ describe('CenteredLayoutStrategy', () => {
       
       const { container } = renderWithContext(rendered);
       
-      const contentWrapper = container.querySelector('.w-full');
-      expect(contentWrapper).toBeInTheDocument();
-      expect(contentWrapper).toHaveStyle({ maxWidth: '480px' });
+      const main = container.querySelector('main');
+      expect(main).toBeInTheDocument();
+      expect(main).toHaveStyle({ '--max-width': '480px' });
     });
   });
 });

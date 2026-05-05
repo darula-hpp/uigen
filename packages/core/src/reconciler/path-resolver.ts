@@ -40,6 +40,8 @@ export class ElementPathResolver {
    * Resolve an element path to its corresponding element in the spec
    * 
    * Supported path formats:
+   * - document - Document root (for document-level annotations)
+   * - #/ - Document root (JSON Pointer format)
    * - #/paths/~1api~1v1~1users/get/responses/200/content/application~1json/schema - JSON Pointer (RFC 6901)
    * - METHOD:/path/to/endpoint - Operation (legacy shorthand)
    * - SchemaName.propertyName - Schema property (legacy shorthand)
@@ -61,7 +63,14 @@ export class ElementPathResolver {
     // Determine path type and delegate to appropriate resolver
     let resolved: ResolvedElement | null = null;
 
-    if (elementPath.startsWith('#/')) {
+    if (elementPath === 'document' || elementPath === '#/') {
+      // Document root - for document-level annotations
+      resolved = {
+        type: 'operation', // Using 'operation' type for document-level
+        location: { path: 'document' },
+        object: spec as unknown as Record<string, unknown>,
+      };
+    } else if (elementPath.startsWith('#/')) {
       // JSON Pointer (RFC 6901): #/paths/~1api~1v1~1users/get/responses/200/content/application~1json/schema
       resolved = this.resolveJsonPointer(spec, elementPath);
     } else if (elementPath.includes(':')) {

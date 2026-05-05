@@ -10,6 +10,7 @@ import { WizardView } from './components/views/WizardView';
 import { SearchView } from './components/views/SearchView';
 import { ActionSelectionView } from './components/views/ActionSelectionView';
 import { DashboardView } from './components/views/DashboardView';
+import { LandingPageView } from './components/views/LandingPageView';
 import { LoginView } from './components/views/LoginView';
 import { SignUpView } from './components/views/SignUpView';
 import { PasswordResetView } from './components/views/PasswordResetView';
@@ -69,7 +70,7 @@ function ProtectedRoute({
 }
 
 // Login route wrapper - redirects to dashboard if already authenticated
-function LoginRoute({ config }: { config: UIGenApp }) {
+function LoginRoute({ config, landingPageEnabled }: { config: UIGenApp; landingPageEnabled: boolean }) {
   const hasAnyAuth =
     config.auth.schemes.length > 0 ||
     (config.auth.loginEndpoints?.length ?? 0) > 0;
@@ -80,7 +81,9 @@ function LoginRoute({ config }: { config: UIGenApp }) {
   }
 
   if (isAuthenticated()) {
-    return <Navigate to="/" replace />;
+    // Redirect to dashboard if landing page is enabled, otherwise to root
+    const redirectPath = landingPageEnabled ? '/dashboard' : '/';
+    return <Navigate to={redirectPath} replace />;
   }
   
   // Use centered layout for login page without header
@@ -94,13 +97,17 @@ function LoginRoute({ config }: { config: UIGenApp }) {
   
   return (
     <LayoutContainer layoutConfig={centeredLayout}>
-      <LoginView config={config.auth} appTitle={config.meta.title} />
+      <LoginView 
+        config={config.auth} 
+        appTitle={config.meta.title}
+        landingPageEnabled={landingPageEnabled}
+      />
     </LayoutContainer>
   );
 }
 
 // Sign-up route wrapper - redirects to dashboard if already authenticated
-function SignUpRoute({ config }: { config: UIGenApp }) {
+function SignUpRoute({ config, landingPageEnabled }: { config: UIGenApp; landingPageEnabled: boolean }) {
   const hasSignUp = (config.auth.signUpEndpoints?.length ?? 0) > 0;
 
   // No sign-up endpoints configured — redirect to login
@@ -109,7 +116,9 @@ function SignUpRoute({ config }: { config: UIGenApp }) {
   }
 
   if (isAuthenticated()) {
-    return <Navigate to="/" replace />;
+    // Redirect to dashboard if landing page is enabled, otherwise to root
+    const redirectPath = landingPageEnabled ? '/dashboard' : '/';
+    return <Navigate to={redirectPath} replace />;
   }
   
   // Use centered layout for signup page without header
@@ -129,7 +138,7 @@ function SignUpRoute({ config }: { config: UIGenApp }) {
 }
 
 // Password reset route wrapper - redirects to dashboard if already authenticated
-function PasswordResetRoute({ config }: { config: UIGenApp }) {
+function PasswordResetRoute({ config, landingPageEnabled }: { config: UIGenApp; landingPageEnabled: boolean }) {
   const hasPasswordReset = (config.auth.passwordResetEndpoints?.length ?? 0) > 0;
 
   // No password reset endpoints configured — redirect to login
@@ -138,7 +147,9 @@ function PasswordResetRoute({ config }: { config: UIGenApp }) {
   }
 
   if (isAuthenticated()) {
-    return <Navigate to="/" replace />;
+    // Redirect to dashboard if landing page is enabled, otherwise to root
+    const redirectPath = landingPageEnabled ? '/dashboard' : '/';
+    return <Navigate to={redirectPath} replace />;
   }
   
   // Use centered layout for password reset page without header
@@ -162,6 +173,12 @@ export function App({ config }: AppProps) {
     config.auth.schemes.length > 0 ||
     (config.auth.loginEndpoints?.length ?? 0) > 0;
 
+  // Check if landing page is enabled
+  const landingPageEnabled = config.landingPageConfig?.enabled === true;
+  
+  // Determine dashboard path based on landing page config
+  const dashboardPath = landingPageEnabled ? '/dashboard' : '/';
+
   return (
     <QueryClientProvider client={queryClient}>
       <AppProvider config={config}>
@@ -169,12 +186,17 @@ export function App({ config }: AppProps) {
           <BrowserRouter>
           <Routes>
             {/* Public routes - no protection */}
-            <Route path="/login" element={<LoginRoute config={config} />} />
-            <Route path="/signup" element={<SignUpRoute config={config} />} />
-            <Route path="/password-reset" element={<PasswordResetRoute config={config} />} />
+            <Route path="/login" element={<LoginRoute config={config} landingPageEnabled={landingPageEnabled} />} />
+            <Route path="/signup" element={<SignUpRoute config={config} landingPageEnabled={landingPageEnabled} />} />
+            <Route path="/password-reset" element={<PasswordResetRoute config={config} landingPageEnabled={landingPageEnabled} />} />
+            
+            {/* Landing page route (if enabled) */}
+            {landingPageEnabled && (
+              <Route path="/" element={<LandingPageView config={config} />} />
+            )}
             
             {/* Dashboard - protected with layout */}
-            <Route path="/" element={
+            <Route path={dashboardPath} element={
               <ProtectedRoute config={config} requiresAuth={requiresAuth}>
                 <DashboardView config={config} />
               </ProtectedRoute>

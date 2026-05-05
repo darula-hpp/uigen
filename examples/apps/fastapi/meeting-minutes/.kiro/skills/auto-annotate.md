@@ -16,6 +16,7 @@ Analyzes an OpenAPI spec and automatically adds annotations to `.uigen/config.ya
 - Detects array fields suitable for charts → `x-uigen-chart`
 - Applies custom labels → `x-uigen-label`
 - Detects active server → `x-uigen-active-server`
+- Detects layout requirements → `x-uigen-layout`
 
 ### The Config Structure
 
@@ -52,12 +53,13 @@ Load the annotations metadata from `annotations.json`:
   "x-uigen-password-reset": { "targetType": "operation", "type": "boolean" },
   "x-uigen-signup": { "targetType": "operation", "type": "boolean" },
   "x-uigen-ignore": { "targetType": ["field", "operation", "resource"], "type": "boolean" },
-  "x-uigen-label": { "targetType": ["field", "operation"], "type": "string" },
+  "x-uigen-label": { "targetType": ["field", "operation", "resource"], "type": "string" },
   "x-uigen-file-types": { "targetType": "field", "type": "array", "applicableWhen": { "type": "file" } },
   "x-uigen-max-file-size": { "targetType": "field", "type": "number", "applicableWhen": { "type": "file" } },
   "x-uigen-ref": { "targetType": "field", "type": "object" },
   "x-uigen-chart": { "targetType": "field", "type": "object", "applicableWhen": { "type": "array" } },
-  "x-uigen-active-server": { "targetType": "server", "type": "boolean" }
+  "x-uigen-active-server": { "targetType": "server", "type": "boolean" },
+  "x-uigen-layout": { "targetType": ["document", "operation"], "type": "object" }
 }
 ```
 
@@ -297,23 +299,41 @@ Post.category_id:
 ### Rule 8: Custom Labels (x-uigen-label)
 
 **Pattern detection:**
-- Apply human-readable labels to operations and fields
+- Apply human-readable labels to operations, fields, and resources
 - Convert snake_case/camelCase to Title Case
 - Use operation summary if available
 
+**Label Behavior:**
+- **Single-operation resources**: Operation label applies to BOTH operation AND resource
+  - Example: `GET:/api/v1/auth/me` with label "My Profile" → resource shows "My Profile"
+- **Multi-operation resources**: Operation labels apply ONLY to operations, NOT the resource
+  - Example: `DELETE:/api/v1/templates/{id}` with label "Delete Template" → resource still shows "Templates"
+- **Explicit resource labels**: Use base path without HTTP method prefix
+  - Example: `/api/v1/templates` with label "Document Templates" → resource shows "Document Templates"
+
 **Examples:**
 ```yaml
+# Operation labels
 POST:/api/v1/users:
   x-uigen-label: Create User
 
 GET:/api/v1/users/{id}:
   x-uigen-label: View User Details
 
+# Single-operation resource (label applies to both operation and resource)
+GET:/api/v1/auth/me:
+  x-uigen-label: My Profile
+
+# Field labels
 User.first_name:
   x-uigen-label: First Name
 
 User.email_address:
   x-uigen-label: Email Address
+
+# Explicit resource label (for multi-operation resources)
+/api/v1/templates:
+  x-uigen-label: Document Templates
 ```
 
 ### Rule 9: Active Server (x-uigen-active-server)
@@ -327,6 +347,75 @@ User.email_address:
 ```yaml
 # This is applied at the server level in the spec, not in config.yaml
 # But can be suggested as a manual edit if needed
+```
+
+### Rule 10: Layout Configuration (x-uigen-layout)
+
+**Pattern detection:**
+
+**Document-level (global layout):**
+- Default: Apply `sidebar` layout for multi-resource applications
+- Apply `centered` layout for single-resource auth-only applications
+- Apply `dashboard-grid` layout if spec has analytics/dashboard endpoints
+
+**Operation-level (per-resource layout overrides):**
+- Auth endpoints (login, signup, password-reset) → `centered` layout with `verticalCenter: true`, `maxWidth: 400`
+- Profile/settings endpoints → `centered` layout with `maxWidth: 600`
+- Dashboard/analytics endpoints → `dashboard-grid` layout with responsive columns
+- Admin/management endpoints → `sidebar` layout (default)
+
+**Layout type selection:**
+- **Sidebar**: Multi-resource CRUD applications (default)
+  - Metadata: `sidebarWidth: 256`, `sidebarCollapsible: true`
+- **Centered**: Auth pages, profile pages, single-form pages
+  - Metadata: `maxWidth: 400-600`, `verticalCenter: true`, `showHeader: false`
+- **Dashboard Grid**: Analytics, metrics, dashboard pages
+  - Metadata: `columns: {mobile: 1, tablet: 2, desktop: 3}`, `gap: 24`
+
+**Examples:**
+```yaml
+# Document-level: Global sidebar layout for the app
+document:
+  x-uigen-layout:
+    type: sidebar
+    metadata:
+      sidebarWidth: 256
+      sidebarCollapsible: true
+      sidebarDefaultCollapsed: false
+
+# Operation-level: Centered layout for login
+POST:/api/v1/auth/login:
+  x-uigen-login: true
+  x-uigen-label: User Login
+  x-uigen-layout:
+    type: centered
+    metadata:
+      maxWidth: 400
+      showHeader: false
+      verticalCenter: true
+
+# Operation-level: Centered layout for profile
+GET:/api/v1/auth/me:
+  x-uigen-profile: true
+  x-uigen-label: My Profile
+  x-uigen-layout:
+    type: centered
+    metadata:
+      maxWidth: 600
+      showHeader: true
+      verticalCenter: false
+
+# Operation-level: Dashboard grid for analytics
+GET:/api/v1/analytics/dashboard:
+  x-uigen-label: Analytics Dashboard
+  x-uigen-layout:
+    type: dashboard-grid
+    metadata:
+      columns:
+        mobile: 1
+        tablet: 2
+        desktop: 4
+      gap: 32
 ```
 
 ## Path Naming Conventions
@@ -466,6 +555,35 @@ function autoAnnotate(specPath: string): Annotation[] {
         path: config.path,
         annotations: {
           'x-uigen-chart': config.chartConfig
+        }
+      });
+    }
+  }
+  
+  // Detect layout configuration
+  const layoutConfig = detectLayoutConfiguration(spec);
+  
+  // Add document-level layout
+  if (layoutConfig.document) {
+    annotations.push({
+      path: 'document',
+      annotations: {
+        'x-uigen-layout': layoutConfig.document
+      }
+    });
+  }
+  
+  // Add operation-level layouts
+  for (const [operationKey, layout] of layoutConfig.operations.entries()) {
+    // Find existing annotation for this operation or create new one
+    const existing = annotations.find(a => a.path === operationKey);
+    if (existing) {
+      existing.annotations['x-uigen-layout'] = layout;
+    } else {
+      annotations.push({
+        path: operationKey,
+        annotations: {
+          'x-uigen-layout': layout
         }
       });
     }
@@ -655,6 +773,107 @@ function findLabelField(schema: any): string {
 }
 ```
 
+### detectLayoutConfiguration
+```typescript
+function detectLayoutConfiguration(spec: any): {
+  document?: any;
+  operations: Map<string, any>;
+} {
+  const layouts = {
+    document: undefined as any,
+    operations: new Map<string, any>()
+  };
+  
+  // Detect document-level layout
+  const resourceCount = Object.keys(spec.paths || {}).length;
+  const hasAuthEndpoints = Object.entries(spec.paths || {}).some(([path, pathItem]: [string, any]) =>
+    Object.values(pathItem).some((op: any) => 
+      isLoginEndpoint(path, 'post', op) || 
+      isSignUpEndpoint(path, 'post', op) ||
+      isPasswordResetEndpoint(path, 'post', op)
+    )
+  );
+  
+  // Default to sidebar for multi-resource apps
+  if (resourceCount > 3) {
+    layouts.document = {
+      type: 'sidebar',
+      metadata: {
+        sidebarWidth: 256,
+        sidebarCollapsible: true,
+        sidebarDefaultCollapsed: false
+      }
+    };
+  }
+  
+  // Detect operation-level layouts
+  for (const [path, pathItem] of Object.entries(spec.paths || {})) {
+    for (const [method, operation] of Object.entries(pathItem as any)) {
+      const operationKey = `${method.toUpperCase()}:${path}`;
+      
+      // Auth endpoints get centered layout
+      if (isLoginEndpoint(path, method, operation) ||
+          isSignUpEndpoint(path, method, operation) ||
+          isPasswordResetEndpoint(path, method, operation)) {
+        layouts.operations.set(operationKey, {
+          type: 'centered',
+          metadata: {
+            maxWidth: 400,
+            showHeader: false,
+            verticalCenter: true
+          }
+        });
+      }
+      
+      // Profile endpoints get centered layout
+      if (isProfileEndpoint(path, method, operation)) {
+        layouts.operations.set(operationKey, {
+          type: 'centered',
+          metadata: {
+            maxWidth: 600,
+            showHeader: true,
+            verticalCenter: false
+          }
+        });
+      }
+      
+      // Dashboard/analytics endpoints get grid layout
+      if (isDashboardEndpoint(path, method, operation)) {
+        layouts.operations.set(operationKey, {
+          type: 'dashboard-grid',
+          metadata: {
+            columns: {
+              mobile: 1,
+              tablet: 2,
+              desktop: 3
+            },
+            gap: 24
+          }
+        });
+      }
+    }
+  }
+  
+  return layouts;
+}
+
+function isProfileEndpoint(path: string, method: string, operation: any): boolean {
+  const pathLower = path.toLowerCase();
+  return method.toLowerCase() === 'get' && 
+         (/\/me$|\/profile$|\/account$/.test(pathLower) ||
+          operation.tags?.includes('profile') ||
+          operation.tags?.includes('account'));
+}
+
+function isDashboardEndpoint(path: string, method: string, operation: any): boolean {
+  const pathLower = path.toLowerCase();
+  return /\/(dashboard|analytics|metrics|stats)/.test(pathLower) ||
+         operation.tags?.some((tag: string) => 
+           /dashboard|analytics|metrics|stats/i.test(tag)
+         );
+}
+```
+
 ## Best Practices
 
 ### 1. Always Preserve Existing Annotations
@@ -711,7 +930,8 @@ function reportResults(annotations: Annotation[]): void {
     ignore: 0,
     fileUpload: 0,
     ref: 0,
-    chart: 0
+    chart: 0,
+    layout: 0
   };
   
   for (const annotation of annotations) {
@@ -722,6 +942,7 @@ function reportResults(annotations: Annotation[]): void {
     if (annotation.annotations['x-uigen-file-types']) summary.fileUpload++;
     if (annotation.annotations['x-uigen-ref']) summary.ref++;
     if (annotation.annotations['x-uigen-chart']) summary.chart++;
+    if (annotation.annotations['x-uigen-layout']) summary.layout++;
   }
   
   console.log('Summary:');
@@ -732,6 +953,7 @@ function reportResults(annotations: Annotation[]): void {
   if (summary.fileUpload > 0) console.log(`  - ${summary.fileUpload} file upload field(s) configured`);
   if (summary.ref > 0) console.log(`  - ${summary.ref} foreign key reference(s) detected`);
   if (summary.chart > 0) console.log(`  - ${summary.chart} chart visualization(s) added`);
+  if (summary.layout > 0) console.log(`  - ${summary.layout} layout configuration(s) applied`);
   
   console.log(`\nRun 'uigen serve openapi.yaml' to see the results.`);
 }
@@ -824,7 +1046,7 @@ const encodedPath = path.replace(/~/g, '~0').replace(/\//g, '~1');
 
 # AI agent reports
 ✓ Auto-annotated OpenAPI spec: openapi.yaml
-✓ Added 8 annotations to .uigen/config.yaml
+✓ Added 10 annotations to .uigen/config.yaml
 
 Summary:
   - 1 login endpoint detected
@@ -833,6 +1055,7 @@ Summary:
   - 1 internal endpoint marked to ignore
   - 2 file upload fields configured
   - 2 foreign key references detected
+  - 2 layout configurations applied
 
 Run 'uigen serve openapi.yaml' to see the results.
 ```

@@ -1,5 +1,8 @@
 export { App } from './App';
 
+// View exports
+export { LandingPageView } from './components/views/LandingPageView';
+
 // Override system exports
 export { overrideRegistry, OverrideRegistry } from './overrides/registry';
 export { reconcile } from './overrides/reconcile';

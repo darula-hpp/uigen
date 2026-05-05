@@ -656,6 +656,636 @@ uigen serve openapi.yaml
 - Verify all components (forms, tables, buttons, navigation)
 - Check accessibility (keyboard navigation, focus states)
 
+## Landing Page Styling
+
+### Overview
+
+Landing pages use the same `.uigen/theme.css` file and CSS variable system as the rest of the application. The `LandingPageView` component renders 8 section types, each with semantic CSS classes.
+
+### Landing Page Section Selectors
+
+```css
+/* Landing page container */
+.landing-page {
+  /* Main landing page wrapper */
+}
+
+/* Hero section */
+.hero-section {
+  /* First impression section with headline and CTAs */
+}
+
+/* Features section */
+.features-section {
+  /* Product features showcase */
+}
+
+.features-grid {
+  /* Grid container for feature items */
+}
+
+.feature-item {
+  /* Individual feature card */
+}
+
+/* How It Works section */
+.how-it-works-section {
+  /* Step-by-step process explanation */
+}
+
+.steps-container {
+  /* Container for step items */
+}
+
+.step-item {
+  /* Individual step card */
+}
+
+.step-number {
+  /* Step number badge */
+}
+
+/* Testimonials section */
+.testimonials-section {
+  /* Customer testimonials */
+}
+
+.testimonials-grid {
+  /* Grid container for testimonials */
+}
+
+.testimonial-item {
+  /* Individual testimonial card */
+}
+
+.rating {
+  /* Star rating display */
+}
+
+/* Pricing section */
+.pricing-section {
+  /* Pricing plans showcase */
+}
+
+.pricing-grid {
+  /* Grid container for pricing plans */
+}
+
+.pricing-plan {
+  /* Individual pricing plan card */
+}
+
+.pricing-plan.highlighted {
+  /* Featured/recommended plan */
+}
+
+/* FAQ section */
+.faq-section {
+  /* Frequently asked questions */
+}
+
+.faq-list {
+  /* Container for FAQ items */
+}
+
+.faq-item {
+  /* Individual FAQ item */
+}
+
+/* CTA section */
+.cta-section {
+  /* Call-to-action section */
+}
+
+/* Footer section */
+.footer-section {
+  /* Landing page footer */
+}
+
+.footer-links {
+  /* Navigation links in footer */
+}
+
+.social-links {
+  /* Social media links */
+}
+
+.legal-links {
+  /* Privacy/Terms links */
+}
+```
+
+### Landing Page Styling Examples
+
+#### Example 1: Modern SaaS Landing Page
+
+```css
+/* Hero section with gradient background */
+.hero-section {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  padding: 6rem 2rem;
+  text-align: center;
+}
+
+.hero-section h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.hero-section p {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.hero-section a {
+  display: inline-block;
+  padding: 1rem 2rem;
+  margin: 0.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.hero-section a[data-testid="hero-primary-cta"] {
+  background-color: white;
+  color: var(--primary);
+}
+
+.hero-section a[data-testid="hero-secondary-cta"] {
+  background-color: transparent;
+  color: white;
+  border: 2px solid white;
+}
+
+.hero-section a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Features section with cards */
+.features-section {
+  padding: 4rem 2rem;
+  background-color: var(--background);
+}
+
+.features-section h2 {
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 3rem;
+  color: var(--foreground);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.feature-item {
+  background-color: var(--card);
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.feature-item h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--foreground);
+}
+
+.feature-item p {
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+/* Pricing section with highlighted plan */
+.pricing-section {
+  padding: 4rem 2rem;
+  background-color: var(--muted);
+}
+
+.pricing-section h2 {
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 3rem;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pricing-plan {
+  background-color: var(--card);
+  padding: 2rem;
+  border-radius: 1rem;
+  border: 2px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.pricing-plan.highlighted {
+  border-color: var(--primary);
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+.pricing-plan.highlighted::before {
+  content: "Most Popular";
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.25rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.pricing-plan h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.pricing-plan .price {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 1.5rem;
+}
+
+.pricing-plan .features-list {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 2rem;
+}
+
+.pricing-plan .features-list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.pricing-plan .features-list li::before {
+  content: "✓ ";
+  color: var(--primary);
+  font-weight: 700;
+  margin-right: 0.5rem;
+}
+
+/* Testimonials section */
+.testimonials-section {
+  padding: 4rem 2rem;
+  background-color: var(--background);
+}
+
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.testimonial-item {
+  background-color: var(--card);
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.testimonial-item blockquote {
+  font-size: 1.125rem;
+  font-style: italic;
+  margin-bottom: 1rem;
+  color: var(--foreground);
+}
+
+.testimonial-item .author {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.testimonial-item .author-title {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.testimonial-item .rating {
+  color: #fbbf24;
+  font-size: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+/* Footer section */
+.footer-section {
+  background-color: var(--card);
+  border-top: 1px solid var(--border);
+  padding: 3rem 2rem 2rem;
+}
+
+.footer-links,
+.social-links,
+.legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.footer-section a {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-section a:hover {
+  color: var(--primary);
+}
+
+.footer-section .copyright {
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+```
+
+#### Example 2: Minimalist Landing Page
+
+```css
+/* Minimalist hero */
+.hero-section {
+  padding: 8rem 2rem;
+  text-align: center;
+  background-color: var(--background);
+}
+
+.hero-section h1 {
+  font-size: 4rem;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+
+.hero-section p {
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: var(--muted-foreground);
+  margin-bottom: 2rem;
+}
+
+.hero-section a {
+  display: inline-block;
+  padding: 1rem 3rem;
+  margin: 0.5rem;
+  border: 1px solid var(--foreground);
+  color: var(--foreground);
+  text-decoration: none;
+  font-weight: 400;
+  transition: all 0.2s ease;
+}
+
+.hero-section a[data-testid="hero-primary-cta"] {
+  background-color: var(--foreground);
+  color: var(--background);
+}
+
+.hero-section a:hover {
+  transform: scale(1.05);
+}
+
+/* Minimalist features */
+.features-section {
+  padding: 4rem 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+}
+
+.feature-item {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 2rem;
+}
+
+.feature-item h3 {
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin-bottom: 0.5rem;
+}
+
+.feature-item p {
+  color: var(--muted-foreground);
+  font-weight: 300;
+}
+```
+
+#### Example 3: Bold/Vibrant Landing Page
+
+```css
+/* Bold hero with large typography */
+.hero-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 8rem 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="rgba(255,255,255,0.1)"/></svg>');
+  opacity: 0.3;
+}
+
+.hero-section h1 {
+  font-size: 4.5rem;
+  font-weight: 900;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-section p {
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-section a {
+  display: inline-block;
+  padding: 1.25rem 3rem;
+  margin: 0.5rem;
+  border-radius: 50px;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-section a[data-testid="hero-primary-cta"] {
+  background-color: #fbbf24;
+  color: #1a202c;
+  box-shadow: 0 4px 20px rgba(251, 191, 36, 0.4);
+}
+
+.hero-section a[data-testid="hero-primary-cta"]:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(251, 191, 36, 0.6);
+}
+
+/* Bold features with icons */
+.features-section {
+  padding: 6rem 2rem;
+  background: linear-gradient(180deg, var(--background) 0%, var(--muted) 100%);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.feature-item {
+  text-align: center;
+  padding: 2rem;
+  background-color: var(--card);
+  border-radius: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+  transform: translateY(-8px) rotate(2deg);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.feature-item h3 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 1rem;
+}
+```
+
+### Responsive Landing Page Styles
+
+```css
+/* Mobile-first responsive design */
+
+/* Mobile (default) */
+.hero-section h1 {
+  font-size: 2rem;
+}
+
+.features-grid,
+.pricing-grid,
+.testimonials-grid {
+  grid-template-columns: 1fr;
+}
+
+/* Tablet */
+@media (min-width: 768px) {
+  .hero-section h1 {
+    font-size: 3rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .pricing-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .hero-section h1 {
+    font-size: 4rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .pricing-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .testimonials-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+```
+
+### Dark Mode for Landing Pages
+
+```css
+/* Ensure landing pages look good in dark mode */
+.dark .hero-section {
+  background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
+}
+
+.dark .features-section {
+  background-color: var(--background);
+}
+
+.dark .feature-item,
+.dark .pricing-plan,
+.dark .testimonial-item {
+  background-color: var(--card);
+  border-color: var(--border);
+}
+
+.dark .footer-section {
+  background-color: var(--card);
+  border-top-color: var(--border);
+}
+```
+
 ## Common Component Selectors
 
 ### Layout Components

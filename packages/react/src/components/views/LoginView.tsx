@@ -17,6 +17,7 @@ import {
 interface LoginViewProps {
   config: AuthConfig;
   appTitle: string;
+  landingPageEnabled?: boolean;
 }
 
 type SchemeTab = 'credential' | 'bearer' | 'apiKey' | 'basic';
@@ -25,8 +26,11 @@ type SchemeTab = 'credential' | 'bearer' | 'apiKey' | 'basic';
  * Dedicated login page component.
  * Supports credential (username/password), bearer token, and API key auth.
  */
-export function LoginView({ config, appTitle }: LoginViewProps) {
+export function LoginView({ config, appTitle, landingPageEnabled = false }: LoginViewProps) {
   const navigate = useNavigate();
+  
+  // Determine post-login redirect path
+  const postLoginPath = landingPageEnabled ? '/dashboard' : '/';
 
   // Detect available auth options
   const loginEndpoints = config.loginEndpoints ?? [];
@@ -98,7 +102,7 @@ export function LoginView({ config, appTitle }: LoginViewProps) {
       });
 
       if (result.success) {
-        navigate('/', { replace: true });
+        navigate(postLoginPath, { replace: true });
       } else {
         setError(result.error ?? 'Authentication failed');
       }
@@ -119,7 +123,7 @@ export function LoginView({ config, appTitle }: LoginViewProps) {
     const result = await manager.login({ token: bearerToken });
 
     if (result.success) {
-      navigate('/', { replace: true });
+      navigate(postLoginPath, { replace: true });
     } else {
       setError(result.error ?? 'Authentication failed');
     }
@@ -144,7 +148,7 @@ export function LoginView({ config, appTitle }: LoginViewProps) {
     });
 
     if (result.success) {
-      navigate('/', { replace: true });
+      navigate(postLoginPath, { replace: true });
     } else {
       setError(result.error ?? 'Authentication failed');
     }
@@ -162,7 +166,7 @@ export function LoginView({ config, appTitle }: LoginViewProps) {
     try {
       const encoded = btoa(`${basicUsername}:${basicPassword}`);
       sessionStorage.setItem('uigen_auth', JSON.stringify({ type: 'basic', credentials: encoded }));
-      navigate('/', { replace: true });
+      navigate(postLoginPath, { replace: true });
     } finally {
       setBasicLoading(false);
     }

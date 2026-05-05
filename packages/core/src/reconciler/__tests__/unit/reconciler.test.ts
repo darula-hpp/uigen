@@ -47,6 +47,96 @@ describe('Reconciler', () => {
       expect(operation['x-uigen-label']).toBe('Create User');
     });
 
+    it('should reconcile document-level annotations', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/users': {
+            get: { responses: {} },
+          },
+        },
+      };
+
+      const config = {
+        version: '1.0',
+        enabled: {},
+        defaults: {},
+        annotations: {
+          'document': {
+            'x-uigen-layout': {
+              type: 'sidebar',
+              metadata: {
+                sidebarWidth: 250
+              }
+            },
+            'x-uigen-landing-page': {
+              enabled: true,
+              sections: {
+                hero: {
+                  enabled: true,
+                  headline: 'Welcome'
+                }
+              }
+            }
+          },
+        },
+      };
+
+      const result = reconciler.reconcile(spec, config);
+
+      expect(result.appliedAnnotations).toBe(2);
+      expect(result.warnings).toHaveLength(0);
+
+      const docSpec = result.spec as any;
+      expect(docSpec['x-uigen-layout']).toEqual({
+        type: 'sidebar',
+        metadata: {
+          sidebarWidth: 250
+        }
+      });
+      expect(docSpec['x-uigen-landing-page']).toEqual({
+        enabled: true,
+        sections: {
+          hero: {
+            enabled: true,
+            headline: 'Welcome'
+          }
+        }
+      });
+    });
+
+    it('should support #/ as document path alias', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {},
+      };
+
+      const config = {
+        version: '1.0',
+        enabled: {},
+        defaults: {},
+        annotations: {
+          '#/': {
+            'x-uigen-layout': {
+              type: 'centered'
+            }
+          },
+        },
+      };
+
+      const result = reconciler.reconcile(spec, config);
+
+      expect(result.appliedAnnotations).toBe(1);
+      expect(result.warnings).toHaveLength(0);
+
+      const docSpec = result.spec as any;
+      expect(docSpec['x-uigen-layout']).toEqual({
+        type: 'centered'
+      });
+    });
+
     it('should handle multiple element paths', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',

@@ -52,7 +52,7 @@ describe('Sidebar', () => {
   describe('Requirement 60.1: Render sidebar with navigation links', () => {
     it('should render sidebar navigation', () => {
       renderSidebar();
-      expect(screen.getByRole('complementary')).toBeInTheDocument();
+      expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
     });
 
     it('should render navigation links for all resources', () => {
