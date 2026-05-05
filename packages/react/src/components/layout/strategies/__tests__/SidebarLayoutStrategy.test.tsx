@@ -290,7 +290,8 @@ describe('SidebarLayoutStrategy', () => {
   describe('Requirement 3.4: Sidebar collapse state persistence', () => {
     it('should load persisted sidebar collapsed state from localStorage', () => {
       // Set persisted state
-      localStorageMock['uigen_sidebar_collapsed'] = JSON.stringify(true);
+      const storageKey = 'uigen_layout_prefs_Test App';
+      localStorageMock[storageKey] = JSON.stringify({ sidebarCollapsed: true });
       
       const children = <div>Test Content</div>;
       const rendered = strategy.render(children);
@@ -298,7 +299,7 @@ describe('SidebarLayoutStrategy', () => {
       renderWithContext(rendered);
       
       // Verify localStorage was read
-      expect(global.localStorage.getItem).toHaveBeenCalledWith('uigen_sidebar_collapsed');
+      expect(global.localStorage.getItem).toHaveBeenCalledWith(storageKey);
     });
 
     it('should use default collapsed state when no persisted state exists', () => {
@@ -345,7 +346,7 @@ describe('SidebarLayoutStrategy', () => {
       renderWithContext(rendered);
       
       // TopBar should have menu button (☰)
-      const menuButton = screen.getByRole('button', { name: /☰/i });
+      const menuButton = screen.getByRole('button', { name: 'Open navigation menu' });
       expect(menuButton).toBeInTheDocument();
     });
 
@@ -384,7 +385,7 @@ describe('SidebarLayoutStrategy', () => {
       // Should render the existing Sidebar component structure
       const sidebar = container.querySelector('aside');
       expect(sidebar).toBeInTheDocument();
-      expect(sidebar?.className).toContain('w-64');
+      expect(sidebar?.className).toContain('w-full'); // Mobile-first: full width
       expect(sidebar?.className).toContain('bg-card');
       expect(sidebar?.className).toContain('border-r');
     });

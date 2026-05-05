@@ -2,6 +2,168 @@ version: '1.0'
 enabled: {}
 defaults: {}
 annotations:
+  document:
+    x-uigen-landing-page:
+      enabled: true
+      sections:
+        hero:
+          enabled: true
+          headline: "Transform Your Meetings Into Professional Documents"
+          subheadline: "AI-powered meeting minutes generation. Upload templates, record meetings, and generate polished documents automatically."
+          primaryCta:
+            text: "Get Started Free"
+            url: "/signup"
+          secondaryCta:
+            text: "View Demo"
+            url: "/dashboard"
+        features:
+          enabled: true
+          title: "Everything You Need for Meeting Documentation"
+          items:
+            - title: "Smart Template Management"
+              description: "Upload Word templates with Jinja2 variables. Our system automatically extracts the schema and prepares them for population."
+              icon: "📄"
+            - title: "AI-Powered Generation"
+              description: "Let AI analyze your meeting recordings and automatically fill in template variables with accurate, contextual information."
+              icon: "🤖"
+            - title: "Manual Control"
+              description: "Prefer hands-on? Manually fill in template data with our intuitive forms. Perfect for sensitive or custom content."
+              icon: "✍️"
+            - title: "Multi-Format Export"
+              description: "Generate professional Word documents and convert them to PDF. Download individual files or merged PDFs."
+              icon: "📥"
+            - title: "Meeting Organization"
+              description: "Track all your meetings with timestamps, recordings, and associated templates in one centralized dashboard."
+              icon: "📅"
+            - title: "Secure & Private"
+              description: "Your meeting data is protected with authentication. Each user has their own private workspace."
+              icon: "🔒"
+        howItWorks:
+          enabled: true
+          title: "Simple 4-Step Process"
+          steps:
+            - stepNumber: 1
+              title: "Upload Your Templates"
+              description: "Create Word documents with Jinja2 variables (like {{meeting_title}} or {{action_items}}). Upload them to define your meeting minute structure."
+            - stepNumber: 2
+              title: "Create a Meeting"
+              description: "Add meeting details including title, date/time, and optionally upload an audio recording for AI transcription."
+            - stepNumber: 3
+              title: "Fill the Data"
+              description: "Choose AI generation to automatically populate templates from recordings, or manually enter information through our forms."
+            - stepNumber: 4
+              title: "Generate & Download"
+              description: "Click generate to create professional Word documents. Convert to PDF and download individual files or a merged document."
+        testimonials:
+          enabled: true
+          title: "Trusted by Teams Worldwide"
+          items:
+            - quote: "Meeting Minutes cut our documentation time by 75%. The AI generation is incredibly accurate and saves hours every week."
+              author: "Sarah Chen"
+              authorTitle: "Project Manager, Tech Startup"
+              rating: 5
+            - quote: "The template system is brilliant. We created our company standard once and now every meeting follows the same professional format."
+              author: "Michael Rodriguez"
+              authorTitle: "Operations Director"
+              rating: 5
+            - quote: "Finally, a tool that understands how meetings actually work. The flexibility between AI and manual input is perfect for our needs."
+              author: "Emily Watson"
+              authorTitle: "Executive Assistant"
+              rating: 5
+        pricing:
+          enabled: true
+          title: "Simple, Transparent Pricing"
+          plans:
+            - name: "Free"
+              price: "$0/month"
+              features:
+                - "Up to 10 meetings per month"
+                - "3 custom templates"
+                - "AI generation (limited)"
+                - "PDF export"
+                - "Email support"
+              ctaText: "Start Free"
+              ctaUrl: "/signup"
+            - name: "Professional"
+              price: "$29/month"
+              highlighted: true
+              features:
+                - "Unlimited meetings"
+                - "Unlimited templates"
+                - "Unlimited AI generation"
+                - "Priority support"
+                - "Advanced analytics"
+                - "Team collaboration"
+              ctaText: "Start Trial"
+              ctaUrl: "/signup?plan=pro"
+            - name: "Enterprise"
+              price: "Custom"
+              features:
+                - "Everything in Professional"
+                - "Custom integrations"
+                - "Dedicated support"
+                - "SLA guarantee"
+                - "On-premise deployment"
+                - "Training & onboarding"
+              ctaText: "Contact Sales"
+              ctaUrl: "/contact"
+        faq:
+          enabled: true
+          title: "Frequently Asked Questions"
+          items:
+            - question: "How does AI generation work?"
+              answer: "Upload a meeting recording and our AI analyzes the audio to extract key information like attendees, action items, decisions, and discussion points. It then fills your template variables automatically."
+              category: "Features"
+            - question: "What template format do you support?"
+              answer: "We support Word documents (.docx) with Jinja2 template syntax. You can use variables like {{variable_name}}, loops, and conditionals just like in standard Jinja2."
+              category: "Templates"
+            - question: "Can I edit AI-generated content?"
+              answer: "Absolutely! After AI generation, you can review and edit all filled data before generating the final document. You have full control over the output."
+              category: "Features"
+            - question: "Is my meeting data secure?"
+              answer: "Yes. All data is encrypted in transit and at rest. Each user has a private workspace, and we never share your meeting content with third parties."
+              category: "Security"
+            - question: "Can I use this for different types of meetings?"
+              answer: "Yes! Create different templates for board meetings, team standups, client calls, or any meeting type. The system is completely flexible."
+              category: "Use Cases"
+            - question: "Do you offer refunds?"
+              answer: "We offer a 30-day money-back guarantee on all paid plans. If you're not satisfied, contact support for a full refund."
+              category: "Billing"
+        cta:
+          enabled: true
+          headline: "Ready to Transform Your Meeting Documentation?"
+          subheadline: "Join hundreds of teams saving hours every week with automated meeting minutes."
+          primaryCta:
+            text: "Start Free Trial"
+            url: "/signup"
+          secondaryCta:
+            text: "Schedule Demo"
+            url: "/contact"
+        footer:
+          enabled: true
+          companyName: "Meeting Minutes"
+          copyrightText: "© 2026 Meeting Minutes. All rights reserved."
+          links:
+            - text: "About"
+              url: "/about"
+            - text: "Features"
+              url: "#features"
+            - text: "Pricing"
+              url: "#pricing"
+            - text: "Contact"
+              url: "/contact"
+          socialLinks:
+            - platform: "Twitter"
+              url: "https://twitter.com/meetingminutes"
+            - platform: "LinkedIn"
+              url: "https://linkedin.com/company/meetingminutes"
+            - platform: "GitHub"
+              url: "https://github.com/meetingminutes"
+          legalLinks:
+            - text: "Privacy Policy"
+              url: "/privacy"
+            - text: "Terms of Service"
+              url: "/terms"
   POST:/api/v1/auth/login:
     x-uigen-login: true
     x-uigen-label: User Login

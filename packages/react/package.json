@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/react",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "Auto-generate frontends from OpenAPI specs",
   "license": "MIT",
   "repository": {
@@ -39,7 +39,7 @@
     "@tailwindcss/typography": "^0.5.15",
     "@tanstack/react-query": "^5.62.0",
     "@tanstack/react-table": "^8.20.0",
-    "@uigen-dev/core": "0.6.2",
+    "@uigen-dev/core": "0.7.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",

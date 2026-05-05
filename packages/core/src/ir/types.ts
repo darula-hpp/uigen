@@ -34,6 +34,8 @@ export interface UIGenApp {
   parsingErrors?: ParsingError[];
   /** Global layout configuration */
   layoutConfig?: LayoutConfig;
+  /** Landing page configuration */
+  landingPageConfig?: LandingPageConfig;
 }
 
 export interface ParsingError {
@@ -376,4 +378,310 @@ export interface LayoutConfig {
   
   /** Layout-specific configuration metadata */
   metadata?: LayoutMetadata;
+}
+
+/**
+ * Shared CTA button configuration used across landing page sections
+ */
+export interface CtaButton {
+  /** Button text */
+  text: string;
+  
+  /** Button URL */
+  url: string;
+}
+
+/**
+ * Feature item for features section
+ */
+export interface FeatureItem {
+  /** Feature title */
+  title: string;
+  
+  /** Feature description */
+  description: string;
+  
+  /** Optional icon identifier */
+  icon?: string;
+  
+  /** Optional image URL */
+  image?: string;
+}
+
+/**
+ * Step item for how it works section
+ */
+export interface StepItem {
+  /** Step title */
+  title: string;
+  
+  /** Step description */
+  description: string;
+  
+  /** Optional step number */
+  stepNumber?: number;
+  
+  /** Optional image URL */
+  image?: string;
+}
+
+/**
+ * Testimonial item for testimonials section
+ */
+export interface TestimonialItem {
+  /** Testimonial quote */
+  quote: string;
+  
+  /** Author name */
+  author: string;
+  
+  /** Optional author title/position */
+  authorTitle?: string;
+  
+  /** Optional author image URL */
+  authorImage?: string;
+  
+  /** Optional rating (1-5) */
+  rating?: number;
+}
+
+/**
+ * Pricing plan for pricing section
+ */
+export interface PricingPlan {
+  /** Plan name */
+  name: string;
+  
+  /** Plan price */
+  price: string;
+  
+  /** List of features */
+  features: string[];
+  
+  /** Whether this plan is highlighted */
+  highlighted?: boolean;
+  
+  /** Optional CTA button text */
+  ctaText?: string;
+  
+  /** Optional CTA button URL */
+  ctaUrl?: string;
+}
+
+/**
+ * FAQ item for FAQ section
+ */
+export interface FaqItem {
+  /** Question text */
+  question: string;
+  
+  /** Answer text */
+  answer: string;
+  
+  /** Optional category for grouping */
+  category?: string;
+}
+
+/**
+ * Link item for footer section
+ */
+export interface FooterLink {
+  /** Link text */
+  text: string;
+  
+  /** Link URL */
+  url: string;
+}
+
+/**
+ * Social link item for footer section
+ */
+export interface SocialLink {
+  /** Platform name (e.g., twitter, linkedin, github) */
+  platform: string;
+  
+  /** Platform URL */
+  url: string;
+}
+
+/**
+ * Hero section configuration
+ */
+export interface HeroSection {
+  /** Whether this section is enabled */
+  enabled: boolean;
+  
+  /** Hero headline */
+  headline?: string;
+  
+  /** Hero subheadline */
+  subheadline?: string;
+  
+  /** Primary CTA button */
+  primaryCta?: CtaButton;
+  
+  /** Secondary CTA button */
+  secondaryCta?: CtaButton;
+  
+  /** Optional background image URL */
+  backgroundImage?: string;
+}
+
+/**
+ * Features section configuration
+ */
+export interface FeaturesSection {
+  /** Whether this section is enabled */
+  enabled: boolean;
+  
+  /** Section title */
+  title?: string;
+  
+  /** List of feature items */
+  items?: FeatureItem[];
+}
+
+/**
+ * How It Works section configuration
+ */
+export interface HowItWorksSection {
+  /** Whether this section is enabled */
+  enabled: boolean;
+  
+  /** Section title */
+  title?: string;
+  
+  /** List of step items */
+  steps?: StepItem[];
+}
+
+/**
+ * Testimonials section configuration
+ */
+export interface TestimonialsSection {
+  /** Whether this section is enabled */
+  enabled: boolean;
+  
+  /** Section title */
+  title?: string;
+  
+  /** List of testimonial items */
+  items?: TestimonialItem[];
+}
+
+/**
+ * Pricing section configuration
+ */
+export interface PricingSection {
+  /** Whether this section is enabled */
+  enabled: boolean;
+  
+  /** Section title */
+  title?: string;
+  
+  /** List of pricing plans */
+  plans?: PricingPlan[];
+}
+
+/**
+ * FAQ section configuration
+ */
+export interface FaqSection {
+  /** Whether this section is enabled */
+  enabled: boolean;
+  
+  /** Section title */
+  title?: string;
+  
+  /** List of FAQ items */
+  items?: FaqItem[];
+}
+
+/**
+ * CTA section configuration
+ */
+export interface CtaSection {
+  /** Whether this section is enabled */
+  enabled: boolean;
+  
+  /** CTA headline */
+  headline?: string;
+  
+  /** CTA subheadline */
+  subheadline?: string;
+  
+  /** Primary CTA button */
+  primaryCta?: CtaButton;
+  
+  /** Secondary CTA button */
+  secondaryCta?: CtaButton;
+  
+  /** Background style (solid, gradient, image) */
+  backgroundStyle?: string;
+  
+  /** Optional background image URL */
+  backgroundImage?: string;
+}
+
+/**
+ * Footer section configuration
+ */
+export interface FooterSection {
+  /** Whether this section is enabled */
+  enabled: boolean;
+  
+  /** Company name */
+  companyName?: string;
+  
+  /** List of footer links */
+  links?: FooterLink[];
+  
+  /** List of social links */
+  socialLinks?: SocialLink[];
+  
+  /** Copyright text */
+  copyrightText?: string;
+  
+  /** List of legal links (privacy policy, terms, etc.) */
+  legalLinks?: FooterLink[];
+}
+
+/**
+ * Container for all landing page section configurations
+ */
+export interface LandingPageSections {
+  /** Hero section configuration */
+  hero?: HeroSection;
+  
+  /** Features section configuration */
+  features?: FeaturesSection;
+  
+  /** How It Works section configuration */
+  howItWorks?: HowItWorksSection;
+  
+  /** Testimonials section configuration */
+  testimonials?: TestimonialsSection;
+  
+  /** Pricing section configuration */
+  pricing?: PricingSection;
+  
+  /** FAQ section configuration */
+  faq?: FaqSection;
+  
+  /** CTA section configuration */
+  cta?: CtaSection;
+  
+  /** Footer section configuration */
+  footer?: FooterSection;
+}
+
+/**
+ * Complete landing page configuration
+ */
+export interface LandingPageConfig {
+  /** Whether landing page generation is enabled */
+  enabled: boolean;
+  
+  /** Section configurations */
+  sections: LandingPageSections;
 }

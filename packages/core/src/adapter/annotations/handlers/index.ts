@@ -11,6 +11,7 @@ import { MaxFileSizeHandler } from './max-file-size-handler.js';
 import { ChartHandler } from './chart-handler.js';
 import { ProfileHandler } from './profile-handler.js';
 import { LayoutHandler } from './layout-handler.js';
+import { LandingPageHandler } from './landing-page-handler.js';
 
 /**
  * Initialize and register all annotation handlers.
@@ -47,6 +48,7 @@ function registerHandlers(): void {
   
   // Register document/operation-level handlers
   registry.register(new LayoutHandler());
+  registry.register(new LandingPageHandler());
   
   // Register server-level handlers (Requirement 1.5)
   registry.register(new ActiveServerHandler());
@@ -68,3 +70,4 @@ export { MaxFileSizeHandler } from './max-file-size-handler.js';
 export { ChartHandler } from './chart-handler.js';
 export { ProfileHandler } from './profile-handler.js';
 export { LayoutHandler } from './layout-handler.js';
+export { LandingPageHandler } from './landing-page-handler.js';

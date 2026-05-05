@@ -884,7 +884,7 @@ describe('App.tsx Layout Integration Tests', () => {
         const sidebar = document.querySelector('aside');
         expect(sidebar).toBeTruthy();
         
-        const gridContainer = document.querySelector('.grid');
+        const gridContainer = document.querySelector('.dashboard-grid-container');
         expect(gridContainer).toBeTruthy();
       });
     });
