@@ -8,11 +8,11 @@ export default function Home() {
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 text-center">
         <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-4 max-w-3xl">
-          Runtime frontend  <span className="text-[var(--primary)]">for OpenAPI specs</span>
+          Declarative UI  <span className="text-[var(--primary)]">Runtime</span>
         </h1>
 
         <p className="text-base md:text-lg text-gray-500 dark:text-gray-400 max-w-lg mb-10 leading-relaxed">
-          From OpenAPI to production-ready UI. Optional code. Optional config.
+          Built on OpenAPI, Optional code, Zero build step, AI-powered.
           <br />
           <span className="text-sm">Includes a framework agnostic core and pluggable renderers.</span>
         </p>
