@@ -12,6 +12,7 @@ import { ChartHandler } from './chart-handler.js';
 import { ProfileHandler } from './profile-handler.js';
 import { LayoutHandler } from './layout-handler.js';
 import { LandingPageHandler } from './landing-page-handler.js';
+import { AppHandler } from './app-handler.js';
 
 /**
  * Initialize and register all annotation handlers.
@@ -49,6 +50,7 @@ function registerHandlers(): void {
   // Register document/operation-level handlers
   registry.register(new LayoutHandler());
   registry.register(new LandingPageHandler());
+  registry.register(new AppHandler());
   
   // Register server-level handlers (Requirement 1.5)
   registry.register(new ActiveServerHandler());
@@ -71,3 +73,4 @@ export { ChartHandler } from './chart-handler.js';
 export { ProfileHandler } from './profile-handler.js';
 export { LayoutHandler } from './layout-handler.js';
 export { LandingPageHandler } from './landing-page-handler.js';
+export { AppHandler } from './app-handler.js';

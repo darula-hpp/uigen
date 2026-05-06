@@ -24,6 +24,20 @@ export type FieldType =
 
 export type FileTypeCategory = 'image' | 'document' | 'video' | 'audio' | 'generic';
 
+/**
+ * Application configuration metadata
+ */
+export interface AppConfig {
+  /** Custom application name (overrides OpenAPI title) */
+  name?: string;
+  
+  /** Application icon URL or path (used for favicon and header) */
+  icon?: string;
+  
+  /** Allow arbitrary metadata for future extensibility */
+  [key: string]: unknown;
+}
+
 export interface UIGenApp {
   meta: AppMeta;
   resources: Resource[];
@@ -36,6 +50,8 @@ export interface UIGenApp {
   layoutConfig?: LayoutConfig;
   /** Landing page configuration */
   landingPageConfig?: LandingPageConfig;
+  /** Application configuration */
+  appConfig?: AppConfig;
 }
 
 export interface ParsingError {
