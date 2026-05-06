@@ -4,6 +4,7 @@ import { BlogPostHeader } from '../../../components/blog/BlogPostHeader';
 import { BlogPostContent } from '../../../components/blog/BlogPostContent';
 import { BlogPostTags } from '../../../components/blog/BlogPostTags';
 import { BlogPostTOC } from '../../../components/blog/BlogPostTOC';
+import { GitHubCTA } from '../../../components/blog/GitHubCTA';
 import { SocialShare } from '../../../components/blog/SocialShare';
 import { SiteHeader } from '../../../components/SiteHeader';
 
@@ -75,6 +76,9 @@ export default async function BlogPostPage({
           {/* Main content */}
           <div className="flex-1 min-w-0">
             <BlogPostContent contentHtml={post.contentHtml} />
+
+            {/* GitHub CTA */}
+            <GitHubCTA />
 
             <div className="mt-8">
               {post.tags.length > 0 && (

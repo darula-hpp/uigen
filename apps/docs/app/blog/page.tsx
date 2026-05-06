@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getAllBlogPosts } from '../../lib/blog';
 import { BlogPostCard } from '../../components/blog/BlogPostCard';
+import { GitHubCTA } from '../../components/blog/GitHubCTA';
 import { SiteHeader } from '../../components/SiteHeader';
 
 export const metadata: Metadata = {
@@ -37,6 +38,9 @@ export default async function BlogPage() {
             Technical articles, architecture deep-dives, and announcements from the UIGen team.
           </p>
         </div>
+
+        {/* GitHub CTA */}
+        <GitHubCTA />
 
         {/* Posts grid */}
         {posts.length === 0 ? (
