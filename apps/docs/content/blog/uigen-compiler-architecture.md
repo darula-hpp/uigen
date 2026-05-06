@@ -4,6 +4,7 @@ author: "Olebogeng Mbedzi"
 date: "2026-05-06"
 excerpt: "A deep dive into UIGen's compiler architecture, exploring how we built a domain-specific language on top of OpenAPI to transform API specifications into live web applications through runtime compilation."
 tags: ["architecture", "compiler", "dsl", "technical"]
+featured_image: "/blog/uigen-compiler-architecture.png"
 ---
 
 ## Introduction
