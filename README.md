@@ -1,6 +1,6 @@
 # UIGen
 
-A UI execution layer for OpenAPI. One spec becomes a live application that runs API calls and renders in real time
+Build Declarative UI Apps on top of OpenAPI
 
 ![UIGen Demo](https://github.com/darula-hpp/uigen/raw/main/examples/output.gif)
 
