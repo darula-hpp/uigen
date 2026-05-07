@@ -4,7 +4,6 @@ author: "Olebogeng Mbedzi"
 date: "2026-05-07"
 excerpt: "What started as an OpenAPI-to-UI compiler accidentally evolved into something that looks, acts, and feels like an operating system for frontend applications. Here's how it happened and why the OS framing isn't just marketing."
 tags: ["architecture", "operating-systems", "compiler", "technical"]
-featured_image: "/blog/uigen-os.png"
 ---
 
 ## The Accidental Discovery
