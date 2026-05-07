@@ -4,6 +4,7 @@ author: "Olebogeng Mbedzi"
 date: "2026-05-07"
 excerpt: "What started as an OpenAPI-to-UI compiler accidentally evolved into something that looks, acts, and feels like an operating system for frontend applications. Here's how it happened and why the OS framing isn't just marketing."
 tags: ["architecture", "operating-systems", "compiler", "technical"]
+featured_image: "/blog/uigen-os.png"
 ---
 
 ## The Accidental Discovery
@@ -34,232 +35,96 @@ I struggled with positioning this. I kept saying "it's a UI runtime," but the ru
 
 Then I looked at the architecture diagram and realized: this isn't just a compiler. It has all the core layers of an operating system.
 
+## Why It's Actually an OS
+
+UIGen has three properties that make it an operating system rather than just a compiler or framework:
+
+1. **Runtime execution environment**: It doesn't generate code, it interprets an IR at runtime
+2. **Kernel/userland separation**: Core system services vs user extensions
+3. **Dynamic module loading**: Extensions load at runtime without rebuilds
+
+Let me explain each layer.
+
 ## The OS Architecture
 
 Here's UIGen's execution pipeline:
 
 ```
-Spec + Config → Reconciler → Adapter → IR → Kernel (Runtime) → Userland (Components)
-                    ↓            ↓        ↓         ↓
-                 Storage    Compiler   Memory   Scheduler
+Spec + Config → Reconciler → Adapter → IR → Runtime → Components
 ```
 
-Let me map each layer to real OS concepts.
+This maps directly to OS concepts:
 
-### 1. The Kernel: Process Management and Scheduling
+### 1. The Kernel (Runtime)
 
-In a traditional OS, the kernel manages processes, schedules tasks, handles interrupts, and provides system calls. UIGen's runtime does the same for UI components.
+In a traditional OS, the kernel manages processes, handles system calls, and provides core services. UIGen's runtime does the same for UI components.
 
-**Process Management:**
-```typescript
-// packages/react/src/App.tsx
-export function App() {
-  const config = window.__UIGEN_CONFIG__;
-  
-  // Process lifecycle management
-  useEffect(() => {
-    // Boot sequence
-    initializeAuth();
-    loadTheme();
-    setupRouting();
-    
-    return () => {
-      // Cleanup on shutdown
-      teardownConnections();
-    };
-  }, []);
-  
-  // Component scheduler
-  return (
-    <Router>
-      <LayoutContainer config={config.layout}>
-        <Routes>
-          {config.resources.map(resource => (
-            <Route
-              key={resource.slug}
-              path={`/${resource.slug}`}
-              element={<ResourceView resource={resource} />}
-            />
-          ))}
-        </Routes>
-      </LayoutContainer>
-    </Router>
-  );
-}
-```
+The runtime handles:
+- **Component lifecycle**: Mounting, updating, unmounting components based on routes
+- **Routing**: Mapping URLs to component trees
+- **Authentication**: Managing auth state and token refresh
+- **API communication**: Proxying requests, handling retries, caching responses
+- **State management**: Coordinating shared state across components
 
-The runtime manages component lifecycle just like a kernel manages process lifecycle:
-- **Spawning**: Components are instantiated based on routes
-- **Scheduling**: React's scheduler determines render priority
-- **Context switching**: Route changes trigger component unmount/mount
-- **Resource allocation**: Memory for component state, API connections
+Components don't directly access these services. They go through the runtime's API (hooks like `useResource`, `useApiCall`, `useAuth`), just like processes use system calls to access kernel services.
 
-**System Calls:**
-UIGen provides a system call interface through hooks:
-
-```typescript
-// packages/react/src/hooks/useApiCall.ts
-export function useApiCall(operation: Operation) {
-  // System call to network layer
-  return useMutation({
-    mutationFn: async (data) => {
-      const response = await fetch(operation.path, {
-        method: operation.method,
-        headers: getAuthHeaders(), // Kernel-managed auth state
-        body: JSON.stringify(data),
-      });
-      return response.json();
-    },
-  });
-}
-```
-
-Components don't make raw network calls—they go through the kernel's API layer, which handles auth, retries, caching, and error handling.
-
-### 2. The Compiler Pipeline: From Source to Executable
+### 2. The Compiler Pipeline
 
 Traditional OS compilers transform high-level code into machine code. UIGen's compiler transforms OpenAPI specs into an Intermediate Representation (IR) that the runtime executes.
 
-**Compilation Stages:**
+**Compilation stages:**
 
 ```
-Source Code (OpenAPI YAML)
+OpenAPI YAML
     ↓
-Lexer/Parser (js-yaml)
+Parser (js-yaml)
     ↓
-Reconciler (Config Merge)
+Reconciler (merges config annotations)
     ↓
-Semantic Analysis (Adapter)
+Adapter (semantic analysis)
     ↓
-IR Generation
+IR (framework-agnostic JSON)
     ↓
-Runtime Execution
+Runtime (interprets IR)
 ```
 
-**The Reconciler** (like a preprocessor):
-```typescript
-// packages/core/src/reconciler/reconciler.ts
-export function reconcile(spec: OpenAPISpec, config: ConfigFile): OpenAPISpec {
-  const reconciled = deepClone(spec);
-  
-  // Merge user config annotations into spec
-  for (const [elementPath, annotations] of Object.entries(config.annotations)) {
-    const element = resolveElementPath(reconciled, elementPath);
-    if (element) {
-      // Config takes precedence (like #define in C)
-      Object.assign(element, annotations);
-    }
-  }
-  
-  return reconciled;
-}
-```
+The IR is like bytecode or LLVM IR. It's framework-agnostic, so different renderers (React, Svelte, Vue) can consume the same IR, just like different CPU architectures execute the same LLVM IR.
 
-**The Adapter** (like a compiler frontend):
-```typescript
-// packages/core/src/adapter/openapi3.ts
-export class OpenAPI3Adapter {
-  adapt(): UIGenApp {
-    // Parse and analyze the spec
-    const resources = this.resourceExtractor.extractResources();
-    const auth = this.authDetector.detectAuthConfig();
-    
-    // Generate IR
-    return {
-      meta: this.extractMeta(),
-      resources,
-      auth,
-      dashboard: this.buildDashboard(),
-      servers: this.extractServers(),
-    };
-  }
-}
-```
+**Why this matters:** You write the spec once, and it runs on any renderer. The IR is the portable format.
 
-The IR is framework-agnostic JSON—like bytecode or LLVM IR. Different renderers (React, Svelte, Vue) can consume the same IR, just like different CPU architectures execute the same LLVM IR.
-
-### 3. The Filesystem: Configuration and Asset Management
+### 3. The Filesystem
 
 Every OS has a filesystem. UIGen's is `.uigen/`:
 
 ```
 .uigen/
-├── config.yaml          # System configuration (like /etc/)
-├── theme.css            # User-space styling
+├── config.yaml          # System configuration
+├── theme.css            # User styling
 ├── assets/              # Static resources
 │   └── logo.svg
-└── plugins/             # Loadable modules (like /lib/)
+└── plugins/             # Loadable modules
     └── custom-auth.ts
 ```
 
-**File Operations:**
-```typescript
-// packages/cli/src/commands/serve.ts
-async function loadConfig(specPath: string): Promise<Config> {
-  const configPath = path.join(path.dirname(specPath), '.uigen/config.yaml');
-  
-  // Filesystem read with fallback
-  if (fs.existsSync(configPath)) {
-    const content = await fs.promises.readFile(configPath, 'utf-8');
-    return yaml.load(content) as Config;
-  }
-  
-  return getDefaultConfig();
-}
-```
+The CLI watches `.uigen/` for changes and triggers recompilation, just like inotify or FSEvents. When you edit `config.yaml`, the system recompiles the IR and hot-reloads the UI.
 
-**Hot-Reloading** (like inotify):
-The CLI watches `.uigen/` for changes and triggers recompilation:
+**Config reconciliation:** The reconciler merges annotations from `config.yaml` into the spec at compile time. This is like a preprocessor (think `#define` in C). Config annotations take precedence over spec annotations.
 
-```typescript
-// File watcher (like inotify/FSEvents)
-const watcher = chokidar.watch('.uigen/**/*', {
-  ignored: /(^|[\/\\])\../,
-  persistent: true
-});
+### 4. Dynamic Linking
 
-watcher.on('change', async (path) => {
-  console.log(`File ${path} changed, recompiling...`);
-  const newIR = await recompile();
-  // Push to runtime via WebSocket
-  ws.send(JSON.stringify({ type: 'IR_UPDATE', payload: newIR }));
-});
-```
+Traditional OSes load shared libraries (`.so`, `.dll`) at runtime. UIGen loads custom components from `.uigen/plugins/`.
 
-### 4. Dynamic Linking: Loading Extensions at Runtime
+**How it works:**
+1. At boot, the runtime scans `.uigen/plugins/`
+2. Each plugin exports a `register` function
+3. The runtime calls `register`, passing a component registry
+4. Plugins register custom components by type
+5. When the runtime needs a component, it looks it up in the registry
 
-Traditional OSes load shared libraries (`.so`, `.dll`) at runtime. UIGen loads custom components from `.uigen/plugins/`:
-
-```typescript
-// packages/react/src/components/fields/ComponentRegistry.tsx
-export class ComponentRegistry {
-  private components: Map<string, ComponentType> = new Map();
-  
-  // Dynamic loader (like dlopen)
-  async loadPlugin(pluginPath: string) {
-    const module = await import(pluginPath);
-    
-    if (module.register) {
-      module.register(this);
-    }
-  }
-  
-  // Register custom component
-  register(type: string, component: ComponentType) {
-    this.components.set(type, component);
-  }
-  
-  // Resolve component (like symbol resolution)
-  resolve(type: string): ComponentType {
-    return this.components.get(type) || DefaultComponent;
-  }
-}
-```
-
-**Plugin Example:**
+**Example plugin:**
 ```typescript
 // .uigen/plugins/custom-auth.ts
-export function register(registry: ComponentRegistry) {
+export function register(registry) {
   registry.register('auth', CustomAuthComponent);
 }
 
@@ -269,177 +134,44 @@ export const CustomAuthComponent = ({ config }) => {
 };
 ```
 
-The runtime discovers and loads plugins at boot—no rebuild required. This is exactly how Linux loads kernel modules or how browsers load extensions.
+No rebuild required. The runtime discovers and loads plugins at boot, just like Linux loads kernel modules or browsers load extensions.
 
-### 5. Memory Management: State and Caching
+### 5. Device Drivers (Strategy Pattern)
 
-OSes manage memory allocation, paging, and garbage collection. UIGen's runtime manages UI state and API response caching.
+OSes abstract hardware through device drivers. UIGen abstracts external systems (auth providers, file storage, payment gateways) through strategies.
 
-**State Management** (like virtual memory):
+**Example: OAuth strategies**
 ```typescript
-// packages/react/src/hooks/useResource.ts
-export function useResource(resourceSlug: string) {
-  // Query cache (like page cache)
-  return useQuery({
-    queryKey: ['resource', resourceSlug],
-    queryFn: () => fetchResource(resourceSlug),
-    staleTime: 5 * 60 * 1000, // 5 min TTL
-    cacheTime: 30 * 60 * 1000, // 30 min in memory
-  });
+// Built-in strategies
+GoogleOAuthStrategy
+GitHubOAuthStrategy
+Auth0Strategy
+
+// User-defined strategy
+export class CustomOAuthStrategy implements OAuthStrategy {
+  async authorize() { /* custom flow */ }
+  async refresh(token) { /* custom refresh */ }
 }
+
+// Register at runtime
+strategyRegistry.register('custom', new CustomOAuthStrategy());
 ```
 
-TanStack Query acts as a page cache—frequently accessed data stays in memory, stale data is evicted.
-
-**Garbage Collection:**
-React's reconciler handles component cleanup, but UIGen also manages API connection pooling:
-
-```typescript
-// Connection pool (like file descriptor table)
-class ConnectionPool {
-  private connections: Map<string, AbortController> = new Map();
-  
-  acquire(key: string): AbortController {
-    if (!this.connections.has(key)) {
-      this.connections.set(key, new AbortController());
-    }
-    return this.connections.get(key)!;
-  }
-  
-  release(key: string) {
-    const controller = this.connections.get(key);
-    controller?.abort();
-    this.connections.delete(key);
-  }
-}
-```
-
-### 6. Inter-Process Communication: Event Bus
-
-OSes provide IPC mechanisms (pipes, sockets, message queues). UIGen uses an event bus for component communication:
-
-```typescript
-// packages/react/src/lib/event-bus.ts
-export class EventBus {
-  private listeners: Map<string, Set<Function>> = new Map();
-  
-  // Subscribe (like pipe read)
-  on(event: string, callback: Function) {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
-    }
-    this.listeners.get(event)!.add(callback);
-  }
-  
-  // Publish (like pipe write)
-  emit(event: string, data: any) {
-    const callbacks = this.listeners.get(event);
-    if (callbacks) {
-      callbacks.forEach(cb => cb(data));
-    }
-  }
-}
-
-// Usage
-eventBus.emit('resource:created', { resource: 'users', id: 123 });
-```
-
-Components communicate through the event bus rather than direct coupling—just like processes use IPC instead of shared memory.
-
-### 7. Device Drivers: Strategy Pattern for External Systems
-
-OSes abstract hardware through device drivers. UIGen abstracts external systems (auth providers, file storage, payment gateways) through strategies:
-
-```typescript
-// packages/react/src/lib/oauth-strategy.ts
-export interface OAuthStrategy {
-  authorize(): Promise<string>;
-  refresh(token: string): Promise<string>;
-  revoke(token: string): Promise<void>;
-}
-
-export class GoogleOAuthStrategy implements OAuthStrategy {
-  async authorize(): Promise<string> {
-    // Google-specific OAuth flow
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?...`;
-    return performPKCEFlow(authUrl);
-  }
-}
-
-export class GitHubOAuthStrategy implements OAuthStrategy {
-  async authorize(): Promise<string> {
-    // GitHub-specific OAuth flow
-    const authUrl = `https://github.com/login/oauth/authorize?...`;
-    return performPKCEFlow(authUrl);
-  }
-}
-
-// Strategy registry (like /dev/)
-export class StrategyRegistry {
-  private strategies: Map<string, OAuthStrategy> = new Map();
-  
-  register(name: string, strategy: OAuthStrategy) {
-    this.strategies.set(name, strategy);
-  }
-  
-  get(name: string): OAuthStrategy {
-    return this.strategies.get(name) || new DefaultStrategy();
-  }
-}
-```
-
-Users can register custom strategies without modifying core code—just like writing a device driver.
-
-### 8. System Calls: The Hook API
-
-OSes expose system calls (`open`, `read`, `write`, `fork`). UIGen exposes hooks:
-
-| System Call | UIGen Hook | Purpose |
-|-------------|------------|---------|
-| `open()` | `useResource()` | Open a resource handle |
-| `read()` | `useQuery()` | Read data from API |
-| `write()` | `useMutation()` | Write data to API |
-| `fork()` | `useModal()` | Spawn a child UI context |
-| `exec()` | `useNavigate()` | Execute a route transition |
-| `getpid()` | `useParams()` | Get current route context |
-| `signal()` | `useEvent()` | Send inter-component signal |
-
-**Example:**
-```typescript
-// User-space code
-function UserList() {
-  // System calls
-  const users = useResource('users');        // open + read
-  const createUser = useMutation('POST:/users'); // write
-  const navigate = useNavigate();            // exec
-  
-  return (
-    <div>
-      {users.data.map(user => (
-        <div key={user.id} onClick={() => navigate(`/users/${user.id}`)}>
-          {user.name}
-        </div>
-      ))}
-    </div>
-  );
-}
-```
-
-Components never touch the network directly—they go through the kernel's system call interface.
+Users can register custom strategies without modifying core code, just like writing a device driver.
 
 ## Why This Matters
 
-### 1. Separation of Concerns
+### 1. Kernel/Userland Separation
 
 Like an OS separates kernel space from user space, UIGen separates:
 - **Kernel space**: Routing, auth, API calls, state management
 - **User space**: Components, styling, business logic
 
-Users can't break the kernel. They extend it through well-defined interfaces.
+Users can't break the kernel. They extend it through well-defined interfaces (plugins, strategies, hooks).
 
 ### 2. Portability
 
-The IR is framework-agnostic. We're building Svelte and Vue renderers that consume the same IR. This is like how POSIX programs run on Linux, macOS, and BSD—same system calls, different kernels.
+The IR is framework-agnostic. We're building Svelte and Vue renderers that consume the same IR. This is like how POSIX programs run on Linux, macOS, and BSD with the same system calls but different kernels.
 
 ### 3. Extensibility Without Rebuilds
 
@@ -451,9 +183,9 @@ Traditional frameworks require rebuilds when you add features. UIGen loads exten
 
 OSes use config files (`/etc/fstab`, `/etc/nginx.conf`). UIGen uses `.uigen/config.yaml`. You declare what you want, the system figures out how.
 
-### 5. Process Isolation
+### 5. Hot-Reloading
 
-Components are isolated. A crash in one component doesn't bring down the system. This is like process isolation in an OS—a segfault in one process doesn't kernel panic.
+The CLI watches `.uigen/` for changes. When you edit a config file or plugin, it recompiles and pushes the new IR to the runtime via WebSocket. The UI updates without a full page reload.
 
 ## The Tradeoffs
 
@@ -466,7 +198,7 @@ Interpreting IR at runtime has overhead. But:
 
 ### Bundle Size
 
-The runtime is ~200KB gzipped. Generated code might be smaller for simple apps. But for complex apps, the runtime amortizes—you're not duplicating CRUD logic across 50 resources.
+The runtime is ~200KB gzipped. Generated code might be smaller for simple apps. But for complex apps, the runtime amortizes because you're not duplicating CRUD logic across 50 resources.
 
 ### Debugging
 
@@ -496,19 +228,16 @@ The repo: [github.com/darula-hpp/uigen](https://github.com/darula-hpp/uigen)
 ## Conclusion
 
 I didn't set out to build an operating system. I wanted to compile API specs into UIs. But as the system grew, it naturally evolved OS-like properties:
-- A kernel managing component lifecycle
+- A runtime kernel managing component lifecycle
 - A compiler pipeline transforming specs to IR
-- A filesystem for configuration
+- A filesystem for configuration and assets
 - Dynamic linking for extensions
-- Memory management for state
-- IPC for component communication
 - Device drivers for external systems
-- System calls for user-space code
 
-Maybe "UI Operating System" isn't just marketing. Maybe it's the most accurate description of what UIGen has become.
+The "UI Operating System" framing isn't marketing. It's the most accurate description of what UIGen has become.
 
 What do you think? Am I crazy for calling this an OS? Or is there something here?
 
 ---
 
-**Discussion on | [GitHub](https://github.com/darula-hpp/uigen) 
+**Discussion on [Hacker News](https://news.ycombinator.com) | [GitHub](https://github.com/darula-hpp/uigen) | [Docs](https://uigen.dev)**
