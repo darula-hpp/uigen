@@ -17,6 +17,7 @@ import {
 interface LoginViewProps {
   config: AuthConfig;
   appTitle: string;
+  appIcon?: string;
   landingPageEnabled?: boolean;
 }
 
@@ -26,7 +27,7 @@ type SchemeTab = 'credential' | 'bearer' | 'apiKey' | 'basic';
  * Dedicated login page component.
  * Supports credential (username/password), bearer token, and API key auth.
  */
-export function LoginView({ config, appTitle, landingPageEnabled = false }: LoginViewProps) {
+export function LoginView({ config, appTitle, appIcon, landingPageEnabled = false }: LoginViewProps) {
   const navigate = useNavigate();
   
   // Determine post-login redirect path
@@ -184,6 +185,15 @@ export function LoginView({ config, appTitle, landingPageEnabled = false }: Logi
       <div className="w-full max-w-md space-y-8">
         {/* Header */}
         <div className="text-center">
+          {appIcon && (
+            <div className="flex justify-center mb-4">
+              <img 
+                src={appIcon} 
+                alt={appTitle}
+                className="h-16 w-16 object-contain"
+              />
+            </div>
+          )}
           <h1 className="text-3xl font-bold tracking-tight">{appTitle}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Sign in to access the dashboard

@@ -272,6 +272,22 @@ export async function serve(specPath: string, options: ServeOptions) {
             }
             
             return injectedHtml;
+          },
+          configureServer(server) {
+            // Serve .uigen/assets/* files
+            server.middlewares.use((req, res, next) => {
+              const url = req.url || '/';
+              if (url.startsWith('/.uigen/assets/')) {
+                const assetPath = resolve(specDir, url.slice(1)); // Remove leading /
+                if (existsSync(assetPath)) {
+                  const ext = extname(assetPath);
+                  res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+                  createReadStream(assetPath).pipe(res);
+                  return;
+                }
+              }
+              next();
+            });
           }
         }]
       });
@@ -289,6 +305,21 @@ export async function serve(specPath: string, options: ServeOptions) {
 
       const httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
         const url = req.url || '/';
+
+        // Serve .uigen/assets/* files
+        if (url.startsWith('/.uigen/assets/')) {
+          const assetPath = resolve(specDir, url.slice(1)); // Remove leading /
+          if (existsSync(assetPath)) {
+            const ext = extname(assetPath);
+            res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+            createReadStream(assetPath).pipe(res);
+            return;
+          } else {
+            res.writeHead(404);
+            res.end('Asset not found');
+            return;
+          }
+        }
 
         if (url.startsWith('/api')) {
           const targetUrl = new URL(url.replace(/^\/api/, ''), proxyTarget);

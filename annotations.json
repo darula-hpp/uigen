@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-05-04T18:22:09.801Z",
-  "totalAnnotations": 12,
+  "generatedAt": "2026-05-07T08:24:33.475Z",
+  "totalAnnotations": 14,
   "annotations": [
     {
       "name": "x-uigen-active-server",
@@ -18,6 +18,44 @@
         {
           "description": "Explicitly not active",
           "value": false
+        }
+      ]
+    },
+    {
+      "name": "x-uigen-app",
+      "description": "Configures application metadata such as name and icon. Applied at document level for global configuration.",
+      "targetType": "document",
+      "parameterSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Custom application name (overrides OpenAPI title)"
+          },
+          "icon": {
+            "type": "string",
+            "description": "Application icon URL or path (used for favicon and header)"
+          }
+        },
+        "required": []
+      },
+      "examples": [
+        {
+          "description": "Minimal app configuration with name only",
+          "value": {
+            "name": "My Application"
+          }
+        },
+        {
+          "description": "Complete app configuration with name and icon",
+          "value": {
+            "name": "My Application",
+            "icon": "/.uigen/assets/logo.svg"
+          }
+        },
+        {
+          "description": "Empty configuration (all fields optional)",
+          "value": {}
         }
       ]
     },
@@ -142,6 +180,62 @@
             "xAxis": "category",
             "yAxis": "amount",
             "labels": "categoryName"
+          }
+        }
+      ]
+    },
+    {
+      "name": "x-uigen-datetime",
+      "description": "Configures datetime field formatting and input controls using dayjs format patterns",
+      "targetType": "field",
+      "applicableWhen": {
+        "type": "string"
+      },
+      "parameterSchema": {
+        "type": "string | object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "description": "Dayjs format pattern (e.g., YYYY-MM-DD, HH:mm:ss, YYYY-MM-DD HH:mm:ss)"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA timezone identifier (e.g., America/New_York, Europe/London)"
+          }
+        },
+        "required": [
+          "format"
+        ]
+      },
+      "examples": [
+        {
+          "description": "Simple date format (string shorthand)",
+          "value": "YYYY-MM-DD"
+        },
+        {
+          "description": "Date and time format",
+          "value": {
+            "format": "YYYY-MM-DD HH:mm:ss"
+          }
+        },
+        {
+          "description": "Date with timezone",
+          "value": {
+            "format": "YYYY-MM-DD",
+            "timezone": "America/New_York"
+          }
+        },
+        {
+          "description": "Time only format",
+          "value": {
+            "format": "HH:mm:ss"
+          }
+        },
+        {
+          "description": "Custom datetime format with timezone",
+          "value": {
+            "format": "DD/MM/YYYY hh:mm A",
+            "timezone": "Europe/London"
           }
         }
       ]

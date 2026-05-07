@@ -37,6 +37,12 @@ class ComponentRegistry {
       if (RefSelectField) return RefSelectField;
     }
 
+    // Check for datetime annotation (x-uigen-datetime)
+    if ((schema as any).dateTimeConfig) {
+      const DateTimeField = this.fieldComponents.get('datetime');
+      if (DateTimeField) return DateTimeField;
+    }
+
     // Check for format-specific components first
     if (schema.format) {
       const formatKey = `${schema.type}:${schema.format}`;

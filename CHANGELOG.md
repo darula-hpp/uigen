@@ -4,6 +4,105 @@ All notable changes to UIGen will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+
+## [0.7.2] - 2026-05-07
+
+### Changed
+
+**Project Infrastructure**
+- **Standardized version management with Changesets** - All packages now use fixed versioning
+  - Configured fixed versioning in `.changeset/config.json` to keep all packages synchronized
+  - All packages bumped to version 0.7.2 together
+  - Internal dependencies use `workspace:*` protocol for local development
+  - Changesets automatically replaces `workspace:*` with actual versions during publishing
+  - Prevents version mismatches between packages when published to npm
+  - Single changeset now bumps all packages to the same version
+
+**React package (`@uigen-dev/react`)**
+- **Landing page auth protection** - Authenticated users are now automatically redirected from landing page to dashboard
+  - Created `LandingPageRoute` wrapper component that checks authentication status
+  - Redirects authenticated users to `/dashboard` when they try to access `/`
+  - Follows same pattern as existing auth route wrappers (LoginRoute, SignUpRoute, PasswordResetRoute)
+  - Prevents authenticated users from navigating back to landing page via URL
+
+### Fixed
+
+**React package (`@uigen-dev/react`)**
+- **Breadcrumb navigation** - Fixed "Home" breadcrumb link to navigate to correct dashboard path
+  - Dashboard path now determined dynamically based on landing page configuration
+  - With landing page enabled: "Home" links to `/dashboard`
+  - Without landing page: "Home" links to `/` (root)
+  - Breadcrumb component now checks `config.landingPageConfig?.enabled` to determine correct path
+
+
+### Added
+
+**Core package (`@uigen-dev/core`)**
+- **DateTime annotation support** - New `x-uigen-datetime` annotation for declarative datetime formatting and input control configuration
+  - Field-level annotation for custom datetime format patterns using dayjs syntax
+  - Support for both string format (simple) and object format (with timezone)
+  - Automatic input control detection (date, time, datetime-local) based on format pattern
+  - Timezone handling with IANA timezone identifiers
+  - Separate `x-uigen-datetime-tz` annotation for independent timezone configuration
+  - Format pattern validation at compile time with clear error messages
+  - DateTimeFormatter service for consistent datetime formatting across the application
+  - DateTimeParser service for parsing user input with timezone awareness
+  - DateTimeApiConverter service for bidirectional conversion between API and display formats
+  - Support for Unix timestamps (seconds and milliseconds) via `x-uigen-datetime-api-format`
+  - Support for custom API format patterns (e.g., API uses YYYY-MM-DD, UI shows MM/DD/YYYY)
+  - Common format pattern constants library (ISO, US, EU, time formats)
+  - Full TypeScript type definitions in IR (DateTimeConfig interface)
+  - Comprehensive validation with helpful error messages
+  - 100+ unit tests covering all datetime operations
+  - 7 property-based tests verifying correctness properties (round-trip preservation, format validation, etc.)
+  - Config file integration for default datetime formats
+  ```yaml
+  # Simple format
+  created_at:
+    type: string
+    x-uigen-datetime: "MMM DD, YYYY"
+  
+  # With timezone
+  scheduled_at:
+    type: string
+    x-uigen-datetime:
+      format: "MM/DD/YYYY hh:mm A"
+      timezone: "America/New_York"
+  
+  # Unix timestamp with display format
+  timestamp:
+    type: integer
+    x-uigen-datetime: "MMM DD, YYYY"
+    x-uigen-datetime-api-format: "unix"
+  ```
+
+**React package (`@uigen-dev/react`)**
+- **DateTimeField component** - New React component for datetime input with format conversion
+  - Automatic input control rendering based on dateTimeConfig (date, time, datetime-local)
+  - Bidirectional format conversion (API format ↔ Display format)
+  - Timezone display and conversion
+  - Integration with react-hook-form for validation
+  - ARIA attributes for accessibility
+  - Support for Unix timestamps and custom API formats
+  - 20 integration tests covering complete form submission flows
+  - Backward compatible with existing date fields
+
+**Documentation**
+- Added comprehensive documentation for `x-uigen-datetime` annotation
+- Added documentation for `x-uigen-datetime-tz` annotation
+- Added example OpenAPI spec demonstrating various datetime format patterns
+- Added common timezone reference (North America, Europe, Asia, Australia)
+- Added dayjs format token reference
+
+### Dependencies
+- Added `dayjs` (^1.11.10) to core and react packages for datetime operations
+- Added dayjs plugins: utc, timezone, customParseFormat
+
+### Notes
+- No breaking changes - existing date fields continue to work without modification
+- The `x-uigen-datetime` annotation is optional and enhances existing date field functionality
+- Default behavior (ISO 8601) is maintained when annotations are not present
+
 ---
 
 ## [0.7.0] - 2026-05-05

@@ -1,8 +1,21 @@
-export function getExampleSpecTemplate(): string {
+export function getExampleSpecTemplate(projectName: string = 'Example API'): string {
   return `openapi: 3.0.0
 info:
-  title: Example API
+  title: ${projectName}
   version: 1.0.0
+  description: API for ${projectName}
+
+# Application configuration
+# Configure your app's name and icon for branding
+x-uigen-app:
+  # Custom application name (optional, defaults to info.title above)
+  name: "${projectName}"
+  
+  # Application icon URL or path (optional)
+  # Uncomment and customize after adding your icon to .uigen/assets/
+  # The icon will appear in the browser tab (favicon) and application header
+  # icon: "/.uigen/assets/logo.svg"
+
 servers:
   - url: http://localhost:8000
 paths:

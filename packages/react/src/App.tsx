@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { reconcile } from './overrides';
@@ -95,11 +96,15 @@ function LoginRoute({ config, landingPageEnabled }: { config: UIGenApp; landingP
     }
   };
   
+  const appName = config.appConfig?.name || config.meta.title;
+  const appIcon = config.appConfig?.icon;
+  
   return (
     <LayoutContainer layoutConfig={centeredLayout}>
       <LoginView 
         config={config.auth} 
-        appTitle={config.meta.title}
+        appTitle={appName}
+        appIcon={appIcon}
         landingPageEnabled={landingPageEnabled}
       />
     </LayoutContainer>
@@ -130,9 +135,16 @@ function SignUpRoute({ config, landingPageEnabled }: { config: UIGenApp; landing
     }
   };
   
+  const appName = config.appConfig?.name || config.meta.title;
+  const appIcon = config.appConfig?.icon;
+  
   return (
     <LayoutContainer layoutConfig={centeredLayout}>
-      <SignUpView config={config.auth} appTitle={config.meta.title} />
+      <SignUpView 
+        config={config.auth} 
+        appTitle={appName}
+        appIcon={appIcon}
+      />
     </LayoutContainer>
   );
 }
@@ -161,11 +173,28 @@ function PasswordResetRoute({ config, landingPageEnabled }: { config: UIGenApp; 
     }
   };
   
+  const appName = config.appConfig?.name || config.meta.title;
+  const appIcon = config.appConfig?.icon;
+  
   return (
     <LayoutContainer layoutConfig={centeredLayout}>
-      <PasswordResetView config={config.auth} appTitle={config.meta.title} />
+      <PasswordResetView 
+        config={config.auth} 
+        appTitle={appName}
+        appIcon={appIcon}
+      />
     </LayoutContainer>
   );
+}
+
+// Landing page route wrapper - redirects to dashboard if already authenticated
+function LandingPageRoute({ config }: { config: UIGenApp }) {
+  if (isAuthenticated()) {
+    // Redirect authenticated users to dashboard
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <LandingPageView config={config} />;
 }
 
 export function App({ config }: AppProps) {
@@ -179,6 +208,27 @@ export function App({ config }: AppProps) {
   // Determine dashboard path based on landing page config
   const dashboardPath = landingPageEnabled ? '/dashboard' : '/';
 
+  // Set document title from appConfig.name or fallback to meta.title
+  useEffect(() => {
+    const appName = config.appConfig?.name || config.meta.title;
+    document.title = appName;
+  }, [config.appConfig?.name, config.meta.title]);
+
+  // Set favicon from appConfig.icon
+  useEffect(() => {
+    if (config.appConfig?.icon) {
+      const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+      if (link) {
+        link.href = config.appConfig.icon;
+      } else {
+        const newLink = document.createElement('link');
+        newLink.rel = 'icon';
+        newLink.href = config.appConfig.icon;
+        document.head.appendChild(newLink);
+      }
+    }
+  }, [config.appConfig?.icon]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AppProvider config={config}>
@@ -190,9 +240,9 @@ export function App({ config }: AppProps) {
             <Route path="/signup" element={<SignUpRoute config={config} landingPageEnabled={landingPageEnabled} />} />
             <Route path="/password-reset" element={<PasswordResetRoute config={config} landingPageEnabled={landingPageEnabled} />} />
             
-            {/* Landing page route (if enabled) */}
+            {/* Landing page route (if enabled) - redirects authenticated users to dashboard */}
             {landingPageEnabled && (
-              <Route path="/" element={<LandingPageView config={config} />} />
+              <Route path="/" element={<LandingPageRoute config={config} />} />
             )}
             
             {/* Dashboard - protected with layout */}

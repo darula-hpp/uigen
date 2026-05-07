@@ -1,0 +1,18 @@
+# @uigen-dev/react
+
+## 0.7.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @uigen-dev/core@0.7.2
+
+## 0.7.1
+
+### Patch Changes
+
+- Fix breadcrumb navigation and landing page auth protection
+
+  - Fixed breadcrumb "Home" link to navigate to dashboard instead of landing page when landing page is enabled
+  - Added auth protection to landing page route to redirect authenticated users to dashboard
+  - Prevents authenticated users from accessing the landing page via URL navigation

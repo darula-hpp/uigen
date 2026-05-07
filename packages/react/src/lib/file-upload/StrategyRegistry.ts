@@ -6,7 +6,7 @@
  */
 
 import type { FileUploadStrategy } from './types';
-import type { FileTypeCategory } from '@uigen/core';
+import type { FileTypeCategory } from '@uigen-dev/core';
 
 export class StrategyRegistry {
   private strategies: Map<string, FileUploadStrategy>;

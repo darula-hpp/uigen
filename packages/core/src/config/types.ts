@@ -57,6 +57,11 @@ export interface AnnotationConfig {
   'x-uigen-login'?: boolean;
   'x-uigen-chart'?: Record<string, unknown>;
   'x-uigen-ref'?: Record<string, unknown>;
+  'x-uigen-app'?: {
+    name?: string;
+    icon?: string;
+    [key: string]: unknown; // Allow extensibility
+  };
   [key: string]: unknown; // Allow other annotations
 }
 

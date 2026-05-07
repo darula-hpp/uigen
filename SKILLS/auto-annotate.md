@@ -58,8 +58,11 @@ Load the annotations metadata from `annotations.json`:
   "x-uigen-max-file-size": { "targetType": "field", "type": "number", "applicableWhen": { "type": "file" } },
   "x-uigen-ref": { "targetType": "field", "type": "object" },
   "x-uigen-chart": { "targetType": "field", "type": "object", "applicableWhen": { "type": "array" } },
+  "x-uigen-datetime": { "targetType": "field", "type": "string | object", "applicableWhen": { "type": "string" } },
   "x-uigen-active-server": { "targetType": "server", "type": "boolean" },
-  "x-uigen-layout": { "targetType": ["document", "operation"], "type": "object" }
+  "x-uigen-layout": { "targetType": ["document", "operation"], "type": "object" },
+  "x-uigen-app": { "targetType": "document", "type": "object" },
+  "x-uigen-profile": { "targetType": "operation", "type": "boolean" }
 }
 ```
 
@@ -296,7 +299,47 @@ Post.category_id:
     yAxis: count
 ```
 
-### Rule 8: Custom Labels (x-uigen-label)
+### Rule 8: DateTime Fields (x-uigen-datetime)
+
+**Pattern detection:**
+- Schema type: `string`
+- Field name contains: `date`, `time`, `timestamp`, `created_at`, `updated_at`, `scheduled`, `expires`, `deadline`
+- Format: `date`, `date-time`, or `time`
+- Description contains: `date`, `time`, `timestamp`, `datetime`
+
+**Format detection:**
+- Field name contains `date` only → `YYYY-MM-DD`
+- Field name contains `time` only → `HH:mm:ss`
+- Field name contains `datetime`, `timestamp`, `created_at`, `updated_at` → `YYYY-MM-DD HH:mm:ss`
+- Format is `date` → `YYYY-MM-DD`
+- Format is `date-time` → `YYYY-MM-DD HH:mm:ss`
+- Format is `time` → `HH:mm:ss`
+
+**Timezone detection:**
+- If field name contains `utc` or description mentions UTC → no timezone (UTC assumed)
+- If description mentions specific timezone → use that timezone
+- Otherwise → no timezone specified (local time)
+
+**Example:**
+```yaml
+User.created_at:
+  x-uigen-datetime:
+    format: YYYY-MM-DD HH:mm:ss
+
+Meeting.scheduled_date:
+  x-uigen-datetime: YYYY-MM-DD
+
+Event.start_time:
+  x-uigen-datetime:
+    format: HH:mm:ss
+
+Appointment.scheduled_at:
+  x-uigen-datetime:
+    format: YYYY-MM-DD HH:mm:ss
+    timezone: America/New_York
+```
+
+### Rule 9: Custom Labels (x-uigen-label)
 
 **Pattern detection:**
 - Apply human-readable labels to operations, fields, and resources
@@ -336,7 +379,7 @@ User.email_address:
   x-uigen-label: Document Templates
 ```
 
-### Rule 9: Active Server (x-uigen-active-server)
+### Rule 10: Active Server (x-uigen-active-server)
 
 **Pattern detection:**
 - If spec has multiple servers, mark the first production server as active
@@ -349,7 +392,7 @@ User.email_address:
 # But can be suggested as a manual edit if needed
 ```
 
-### Rule 10: Layout Configuration (x-uigen-layout)
+### Rule 11: Layout Configuration (x-uigen-layout)
 
 **Pattern detection:**
 
@@ -555,6 +598,27 @@ function autoAnnotate(specPath: string): Annotation[] {
         path: config.path,
         annotations: {
           'x-uigen-chart': config.chartConfig
+        }
+      });
+    }
+  }
+  
+  // Detect datetime fields
+  for (const [schemaName, schema] of Object.entries(spec.components?.schemas || {})) {
+    const dateTimeFields = detectDateTimeFields(schemaName, schema);
+    for (const field of dateTimeFields) {
+      const annotation: any = {
+        format: field.format
+      };
+      
+      if (field.timezone) {
+        annotation.timezone = field.timezone;
+      }
+      
+      annotations.push({
+        path: `${schemaName}.${field.fieldName}`,
+        annotations: {
+          'x-uigen-datetime': annotation
         }
       });
     }
@@ -773,6 +837,81 @@ function findLabelField(schema: any): string {
 }
 ```
 
+### detectDateTimeFields
+```typescript
+function detectDateTimeFields(schemaName: string, schema: any): Array<{
+  fieldName: string;
+  format: string;
+  timezone?: string;
+}> {
+  const dateTimeFields: Array<any> = [];
+  
+  for (const [fieldName, fieldSchema] of Object.entries(schema.properties || {})) {
+    const field = fieldSchema as any;
+    
+    // Only apply to string fields
+    if (field.type !== 'string') {
+      continue;
+    }
+    
+    // Check field name patterns
+    const fieldNameLower = fieldName.toLowerCase();
+    const isDateTimeField = /date|time|timestamp|created_at|updated_at|scheduled|expires|deadline/.test(fieldNameLower);
+    
+    // Check format
+    const hasDateTimeFormat = field.format === 'date' || field.format === 'date-time' || field.format === 'time';
+    
+    // Check description
+    const hasDateTimeDescription = field.description && /date|time|timestamp|datetime/i.test(field.description);
+    
+    if (isDateTimeField || hasDateTimeFormat || hasDateTimeDescription) {
+      // Detect format pattern
+      let format: string;
+      
+      if (field.format === 'date') {
+        format = 'YYYY-MM-DD';
+      } else if (field.format === 'time') {
+        format = 'HH:mm:ss';
+      } else if (field.format === 'date-time') {
+        format = 'YYYY-MM-DD HH:mm:ss';
+      } else if (/time/.test(fieldNameLower) && !/date/.test(fieldNameLower)) {
+        format = 'HH:mm:ss';
+      } else if (/date/.test(fieldNameLower) && !/time/.test(fieldNameLower)) {
+        format = 'YYYY-MM-DD';
+      } else {
+        format = 'YYYY-MM-DD HH:mm:ss';
+      }
+      
+      // Detect timezone
+      let timezone: string | undefined;
+      
+      if (field.description) {
+        const descLower = field.description.toLowerCase();
+        
+        // Check for specific timezone mentions
+        const timezoneMatch = field.description.match(/timezone:\s*([A-Za-z_\/]+)/i);
+        if (timezoneMatch) {
+          timezone = timezoneMatch[1];
+        }
+        
+        // Don't set timezone if UTC is mentioned (UTC is default)
+        if (/\butc\b/i.test(descLower)) {
+          timezone = undefined;
+        }
+      }
+      
+      dateTimeFields.push({
+        fieldName,
+        format,
+        ...(timezone && { timezone })
+      });
+    }
+  }
+  
+  return dateTimeFields;
+}
+```
+
 ### detectLayoutConfiguration
 ```typescript
 function detectLayoutConfiguration(spec: any): {
@@ -931,6 +1070,7 @@ function reportResults(annotations: Annotation[]): void {
     fileUpload: 0,
     ref: 0,
     chart: 0,
+    datetime: 0,
     layout: 0
   };
   
@@ -942,6 +1082,7 @@ function reportResults(annotations: Annotation[]): void {
     if (annotation.annotations['x-uigen-file-types']) summary.fileUpload++;
     if (annotation.annotations['x-uigen-ref']) summary.ref++;
     if (annotation.annotations['x-uigen-chart']) summary.chart++;
+    if (annotation.annotations['x-uigen-datetime']) summary.datetime++;
     if (annotation.annotations['x-uigen-layout']) summary.layout++;
   }
   
@@ -953,6 +1094,7 @@ function reportResults(annotations: Annotation[]): void {
   if (summary.fileUpload > 0) console.log(`  - ${summary.fileUpload} file upload field(s) configured`);
   if (summary.ref > 0) console.log(`  - ${summary.ref} foreign key reference(s) detected`);
   if (summary.chart > 0) console.log(`  - ${summary.chart} chart visualization(s) added`);
+  if (summary.datetime > 0) console.log(`  - ${summary.datetime} datetime field(s) configured`);
   if (summary.layout > 0) console.log(`  - ${summary.layout} layout configuration(s) applied`);
   
   console.log(`\nRun 'uigen serve openapi.yaml' to see the results.`);
@@ -1046,7 +1188,7 @@ const encodedPath = path.replace(/~/g, '~0').replace(/\//g, '~1');
 
 # AI agent reports
 ✓ Auto-annotated OpenAPI spec: openapi.yaml
-✓ Added 10 annotations to .uigen/config.yaml
+✓ Added 12 annotations to .uigen/config.yaml
 
 Summary:
   - 1 login endpoint detected
@@ -1055,6 +1197,7 @@ Summary:
   - 1 internal endpoint marked to ignore
   - 2 file upload fields configured
   - 2 foreign key references detected
+  - 2 datetime fields configured
   - 2 layout configurations applied
 
 Run 'uigen serve openapi.yaml' to see the results.
