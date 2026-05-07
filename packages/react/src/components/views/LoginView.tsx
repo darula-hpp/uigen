@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { AuthConfig, LoginEndpoint } from '@uigen-dev/core';
+import type { AuthConfig, LoginEndpoint, OAuthProvider } from '@uigen-dev/core';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Alert, AlertDescription } from '../ui/alert';
 import { ThemeToggle } from '../ThemeToggle';
 import { useThemeInitializer } from '@/hooks/useThemeInitializer';
+import { OAuthButton } from '../auth/OAuthButton';
+import { OAuthStrategy } from '@/lib/oauth-strategy';
 import {
   CredentialStrategy,
   BearerStrategy,
@@ -40,6 +43,7 @@ export function LoginView({ config, appTitle, appIcon, landingPageEnabled = fals
   const bearerScheme = config.schemes.find(s => s.type === 'bearer');
   const apiKeyScheme = config.schemes.find(s => s.type === 'apiKey');
   const basicScheme = config.schemes.find(s => s.type === 'basic');
+  const oauthProviders = (config.oauthProviders ?? []).filter((p: OAuthProvider) => p.enabled !== false).slice(0, 10);
 
   const hasCredential = loginEndpoints.length > 0;
   const hasBearer = !!bearerScheme;
@@ -47,6 +51,8 @@ export function LoginView({ config, appTitle, appIcon, landingPageEnabled = fals
   const hasBasic = !!basicScheme;
   const hasPasswordReset = passwordResetEndpoints.length > 0;
   const hasSignUp = signUpEndpoints.length > 0;
+  const hasOAuth = oauthProviders.length > 0;
+  const hasCredentialAuth = hasCredential || hasBearer || hasApiKey || hasBasic;
 
   // Determine default tab: prefer credential > basic > bearer > apiKey
   const defaultTab: SchemeTab = hasCredential ? 'credential' : hasBasic ? 'basic' : hasBearer ? 'bearer' : 'apiKey';
@@ -71,6 +77,10 @@ export function LoginView({ config, appTitle, appIcon, landingPageEnabled = fals
   const [basicPassword, setBasicPassword] = useState('');
   const [basicLoading, setBasicLoading] = useState(false);
 
+  // OAuth state
+  const [oauthError, setOAuthError] = useState<string | null>(null);
+  const [oauthLoadingProvider, setOAuthLoadingProvider] = useState<string | null>(null);
+
   // Shared error state
   const [error, setError] = useState<string | null>(null);
 
@@ -78,9 +88,35 @@ export function LoginView({ config, appTitle, appIcon, landingPageEnabled = fals
   useThemeInitializer();
 
   // Redirect synchronously (no useEffect) if nothing to authenticate with
-  if (!hasCredential && !hasBearer && !hasApiKey && !hasBasic) {
+  if (!hasCredential && !hasBearer && !hasApiKey && !hasBasic && !hasOAuth) {
     return null;
   }
+
+  // ── OAuth button click handler ────────────────────────────────────────────
+  const handleOAuthClick = async (provider: OAuthProvider) => {
+    // Clear any existing errors
+    setOAuthError(null);
+    setError(null);
+    
+    // Set loading state for this provider
+    setOAuthLoadingProvider(provider.provider);
+    
+    try {
+      const strategy = new OAuthStrategy();
+      const result = await strategy.login({ provider });
+      
+      // If login fails (shouldn't happen as it redirects), show error
+      if (!result.success) {
+        setOAuthError(result.error ?? 'OAuth authentication failed');
+        setOAuthLoadingProvider(null);
+      }
+      // Note: On success, the strategy redirects to the OAuth provider,
+      // so we won't reach this point. The callback will be handled separately.
+    } catch (err) {
+      setOAuthError('Failed to initiate OAuth authentication');
+      setOAuthLoadingProvider(null);
+    }
+  };
 
   // ── Credential submit ──────────────────────────────────────────────────────
   const handleCredentialSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -203,8 +239,65 @@ export function LoginView({ config, appTitle, appIcon, landingPageEnabled = fals
         {/* Auth Form Card */}
         <div className="bg-card border rounded-lg shadow-sm p-6 space-y-6">
 
-          {/* Tab switcher — only shown when multiple auth methods exist */}
-          {tabCount > 1 && (
+          {/* OAuth Error Message */}
+          {oauthError && (
+            <Alert variant="destructive" className="relative">
+              <AlertDescription className="pr-8">
+                {oauthError}
+              </AlertDescription>
+              <button
+                type="button"
+                onClick={() => setOAuthError(null)}
+                className="absolute top-3 right-3 text-destructive hover:text-destructive/80"
+                aria-label="Dismiss error"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </Alert>
+          )}
+
+          {/* OAuth Buttons Section */}
+          {hasOAuth && (
+            <div className="space-y-4">
+              {oauthProviders.map((provider) => (
+                <OAuthButton
+                  key={provider.provider}
+                  provider={provider}
+                  onInitiate={handleOAuthClick}
+                  loading={oauthLoadingProvider === provider.provider}
+                  disabled={oauthLoadingProvider !== null && oauthLoadingProvider !== provider.provider}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Divider with "OR" text when both OAuth and credential auth are available */}
+          {hasOAuth && hasCredentialAuth && (
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">OR</span>
+              </div>
+            </div>
+          )}
+
+          {/* Tab switcher — only shown when multiple credential auth methods exist */}
+          {hasCredentialAuth && tabCount > 1 && (
             <div className="flex gap-2">
               {hasCredential && (
                 <Button
@@ -253,7 +346,7 @@ export function LoginView({ config, appTitle, appIcon, landingPageEnabled = fals
           )}
 
           {/* ── Credential form ── */}
-          {activeTab === 'credential' && hasCredential && (
+          {hasCredentialAuth && activeTab === 'credential' && hasCredential && (
             <form onSubmit={handleCredentialSubmit} className="space-y-4">
               {/* Endpoint selector when multiple login endpoints exist */}
               {loginEndpoints.length > 1 && (
@@ -335,7 +428,7 @@ export function LoginView({ config, appTitle, appIcon, landingPageEnabled = fals
           )}
 
           {/* ── Bearer form ── */}
-          {activeTab === 'bearer' && hasBearer && (
+          {hasCredentialAuth && activeTab === 'bearer' && hasBearer && (
             <form onSubmit={handleBearerSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="bearer-token">Bearer Token</Label>
@@ -358,7 +451,7 @@ export function LoginView({ config, appTitle, appIcon, landingPageEnabled = fals
           )}
 
           {/* ── API key form ── */}
-          {activeTab === 'apiKey' && hasApiKey && apiKeyScheme && (
+          {hasCredentialAuth && activeTab === 'apiKey' && hasApiKey && apiKeyScheme && (
             <form onSubmit={handleApiKeySubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="api-key">API Key</Label>
@@ -381,7 +474,7 @@ export function LoginView({ config, appTitle, appIcon, landingPageEnabled = fals
           )}
 
           {/* ── Basic auth form ── */}
-          {activeTab === 'basic' && hasBasic && (
+          {hasCredentialAuth && activeTab === 'basic' && hasBasic && (
             <form onSubmit={handleBasicSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="basic-username">Username</Label>
