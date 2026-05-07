@@ -29,9 +29,13 @@ export function Breadcrumb({ config }: BreadcrumbProps) {
     return null;
   }
 
+  // Determine dashboard path based on landing page config
+  const landingPageEnabled = config.landingPageConfig?.enabled === true;
+  const dashboardPath = landingPageEnabled ? '/dashboard' : '/';
+
   // Build breadcrumb items
   const breadcrumbs: Array<{ label: string; path: string; isActive: boolean }> = [
-    { label: 'Home', path: '/', isActive: false }
+    { label: 'Home', path: dashboardPath, isActive: false }
   ];
 
   // Add resource (list view)

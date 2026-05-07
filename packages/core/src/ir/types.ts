@@ -216,6 +216,11 @@ export interface SchemaNode {
    * Set by ChartHandler when x-uigen-chart annotation is present
    */
   chartConfig?: ChartConfig;
+  /**
+   * DateTime configuration (optional)
+   * Set by DateTimeHandler when x-uigen-datetime annotation is present
+   */
+  dateTimeConfig?: DateTimeConfig;
 }
 
 export interface ValidationRule {
@@ -336,6 +341,26 @@ export interface ChartConfig {
   
   /** Chart display and behavior options (optional) */
   options?: ChartOptions;
+}
+
+/**
+ * DateTime field configuration
+ * 
+ * Configures datetime formatting and input controls for string fields.
+ * Set by DateTimeHandler when x-uigen-datetime annotation is present.
+ */
+export interface DateTimeConfig {
+  /** dayjs format pattern for display and parsing */
+  format: string;
+  
+  /** IANA timezone identifier or 'local' */
+  timezone?: string;
+  
+  /** HTML5 input type based on format pattern */
+  inputType: 'date' | 'time' | 'datetime-local';
+  
+  /** API format for sending/receiving values (ISO8601, unix, custom pattern) */
+  apiFormat?: string;
 }
 
 /**

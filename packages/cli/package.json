@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/cli",
-  "version": "0.7.0",
+  "version": "0.7.2",
   "description": "Auto-generate frontends from OpenAPI specs",
   "license": "MIT",
   "repository": {
@@ -36,9 +36,9 @@
     "postpack": "rm -f ./README.md"
   },
   "dependencies": {
-    "@uigen-dev/config-gui": "0.7.0",
-    "@uigen-dev/core": "0.7.0",
-    "@uigen-dev/react": "0.7.0",
+    "@uigen-dev/config-gui": "workspace:*",
+    "@uigen-dev/core": "workspace:*",
+    "@uigen-dev/react": "workspace:*",
     "commander": "^12.1.0",
     "js-yaml": "^4.1.0",
     "picocolors": "^1.1.1",

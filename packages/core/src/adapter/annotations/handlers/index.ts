@@ -9,6 +9,8 @@ import { ActiveServerHandler } from './active-server-handler.js';
 import { FileTypesHandler } from './file-types-handler.js';
 import { MaxFileSizeHandler } from './max-file-size-handler.js';
 import { ChartHandler } from './chart-handler.js';
+import { DateTimeHandler } from './datetime-handler.js';
+import { DateTimeTimezoneHandler } from './datetime-timezone-handler.js';
 import { ProfileHandler } from './profile-handler.js';
 import { LayoutHandler } from './layout-handler.js';
 import { LandingPageHandler } from './landing-page-handler.js';
@@ -43,6 +45,8 @@ function registerHandlers(): void {
   registry.register(new FileTypesHandler());
   registry.register(new MaxFileSizeHandler());
   registry.register(new ChartHandler());
+  registry.register(new DateTimeHandler());
+  registry.register(new DateTimeTimezoneHandler());
   
   // Register resource-level handlers
   registry.register(new ProfileHandler());
@@ -70,6 +74,8 @@ export { ActiveServerHandler } from './active-server-handler.js';
 export { FileTypesHandler } from './file-types-handler.js';
 export { MaxFileSizeHandler } from './max-file-size-handler.js';
 export { ChartHandler } from './chart-handler.js';
+export { DateTimeHandler } from './datetime-handler.js';
+export { DateTimeTimezoneHandler } from './datetime-timezone-handler.js';
 export { ProfileHandler } from './profile-handler.js';
 export { LayoutHandler } from './layout-handler.js';
 export { LandingPageHandler } from './landing-page-handler.js';

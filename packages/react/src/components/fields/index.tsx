@@ -5,6 +5,7 @@ import { CheckboxField } from './CheckboxField';
 import { SelectField } from './SelectField';
 import { DatePicker } from './DatePicker';
 import { DateTimePicker } from './DateTimePicker';
+import { DateTimeField } from './DateTimeField';
 import { FileUpload } from './FileUpload';
 import { ArrayField } from './ArrayField';
 import { ObjectField } from './ObjectField';
@@ -17,6 +18,9 @@ import { RefSelectField } from './RefSelectField';
 export function registerDefaultComponents() {
   // Ref annotation (x-uigen-ref)
   componentRegistry.registerField('ref', RefSelectField);
+  
+  // DateTime annotation (x-uigen-datetime)
+  componentRegistry.registerField('datetime', DateTimeField);
   
   // String types
   componentRegistry.registerField('string', TextField);
@@ -57,6 +61,7 @@ export {
   SelectField,
   DatePicker,
   DateTimePicker,
+  DateTimeField,
   FileUpload,
   ArrayField,
   ObjectField,

@@ -1,0 +1,9 @@
+# @uigen-dev/config-gui
+
+## 0.7.2
+
+### Patch Changes
+
+- Align all package versions to 0.7.1 for consistent versioning across the monorepo
+- Updated dependencies
+  - @uigen-dev/core@0.7.2

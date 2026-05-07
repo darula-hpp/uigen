@@ -187,6 +187,16 @@ function PasswordResetRoute({ config, landingPageEnabled }: { config: UIGenApp; 
   );
 }
 
+// Landing page route wrapper - redirects to dashboard if already authenticated
+function LandingPageRoute({ config }: { config: UIGenApp }) {
+  if (isAuthenticated()) {
+    // Redirect authenticated users to dashboard
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <LandingPageView config={config} />;
+}
+
 export function App({ config }: AppProps) {
   const requiresAuth =
     config.auth.schemes.length > 0 ||
@@ -230,9 +240,9 @@ export function App({ config }: AppProps) {
             <Route path="/signup" element={<SignUpRoute config={config} landingPageEnabled={landingPageEnabled} />} />
             <Route path="/password-reset" element={<PasswordResetRoute config={config} landingPageEnabled={landingPageEnabled} />} />
             
-            {/* Landing page route (if enabled) */}
+            {/* Landing page route (if enabled) - redirects authenticated users to dashboard */}
             {landingPageEnabled && (
-              <Route path="/" element={<LandingPageView config={config} />} />
+              <Route path="/" element={<LandingPageRoute config={config} />} />
             )}
             
             {/* Dashboard - protected with layout */}

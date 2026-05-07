@@ -70,10 +70,11 @@ button.bg-secondary:hover {
   background: #d97706;
 }
 
-/* Focus states */
+/* Focus states - Minimal and subtle */
 button:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+  outline: 1px solid var(--ring);
+  outline-offset: 1px;
+  opacity: 0.9;
 }
 
 /* Forms - Simple and clean */
@@ -94,6 +95,7 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
 }
 
 /* Labels */
@@ -190,9 +192,10 @@ a:not(nav a):not(aside a):hover {
 }
 
 a:not(nav a):not(aside a):focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+  outline: 1px solid var(--ring);
+  outline-offset: 1px;
   border-radius: 0.25rem;
+  opacity: 0.9;
 }
 
 /* Responsive Design */
@@ -250,11 +253,12 @@ a:not(nav a):not(aside a):focus-visible {
   }
 }
 
-/* Accessibility */
+/* Accessibility - Minimal focus indicators */
 *:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+  outline: 1px solid var(--ring);
+  outline-offset: 1px;
   border-radius: 0.25rem;
+  opacity: 0.95;
 }
 
 .text-muted {
@@ -272,7 +276,7 @@ a:not(nav a):not(aside a):focus-visible {
 .error:focus,
 [aria-invalid="true"]:focus {
   border-color: var(--destructive);
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.3);
 }
 
 /* Success states */
@@ -283,7 +287,7 @@ a:not(nav a):not(aside a):focus-visible {
 
 .success:focus {
   border-color: #059669;
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+  box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.3);
 }
 
 /* Loading spinner */

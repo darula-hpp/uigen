@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/core",
-  "version": "0.7.0",
+  "version": "0.7.2",
   "description": "Framework-agnostic engine for spec-driven frontends",
   "license": "MIT",
   "repository": {
@@ -40,6 +40,7 @@
     "postpack": "rm -f ./README.md"
   },
   "dependencies": {
+    "dayjs": "^1.11.20",
     "js-yaml": "^4.1.0",
     "openapi-types": "^12.1.3"
   },
