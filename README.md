@@ -1,6 +1,6 @@
-# Shimmer From Structure
+# UIGen
 
-A frontend that renders itself from your OpenAPI spec at runtime.
+A UI execution layer for OpenAPI. One spec becomes a live application that runs API calls and renders in real time
 
 ![UIGen Demo](https://github.com/darula-hpp/uigen/raw/main/examples/output.gif)
 
