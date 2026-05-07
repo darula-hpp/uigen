@@ -1,10 +1,9 @@
-# UIGen
+# Shimmer From Structure
 
-> Turn your API into an application. Automatically.
+A frontend that renders itself from your OpenAPI spec at runtime.
 
 ![UIGen Demo](https://github.com/darula-hpp/uigen/raw/main/examples/output.gif)
 
-**⚠️ Disclaimer:** Project not ready for production yet, but we're fast approaching v1.
 
 ---
 
