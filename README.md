@@ -1,4 +1,4 @@
-# Shimmer From Structure
+# UIGen
 
 A frontend that renders itself from your OpenAPI spec at runtime.
 
