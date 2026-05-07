@@ -15,6 +15,7 @@ import { ProfileHandler } from './profile-handler.js';
 import { LayoutHandler } from './layout-handler.js';
 import { LandingPageHandler } from './landing-page-handler.js';
 import { AppHandler } from './app-handler.js';
+import { AuthHandler } from './auth-handler.js';
 
 /**
  * Initialize and register all annotation handlers.
@@ -36,6 +37,9 @@ function registerHandlers(): void {
   registry.register(new LoginHandler());
   registry.register(new LabelHandler());
   registry.register(new RefHandler());
+  
+  // Register auth handlers (document-level)
+  registry.register(new AuthHandler());
   
   // Register operation-level handlers (Requirements 1.2, 1.3, 1.4)
   registry.register(new PasswordResetHandler());
@@ -68,6 +72,7 @@ export { IgnoreHandler } from './ignore-handler.js';
 export { LabelHandler } from './label-handler.js';
 export { RefHandler } from './ref-handler.js';
 export { LoginHandler } from './login-handler.js';
+export { AuthHandler } from './auth-handler.js';
 export { PasswordResetHandler } from './password-reset-handler.js';
 export { SignUpHandler } from './sign-up-handler.js';
 export { ActiveServerHandler } from './active-server-handler.js';

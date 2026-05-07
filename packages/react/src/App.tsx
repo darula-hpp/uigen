@@ -16,6 +16,7 @@ import { LoginView } from './components/views/LoginView';
 import { SignUpView } from './components/views/SignUpView';
 import { PasswordResetView } from './components/views/PasswordResetView';
 import { ProfileView } from './components/views/ProfileView';
+import { OAuthCallback } from './components/auth/OAuthCallback';
 import { ToastProvider } from './components/Toast';
 import { AppProvider } from './contexts/AppContext';
 import { isAuthenticated } from './lib/auth';
@@ -239,6 +240,9 @@ export function App({ config }: AppProps) {
             <Route path="/login" element={<LoginRoute config={config} landingPageEnabled={landingPageEnabled} />} />
             <Route path="/signup" element={<SignUpRoute config={config} landingPageEnabled={landingPageEnabled} />} />
             <Route path="/password-reset" element={<PasswordResetRoute config={config} landingPageEnabled={landingPageEnabled} />} />
+            
+            {/* OAuth callback route - handles OAuth provider redirects */}
+            <Route path="/auth/callback" element={<OAuthCallback />} />
             
             {/* Landing page route (if enabled) - redirects authenticated users to dashboard */}
             {landingPageEnabled && (

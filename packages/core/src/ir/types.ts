@@ -78,6 +78,7 @@ export interface AuthConfig {
   refreshEndpoints?: RefreshEndpoint[];
   passwordResetEndpoints?: PasswordResetEndpoint[];
   signUpEndpoints?: SignUpEndpoint[];
+  oauthProviders?: OAuthProvider[];
 }
 
 export interface LoginEndpoint {
@@ -116,6 +117,41 @@ export interface AuthScheme {
   in?: 'header' | 'query' | 'cookie';
   scheme?: string;
   bearerFormat?: string;
+}
+
+/**
+ * OAuth 2.0 provider configuration
+ * 
+ * Configures an OAuth provider for social login authentication.
+ * Set by AuthHandler when x-uigen-auth annotation is present.
+ */
+export interface OAuthProvider {
+  /** OAuth provider identifier (google, github, facebook, microsoft) */
+  provider: 'google' | 'github' | 'facebook' | 'microsoft';
+  
+  /** OAuth client ID from provider console */
+  clientId: string;
+  
+  /** Redirect URI for OAuth callback (must match provider configuration) */
+  redirectUri: string;
+  
+  /** OAuth scopes to request (defaults to provider-specific scopes if omitted) */
+  scopes: string[];
+  
+  /** Whether this provider is enabled (defaults to true) */
+  enabled: boolean;
+  
+  /** Custom authorization endpoint URL (overrides provider default) */
+  authorizationUrl: string;
+  
+  /** Custom token endpoint URL (overrides provider default) */
+  tokenUrl: string;
+  
+  /** Custom user info endpoint URL (overrides provider default) */
+  userInfoUrl: string;
+  
+  /** Custom refresh token endpoint URL (optional, defaults to tokenUrl) */
+  refreshTokenEndpoint?: string;
 }
 
 export interface DashboardConfig {
