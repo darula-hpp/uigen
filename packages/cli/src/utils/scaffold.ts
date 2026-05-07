@@ -27,6 +27,7 @@ export async function scaffoldProject(
   const dirs = [
     '.agents/skills',
     '.uigen',
+    '.uigen/assets',
   ];
 
   for (const dir of dirs) {
@@ -45,6 +46,9 @@ export async function scaffoldProject(
 
   // Copy base-styles.css
   await copyBaseStyles(projectPath, verbose);
+
+  // Copy default icon
+  await copyDefaultIcon(projectPath, verbose);
 
   // Create config.yaml
   const configPath = resolve(projectPath, '.uigen/config.yaml');
@@ -69,7 +73,7 @@ export async function scaffoldProject(
       console.log(pc.gray(`  Copied ${config.spec} to openapi.yaml`));
     }
   } else {
-    writeFileSync(specPath, getExampleSpecTemplate(), 'utf-8');
+    writeFileSync(specPath, getExampleSpecTemplate(config.name), 'utf-8');
     if (verbose) {
       console.log(pc.gray('  Created example openapi.yaml'));
     }
@@ -153,5 +157,23 @@ async function copyBaseStyles(projectPath: string, verbose?: boolean): Promise<v
   copyFileSync(baseStylesSource, baseStylesTarget);
   if (verbose) {
     console.log(pc.gray('  Copied base-styles.css'));
+  }
+}
+
+async function copyDefaultIcon(projectPath: string, verbose?: boolean): Promise<void> {
+  // logo.svg is bundled in dist/assets/ after build
+  const iconSource = resolve(__dirname, '../assets/logo.svg');
+  const iconTarget = resolve(projectPath, '.uigen/assets/logo.svg');
+
+  if (!existsSync(iconSource)) {
+    if (verbose) {
+      console.log(pc.yellow('  Warning: logo.svg not found, skipping'));
+    }
+    return;
+  }
+
+  copyFileSync(iconSource, iconTarget);
+  if (verbose) {
+    console.log(pc.gray('  Copied logo.svg'));
   }
 }

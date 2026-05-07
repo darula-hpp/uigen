@@ -25,14 +25,6 @@ export function DashboardView({ config }: DashboardViewProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header - Simplified for user-facing app */}
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-      </div>
-
-      {/* Status Cards - Hidden for user-facing apps */}
-      {/* Authentication and Server status removed as they give a docs/developer vibe */}
-
       {/* Resource Cards */}
       <div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

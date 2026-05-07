@@ -19,6 +19,7 @@
     "dist/**/*.js",
     "dist/**/*.d.ts",
     "dist/assets/base-styles.css",
+    "dist/assets/logo.svg",
     "dist/skills/**/*.md",
     "dist/annotations.json",
     "!dist/**/__tests__/**",
@@ -27,7 +28,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && mkdir -p dist/assets && cp ../react/src/index.css dist/assets/base-styles.css && mkdir -p dist/skills && cp -r ../../SKILLS/* dist/skills/ && cp ../../annotations.json dist/annotations.json",
+    "build": "tsc && mkdir -p dist/assets && cp ../react/src/index.css dist/assets/base-styles.css && cp src/assets/logo.svg dist/assets/logo.svg && mkdir -p dist/skills && cp -r ../../SKILLS/* dist/skills/ && cp ../../annotations.json dist/annotations.json",
     "dev": "tsc --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit",

@@ -3,6 +3,9 @@ enabled: {}
 defaults: {}
 annotations:
   document:
+    x-uigen-app:
+      name: "Meeting Minutes Pro"
+      icon: "/.uigen/assets/logo.svg"
     x-uigen-landing-page:
       enabled: true
       sections:

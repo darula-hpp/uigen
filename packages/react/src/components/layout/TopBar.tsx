@@ -84,7 +84,6 @@ export function TopBar({ config, onMenuClick }: TopBarProps) {
       role="banner"
       className="h-16 border-b bg-card flex items-center px-4 gap-4"
     >
-      {/* Requirement 30.1: Display app title */}
       {/* Mobile menu button */}
       <Button
         variant="ghost"
@@ -97,11 +96,6 @@ export function TopBar({ config, onMenuClick }: TopBarProps) {
       >
         ☰
       </Button>
-
-      {/* App title - Requirement 30.1 */}
-      <div className="flex-shrink-0">
-        <h1 className="text-lg font-bold">{config.meta.title}</h1>
-      </div>
 
       {/* Requirement 54.1: Global search input in top bar */}
       {searchableResources.length > 0 && (

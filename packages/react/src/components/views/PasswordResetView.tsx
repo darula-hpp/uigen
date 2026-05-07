@@ -11,13 +11,14 @@ import { useToast } from '../Toast';
 interface PasswordResetViewProps {
   config: AuthConfig;
   appTitle: string;
+  appIcon?: string;
 }
 
 /**
  * Dedicated password reset page component.
  * Renders a form based on the password reset endpoint's request body schema.
  */
-export function PasswordResetView({ config, appTitle }: PasswordResetViewProps) {
+export function PasswordResetView({ config, appTitle, appIcon }: PasswordResetViewProps) {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -101,6 +102,15 @@ export function PasswordResetView({ config, appTitle }: PasswordResetViewProps) 
       <div className="w-full max-w-md space-y-8">
         {/* Header */}
         <div className="text-center">
+          {appIcon && (
+            <div className="flex justify-center mb-4">
+              <img 
+                src={appIcon} 
+                alt={appTitle}
+                className="h-16 w-16 object-contain"
+              />
+            </div>
+          )}
           <h1 className="text-3xl font-bold tracking-tight">{appTitle}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Reset your password

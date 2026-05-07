@@ -89,8 +89,14 @@ export function Sidebar({ config, isOpen, onClose }: SidebarProps) {
       >
         {/* Header */}
         <div className="p-4 border-b flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">{config.meta.title}</h1>
+          <div className="flex items-center">
+            {config.appConfig?.icon && (
+              <img 
+                src={config.appConfig.icon} 
+                alt={config.appConfig?.name || config.meta.title}
+                className="h-10 w-10 object-contain"
+              />
+            )}
           </div>
           <Button 
             variant="ghost" 
