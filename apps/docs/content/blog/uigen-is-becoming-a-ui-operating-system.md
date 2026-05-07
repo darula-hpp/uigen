@@ -8,9 +8,9 @@ tags: ["architecture", "operating-systems", "compiler", "technical"]
 
 ## The Accidental Discovery
 
-I always had this thought: frontend work is really just an interpretation of the backend. So I wondered—can't we just compile an API spec to get a functioning frontend?
+I always had this thought: frontend work is really just an interpretation of the backend. So I wondered, can't we just compile an API spec to get a functioning frontend?
 
-I started building. The first version was very CRUD-like. Health check endpoints would show up in the UI, which was noisy and ugly. So I added vendor extensions like `x-uigen-ignore` to filter out that noise. Then more extensions for polish. Until eventually, vendor extensions entered DSL territory—because I didn't just want to build CRUD apps. I wanted to build complex SaaS products with OAuth, charting, i18n, and all the real-world features.
+I started building. The first version was very CRUD-like. Health check endpoints would show up in the UI, which was noisy and ugly. So I added vendor extensions like `x-uigen-ignore` to filter out that noise. Then more extensions for polish. Until eventually, vendor extensions entered DSL territory because I didn't just want to build CRUD apps. I wanted to build complex SaaS products with OAuth, charting, i18n, and all the real-world features.
 
 The twist came when I added an extension to define landing pages:
 
@@ -511,4 +511,4 @@ What do you think? Am I crazy for calling this an OS? Or is there something here
 
 ---
 
-**Discussion on [Hacker News](https://news.ycombinator.com) | [GitHub](https://github.com/darula-hpp/uigen) | [Docs](https://uigen.dev)**
+**Discussion on | [GitHub](https://github.com/darula-hpp/uigen) 
