@@ -34,9 +34,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Without landing page: "Home" links to `/` (root)
   - Breadcrumb component now checks `config.landingPageConfig?.enabled` to determine correct path
 
----
-
-## [Unreleased - Pre 0.7.2]
 
 ### Added
 
