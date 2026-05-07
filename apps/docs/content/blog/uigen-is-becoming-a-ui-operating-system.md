@@ -4,7 +4,6 @@ author: "Olebogeng Mbedzi"
 date: "2026-05-07"
 excerpt: "What started as an OpenAPI-to-UI compiler accidentally evolved into something that looks, acts, and feels like an operating system for frontend applications. Here's how it happened and why the OS framing isn't just marketing."
 tags: ["architecture", "operating-systems", "compiler", "technical"]
-featured_image: "/blog/uigen-os.png"
 ---
 
 ## The Accidental Discovery
@@ -207,14 +206,6 @@ Debugging interpreted systems is harder than debugging generated code. We're wor
 - Runtime introspection tools
 - Performance profiling
 
-## What's Next
-
-We're building:
-- **Multi-tenancy**: Run multiple apps in the same runtime (like containers)
-- **Sandboxing**: Isolate untrusted plugins (like seccomp)
-- **Distributed rendering**: Split UI across multiple servers (like distributed OS)
-- **Time-travel debugging**: Record and replay UI state (like rr debugger)
-
 ## Try It
 
 ```bash
@@ -240,4 +231,4 @@ What do you think? Am I crazy for calling this an OS? Or is there something here
 
 ---
 
-**Discussion on [Hacker News](https://news.ycombinator.com) | [GitHub](https://github.com/darula-hpp/uigen) | [Docs](https://uigen.dev)**
+[GitHub](https://github.com/darula-hpp/uigen)
