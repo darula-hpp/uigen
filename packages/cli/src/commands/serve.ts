@@ -1,4 +1,4 @@
-import { readFileSync, existsSync, createReadStream } from 'fs';
+import { readFileSync, existsSync, createReadStream, mkdirSync, writeFileSync } from 'fs';
 import { resolve, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer, type ProxyOptions } from 'vite';
@@ -200,6 +200,19 @@ export async function serve(specPath: string, options: ServeOptions) {
 
     console.log(pc.green(`✓ Parsed spec: ${ir.meta.title} v${ir.meta.version}`));
     console.log(pc.gray(`  Resources: ${ir.resources.map(r => r.name).join(', ')}\n`));
+
+    // Create .uigen/build directory and save IR
+    const buildDir = resolve(specDir, '.uigen/build');
+    try {
+      mkdirSync(buildDir, { recursive: true });
+      const irPath = resolve(buildDir, 'app.uigen.json');
+      writeFileSync(irPath, JSON.stringify(ir, null, 2), 'utf-8');
+      if (options.verbose) {
+        console.log(pc.gray(`Saved IR to ${irPath}\n`));
+      }
+    } catch (error) {
+      console.error(pc.yellow(`⚠ Failed to save IR: ${error instanceof Error ? error.message : error}`));
+    }
 
     const proxyTarget = options.proxyBase || ir.servers[0]?.url || 'http://localhost:3000';
     console.log(pc.gray(`API proxy target: ${proxyTarget}\n`));
