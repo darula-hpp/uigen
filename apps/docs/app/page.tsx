@@ -12,7 +12,7 @@ export default function Home() {
         </h1>
 
         <p className="text-base md:text-lg text-gray-500 dark:text-gray-400 max-w-lg mb-10 leading-relaxed">
-            Write apps in YAML — rendering, storage, and networking are handled for you. Ships with a Web Kernel. OpenAPI is your foundation.
+            Write apps in YAML - rendering, storage, and networking are handled for you. Ships with a Web Kernel. OpenAPI is your foundation.
         </p>
         {/* CLI snippet */}
         <div className="w-full max-w-lg mb-10">
