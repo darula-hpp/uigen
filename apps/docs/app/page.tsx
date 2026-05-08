@@ -8,15 +8,12 @@ export default function Home() {
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 text-center">
         <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-4 max-w-3xl">
-          UI <span className="text-[var(--primary)]">Operating System</span>
+          UI Runtime <span className="text-[var(--primary)]">with a Web Kernel</span>
         </h1>
 
         <p className="text-base md:text-lg text-gray-500 dark:text-gray-400 max-w-lg mb-10 leading-relaxed">
-          Executes OpenAPI specs as live applications at runtime.
-          <br />
-          <span className="text-sm">Includes a framework agnostic core and pluggable renderers.</span>
+          Write apps in YAML - rendering, storage, and networking are handled for you. OpenAPI is your foundation.
         </p>
-
         {/* CLI snippet */}
         <div className="w-full max-w-lg mb-10">
           <div className="bg-gray-950 dark:bg-gray-900 rounded-xl border border-gray-800 overflow-hidden text-left shadow-xl">
