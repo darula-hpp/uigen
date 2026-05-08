@@ -1,6 +1,6 @@
 # UIGen
 
-Build Declarative UI Apps on top of OpenAPI
+Build & Run Declarative UI Apps. OpenAPI is your foundation.
 
 ![UIGen Demo](https://github.com/darula-hpp/uigen/raw/main/examples/output.gif)
 
