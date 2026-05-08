@@ -8,6 +8,9 @@ dist
 coverage
 *.tsbuildinfo
 
+# UIGen build artifacts
+.uigen/build
+
 # Kiro IDE files
 .kiro/specs
 AGENTS.md
