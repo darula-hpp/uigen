@@ -5,6 +5,33 @@ All notable changes to UIGen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [0.7.3] - 2026-05-09
+
+### Added
+
+**CLI (`@uigen-dev/cli`)**
+- **`uigen build` command** - Package UIGen projects for production deployment
+  - Copies `.uigen/` directory (config.yaml, theme.css, base-styles.css, assets) to build output
+  - Copies OpenAPI spec file to build output as `openapi.yaml`
+  - Copies `annotations.json` if present
+  - Creates self-contained build folder ready for deployment
+  - `--output` flag to specify custom output directory (defaults to `./build`)
+  - `--clean` flag to remove existing build directory before building
+  - `--verbose` flag for detailed build logging
+  - Validates `.uigen/` directory and spec file exist before building
+  - Command signatures:
+    - `uigen build openapi.yaml` - Build with default output directory
+    - `uigen build openapi.yaml --output dist` - Custom output directory
+    - `uigen build openapi.yaml --clean` - Clean before building
+    - `uigen build openapi.yaml --clean --verbose` - Clean with detailed logs
+
+**Documentation**
+- Added CLI reference documentation for `uigen build` command
+- Updated Quick Start guide with build command workflow
+- Updated Installation guide with build command examples
+
+---
+
 ## [0.7.2] - 2026-05-07
 
 ### Changed
@@ -1152,6 +1179,8 @@ This is the first release of UIGen — point it at an OpenAPI spec, get a fully 
 
 ---
 
+[0.7.3]: https://github.com/darula-hpp/uigen/releases/tag/v0.7.3
+[0.7.2]: https://github.com/darula-hpp/uigen/releases/tag/v0.7.2
 [0.7.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.7.0
 [0.6.3]: https://github.com/darula-hpp/uigen/releases/tag/v0.6.3
 [0.6.2]: https://github.com/darula-hpp/uigen/releases/tag/v0.6.2
