@@ -56,7 +56,7 @@ The skill will detect login endpoints, file uploads, foreign key references, and
 
 - \`uigen serve openapi.yaml\` - Start development server
 - \`uigen config openapi.yaml\` - Open configuration GUI
-- \`uigen build openapi.yaml\` - Build for production (coming soon)
+- \`uigen build openapi.yaml\` - Build for production
 
 ---
 

@@ -1,43 +1,43 @@
 /* Modern SaaS Theme for Meeting Minutes App */
-/* Sophisticated amber/gold palette with clean, modern styling */
-/* Perfect for SaaS applications - warm, professional, and easy on the eyes */
+/* Sophisticated blue palette with clean, modern styling */
+/* Perfect for SaaS applications - professional, trustworthy, and easy on the eyes */
 
-/* Light Theme - Sophisticated muted orange with clean whites */
+/* Light Theme - Sophisticated blue with clean whites */
 :root {
-  --primary: #d97706;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --secondary: #f59e0b;
+  --secondary: #3b82f6;
   --secondary-foreground: #ffffff;
-  --accent: #fef3c7;
-  --accent-foreground: #78350f;
+  --accent: #dbeafe;
+  --accent-foreground: #1e3a8a;
   --muted: #f9fafb;
   --muted-foreground: #6b7280;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --border: #e5e7eb;
   --input: #f3f4f6;
-  --ring: #d97706;
+  --ring: #2563eb;
   --radius: 0.75rem;
   --background: #ffffff;
   --foreground: #111827;
   --card: #ffffff;
 }
 
-/* Dark Theme - Deep slate with warm amber accents */
+/* Dark Theme - Deep slate with vibrant blue accents */
 .dark {
-  --primary: #f59e0b;
+  --primary: #3b82f6;
   --primary-foreground: #ffffff;
-  --secondary: #fbbf24;
+  --secondary: #60a5fa;
   --secondary-foreground: #1f2937;
-  --accent: #451a03;
-  --accent-foreground: #fde68a;
+  --accent: #1e3a8a;
+  --accent-foreground: #bfdbfe;
   --muted: #1f2937;
   --muted-foreground: #9ca3af;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --border: #374151;
   --input: #1f2937;
-  --ring: #f59e0b;
+  --ring: #3b82f6;
   --background: #111827;
   --foreground: #f9fafb;
   --card: #1f2937;
@@ -52,22 +52,22 @@ button {
   letter-spacing: 0.025em;
 }
 
-/* Primary buttons with solid amber */
+/* Primary buttons with solid blue */
 button.bg-primary {
-  background: #d97706;
+  background: #2563eb;
 }
 
 button.bg-primary:hover {
-  background: #b45309;
+  background: #1d4ed8;
 }
 
-/* Secondary buttons with lighter amber */
+/* Secondary buttons with lighter blue */
 button.bg-secondary {
-  background: #f59e0b;
+  background: #3b82f6;
 }
 
 button.bg-secondary:hover {
-  background: #d97706;
+  background: #2563eb;
 }
 
 /* Focus states - Minimal and subtle */
@@ -118,7 +118,7 @@ table {
 }
 
 thead {
-  background: #d97706;
+  background: #2563eb;
   color: white;
 }
 
@@ -330,21 +330,21 @@ textarea:disabled {
   filter: grayscale(0.5);
 }
 
-/* Badges - Simple amber style */
+/* Badges - Simple blue style */
 .badge {
   display: inline-block;
   padding: 0.25rem 0.625rem;
   border-radius: 0.25rem;
   font-size: 0.75rem;
   font-weight: 600;
-  background: #d97706;
+  background: #2563eb;
   color: var(--primary-foreground);
   text-transform: uppercase;
   letter-spacing: 0.025em;
 }
 
 .badge:hover {
-  background: #b45309;
+  background: #1d4ed8;
 }
 
 /* Tooltips */
@@ -412,14 +412,14 @@ h3 {
 }
 
 .status-away {
-  background-color: #d97706;
+  background-color: #3b82f6;
 }
 
 .status-offline {
   background-color: #6b7280;
 }
 
-/* Meeting-specific styles with amber theme */
+/* Meeting-specific styles with blue theme */
 .meeting-card {
   border-left: 4px solid var(--primary);
   background: var(--card);
@@ -438,13 +438,13 @@ h3 {
 }
 
 .meeting-status.scheduled {
-  background: #fbbf24;
-  color: #78350f;
+  background: #60a5fa;
+  color: #1e3a8a;
 }
 
 .dark .meeting-status.scheduled {
-  background: #78350f;
-  color: #fde68a;
+  background: #1e3a8a;
+  color: #bfdbfe;
 }
 
 .meeting-status.completed {
@@ -500,7 +500,7 @@ h3 {
   }
 }
 
-/* Stats cards - Simple amber accents */
+/* Stats cards - Simple blue accents */
 .stat-card {
   padding: 1.25rem;
   border-radius: 0.25rem;
@@ -537,7 +537,7 @@ h3 {
 
 /* Hero Section - Simple background with clean design */
 .hero-section {
-  background: #d97706;
+  background: #2563eb;
   color: white;
   padding: 8rem 2rem 6rem;
   text-align: center;
@@ -584,7 +584,7 @@ h3 {
 
 .hero-section a[data-testid="hero-primary-cta"] {
   background-color: white;
-  color: #d97706;
+  color: #2563eb;
 }
 
 .hero-section a[data-testid="hero-secondary-cta"] {
@@ -766,7 +766,7 @@ h3 {
 }
 
 .testimonial-item .rating {
-  color: #fbbf24;
+  color: #3b82f6;
   font-size: 1.25rem;
   letter-spacing: 0.25rem;
 }
@@ -929,7 +929,7 @@ h3 {
 /* CTA Section - Simple call to action */
 .cta-section {
   padding: 6rem 2rem;
-  background: #d97706;
+  background: #2563eb;
   color: white;
   text-align: center;
   position: relative;
@@ -973,7 +973,7 @@ h3 {
 
 .cta-section a[data-testid="cta-primary-cta"] {
   background-color: white;
-  color: #d97706;
+  color: #2563eb;
 }
 
 .cta-section a[data-testid="cta-secondary-cta"] {
@@ -1112,7 +1112,7 @@ h3 {
 
 .dark .hero-section,
 .dark .cta-section {
-  background: #78350f;
+  background: #1e3a8a;
 }
 
 .dark .feature-item,

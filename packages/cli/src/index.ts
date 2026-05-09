@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import { serve } from './commands/serve.js';
 import { config } from './commands/config.js';
 import { init } from './commands/init.js';
+import { build } from './commands/build.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -31,6 +32,8 @@ Examples:
   $ uigen serve petstore.yaml --verbose
   $ uigen config petstore.yaml
   $ uigen config petstore.yaml --port 4401
+  $ uigen build petstore.yaml
+  $ uigen build petstore.yaml --output dist
 `);
 
 program
@@ -119,6 +122,34 @@ when running 'uigen serve'.
   .action(async (spec, options) => {
     await config(spec, {
       port: options.port ? parseInt(options.port, 10) : undefined,
+      verbose: options.verbose,
+    });
+  });
+
+program
+  .command('build')
+  .description('Build production-ready output by copying .uigen directory and spec')
+  .argument('<spec>', 'Path to OpenAPI spec file (YAML or JSON)')
+  .option('-o, --output <path>', 'Output directory for build', 'build')
+  .option('--clean', 'Clean output directory before building')
+  .option('--verbose', 'Show detailed build output')
+  .addHelpText('after', `
+Examples:
+  $ uigen build petstore.yaml
+  $ uigen build petstore.yaml --output dist
+  $ uigen build petstore.yaml --clean --verbose
+
+The build command creates a production-ready output by copying:
+  - .uigen/ directory (config.yaml, theme.css, base-styles.css, assets)
+  - OpenAPI spec file
+  - annotations.json (if present)
+
+The output can be deployed to any static hosting or used with 'uigen serve'.
+`)
+  .action(async (spec, options) => {
+    await build(spec, {
+      output: options.output,
+      clean: options.clean,
       verbose: options.verbose,
     });
   });
