@@ -26,28 +26,51 @@ Visit `http://localhost:4400` to see your app.
 
 UIGen scaffolds a complete project with configuration files (`.uigen/config.yaml`, `.uigen/theme.css`), AI agent skills (`.agents/skills/`), and an example spec if needed. The serve command renders a complete UI from your OpenAPI spec at runtime. When your API changes, the UI updates automatically with no regeneration or code maintenance required.
 
-### Configuration Options
+---
 
-**Option 1: AI-Powered (Recommended)**
+## Key Features
+
+### Authentication & Authorization
+- **OAuth 2.0 Social Login** - Google, GitHub, Facebook, Microsoft with automatic flow handling
+- **Bearer Token, API Key, HTTP Basic** - All standard auth schemes supported
+- **Credential-based Login** - Auto-detected from spec with token extraction
+- **Environment Variable Support** - Secure credential management with `${VAR_NAME}` syntax
+
+### Data Visualization & Forms
+- **Smart Forms** - Auto-generated with validation, file uploads, nested objects, arrays
+- **DateTime Formatting** - Declarative format patterns with timezone support
+- **File Uploads** - Type-aware validation, previews, drag-and-drop (images, documents, videos)
+- **Chart Annotations** - Line, bar, pie, scatter charts from array data
+
+### Relationships & Navigation
+- **Auto-detected Relationships** - `hasMany`, `belongsTo`, `manyToMany` from path patterns
+- **Landing Pages** - Hero, features, pricing, testimonials, FAQ sections
+- **Layout System** - Sidebar, centered, dashboard-grid layouts per resource
+- **Profile Editing** - Inline editing with validation and conflict handling
+
+### Developer Experience
+- **Runtime Rendering** - No code generation, UI stays in sync with spec changes
+- **AI Agent Skills** - Automate configuration with your favorite coding assistant
+- **Override System** - Customize any component with React overrides (coming soon)
+- **Build Command** - Package for production deployment with `uigen build`
+
+---
+
+## Configuration
+
+**AI-Powered Configuration**
 
 Use AI agent skills with your favorite coding assistant (Cursor, Windsurf, Cline, etc.):
 
 ```
 Ask your AI: "Use the auto-annotate skill to configure my OpenAPI spec"
 Ask your AI: "Use the applying-styles skill to create a modern dark theme"
+Ask your AI: "Use the configure-oauth skill to set up social login"
 ```
 
-Skills are located in `.agents/skills/` and automate pattern detection, annotation generation, and styling.
+Skills are located in `.agents/skills/` and automate pattern detection, annotation generation, OAuth setup, and styling.
 
-**Option 2: Visual Config GUI**
-
-```bash
-npx @uigen-dev/cli@latest config openapi.yaml
-```
-
-Define relationships, customize labels, configure charts and file uploads, edit theme CSS visually. All changes saved to `.uigen/config.yaml`.
-
-**Environment Variables**: Keep sensitive values like OAuth credentials secure by using `${ENV_VAR_NAME}` syntax in your config file. See the [Environment Variables Guide](https://uigen-docs.vercel.app/docs/guides/environment-variables) for details.
+**Environment Variables**: Keep sensitive values like OAuth credentials secure by using `${ENV_VAR_NAME}` syntax in your config file. UIGen automatically loads `.env` files from your spec directory. See the [Environment Variables Guide](https://uigen-docs.vercel.app/docs/guides/environment-variables) for details.
 
 ### Try the Example App
 
@@ -82,6 +105,12 @@ UIGen includes AI agent skills that automate configuration through intelligent a
 - Adds chart visualizations for array data
 - Applies smart labels (technical names to human-readable)
 
+**Configure OAuth** (`configure-oauth.md`)
+- Sets up OAuth 2.0 social login (Google, GitHub, Facebook, Microsoft)
+- Configures client IDs, redirect URIs, and scopes
+- Generates environment variable placeholders
+- Provides provider-specific setup instructions
+
 **Applying Styles** (`applying-styles-to-react-spa.md`)
 - Brand colors and dark mode support
 - Component styling (buttons, forms, tables, cards)
@@ -101,6 +130,7 @@ Example workflow:
 ```bash
 npx @uigen-dev/cli@latest init my-app --spec openapi.yaml
 # Ask AI: "Use the auto-annotate skill to configure my spec"
+# Ask AI: "Use the configure-oauth skill to add Google login"
 # Ask AI: "Use the applying-styles skill to create a professional theme"
 npx @uigen-dev/cli@latest serve openapi.yaml
 ```
@@ -155,8 +185,11 @@ The React renderer interprets this IR at runtime and creates:
 ---
 
 ## Current Priorities
-- Better handling of resources and their relationships
-- Layout Config
+- Component override system (x-uigen-id based customization)
+- Better relationship handling and visualization
+- Additional renderers (Svelte, Vue)
+
+---
 
 ## License
 
