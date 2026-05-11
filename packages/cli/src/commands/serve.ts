@@ -46,7 +46,7 @@ function resolveRendererRoot(renderer: Renderer): string {
  * Base styles are already in the SPA, we only inject custom theme
  * Requirements: 6.1, 6.2, 6.3, 10.1
  */
-function loadCSS(specDir: string, rendererRoot: string, verbose: boolean): string {
+function loadCSS(specDir: string, verbose: boolean): string {
   const themePath = resolve(specDir, '.uigen/theme.css');
   
   // Load theme.css (custom overrides)
@@ -248,7 +248,7 @@ export async function serve(specPath: string, options: ServeOptions) {
       // --- Dev mode: Vite dev server (monorepo) ---
       
       // Load CSS content
-      const cssContent = loadCSS(specDir, rendererRoot, options.verbose ?? false);
+      const cssContent = loadCSS(specDir, options.verbose ?? false);
       
       const proxyConfig: ProxyOptions = {
         target: proxyTarget,
@@ -327,7 +327,7 @@ export async function serve(specPath: string, options: ServeOptions) {
       const port = options.port || 4400;
       
       // Load CSS content
-      const cssContent = loadCSS(specDir, rendererRoot, options.verbose ?? false);
+      const cssContent = loadCSS(specDir, options.verbose ?? false);
 
       const httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
         const url = req.url || '/';
