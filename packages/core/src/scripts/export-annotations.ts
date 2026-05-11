@@ -24,6 +24,7 @@ import { ProfileHandler } from '../adapter/annotations/handlers/profile-handler.
 import { LayoutHandler } from '../adapter/annotations/handlers/layout-handler.js';
 import { DateTimeHandler } from '../adapter/annotations/handlers/datetime-handler.js';
 import { AppHandler } from '../adapter/annotations/handlers/app-handler.js';
+import { AuthHandler } from '../adapter/annotations/handlers/auth-handler.js';
 
 /**
  * Interface for annotation metadata
@@ -60,7 +61,8 @@ const handlerClasses = [
   ProfileHandler,
   LayoutHandler,
   DateTimeHandler,
-  AppHandler
+  AppHandler,
+  AuthHandler
 ];
 
 /**

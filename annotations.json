@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-05-07T08:24:33.475Z",
-  "totalAnnotations": 14,
+  "generatedAt": "2026-05-10T08:19:33.229Z",
+  "totalAnnotations": 15,
   "annotations": [
     {
       "name": "x-uigen-active-server",
@@ -56,6 +56,109 @@
         {
           "description": "Empty configuration (all fields optional)",
           "value": {}
+        }
+      ]
+    },
+    {
+      "name": "x-uigen-auth",
+      "description": "Configures OAuth 2.0 providers for social login authentication at the document level",
+      "targetType": "info",
+      "parameterSchema": {
+        "type": "object",
+        "properties": {
+          "providers": {
+            "type": "array",
+            "description": "Array of OAuth provider configurations",
+            "items": {
+              "type": "object",
+              "properties": {
+                "provider": {
+                  "type": "enum",
+                  "enum": [
+                    "google",
+                    "github",
+                    "facebook",
+                    "microsoft"
+                  ],
+                  "description": "OAuth provider identifier"
+                },
+                "clientId": {
+                  "type": "string",
+                  "description": "OAuth client ID from provider console"
+                },
+                "redirectUri": {
+                  "type": "string",
+                  "description": "Redirect URI for OAuth callback"
+                },
+                "scopes": {
+                  "type": "array",
+                  "description": "OAuth scopes to request (optional, uses provider defaults if omitted)",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Whether this provider is enabled (defaults to true)"
+                },
+                "authorizationUrl": {
+                  "type": "string",
+                  "description": "Custom authorization endpoint URL (optional)"
+                },
+                "tokenUrl": {
+                  "type": "string",
+                  "description": "Custom token endpoint URL (optional)"
+                },
+                "userInfoUrl": {
+                  "type": "string",
+                  "description": "Custom user info endpoint URL (optional)"
+                },
+                "refreshTokenEndpoint": {
+                  "type": "string",
+                  "description": "Custom refresh token endpoint URL (optional)"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "providers"
+        ]
+      },
+      "examples": [
+        {
+          "description": "Google OAuth configuration",
+          "value": {
+            "providers": [
+              {
+                "provider": "google",
+                "clientId": "${GOOGLE_CLIENT_ID}",
+                "redirectUri": "http://localhost:3000/auth/callback",
+                "scopes": [
+                  "openid",
+                  "email",
+                  "profile"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "description": "Multiple OAuth providers",
+          "value": {
+            "providers": [
+              {
+                "provider": "google",
+                "clientId": "${GOOGLE_CLIENT_ID}",
+                "redirectUri": "http://localhost:3000/auth/callback"
+              },
+              {
+                "provider": "github",
+                "clientId": "${GITHUB_CLIENT_ID}",
+                "redirectUri": "http://localhost:3000/auth/callback"
+              }
+            ]
+          }
         }
       ]
     },

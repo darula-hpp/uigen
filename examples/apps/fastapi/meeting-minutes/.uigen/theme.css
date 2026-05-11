@@ -1,46 +1,46 @@
 /* Modern SaaS Theme for Meeting Minutes App */
-/* Sophisticated blue palette with clean, modern styling */
-/* Perfect for SaaS applications - professional, trustworthy, and easy on the eyes */
+/* Balanced amber-orange palette matching logo with neutral grays */
+/* Perfect for SaaS applications - warm, professional, and inviting */
 
-/* Light Theme - Sophisticated blue with clean whites */
+/* Light Theme - Amber orange from logo with clean neutrals */
 :root {
-  --primary: #2563eb;
+  --primary: #d97706;
   --primary-foreground: #ffffff;
-  --secondary: #3b82f6;
+  --secondary: #78716c;
   --secondary-foreground: #ffffff;
-  --accent: #dbeafe;
-  --accent-foreground: #1e3a8a;
-  --muted: #f9fafb;
-  --muted-foreground: #6b7280;
+  --accent: #fef3c7;
+  --accent-foreground: #78350f;
+  --muted: #fafaf9;
+  --muted-foreground: #78716c;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: #e5e7eb;
-  --input: #f3f4f6;
-  --ring: #2563eb;
+  --border: #e7e5e4;
+  --input: #f5f5f4;
+  --ring: #d97706;
   --radius: 0.75rem;
   --background: #ffffff;
-  --foreground: #111827;
+  --foreground: #1c1917;
   --card: #ffffff;
 }
 
-/* Dark Theme - Deep slate with vibrant blue accents */
+/* Dark Theme - Warm amber with stone grays (matching light mode orange) */
 .dark {
-  --primary: #3b82f6;
+  --primary: #d97706;
   --primary-foreground: #ffffff;
-  --secondary: #60a5fa;
-  --secondary-foreground: #1f2937;
-  --accent: #1e3a8a;
-  --accent-foreground: #bfdbfe;
-  --muted: #1f2937;
-  --muted-foreground: #9ca3af;
+  --secondary: #a8a29e;
+  --secondary-foreground: #1c1917;
+  --accent: #78350f;
+  --accent-foreground: #fef3c7;
+  --muted: #292524;
+  --muted-foreground: #a8a29e;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #374151;
-  --input: #1f2937;
-  --ring: #3b82f6;
-  --background: #111827;
-  --foreground: #f9fafb;
-  --card: #1f2937;
+  --border: #44403c;
+  --input: #292524;
+  --ring: #d97706;
+  --background: #1c1917;
+  --foreground: #fafaf9;
+  --card: #292524;
 }
 
 /* Buttons - Simple style with minimal rounding */
@@ -52,22 +52,22 @@ button {
   letter-spacing: 0.025em;
 }
 
-/* Primary buttons with solid blue */
+/* Primary buttons with amber orange */
 button.bg-primary {
-  background: #2563eb;
+  background: var(--primary);
 }
 
 button.bg-primary:hover {
-  background: #1d4ed8;
+  background: #b45309;
 }
 
-/* Secondary buttons with lighter blue */
+/* Secondary buttons with stone gray */
 button.bg-secondary {
-  background: #3b82f6;
+  background: var(--secondary);
 }
 
 button.bg-secondary:hover {
-  background: #2563eb;
+  background: #57534e;
 }
 
 /* Focus states - Minimal and subtle */
@@ -118,7 +118,7 @@ table {
 }
 
 thead {
-  background: #2563eb;
+  background: var(--primary);
   color: white;
 }
 
@@ -281,13 +281,13 @@ a:not(nav a):not(aside a):focus-visible {
 
 /* Success states */
 .success {
-  border-color: #059669;
-  background-color: rgba(5, 150, 105, 0.05);
+  border-color: #10b981;
+  background-color: rgba(16, 185, 129, 0.05);
 }
 
 .success:focus {
-  border-color: #059669;
-  box-shadow: 0 0 0 1px rgba(5, 150, 105, 0.3);
+  border-color: #10b981;
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.3);
 }
 
 /* Loading spinner */
@@ -330,21 +330,21 @@ textarea:disabled {
   filter: grayscale(0.5);
 }
 
-/* Badges - Simple blue style */
+/* Badges - Amber orange style */
 .badge {
   display: inline-block;
   padding: 0.25rem 0.625rem;
   border-radius: 0.25rem;
   font-size: 0.75rem;
   font-weight: 600;
-  background: #2563eb;
+  background: var(--primary);
   color: var(--primary-foreground);
   text-transform: uppercase;
   letter-spacing: 0.025em;
 }
 
 .badge:hover {
-  background: #1d4ed8;
+  background: #b45309;
 }
 
 /* Tooltips */
@@ -408,18 +408,18 @@ h3 {
 
 /* Status indicators */
 .status-online {
-  background-color: #059669;
+  background-color: #10b981;
 }
 
 .status-away {
-  background-color: #3b82f6;
+  background-color: #d97706;
 }
 
 .status-offline {
-  background-color: #6b7280;
+  background-color: #78716c;
 }
 
-/* Meeting-specific styles with blue theme */
+/* Meeting-specific styles with amber theme */
 .meeting-card {
   border-left: 4px solid var(--primary);
   background: var(--card);
@@ -438,22 +438,22 @@ h3 {
 }
 
 .meeting-status.scheduled {
-  background: #60a5fa;
-  color: #1e3a8a;
+  background: #fef3c7;
+  color: #78350f;
 }
 
 .dark .meeting-status.scheduled {
-  background: #1e3a8a;
-  color: #bfdbfe;
+  background: #78350f;
+  color: #fef3c7;
 }
 
 .meeting-status.completed {
-  background: #a7f3d0;
+  background: #d1fae5;
   color: #065f46;
 }
 
 .dark .meeting-status.completed {
-  background: #065f46;
+  background: #064e3b;
   color: #a7f3d0;
 }
 
@@ -500,7 +500,7 @@ h3 {
   }
 }
 
-/* Stats cards - Simple blue accents */
+/* Stats cards - Amber accents */
 .stat-card {
   padding: 1.25rem;
   border-radius: 0.25rem;
@@ -535,9 +535,9 @@ h3 {
   overflow-x: hidden;
 }
 
-/* Hero Section - Simple background with clean design */
+/* Hero Section - Warm amber gradient */
 .hero-section {
-  background: #2563eb;
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   color: white;
   padding: 8rem 2rem 6rem;
   text-align: center;
@@ -584,7 +584,7 @@ h3 {
 
 .hero-section a[data-testid="hero-primary-cta"] {
   background-color: white;
-  color: #2563eb;
+  color: #d97706;
 }
 
 .hero-section a[data-testid="hero-secondary-cta"] {
@@ -766,7 +766,7 @@ h3 {
 }
 
 .testimonial-item .rating {
-  color: #3b82f6;
+  color: #d97706;
   font-size: 1.25rem;
   letter-spacing: 0.25rem;
 }
@@ -926,10 +926,10 @@ h3 {
   font-weight: 500;
 }
 
-/* CTA Section - Simple call to action */
+/* CTA Section - Warm amber gradient */
 .cta-section {
   padding: 6rem 2rem;
-  background: #2563eb;
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   color: white;
   text-align: center;
   position: relative;
@@ -973,7 +973,7 @@ h3 {
 
 .cta-section a[data-testid="cta-primary-cta"] {
   background-color: white;
-  color: #2563eb;
+  color: #d97706;
 }
 
 .cta-section a[data-testid="cta-secondary-cta"] {
@@ -1112,7 +1112,7 @@ h3 {
 
 .dark .hero-section,
 .dark .cta-section {
-  background: #1e3a8a;
+  background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
 }
 
 .dark .feature-item,

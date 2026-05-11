@@ -43,6 +43,22 @@ annotations:
       yAxis: count
 ```
 
+## Annotations Excluded from Auto-Annotation
+
+**IMPORTANT**: The following annotations are handled by dedicated skills and should **NOT** be auto-detected or added by this skill:
+
+### x-uigen-auth (OAuth Configuration)
+- **Handled by**: `SKILLS/configure-oauth.md`
+- **Reason**: OAuth configuration requires interactive user input for provider selection, client IDs, redirect URIs, and scopes. It cannot be reliably auto-detected.
+- **User action**: Run the OAuth configuration skill separately when OAuth is needed.
+
+### x-uigen-landing-page (Landing Page Content)
+- **Handled by**: `SKILLS/generate-landing-page-content.md`
+- **Reason**: Landing page content requires creative content generation, marketing copy, and user-specific branding decisions. It cannot be auto-detected from API specs.
+- **User action**: Run the landing page generation skill separately when a landing page is needed.
+
+**Rule**: If you encounter these annotations in existing config.yaml, preserve them but do not attempt to generate or modify them.
+
 ## Available Annotations Reference
 
 Load the annotations metadata from `annotations.json`:
@@ -65,6 +81,8 @@ Load the annotations metadata from `annotations.json`:
   "x-uigen-profile": { "targetType": "operation", "type": "boolean" }
 }
 ```
+
+**Note**: `x-uigen-auth` and `x-uigen-landing-page` are intentionally excluded from this list as they require dedicated skills.
 
 ## AI Agent Workflow
 
@@ -97,6 +115,12 @@ Parse the spec to understand:
 ### Step 3: Detect Patterns and Generate Annotations
 
 Run through all detection rules (see Detection Rules section below).
+
+**IMPORTANT**: Do not attempt to detect or generate the following annotations:
+- `x-uigen-auth` - Use the OAuth configuration skill instead
+- `x-uigen-landing-page` - Use the landing page generation skill instead
+
+If the user mentions OAuth or landing pages, inform them about the dedicated skills available.
 
 ### Step 4: Load Existing Config
 
@@ -1215,6 +1239,10 @@ As an AI agent, your role is to:
 6. **Report results** with a clear summary
 
 The annotations you generate will be used by UIGen to customize the generated application, eliminating the need for manual configuration in the config GUI.
+
+**Annotations Handled by Other Skills:**
+- For OAuth configuration → Use `SKILLS/configure-oauth.md`
+- For landing page content → Use `SKILLS/generate-landing-page-content.md`
 
 **Key Files:**
 - Read spec from: `openapi.yaml` (or user-provided path)

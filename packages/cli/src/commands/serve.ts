@@ -108,6 +108,19 @@ export async function serve(specPath: string, options: ServeOptions) {
     // Resolve spec path and determine config location
     const resolvedSpecPath = resolve(process.cwd(), specPath);
     const specDir = dirname(resolvedSpecPath);
+    
+    // Load .env file from the spec directory
+    const { config: dotenvConfig } = await import('dotenv');
+    const envPath = resolve(specDir, '.env');
+    if (existsSync(envPath)) {
+      dotenvConfig({ path: envPath });
+      if (options.verbose) {
+        console.log(pc.gray(`Loaded environment variables from ${envPath}\n`));
+      }
+    } else if (options.verbose) {
+      console.log(pc.gray(`No .env file found at ${envPath}\n`));
+    }
+    
     const configPath = resolve(specDir, '.uigen/config.yaml');
     
     // Load config file if it exists
@@ -364,10 +377,17 @@ export async function serve(specPath: string, options: ServeOptions) {
           return;
         }
 
-        const ext = extname(url);
-        const filePath = ext ? resolve(distDir, url.slice(1)) : resolve(distDir, 'index.html');
+        // Parse URL to remove query string and hash
+        const urlPath = url.split('?')[0].split('#')[0];
+        const ext = extname(urlPath);
+        
+        // If URL has extension, try to serve that specific file
+        // Otherwise, serve index.html for SPA routing
+        const filePath = ext ? resolve(distDir, urlPath.slice(1)) : resolve(distDir, 'index.html');
 
-        if (!existsSync(filePath)) {
+        // For files with extensions, return 404 if not found
+        // For SPA routes (no extension), always serve index.html
+        if (ext && !existsSync(filePath)) {
           res.writeHead(404);
           res.end('Not found');
           return;

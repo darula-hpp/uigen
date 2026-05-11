@@ -5,6 +5,10 @@ node_modules/
 # UIGen
 annotations.json
 
+# Environment Variables
+.env
+.env.local
+
 # OS
 .DS_Store
 Thumbs.db

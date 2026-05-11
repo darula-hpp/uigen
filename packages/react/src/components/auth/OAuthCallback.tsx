@@ -10,7 +10,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import type { OAuthProvider } from '@uigen-dev/core';
+import type { OAuthProvider, UIGenApp } from '@uigen-dev/core';
 import { OAuthStrategy } from '@/lib/oauth-strategy';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { getProviderMetadata } from '@/lib/oauth-providers';
@@ -19,7 +19,7 @@ import { getProviderMetadata } from '@/lib/oauth-providers';
  * OAuthCallback component
  * 
  * Processes OAuth provider callbacks:
- * 1. Extract query parameters (code, state, error, error_description)
+ * 1. Extract query parameters (code, state, error, error_description, token)
  * 2. Determine provider from URL path or state
  * 3. Validate state parameter
  * 4. Handle error parameter from provider
@@ -29,7 +29,7 @@ import { getProviderMetadata } from '@/lib/oauth-providers';
  * 
  * **Validates: Requirements 3.7, 3.8, 7.1-7.10, 10.1-10.10**
  */
-export function OAuthCallback() {
+export function OAuthCallback({ config }: { config: UIGenApp }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +38,44 @@ export function OAuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        // Check for token in query parameter (passed from backend redirect)
+        const tokenParam = searchParams.get('token');
+        
+        if (tokenParam) {
+          // Token found in query parameter - store it and redirect
+          sessionStorage.setItem('uigen_auth', JSON.stringify({
+            type: 'bearer',
+            token: tokenParam
+          }));
+          
+          // Clean up URL and redirect to dashboard
+          cleanupUrl();
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+        
+        // Check for token in URL fragment (fallback for other OAuth flows)
+        const hash = window.location.hash;
+        
+        if (hash && hash.length > 1) {
+          // Remove the leading # and parse as query string
+          const hashParams = new URLSearchParams(hash.substring(1));
+          const fragmentToken = hashParams.get('access_token');
+          
+          if (fragmentToken) {
+            // Token found in URL fragment - store it and redirect
+            sessionStorage.setItem('uigen_auth', JSON.stringify({
+              type: 'bearer',
+              token: fragmentToken
+            }));
+            
+            // Clean up URL and redirect to dashboard
+            cleanupUrl();
+            navigate('/dashboard', { replace: true });
+            return;
+          }
+        }
+        
         // Extract query parameters
         const code = searchParams.get('code');
         const state = searchParams.get('state');
@@ -57,8 +95,54 @@ export function OAuthCallback() {
           return;
         }
 
-        // Validate required parameters
-        if (!code || !state) {
+        // COOKIE-BASED AUTH: If no code and no fragment token, check session cookie
+        // Use sessionValidationEndpoint from OAuth provider config if available
+        if (!code) {
+          try {
+            // Get the first enabled OAuth provider's sessionValidationEndpoint
+            const oauthProvider = config.auth.oauthProviders?.find(p => p.enabled);
+            const sessionEndpoint = oauthProvider?.sessionValidationEndpoint;
+            
+            if (sessionEndpoint) {
+              // Use the explicitly configured session validation endpoint
+              const response = await fetch(`/api${sessionEndpoint}`, {
+                credentials: 'include',
+                headers: {
+                  'Accept': 'application/json'
+                }
+              });
+
+              if (response.ok) {
+                const userData = await response.json();
+                
+                // Store user info in sessionStorage (not the token)
+                sessionStorage.setItem('uigen_auth', JSON.stringify({
+                  type: 'cookie',
+                  user: userData
+                }));
+                
+                // Clean up URL and redirect to dashboard
+                cleanupUrl();
+                navigate('/dashboard', { replace: true });
+                return;
+              }
+            }
+          } catch (err) {
+            console.error('Session validation error:', err);
+          }
+          
+          // If session validation fails, treat as missing parameters
+          setError('Authentication session not found. Please try again.');
+          setProcessing(false);
+          
+          setTimeout(() => {
+            navigate('/login', { replace: true });
+          }, 3000);
+          return;
+        }
+
+        // TOKEN-BASED AUTH: Validate required parameters for code exchange
+        if (!state) {
           setError('Missing authentication parameters. Please try again.');
           setProcessing(false);
           
@@ -268,6 +352,7 @@ function cleanupUrl(): void {
     url.searchParams.delete('state');
     url.searchParams.delete('error');
     url.searchParams.delete('error_description');
+    url.searchParams.delete('token'); // Remove token from URL
     
     window.history.replaceState({}, document.title, url.toString());
   } catch (error) {

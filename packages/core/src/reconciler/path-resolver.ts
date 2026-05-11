@@ -65,10 +65,11 @@ export class ElementPathResolver {
 
     if (elementPath === 'document' || elementPath === '#/') {
       // Document root - for document-level annotations
+      // Apply to info object where document-level annotations belong
       resolved = {
         type: 'operation', // Using 'operation' type for document-level
         location: { path: 'document' },
-        object: spec as unknown as Record<string, unknown>,
+        object: (spec as any).info as Record<string, unknown>,
       };
     } else if (elementPath.startsWith('#/')) {
       // JSON Pointer (RFC 6901): #/paths/~1api~1v1~1users/get/responses/200/content/application~1json/schema

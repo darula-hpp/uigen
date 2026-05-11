@@ -35,6 +35,7 @@ export interface OAuthProviderConfig {
   tokenUrl?: string;
   userInfoUrl?: string;
   refreshTokenEndpoint?: string;
+  sessionValidationEndpoint?: string;
 }
 
 /**
@@ -156,6 +157,10 @@ export class AuthHandler implements AnnotationHandler<AuthAnnotation> {
               refreshTokenEndpoint: {
                 type: 'string',
                 description: 'Custom refresh token endpoint URL (optional)'
+              },
+              sessionValidationEndpoint: {
+                type: 'string',
+                description: 'Session validation endpoint for cookie-based auth (optional, e.g., /api/v1/auth/me)'
               }
             }
           }
@@ -408,7 +413,8 @@ export class AuthHandler implements AnnotationHandler<AuthAnnotation> {
         authorizationUrl: providerConfig.authorizationUrl || defaults.authorizationUrl,
         tokenUrl: providerConfig.tokenUrl || defaults.tokenUrl,
         userInfoUrl: providerConfig.userInfoUrl || defaults.userInfoUrl,
-        refreshTokenEndpoint: providerConfig.refreshTokenEndpoint
+        refreshTokenEndpoint: providerConfig.refreshTokenEndpoint,
+        sessionValidationEndpoint: providerConfig.sessionValidationEndpoint
       };
       
       // Add to IR

@@ -3,7 +3,6 @@ info:
   title: Meeting Minutes
   description: Automated meeting minutes document generation API
   version: 1.0.0
-
 paths:
   /api/v1/templates:
     post:
@@ -845,7 +844,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-      x-uigen-profile: true
     put:
       tags:
       - auth
@@ -886,17 +884,84 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserResponse'
-        '401':
-          description: Unauthorized
-        '409':
-          description: Conflict - Username or email already exists
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-      x-uigen-profile: true
+  /api/v1/auth/oauth/google/callback:
+    get:
+      tags:
+      - oauth
+      summary: Google Oauth Callback
+      description: "Handle OAuth callback from Google.\n\nThis endpoint receives the\
+        \ authorization code from Google after user consent\nand completes the OAuth\
+        \ flow by exchanging the code for an access token,\nretrieving user information,\
+        \ creating or finding the user account, and\ngenerating a JWT token for authentication.\n\
+        \nQuery Parameters:\n    code: Authorization code from Google (required unless\
+        \ error is present)\n    state: CSRF protection token (required)\n    error:\
+        \ Error code if authorization failed (optional)\n    error_description: Human-readable\
+        \ error description (optional)\n    \nReturns:\n    TokenResponse with access_token\
+        \ and token_type\n    \nRaises:\n    HTTPException 400: Missing/invalid parameters,\
+        \ user denied access\n    HTTPException 401: Token exchange or user info retrieval\
+        \ failed\n    HTTPException 504: Timeout during external API calls\n    HTTPException\
+        \ 500: Server error"
+      operationId: google_oauth_callback_api_v1_auth_oauth_google_callback_get
+      parameters:
+      - name: code
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Authorization code from Google
+          title: Code
+        description: Authorization code from Google
+      - name: state
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: CSRF protection token
+          title: State
+        description: CSRF protection token
+      - name: error
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Error code if authorization failed
+          title: Error
+        description: Error code if authorization failed
+      - name: error_description
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Human-readable error description
+          title: Error Description
+        description: Human-readable error description
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /:
     get:
       summary: Root

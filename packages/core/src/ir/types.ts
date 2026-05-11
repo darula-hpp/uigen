@@ -152,6 +152,9 @@ export interface OAuthProvider {
   
   /** Custom refresh token endpoint URL (optional, defaults to tokenUrl) */
   refreshTokenEndpoint?: string;
+  
+  /** Session validation endpoint for cookie-based auth (optional, e.g., /api/v1/auth/me) */
+  sessionValidationEndpoint?: string;
 }
 
 export interface DashboardConfig {

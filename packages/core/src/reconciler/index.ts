@@ -25,3 +25,9 @@ export { Validator } from './validator.js';
 export { deepClone, levenshteinDistance } from './utils.js';
 export { validateRelationships, validateRelationshipType } from './relationship-validator.js';
 export type { RelationshipValidationResult } from './relationship-validator.js';
+export { AuthReconciler } from './auth-reconciler.js';
+export type {
+  AuthConfigFile,
+  OAuthProviderConfig,
+  ReconcileResult,
+} from './auth-reconciler.js';

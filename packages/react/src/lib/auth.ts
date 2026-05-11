@@ -47,6 +47,7 @@ export function clearAuthCredentials(): void {
 /**
  * Check if user is authenticated
  * Requirement 16.6: Display authentication status
+ * Supports both token-based and cookie-based authentication
  */
 export function isAuthenticated(): boolean {
   const stored = sessionStorage.getItem('uigen_auth');
@@ -60,6 +61,7 @@ export function isAuthenticated(): boolean {
     if (data.type === 'apiKey') return !!data.apiKey && !!data.apiKeyName;
     if (data.type === 'basic') return !!data.credentials;
     if (data.type === 'credential') return !!data.token;
+    if (data.type === 'cookie') return !!data.user; // Cookie-based auth
 
     return false;
   } catch {
@@ -70,6 +72,7 @@ export function isAuthenticated(): boolean {
 /**
  * Get authentication headers for API requests
  * Requirements 16.4, 17.5: Inject auth into requests
+ * For cookie-based auth, returns empty object (cookies sent automatically)
  */
 export function getAuthHeaders(): Record<string, string> {
   const stored = sessionStorage.getItem('uigen_auth');
@@ -78,6 +81,11 @@ export function getAuthHeaders(): Record<string, string> {
   try {
     const data = JSON.parse(stored) as any;
     const headers: Record<string, string> = {};
+
+    // Cookie-based auth: no headers needed (cookies sent automatically)
+    if (data.type === 'cookie') {
+      return {};
+    }
 
     if (data.type === 'bearer' && data.token) {
       headers['x-uigen-auth'] = data.token;

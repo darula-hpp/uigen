@@ -7,7 +7,8 @@ import {
   getThemeTemplate, 
   getGitignoreTemplate, 
   getReadmeTemplate,
-  getExampleSpecTemplate 
+  getExampleSpecTemplate,
+  getEnvExampleTemplate
 } from '../templates/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -84,6 +85,13 @@ export async function scaffoldProject(
   writeFileSync(gitignorePath, getGitignoreTemplate(), 'utf-8');
   if (verbose) {
     console.log(pc.gray('  Created .gitignore'));
+  }
+
+  // Create .env.example
+  const envExamplePath = resolve(projectPath, '.env.example');
+  writeFileSync(envExamplePath, getEnvExampleTemplate(), 'utf-8');
+  if (verbose) {
+    console.log(pc.gray('  Created .env.example'));
   }
 
   // Create README.md
