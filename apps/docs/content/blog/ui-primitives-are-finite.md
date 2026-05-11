@@ -1,8 +1,8 @@
 ---
-title: "UI Primitives Are Finite: Why UIGen Is a Runtime Engine, Not a Code Generator"
+title: "UI Primitives Are Finite: Why UIGen Is a Runtime, Not a Code Generator"
 author: "Olebogeng Mbedzi"
 date: "2026-05-11"
-excerpt: "The fundamental insight behind UIGen: UI primitives are finite, but interactions are not. How this truth led us to build a runtime engine that interprets your API spec, not a code generator."
+excerpt: "The fundamental insight behind UIGen: UI primitives are finite, but interactions are not. How this truth led us to build a runtime that interprets your API spec, not a code generator."
 tags: ["architecture", "philosophy", "technical", "ai-agents"]
 ---
 
@@ -12,13 +12,13 @@ There is a finite set of UI primitives. Text inputs, dropdowns, checkboxes, tabl
 
 This is not a limitation. It is a fundamental truth about user interfaces. And it is the premise that UIGen is built on.
 
-If UI primitives are finite, we can build an engine that maps data types to UI primitives at runtime. We do not need to generate code. We need an intelligent interpreter that reads your API spec and renders the appropriate components.
+If UI primitives are finite, we can build a runtime that maps data types to UI primitives. We do not need to generate code. We need an intelligent interpreter that reads your API spec and renders the appropriate components.
 
 But here is the critical insight: **common interactions are also finite**. Form submissions, validation, data fetching, pagination, sorting, filtering, multi-step forms - these are patterns that repeat across applications. UIGen infers and handles these common interactions automatically.
 
 Where UIGen stops is **complex application-specific flow**. Custom business logic, intricate state machines, domain-specific workflows - these are infinite and unique to each application. UIGen does not try to abstract these away.
 
-This is why UIGen does not try to reinvent JSX or React. It embraces them. UIGen is a runtime engine with pluggable renderers. The React renderer is one implementation, but you could build renderers for Vue, Svelte, or mobile frameworks. The engine handles the boilerplate (UI primitives and common interactions). You handle the complex flow using the tools you already know.
+This is why UIGen does not try to reinvent JSX or React. It embraces them. UIGen is a runtime with pluggable renderers. The React renderer is one implementation, but you could build renderers for Vue, Svelte, or mobile frameworks. UIGen handles the boilerplate (UI primitives and common interactions). You handle the complex flow using the tools you already know.
 
 ---
 
@@ -94,11 +94,11 @@ That is it. Roughly 40 primitives. Every CRUD application you have ever built us
 
 ## Why This Matters
 
-If UI primitives are finite, we can build an engine that automatically maps data types to primitives at runtime. This is what UIGen does.
+If UI primitives are finite, we can build a runtime that automatically maps data types to primitives. This is what UIGen does.
 
 ### Automatic Mapping
 
-The UIGen engine reads your OpenAPI spec and infers the right UI primitive for each field:
+UIGen reads your OpenAPI spec and infers the right UI primitive for each field:
 
 ```yaml
 # OpenAPI Schema
@@ -127,7 +127,7 @@ Template:
       format: binary
 ```
 
-The engine automatically maps:
+UIGen automatically maps:
 - `name` (string with length constraints) → Text input with validation
 - `description` (string, no constraints) → Text area
 - `categoryId` (integer, foreign key) → Dropdown (fetches categories)
@@ -136,7 +136,7 @@ The engine automatically maps:
 - `createdAt` (date-time) → Date-time picker (or read-only display)
 - `file` (binary) → File upload component
 
-No code generation. No templates. The engine interprets the spec at runtime and the renderer creates the appropriate components.
+No code generation. No templates. UIGen interprets the spec at runtime and the renderer creates the appropriate components.
 
 ### Customizable Mapping
 
@@ -170,20 +170,20 @@ annotations:
     x-uigen-ignore: true
 ```
 
-The config is declarative. You declare what you want, not how to build it. The engine handles the rest.
+The config is declarative. You declare what you want, not how to build it. UIGen handles the rest.
 
 ---
 
-## Why UIGen Is a Runtime Engine
+## Why UIGen Is a Runtime
 
-Here is where UIGen differs from code generators. UIGen is a runtime engine with pluggable renderers.
+Here is where UIGen differs from code generators. UIGen is a runtime with pluggable renderers.
 
 ### The Architecture
 
 ```
 OpenAPI Spec + Config
         ↓
-   UIGen Core (engine)
+   UIGen Core
         ↓
   Generates IR (JSON)
         ↓
@@ -192,7 +192,7 @@ Renderer interprets at runtime
    Live Application
 ```
 
-The engine (UIGen Core) is framework-agnostic. It parses your OpenAPI spec and produces an Intermediate Representation (IR) - a JSON structure that describes your application.
+UIGen Core is framework-agnostic. It parses your OpenAPI spec and produces an Intermediate Representation (IR) - a JSON structure that describes your application.
 
 The renderer is pluggable. The React renderer interprets the IR and creates React components. But you could build renderers for Vue, Svelte, React Native, or Flutter. The same IR works with any renderer.
 
@@ -232,7 +232,7 @@ UIGen does not just map data types to UI primitives. It infers and handles commo
 - Cache management
 - Optimistic updates
 
-These are patterns that repeat across applications. UIGen infers them from your OpenAPI spec and handles them automatically. You do not write boilerplate for form submissions, pagination, or validation. The engine handles it.
+These are patterns that repeat across applications. UIGen infers them from your OpenAPI spec and handles them automatically. You do not write boilerplate for form submissions, pagination, or validation. UIGen handles it.
 
 **2. Complex Flow Is Where UIGen Stops**
 
@@ -254,14 +254,14 @@ For most CRUD applications, UIGen handles 90% of the interactions. Form submissi
 
 **3. Pluggable Renderers**
 
-The React renderer is one implementation. The engine produces a framework-agnostic IR. You could build renderers for:
+The React renderer is one implementation. UIGen produces a framework-agnostic IR. You could build renderers for:
 - **Vue** (using Vue components and Composition API)
 - **Svelte** (using Svelte components and stores)
 - **React Native** (for mobile apps)
 - **Flutter** (for cross-platform apps)
 - **Web Components** (framework-agnostic)
 
-The same OpenAPI spec works with any renderer. The engine is the constant. The renderer is the variable.
+The same OpenAPI spec works with any renderer. UIGen Core is the constant. The renderer is the variable.
 
 **4. No Abstraction Leaks**
 
@@ -526,7 +526,7 @@ Let's be specific about what UIGen infers and handles automatically:
 - Protected routes
 - Logout
 
-For most CRUD applications, this covers everything you need. You do not write boilerplate. The engine infers it from your spec.
+For most CRUD applications, this covers everything you need. You do not write boilerplate. UIGen infers it from your spec.
 
 ### When You Write Code
 
@@ -582,7 +582,7 @@ Let's compare UIGen's approach with other UI generation strategies.
 - Generated code is hard to maintain
 - Divergence from API is common
 
-**UIGen's Advantage:** Runtime engine. Customizations survive updates. No code to maintain.
+**UIGen's Advantage:** Runtime. Customizations survive updates. No code to maintain.
 
 ### Approach 2: Low-Code Builders
 
@@ -743,9 +743,9 @@ components:
           format: date-time
 ```
 
-### What the Engine Produces
+### What UIGen Produces
 
-From this spec, the UIGen engine produces an IR. The React renderer interprets the IR and creates:
+From this spec, UIGen produces an IR. The React renderer interprets the IR and creates:
 
 **1. List View**
 - Table with columns: ID, Name, Description, Created At
@@ -881,12 +881,12 @@ A visual editor for the config file. Drag and drop to reorder fields, click to c
 
 UI primitives are finite. Common interactions are also finite. This is not a limitation. It is an opportunity.
 
-If we accept that UI primitives and common interactions are finite, we can build engines that automatically handle the boilerplate. Form submissions, validation, pagination, sorting, filtering - all inferred from your API spec.
+If we accept that UI primitives and common interactions are finite, we can build runtimes that automatically handle the boilerplate. Form submissions, validation, pagination, sorting, filtering - all inferred from your API spec.
 
 But complex application-specific flow is infinite. We cannot template away business logic. We need real code, real frameworks, real patterns.
 
 UIGen embraces both truths:
-- **Finite primitives and common interactions:** Runtime engine that eliminates boilerplate
+- **Finite primitives and common interactions:** Runtime that eliminates boilerplate
 - **Infinite complex flow:** Full framework access for custom logic
 
 The result is a system that is:
@@ -916,7 +916,7 @@ See it in action:
 # Install UIGen
 npm install -g @uigen-dev/cli
 
-# Start the engine with your OpenAPI spec
+# Start UIGen with your OpenAPI spec
 uigen serve openapi.yaml
 
 # Open http://localhost:4400
