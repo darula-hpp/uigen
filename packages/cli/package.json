@@ -39,8 +39,11 @@
     "@uigen-dev/config-gui": "workspace:*",
     "@uigen-dev/core": "workspace:*",
     "@uigen-dev/react": "workspace:*",
+    "chokidar": "^4.0.3",
     "commander": "^12.1.0",
     "dotenv": "^17.4.2",
+    "esbuild": "^0.24.2",
+    "fast-glob": "^3.3.3",
     "js-yaml": "^4.1.0",
     "picocolors": "^1.1.1",
     "vite": "^6.0.0"
