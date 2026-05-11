@@ -27,8 +27,13 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
       JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS:-24}
       BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8000/api/v1/auth/oauth/google/callback}
+      SPA_URL: ${SPA_URL:-http://localhost:4400}
     volumes:
       - upload_data:/data/uploads
+      - ./app:/app/app
     depends_on:
       db:
         condition: service_healthy

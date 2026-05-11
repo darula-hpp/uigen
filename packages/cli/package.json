@@ -40,6 +40,7 @@
     "@uigen-dev/core": "workspace:*",
     "@uigen-dev/react": "workspace:*",
     "commander": "^12.1.0",
+    "dotenv": "^17.4.2",
     "js-yaml": "^4.1.0",
     "picocolors": "^1.1.1",
     "vite": "^6.0.0"

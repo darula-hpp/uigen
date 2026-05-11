@@ -47,6 +47,8 @@ npx @uigen-dev/cli@latest config openapi.yaml
 
 Define relationships, customize labels, configure charts and file uploads, edit theme CSS visually. All changes saved to `.uigen/config.yaml`.
 
+**Environment Variables**: Keep sensitive values like OAuth credentials secure by using `${ENV_VAR_NAME}` syntax in your config file. See the [Environment Variables Guide](https://uigen-docs.vercel.app/docs/guides/environment-variables) for details.
+
 ### Try the Example App
 
 ```bash

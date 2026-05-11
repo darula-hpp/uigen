@@ -242,7 +242,7 @@ export function App({ config }: AppProps) {
             <Route path="/password-reset" element={<PasswordResetRoute config={config} landingPageEnabled={landingPageEnabled} />} />
             
             {/* OAuth callback route - handles OAuth provider redirects */}
-            <Route path="/auth/callback" element={<OAuthCallback />} />
+            <Route path="/auth/callback" element={<OAuthCallback config={config} />} />
             
             {/* Landing page route (if enabled) - redirects authenticated users to dashboard */}
             {landingPageEnabled && (

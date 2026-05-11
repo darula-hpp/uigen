@@ -1,10 +1,13 @@
 """API routes for authentication."""
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query, Response
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+import httpx
 
 from app.database import get_db
 from app.config import get_settings
 from app.services.auth_service import AuthService
+from app.services.oauth_service import OAuthService
 from app.schemas import (
     UserRegister,
     UserLogin,
@@ -161,3 +164,86 @@ async def update_me(
     )
     
     return updated_user
+
+
+@router.get("/oauth/google/callback")
+async def google_oauth_callback(
+    code: str = Query(..., description="Authorization code from Google"),
+    state: str = Query(..., description="State parameter for CSRF protection"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Handle Google OAuth callback (Production-grade with httpOnly cookies).
+    
+    Flow:
+    1. Receive authorization code from Google
+    2. Exchange code for access token
+    3. Get user info from Google
+    4. Create/update user in database
+    5. Generate JWT token
+    6. Set httpOnly cookie with token
+    7. Redirect to SPA dashboard
+    
+    Security features:
+    - httpOnly cookie (immune to XSS)
+    - Secure flag (HTTPS only in production)
+    - SameSite=Lax (CSRF protection)
+    - State validation (CSRF protection)
+    
+    Args:
+        code: Authorization code from Google
+        state: State parameter for CSRF validation
+        db: Database session
+        
+    Returns:
+        Redirect to SPA with token in httpOnly cookie
+    """
+    settings = get_settings()
+    
+    # Create HTTP client for OAuth requests
+    async with httpx.AsyncClient() as http_client:
+        oauth_service = OAuthService(db, settings, http_client)
+        
+        # Complete OAuth flow and get JWT token
+        jwt_token = await oauth_service.complete_oauth_flow(
+            code=code,
+            redirect_uri=settings.GOOGLE_REDIRECT_URI
+        )
+    
+    # Determine SPA URL
+    spa_url = settings.SPA_URL if hasattr(settings, 'SPA_URL') else "http://localhost:4400"
+    
+    # Redirect back to SPA with token as query parameter
+    # Query parameters ARE sent in redirects (unlike fragments)
+    # The SPA will extract the token and store it in sessionStorage
+    response = RedirectResponse(
+        url=f"{spa_url}/auth/callback?token={jwt_token}",
+        status_code=status.HTTP_303_SEE_OTHER
+    )
+    
+    return response
+
+
+@router.get("/status")
+async def auth_status(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Check authentication status (for httpOnly cookie auth).
+    
+    This endpoint allows the SPA to check if the user is authenticated
+    when using httpOnly cookies (since JavaScript can't read the cookie).
+    
+    Returns:
+        User info if authenticated, 401 if not
+    """
+    return {
+        "authenticated": True,
+        "user": {
+            "id": current_user.id,
+            "username": current_user.username,
+            "email": current_user.email
+        }
+    }
+
+

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { config as dotenvConfig } from 'dotenv';
 import { Command } from 'commander';
 import { serve } from './commands/serve.js';
 import { config } from './commands/config.js';
@@ -8,6 +9,9 @@ import { build } from './commands/build.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+
+// Load environment variables from .env file in current working directory
+dotenvConfig();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

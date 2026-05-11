@@ -5,6 +5,137 @@ All notable changes to UIGen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [0.8.0] - 2026-05-11
+
+### Added
+
+**Core package (`@uigen-dev/core`)**
+- **OAuth 2.0 authentication support** - Social login with Google, GitHub, Facebook, and Microsoft
+  - New `x-uigen-auth` annotation for configuring OAuth providers at document level
+  - `AuthHandler` for processing OAuth provider configurations with validation
+  - Support for multiple OAuth providers in a single application
+  - OAuth provider configuration with client ID, redirect URI, scopes, and custom endpoints
+  - Default OAuth endpoints for all supported providers (authorization, token, user info)
+  - Optional `sessionValidationEndpoint` parameter for cookie-based auth fallback
+  - Full TypeScript type definitions (`OAuthProvider`, `OAuthProviderConfig`)
+  - Comprehensive validation with helpful error messages
+  - Environment variable support in OAuth configuration (e.g., `${GOOGLE_CLIENT_ID}`)
+  ```yaml
+  info:
+    x-uigen-auth:
+      providers:
+        - provider: google
+          clientId: ${GOOGLE_CLIENT_ID}
+          redirectUri: ${GOOGLE_REDIRECT_URI}
+          sessionValidationEndpoint: /api/v1/auth/me
+          scopes:
+            - openid
+            - email
+            - profile
+  ```
+
+- **Environment variable resolution** - Dynamic configuration with environment variables
+  - `${VAR_NAME}` syntax support in config.yaml files
+  - `EnvVarParser` for detecting and extracting environment variable references
+  - `EnvVarResolver` for resolving variables from process.env with validation
+  - Variables resolved before reconciliation for seamless integration
+  - Graceful fallback to empty string for missing variables with warnings
+  - Support for nested objects and arrays in configuration
+  - 80+ tests covering unit, property-based, and integration scenarios
+  ```yaml
+  # Use environment variables anywhere in config
+  x-uigen-auth:
+    providers:
+      - provider: google
+        clientId: ${GOOGLE_CLIENT_ID}
+        redirectUri: ${GOOGLE_REDIRECT_URI}
+  ```
+
+**React package (`@uigen-dev/react`)**
+- **OAuth login flow** - Complete OAuth 2.0 authorization code flow implementation
+  - `OAuthCallback` component handles provider redirects with multiple auth methods:
+    - Token in query parameter (primary method for backend redirects)
+    - Token in URL fragment (fallback for client-side flows)
+    - Cookie-based session validation (fallback using `sessionValidationEndpoint`)
+  - `OAuthStrategy` for initiating OAuth flows and exchanging authorization codes
+  - OAuth provider buttons with logos on login page
+  - State parameter generation and validation for CSRF protection
+  - Automatic token storage in sessionStorage
+  - URL cleanup after token extraction (no sensitive data in browser history)
+  - Error handling with user-friendly messages
+  - Support for multiple OAuth providers simultaneously
+  - Graceful fallback when OAuth providers are unavailable
+
+**CLI (`@uigen-dev/cli`)**
+- **Environment variable loading** - Automatic .env file loading from spec directory
+  - Loads `.env` file from the same directory as the OpenAPI spec
+  - Environment variables available during config reconciliation
+  - Verbose logging shows loaded environment file path
+  - Graceful handling when .env file is not present
+
+- **SPA routing fix** - Fixed "Not found" errors for client-side routes with query parameters
+  - Updated serve command to strip query strings before checking file extensions
+  - All SPA routes now properly serve index.html for client-side routing
+  - Query parameters preserved for React Router to process
+  - Fixes OAuth callback route (`/auth/callback?token=xxx`)
+
+**Skills**
+- **OAuth configuration skill** - `configure-oauth.md` for AI-assisted OAuth setup
+  - Automatic detection of APIs that need OAuth
+  - Interactive prompts for provider selection and configuration
+  - Provider-specific setup instructions (Google, GitHub, Facebook, Microsoft)
+  - Default scope recommendations per provider
+  - Environment variable best practices
+  - Complete examples and troubleshooting guide
+  - Documentation of `sessionValidationEndpoint` parameter
+
+**Documentation**
+- Added comprehensive OAuth authentication guide
+- Added environment variable configuration guide
+- Updated authentication documentation with OAuth flow diagrams
+- Added security best practices for OAuth implementation
+- Documented `redirectUri` vs `sessionValidationEndpoint` differences
+
+### Changed
+
+**Core package (`@uigen-dev/core`)**
+- Enhanced `Reconciler` to resolve environment variables before applying annotations
+- Updated `PathResolver` to correctly resolve document-level annotations to `spec.info`
+- OAuth providers now stored in `ir.auth.oauthProviders` array
+
+**React package (`@uigen-dev/react`)**
+- `LoginView` now renders OAuth provider buttons when configured
+- `App.tsx` updated to pass config prop to `OAuthCallback` component
+- Auth utilities enhanced to support cookie-based authentication
+
+### Fixed
+
+**Core package (`@uigen-dev/core`)**
+- Fixed path resolution for document-level annotations (now correctly resolves to `spec.info`)
+- Fixed annotation precedence when both spec and config define the same annotation
+
+**CLI (`@uigen-dev/cli`)**
+- Fixed SPA routing to handle query parameters correctly (strips `?` before checking extensions)
+- Fixed static file serving to always serve index.html for routes without extensions
+
+**React package (`@uigen-dev/react`)**
+- Fixed OAuth callback route not rendering due to missing index.html for SPA routes
+- Fixed token extraction from query parameters in OAuth callback
+
+### Tests
+- 80+ tests for environment variable resolution (unit, property-based, integration)
+- 50+ tests for OAuth authentication (handler validation, flow integration)
+- 20+ tests for OAuth callback component (token extraction, error handling)
+- All existing tests continue to pass
+
+### Security
+- OAuth state parameter validation prevents CSRF attacks
+- Environment variables never exposed to client (resolved server-side only)
+- Tokens immediately cleaned from URL after extraction
+- Session validation endpoint optional for defense-in-depth
+
+---
+
 ## [0.7.3] - 2026-05-09
 
 ### Added

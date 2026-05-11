@@ -6,6 +6,16 @@ annotations:
     x-uigen-app:
       name: "Meeting Minutes Pro"
       icon: "/.uigen/assets/logo.svg"
+    x-uigen-auth:
+      providers:
+        - provider: google
+          clientId: ${GOOGLE_CLIENT_ID}
+          redirectUri: ${GOOGLE_REDIRECT_URI}
+          scopes:
+            - openid
+            - email
+            - profile
+          sessionValidationEndpoint: /api/v1/auth/me
     x-uigen-landing-page:
       enabled: true
       sections:
@@ -182,6 +192,8 @@ annotations:
   GET:/api/v1/auth/me:
     x-uigen-profile: true
     x-uigen-label: My Profile
+  GET:/api/v1/auth/oauth/google/callback:
+    x-uigen-ignore: true
   GET:/health:
     x-uigen-ignore: true
   GET:/:
@@ -280,31 +292,3 @@ annotations:
     x-uigen-ignore: true
   '#/paths/~1api~1v1~1auth~1me/get/responses/200/content/application~1json/schema/properties/id':
     x-uigen-ignore: true
-relationships:
-  - source: meetings
-    target: templates
-    path: /api/v1/meetings/{meeting_id}/templates
-    type: hasMany
-canvasLayout:
-  positions:
-    me:
-      x: 411
-      'y': 364
-    confirm:
-      x: 119
-      'y': 157
-    password-reset:
-      x: 81
-      'y': 415
-    sign-up:
-      x: 943
-      'y': 202
-    login:
-      x: 669
-      'y': 357
-    meetings:
-      x: 372
-      'y': 63
-    templates:
-      x: 773
-      'y': 794

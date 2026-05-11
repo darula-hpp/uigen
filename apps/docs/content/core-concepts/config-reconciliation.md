@@ -64,7 +64,21 @@ annotations:
   # Nested properties
   User.address.street:
     x-uigen-label: "Street Address"
+  
+  # Use environment variables for sensitive values
+  document:
+    x-uigen-auth:
+      providers:
+        - provider: google
+          clientId: ${GOOGLE_CLIENT_ID}
+          redirectUri: ${GOOGLE_REDIRECT_URI}
 ```
+
+### Environment Variables
+
+You can reference environment variables in any string value using the `${ENV_VAR_NAME}` syntax. This is particularly useful for sensitive values like OAuth credentials that should not be committed to version control.
+
+See the [Environment Variables Guide](/docs/guides/environment-variables) for complete documentation.
 
 ## Element Path Syntax
 
@@ -99,13 +113,33 @@ The reconciler automatically resolves `$ref` references.
 When you run `uigen serve`, the reconciliation process:
 
 1. **Loads Config**: Checks for `.uigen/config.yaml` in your project root
-2. **Deep Clones Spec**: Creates an in-memory copy of your source spec
-3. **Resolves Paths**: Locates each element path in the spec
-4. **Merges Annotations**: Applies config annotations (config takes precedence)
-5. **Validates**: Ensures the reconciled spec is valid OpenAPI/Swagger
-6. **Generates UI**: Uses the reconciled spec for IR generation
+2. **Resolves Environment Variables**: Replaces `${ENV_VAR_NAME}` references with actual values from your environment
+3. **Deep Clones Spec**: Creates an in-memory copy of your source spec
+4. **Resolves Paths**: Locates each element path in the spec
+5. **Merges Annotations**: Applies config annotations (config takes precedence)
+6. **Validates**: Ensures the reconciled spec is valid OpenAPI/Swagger
+7. **Generates UI**: Uses the reconciled spec for IR generation
 
 Your source spec file is never modified.
+
+### Environment Variable Resolution
+
+Before reconciliation begins, UIGen automatically resolves environment variable references in your config file. This allows you to keep sensitive values like OAuth credentials out of version control:
+
+```yaml
+# config.yaml
+annotations:
+  document:
+    x-uigen-auth:
+      providers:
+        - provider: google
+          clientId: ${GOOGLE_CLIENT_ID}
+          redirectUri: ${GOOGLE_REDIRECT_URI}
+```
+
+Environment variables are resolved recursively at any depth in your config structure. If a referenced variable is not defined, UIGen will fail with a clear error message indicating which variable is missing and where it was referenced.
+
+For detailed information on using environment variables, see the [Environment Variables Guide](/docs/guides/environment-variables).
 
 ## Generic Annotation Support
 
@@ -421,6 +455,7 @@ Check:
 
 ## See Also
 
+- [Environment Variables](/docs/guides/environment-variables) - Using environment variables in config files
 - [Spec Annotations](/docs/spec-annotations/overview) - Available `x-uigen-*` annotations
 - [How It Works](/docs/core-concepts/how-it-works) - UIGen architecture overview
 - [CLI Reference](/docs/cli-reference/serve) - `serve` command options

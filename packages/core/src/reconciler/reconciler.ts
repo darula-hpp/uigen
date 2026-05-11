@@ -19,6 +19,8 @@ import { AnnotationMerger } from './merger.js';
 import { Validator } from './validator.js';
 import { deepClone } from './utils.js';
 import { validateRelationships } from './relationship-validator.js';
+import { AuthReconciler, type OAuthProviderConfig } from './auth-reconciler.js';
+import { EnvVarResolver } from '../config/env-var-resolver.js';
 
 /**
  * Configuration file interface
@@ -29,6 +31,9 @@ interface ConfigFile {
   defaults: Record<string, Record<string, unknown>>;
   annotations: Record<string, Record<string, unknown>>;
   relationships?: RelationshipConfig[];
+  auth?: {
+    providers?: OAuthProviderConfig[];
+  };
 }
 
 /**
@@ -82,6 +87,8 @@ export class Reconciler {
   private resolver: ElementPathResolver;
   private merger: AnnotationMerger;
   private validator: Validator;
+  private authReconciler: AuthReconciler;
+  private envVarResolver: EnvVarResolver;
 
   constructor(options: ReconcilerOptions = {}) {
     this.options = {
@@ -94,6 +101,11 @@ export class Reconciler {
     this.resolver = new ElementPathResolver();
     this.merger = new AnnotationMerger(this.logger);
     this.validator = new Validator();
+    this.authReconciler = new AuthReconciler();
+    this.envVarResolver = new EnvVarResolver({
+      logger: this.logger,
+      strict: true,
+    });
   }
 
   /**
@@ -114,11 +126,26 @@ export class Reconciler {
     });
 
     try {
+      // NEW: Resolve environment variables before processing
+      this.logger.info('Resolving environment variables');
+      const resolveResult = this.envVarResolver.resolve(config);
+      const resolvedConfig = resolveResult.config;
+      
+      this.logger.info('Environment variable resolution complete', {
+        resolvedVars: resolveResult.resolvedVars.length,
+        warnings: resolveResult.warnings.length,
+      });
+      
+      // Log any warnings from env var resolution
+      for (const warning of resolveResult.warnings) {
+        this.logger.warn(warning.message, { path: warning.path });
+      }
+
       // Deep clone source spec to avoid mutation
       const clonedSpec = deepClone(sourceSpec);
 
-      // Merge annotations
-      const mergeResult = this.merger.merge(clonedSpec, config, this.resolver);
+      // Merge annotations using resolved config
+      const mergeResult = this.merger.merge(clonedSpec, resolvedConfig, this.resolver);
 
       // Build warnings for unresolved paths
       const warnings: ReconciliationWarning[] = mergeResult.skippedPaths.map((elementPath) => {
@@ -130,9 +157,36 @@ export class Reconciler {
         };
       });
 
+      // Reconcile OAuth providers if auth config exists
+      let reconciledSpec = mergeResult.modifiedSpec;
+      if ((resolvedConfig as any).auth) {
+        this.logger.info('Reconciling OAuth providers', {
+          providerCount: (resolvedConfig as any).auth.providers?.length || 0,
+        });
+
+        const authResult = this.authReconciler.reconcile(reconciledSpec, resolvedConfig as any);
+        reconciledSpec = authResult.spec;
+
+        // Add OAuth validation errors as warnings
+        if (authResult.errors.length > 0) {
+          for (const error of authResult.errors) {
+            this.logger.warn(`OAuth configuration error: ${error}`);
+            warnings.push({
+              elementPath: 'config.auth.providers',
+              message: error,
+            });
+          }
+        }
+
+        this.logger.info('OAuth reconciliation complete', {
+          reconciledProviders: authResult.reconciledProviders,
+          errors: authResult.errors.length,
+        });
+      }
+
       // Validate and collect relationships (pass-through, never injected into spec)
       const { validRelationships, warnings: relationshipWarnings } = validateRelationships(
-        config.relationships ?? []
+        resolvedConfig.relationships ?? []
       );
 
       // Merge relationship warnings into the warnings array
@@ -155,7 +209,7 @@ export class Reconciler {
 
       // Validate reconciled spec
       if (this.options.validateOutput) {
-        const validationResult = this.validator.validate(mergeResult.modifiedSpec);
+        const validationResult = this.validator.validate(reconciledSpec);
 
         if (!validationResult.valid) {
           const errorMessages = validationResult.errors
@@ -171,12 +225,13 @@ export class Reconciler {
       });
 
       return {
-        spec: mergeResult.modifiedSpec,
+        spec: reconciledSpec,
         appliedAnnotations: mergeResult.appliedCount,
         warnings,
         relationships: validRelationships,
       };
     } catch (error) {
+      // EnvVarResolutionError will propagate and halt the pipeline
       this.logger.error('Reconciliation failed', {
         error: error instanceof Error ? error.message : String(error),
       });
