@@ -51,7 +51,7 @@ UIGen scaffolds a complete project with configuration files (`.uigen/config.yaml
 ### Developer Experience
 - **Runtime Rendering** - No code generation, UI stays in sync with spec changes
 - **AI Agent Skills** - Automate configuration with your favorite coding assistant
-- **Override System** - Customize any component with React overrides (coming soon)
+- **Override System** - Replace any view with custom React components in `src/overrides/`
 - **Build Command** - Package for production deployment with `uigen build`
 
 ---
