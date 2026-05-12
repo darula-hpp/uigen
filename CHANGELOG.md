@@ -5,6 +5,61 @@ All notable changes to UIGen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [0.8.1] - 2026-05-12
+
+### Changed
+
+**Override System Refactor** - Replaced `x-uigen-id` with structured `x-uigen-override` annotation
+
+The override system has been refactored to use a structured annotation format that enables programmatic control over override enablement.
+
+**Migration Required:**
+
+Old format (no longer supported):
+```yaml
+/api/v1/users:
+  x-uigen-id: users
+```
+
+New format (required):
+```yaml
+/api/v1/users:
+  x-uigen-override:
+    id: users
+    enabled: true  # Optional, defaults to true
+```
+
+**What Changed:**
+- `x-uigen-id` annotation removed entirely
+- New `x-uigen-override` annotation with `id` and `enabled` properties
+- `uigenId` property removed from Resource and Operation IR types
+- New `override?: OverrideConfig` property added to Resource and Operation
+- Override reconciliation now checks `enabled` flag before applying overrides
+
+**Benefits:**
+- Programmatic enable/disable of overrides without removing annotations
+- Better structure for future extensibility
+- Clearer separation between override identification and resource identification
+- Agent-friendly format for automated override management
+
+**Migration Steps:**
+1. Update all `x-uigen-id` annotations in your `.uigen/config.yaml` to use `x-uigen-override` format
+2. Override files (`src/overrides/*.tsx`) do not need changes
+3. The `targetId` in override files should match the `id` in `x-uigen-override`
+
+### Added
+
+- Override enablement control via `x-uigen-override.enabled` property
+- Structured override metadata for future extensibility
+- `OverrideHandler` annotation handler following established architecture
+- Better error messages when overrides are not found
+
+### Removed
+
+- `x-uigen-id` annotation (replaced by `x-uigen-override`)
+- `uigenId` property from Resource and Operation IR types
+
+
 ## [0.8.0] - 2026-05-11
 
 ### Added

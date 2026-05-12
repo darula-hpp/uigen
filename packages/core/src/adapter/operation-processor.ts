@@ -67,10 +67,9 @@ export class Operation_Processor {
    * 5. Delegates response processing to Body_Processor
    * 6. Delegates view hint classification to ViewHintClassifier
    * 7. Extracts operation ID (from operationId or generates)
-   * 8. Extracts x-uigen-id vendor extension
-   * 9. Determines request content type
-   * 10. Extracts security requirements
-   * 11. Constructs and returns complete Operation IR object
+   * 8. Determines request content type
+   * 9. Extracts security requirements
+   * 10. Constructs and returns complete Operation IR object
    * 
    * @param method - HTTP method (GET, POST, PUT, PATCH, DELETE)
    * @param path - API path (e.g., /users, /users/{id})
@@ -127,16 +126,12 @@ export class Operation_Processor {
     // Extract operation ID
     const operationId = this.extractOperationId(method, path, operation);
 
-    // Extract x-uigen-id vendor extension
-    const uigenId = this.extractUigenId(operation, operationId);
-
     // Extract security requirements
     const security = this.extractSecurityRequirements(operation);
 
     // Construct and return Operation IR object
     return {
       id: operationId,
-      uigenId: uigenId,
       method,
       path,
       summary: operation.summary,
@@ -256,42 +251,6 @@ export class Operation_Processor {
     operation: OpenAPIV3.OperationObject
   ): string {
     return operation.operationId || `${method.toLowerCase()}_${path.replace(/\//g, '_')}`;
-  }
-
-  /**
-   * Extract x-uigen-id vendor extension or fall back to operationId.
-   * 
-   * Uses x-uigen-id if present and non-empty, otherwise falls back to operationId.
-   * Handles numeric x-uigen-id by converting to string.
-   * 
-   * @param operation - The operation object
-   * @param operationId - The operation ID (fallback value)
-   * @returns UigenId string
-   * 
-   * @example
-   * ```typescript
-   * // With x-uigen-id
-   * const uigenId = this.extractUigenId({ 'x-uigen-id': 'custom-list-users' }, 'listUsers');
-   * // Returns: 'custom-list-users'
-   * 
-   * // Without x-uigen-id
-   * const uigenId = this.extractUigenId({}, 'listUsers');
-   * // Returns: 'listUsers'
-   * ```
-   */
-  private extractUigenId(
-    operation: OpenAPIV3.OperationObject,
-    operationId: string
-  ): string {
-    const vendorExtension = (operation as any)['x-uigen-id'];
-
-    // Handle numeric x-uigen-id by converting to string
-    if (typeof vendorExtension === 'number') {
-      return String(vendorExtension);
-    }
-
-    // Use x-uigen-id if present and non-empty, otherwise fall back to operationId
-    return vendorExtension && vendorExtension !== '' ? vendorExtension : operationId;
   }
 
   /**

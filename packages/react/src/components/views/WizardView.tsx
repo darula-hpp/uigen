@@ -232,11 +232,6 @@ export function WizardView({ resource, mode = 'create', initialData, onSuccess }
   const params = useParams<{ id: string }>();
   
   // Construct view-specific uigenId
-  const uigenId = `${resource.uigenId}.${mode}`;
-  
-  // Reconcile to determine override mode
-  const { mode: overrideMode, renderFn } = reconcile(uigenId);
-  
   // Find wizard or update operation based on mode
   const operation = mode === 'edit'
     ? resource.operations.find(op => op.viewHint === 'update')
@@ -244,6 +239,9 @@ export function WizardView({ resource, mode = 'create', initialData, onSuccess }
       || resource.operations.find(op => op.viewHint === 'action' && op.method === 'POST' && op.path.includes('{') && !!op.requestBody)
       || resource.operations.find(op => op.viewHint === 'wizard')
     : resource.operations.find(op => op.viewHint === 'wizard');
+  
+  // Reconcile to determine override mode using operation's override config
+  const { mode: overrideMode, renderFn } = reconcile(operation?.override);
 
   // Current step state (Requirement 14.7 - persist step data)
   const [currentStep, setCurrentStep] = useState(0);
@@ -444,7 +442,7 @@ export function WizardView({ resource, mode = 'create', initialData, onSuccess }
         isLastStep
       })}</>;
     } catch (err) {
-      console.error(`[UIGen Override] Error in render function for "${uigenId}":`, err);
+      console.error(`[UIGen Override] Error in render function for "${operation?.override?.id || `${resource.slug}.${mode}`}":`, err);
       // Fall through to built-in view
     }
   }
@@ -582,7 +580,7 @@ export function WizardView({ resource, mode = 'create', initialData, onSuccess }
   // Hooks mode: wrap in OverrideHooksHost
   if (overrideMode === 'hooks') {
     return (
-      <OverrideHooksHost uigenId={uigenId} resource={resource} operation={operation}>
+      <OverrideHooksHost uigenId={operation?.override?.id || `${resource.slug}.${mode}`} resource={resource} operation={operation}>
         {content}
       </OverrideHooksHost>
     );

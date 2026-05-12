@@ -1,342 +1,55 @@
-import { readFileSync, existsSync, createReadStream, mkdirSync, writeFileSync } from 'fs';
-import { resolve, dirname, extname } from 'path';
+import { existsSync } from 'fs';
+import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { createServer as createViteServer, type ProxyOptions } from 'vite';
-import { createServer as createHttpServer, request as httpRequest, type IncomingMessage, type ServerResponse } from 'http';
-import { request as httpsRequest } from 'https';
-import { parseSpec, ConfigLoader, AnnotationHandlerRegistry, Reconciler } from '@uigen-dev/core';
-import { load as parseYaml } from 'js-yaml';
 import pc from 'picocolors';
-import { discoverOverrides, transpileOverrides, validateOverrides, createInjectionScript } from '../overrides/index.js';
+import {
+  SpecProcessor,
+  AssetLoader,
+  DevServerStrategy,
+  StaticServerStrategy,
+  SUPPORTED_RENDERERS,
+  type ServeOptions,
+  type Renderer,
+} from '../server/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const SUPPORTED_RENDERERS = ['react', 'vue', 'svelte'] as const;
-type Renderer = typeof SUPPORTED_RENDERERS[number];
-
-const MIME: Record<string, string> = {
-  '.html':  'text/html',
-  '.js':    'application/javascript',
-  '.css':   'text/css',
-  '.svg':   'image/svg+xml',
-  '.png':   'image/png',
-  '.ico':   'image/x-icon',
-  '.json':  'application/json',
-  '.woff':  'font/woff',
-  '.woff2': 'font/woff2',
-};
-
-/** Resolve the renderer package root from node_modules, works for npx, global, and local installs. */
+/**
+ * Resolve renderer package root from node_modules
+ */
 function resolveRendererRoot(renderer: Renderer): string {
   const pkgName = `@uigen-dev/${renderer}`;
   const candidates = [
-    resolve(__dirname, '../../node_modules', pkgName),       // cli's own node_modules (global install)
-    resolve(__dirname, '../../..', pkgName),                 // npm/npx sibling
-    resolve(__dirname, '../../../../node_modules', pkgName), // monorepo hoisted
-    resolve(__dirname, '../node_modules', pkgName),          // cli-local (shouldn't exist but check anyway)
+    resolve(__dirname, '../../node_modules', pkgName),
+    resolve(__dirname, '../../..', pkgName),
+    resolve(__dirname, '../../../../node_modules', pkgName),
+    resolve(__dirname, '../node_modules', pkgName),
   ];
+  
   for (const candidate of candidates) {
     if (existsSync(resolve(candidate, 'package.json'))) return candidate;
   }
-  return resolve(__dirname, '../../../' + renderer); // last resort
-}
-
-/**
- * Load theme CSS content from .uigen/theme.css
- * Base styles are already in the SPA, we only inject custom theme
- * Requirements: 6.1, 6.2, 6.3, 10.1
- */
-function loadCSS(specDir: string, verbose: boolean): string {
-  const themePath = resolve(specDir, '.uigen/theme.css');
   
-  // Load theme.css (custom overrides)
-  if (existsSync(themePath)) {
-    if (verbose) {
-      console.log(pc.gray(`Loading custom theme from ${themePath}`));
-    }
-    return readFileSync(themePath, 'utf-8');
-  }
-  
-  // No custom theme found - that's okay, base styles are in SPA
-  if (verbose) {
-    console.log(pc.gray('No custom theme found, using base styles only'));
-  }
-  return '';
-}
-
-/**
- * Process override files from src/ directory.
- * Discovers, transpiles, validates, and creates injection script.
- * All errors are non-fatal - returns empty script on failure.
- * 
- * @param specDir - Directory containing the spec file
- * @param mode - Build mode (development or production)
- * @param verbose - Enable verbose logging
- * @returns Injection script for HTML
- */
-async function processOverrides(
-  specDir: string,
-  mode: 'development' | 'production',
-  verbose: boolean
-): Promise<string> {
-  try {
-    const srcDir = resolve(specDir, 'src');
-    
-    if (verbose) {
-      console.log(pc.gray(`Processing overrides from ${srcDir}...`));
-    }
-    
-    // Step 1: Discover override files
-    const files = await discoverOverrides({
-      srcDir,
-      verbose,
-    });
-    
-    // If no files found, return empty injection
-    if (files.length === 0) {
-      if (verbose) {
-        console.log(pc.gray('No override files found'));
-      }
-      return createInjectionScript({ code: '', mode });
-    }
-    
-    if (verbose) {
-      console.log(pc.gray(`Found ${files.length} override file(s)`));
-    }
-    
-    // Step 2: Transpile override files
-    const transpileResult = await transpileOverrides({
-      files,
-      mode,
-      verbose,
-    });
-    
-    // Log transpilation errors (non-fatal)
-    if (transpileResult.errors.length > 0) {
-      console.warn(pc.yellow(`⚠ Override transpilation errors (${transpileResult.errors.length}):`));
-      for (const error of transpileResult.errors) {
-        console.warn(pc.yellow(`  ${error.filePath}: ${error.message}`));
-      }
-    }
-    
-    // If transpilation completely failed, return empty injection
-    if (!transpileResult.code || transpileResult.code.trim() === '') {
-      console.warn(pc.yellow('⚠ Override transpilation failed, continuing without overrides'));
-      return createInjectionScript({ code: '', mode });
-    }
-    
-    // Step 3: Validate override definitions
-    const validationResult = validateOverrides({
-      code: transpileResult.code,
-      files,
-      verbose,
-    });
-    
-    // Log validation errors (non-fatal)
-    if (validationResult.errors.length > 0) {
-      console.warn(pc.yellow(`⚠ Override validation errors (${validationResult.errors.length}):`));
-      for (const error of validationResult.errors) {
-        console.warn(pc.yellow(`  ${error.filePath}: ${error.message}`));
-      }
-    }
-    
-    // Log validation warnings
-    if (validationResult.warnings.length > 0 && verbose) {
-      console.warn(pc.yellow(`⚠ Override validation warnings (${validationResult.warnings.length}):`));
-      for (const warning of validationResult.warnings) {
-        console.warn(pc.yellow(`  ${warning.filePath}: ${warning.message}`));
-      }
-    }
-    
-    // Step 4: Create injection script
-    const injectionScript = createInjectionScript({
-      code: transpileResult.code,
-      mode,
-    });
-    
-    if (verbose) {
-      console.log(pc.green(`✓ Override processing complete`));
-    }
-    
-    return injectionScript;
-  } catch (error) {
-    // Catch any unexpected errors and log them (non-fatal)
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.warn(pc.yellow(`⚠ Override processing failed: ${errorMessage}`));
-    console.warn(pc.yellow('  Continuing without overrides...'));
-    
-    // Return empty injection on failure
-    return createInjectionScript({ code: '', mode });
-  }
-}
-
-/** Inject auth headers and strip uigen-specific ones. Mutates the headers object in place. */
-function injectAuthHeaders(
-  headers: Record<string, string | string[]>,
-  incoming: IncomingMessage,
-  targetUrl: URL,
-  verbose: boolean
-): void {
-  const authHeader    = incoming.headers['x-uigen-auth'];
-  const basicAuth     = incoming.headers['x-uigen-basic-auth'];
-  const apiKeyHeader  = incoming.headers['x-uigen-api-key'];
-  const apiKeyName    = incoming.headers['x-uigen-api-key-name'];
-  const apiKeyIn      = incoming.headers['x-uigen-api-key-in'];
-
-  if (authHeader)  { headers['authorization'] = `Bearer ${authHeader}`;  if (verbose) console.log(pc.gray('  [Auth] Bearer token')); }
-  if (basicAuth)   { headers['authorization'] = `Basic ${basicAuth}`;    if (verbose) console.log(pc.gray('  [Auth] Basic auth')); }
-  if (apiKeyHeader && apiKeyName) {
-    if (apiKeyIn === 'header') {
-      headers[apiKeyName as string] = apiKeyHeader as string;
-      if (verbose) console.log(pc.gray(`  [Auth] API key header: ${apiKeyName}`));
-    } else if (apiKeyIn === 'query') {
-      targetUrl.searchParams.set(apiKeyName as string, apiKeyHeader as string);
-      if (verbose) console.log(pc.gray(`  [Auth] API key query: ${apiKeyName}`));
-    }
-  }
-
-  for (const h of ['x-uigen-auth','x-uigen-api-key','x-uigen-api-key-name','x-uigen-api-key-in','x-uigen-basic-auth','x-uigen-server']) {
-    delete headers[h];
-  }
-}
-
-interface ServeOptions {
-  port?: number;
-  proxyBase?: string;
-  verbose?: boolean;
-  renderer?: string;
+  return resolve(__dirname, '../../../' + renderer);
 }
 
 export async function serve(specPath: string, options: ServeOptions) {
   console.log(pc.cyan('🚀 UIGen starting...\n'));
 
   try {
-    // Resolve spec path and determine config location
-    const resolvedSpecPath = resolve(process.cwd(), specPath);
-    const specDir = dirname(resolvedSpecPath);
-    
-    // Load .env file from the spec directory
-    const { config: dotenvConfig } = await import('dotenv');
-    const envPath = resolve(specDir, '.env');
-    if (existsSync(envPath)) {
-      dotenvConfig({ path: envPath });
-      if (options.verbose) {
-        console.log(pc.gray(`Loaded environment variables from ${envPath}\n`));
-      }
-    } else if (options.verbose) {
-      console.log(pc.gray(`No .env file found at ${envPath}\n`));
-    }
-    
-    const configPath = resolve(specDir, '.uigen/config.yaml');
-    
-    // Load config file if it exists
-    const configLoader = new ConfigLoader({
-      configPath,
-      verbose: options.verbose
+    // Process spec
+    const specProcessor = new SpecProcessor();
+    const { ir, specDir } = await specProcessor.process({
+      specPath,
+      verbose: options.verbose ?? false,
     });
     
-    const config = configLoader.load();
-    
-    if (config) {
-      console.log(pc.gray(`Loading annotation config from ${configPath}`));
-      
-      // Apply config to registry
-      const registry = AnnotationHandlerRegistry.getInstance();
-      configLoader.applyToRegistry(config, registry);
-      
-      // Set config loader on registry for precedence handling
-      registry.setConfigLoader(configLoader);
-      
-      // Log disabled annotations
-      const disabledAnnotations = Object.entries(config.enabled)
-        .filter(([_, enabled]) => !enabled)
-        .map(([name]) => name);
-      
-      if (disabledAnnotations.length > 0 && options.verbose) {
-        console.log(pc.gray(`  Disabled annotations: ${disabledAnnotations.join(', ')}`));
-      }
-      
-      // Log annotations with defaults
-      const annotationsWithDefaults = Object.keys(config.defaults);
-      if (annotationsWithDefaults.length > 0 && options.verbose) {
-        console.log(pc.gray(`  Annotations with defaults: ${annotationsWithDefaults.join(', ')}`));
-      }
-      
-      console.log(pc.green('✓ Config loaded\n'));
-    } else if (options.verbose) {
-      console.log(pc.gray('No config file found, using default annotation settings\n'));
-    }
-    
-    console.log(pc.gray(`Reading spec: ${specPath}`));
-    const specContent = readFileSync(resolve(process.cwd(), specPath), 'utf-8');
-    
-    // Parse the spec as YAML/JSON to get the raw spec object
-    let rawSpec: any;
-    try {
-      rawSpec = parseYaml(specContent);
-    } catch {
-      // If YAML parsing fails, try JSON
-      rawSpec = JSON.parse(specContent);
-    }
-    
-    // Apply reconciliation if config exists
-    let reconciledSpec = rawSpec;
-    if (config) {
-      try {
-        const reconciler = new Reconciler({
-          logLevel: options.verbose ? 'debug' : 'info',
-          validateOutput: true,
-          strictMode: false,
-        });
-        
-        const reconciliationResult = reconciler.reconcile(rawSpec, config);
-        reconciledSpec = reconciliationResult.spec;
-        
-        if (options.verbose) {
-          console.log(pc.gray(`  Applied ${reconciliationResult.appliedAnnotations} annotation(s) from config`));
-          
-          if (reconciliationResult.warnings.length > 0) {
-            console.log(pc.yellow(`  Warnings: ${reconciliationResult.warnings.length}`));
-            for (const warning of reconciliationResult.warnings) {
-              console.log(pc.yellow(`    - ${warning.message}`));
-              if (warning.suggestion) {
-                console.log(pc.gray(`      ${warning.suggestion}`));
-              }
-            }
-          }
-        }
-        
-        console.log(pc.green('✓ Reconciliation complete\n'));
-      } catch (error) {
-        console.error(pc.red('✗ Reconciliation failed:'), error instanceof Error ? error.message : error);
-        process.exit(1);
-      }
-    }
-    
-    // Convert reconciled spec back to string for parseSpec
-    const reconciledSpecContent = JSON.stringify(reconciledSpec);
-    const ir = await parseSpec(reconciledSpecContent);
-
-    console.log(pc.green(`✓ Parsed spec: ${ir.meta.title} v${ir.meta.version}`));
-    console.log(pc.gray(`  Resources: ${ir.resources.map(r => r.name).join(', ')}\n`));
-
-    // Create .uigen/build directory and save IR
-    const buildDir = resolve(specDir, '.uigen/build');
-    try {
-      mkdirSync(buildDir, { recursive: true });
-      const irPath = resolve(buildDir, 'app.uigen.json');
-      writeFileSync(irPath, JSON.stringify(ir, null, 2), 'utf-8');
-      if (options.verbose) {
-        console.log(pc.gray(`Saved IR to ${irPath}\n`));
-      }
-    } catch (error) {
-      console.error(pc.yellow(`⚠ Failed to save IR: ${error instanceof Error ? error.message : error}`));
-    }
-
+    // Determine proxy target
     const proxyTarget = options.proxyBase || ir.servers[0]?.url || 'http://localhost:3000';
     console.log(pc.gray(`API proxy target: ${proxyTarget}\n`));
-
+    
+    // Validate renderer
     const renderer: Renderer = (SUPPORTED_RENDERERS as readonly string[]).includes(options.renderer ?? '')
       ? (options.renderer as Renderer)
       : 'react';
@@ -344,198 +57,42 @@ export async function serve(specPath: string, options: ServeOptions) {
     if (options.renderer && renderer !== options.renderer) {
       console.log(pc.yellow(`⚠ Unknown renderer "${options.renderer}", falling back to react\n`));
     }
-
+    
+    // Determine server mode
     const rendererRoot = resolveRendererRoot(renderer);
     const isInstalled = rendererRoot.includes('node_modules');
-
+    
     console.log(pc.gray(`Renderer: ${renderer} (${rendererRoot})`));
-    if (options.verbose) console.log(pc.gray(`Mode: ${isInstalled ? 'static' : 'dev'}\n`));
-
-    if (!isInstalled) {
-      // --- Dev mode: Vite dev server (monorepo) ---
-      
-      // Load CSS content
-      const cssContent = loadCSS(specDir, options.verbose ?? false);
-      
-      // Process overrides
-      const overrideScript = await processOverrides(specDir, 'development', options.verbose ?? false);
-      
-      const proxyConfig: ProxyOptions = {
-        target: proxyTarget,
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-        configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq, req: IncomingMessage) => {
-            const startTime = Date.now();
-            const headers: Record<string, string | string[]> = {};
-            injectAuthHeaders(headers, req, new URL(proxyReq.path || '', proxyTarget), options.verbose ?? false);
-            for (const [k, v] of Object.entries(headers)) proxyReq.setHeader(k, v);
-            for (const h of ['x-uigen-auth','x-uigen-api-key','x-uigen-api-key-name','x-uigen-api-key-in','x-uigen-basic-auth','x-uigen-server']) {
-              proxyReq.removeHeader(h);
-            }
-            console.log(pc.blue(`→ ${req.method} ${req.url}`));
-            (req as any).__startTime = startTime;
-          });
-          proxy.on('proxyRes', (proxyRes, req: IncomingMessage) => {
-            const duration = Date.now() - ((req as any).__startTime || Date.now());
-            const status = proxyRes.statusCode || 0;
-            const color = status >= 500 ? pc.red : status >= 400 ? pc.yellow : pc.green;
-            console.log(color(`← ${req.method} ${req.url} ${status} (${duration}ms)`));
-          });
-          proxy.on('error', (err, req: IncomingMessage) => {
-            console.error(pc.red(`✗ ${req.method} ${req.url} - ${err.message}`));
-          });
-        }
-      };
-
-      const server = await createViteServer({
-        root: rendererRoot,
-        configFile: resolve(rendererRoot, 'vite.config.ts'),
-        server: {
-          port: options.port || 4400,
-          cors: { origin: '*', credentials: true },
-          proxy: { '/api': proxyConfig }
-        },
-        plugins: [{
-          name: 'uigen-config-injection',
-          transformIndexHtml(html) {
-            // Inject config
-            let injectedHtml = html.replace('</head>', `<script>window.__UIGEN_CONFIG__ = ${JSON.stringify(ir)};</script></head>`);
-            
-            // Inject CSS if available (Requirements: 6.4, 6.5)
-            if (cssContent) {
-              injectedHtml = injectedHtml.replace('</head>', `<script>window.__UIGEN_CSS__ = ${JSON.stringify(cssContent)};</script></head>`);
-            }
-            
-            // Inject overrides
-            injectedHtml = injectedHtml.replace('</head>', `${overrideScript}</head>`);
-            
-            return injectedHtml;
-          },
-          configureServer(server) {
-            // Serve .uigen/assets/* files
-            server.middlewares.use((req, res, next) => {
-              const url = req.url || '/';
-              if (url.startsWith('/.uigen/assets/')) {
-                const assetPath = resolve(specDir, url.slice(1)); // Remove leading /
-                if (existsSync(assetPath)) {
-                  const ext = extname(assetPath);
-                  res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
-                  createReadStream(assetPath).pipe(res);
-                  return;
-                }
-              }
-              next();
-            });
-          }
-        }]
-      });
-      await server.listen();
-      const port = server.config.server.port;
-      console.log(pc.green(`\n✓ Server running at ${pc.bold(`http://localhost:${port}`)}\n`));
-      console.log(pc.gray('Press Ctrl+C to stop\n'));
-    } else {
-      // --- Static mode: serve pre-built dist (npm/npx install) ---
-      const distDir = resolve(rendererRoot, 'dist');
-      const port = options.port || 4400;
-      
-      // Load CSS content
-      const cssContent = loadCSS(specDir, options.verbose ?? false);
-      
-      // Process overrides
-      const overrideScript = await processOverrides(specDir, 'production', options.verbose ?? false);
-
-      const httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
-        const url = req.url || '/';
-
-        // Serve .uigen/assets/* files
-        if (url.startsWith('/.uigen/assets/')) {
-          const assetPath = resolve(specDir, url.slice(1)); // Remove leading /
-          if (existsSync(assetPath)) {
-            const ext = extname(assetPath);
-            res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
-            createReadStream(assetPath).pipe(res);
-            return;
-          } else {
-            res.writeHead(404);
-            res.end('Asset not found');
-            return;
-          }
-        }
-
-        if (url.startsWith('/api')) {
-          const targetUrl = new URL(url.replace(/^\/api/, ''), proxyTarget);
-          const forwardHeaders: Record<string, string | string[]> = {};
-          for (const [k, v] of Object.entries(req.headers)) {
-            if (v !== undefined) forwardHeaders[k] = v as string | string[];
-          }
-          forwardHeaders['host'] = targetUrl.host;
-          injectAuthHeaders(forwardHeaders, req, targetUrl, options.verbose ?? false);
-
-          const startTime = Date.now();
-          console.log(pc.blue(`→ ${req.method || 'GET'} ${url}`));
-
-          const requester = targetUrl.protocol === 'https:' ? httpsRequest : httpRequest;
-          const proxyReq = requester(targetUrl, { method: req.method, headers: forwardHeaders }, (proxyRes) => {
-            const duration = Date.now() - startTime;
-            const status = proxyRes.statusCode || 0;
-            const color = status >= 500 ? pc.red : status >= 400 ? pc.yellow : pc.green;
-            console.log(color(`← ${req.method || 'GET'} ${url} ${status} (${duration}ms)`));
-            res.writeHead(status, proxyRes.headers);
-            proxyRes.pipe(res);
-          });
-          proxyReq.on('error', (err) => {
-            console.error(pc.red(`✗ Proxy error: ${err.message}`));
-            res.writeHead(502);
-            res.end('Bad Gateway');
-          });
-          req.pipe(proxyReq);
-          return;
-        }
-
-        // Parse URL to remove query string and hash
-        const urlPath = url.split('?')[0].split('#')[0];
-        const ext = extname(urlPath);
-        
-        // If URL has extension, try to serve that specific file
-        // Otherwise, serve index.html for SPA routing
-        const filePath = ext ? resolve(distDir, urlPath.slice(1)) : resolve(distDir, 'index.html');
-
-        // For files with extensions, return 404 if not found
-        // For SPA routes (no extension), always serve index.html
-        if (ext && !existsSync(filePath)) {
-          res.writeHead(404);
-          res.end('Not found');
-          return;
-        }
-
-        if (filePath.endsWith('index.html')) {
-          let html = readFileSync(filePath, 'utf-8');
-          
-          // Inject config
-          html = html.replace('</head>', `<script>window.__UIGEN_CONFIG__ = ${JSON.stringify(ir)};</script></head>`);
-          
-          // Inject CSS if available (Requirements: 6.4, 6.5)
-          if (cssContent) {
-            html = html.replace('</head>', `<script>window.__UIGEN_CSS__ = ${JSON.stringify(cssContent)};</script></head>`);
-          }
-          
-          // Inject overrides
-          html = html.replace('</head>', `${overrideScript}</head>`);
-          
-          res.writeHead(200, { 'Content-Type': 'text/html' });
-          res.end(html);
-        } else {
-          res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
-          createReadStream(filePath).pipe(res);
-        }
-      });
-
-      httpServer.listen(port, () => {
-        console.log(pc.green(`\n✓ Server running at ${pc.bold(`http://localhost:${port}`)}\n`));
-        console.log(pc.gray('Press Ctrl+C to stop\n'));
-      });
+    if (options.verbose) {
+      console.log(pc.gray(`Mode: ${isInstalled ? 'static' : 'dev'}\n`));
     }
+    
+    // Load assets
+    const assetLoader = new AssetLoader();
+    const cssContent = assetLoader.loadCSS(specDir, options.verbose ?? false);
+    const overrideScript = await assetLoader.processOverrides(
+      specDir,
+      isInstalled ? 'production' : 'development',
+      options.verbose ?? false
+    );
+    
+    // Create server context
+    const context = {
+      specDir,
+      ir,
+      proxyTarget,
+      cssContent,
+      overrideScript,
+      verbose: options.verbose ?? false,
+    };
+    
+    // Start appropriate server
+    const strategy = isInstalled 
+      ? new StaticServerStrategy()
+      : new DevServerStrategy();
+    
+    await strategy.start(context, options);
+    
   } catch (error) {
     console.error(pc.red('✗ Error:'), error instanceof Error ? error.message : error);
     process.exit(1);

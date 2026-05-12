@@ -252,8 +252,8 @@ export function ProfileView({ config, resourceSlug }: ProfileViewProps) {
     );
   }
 
-  // Check for component override using resource's uigenId
-  const { mode: overrideMode, overrideComponent } = reconcile(resource.uigenId);
+  // Check for component override using resource's override config
+  const { mode: overrideMode, overrideComponent } = reconcile(resource.override);
   
   // If component override exists, render it instead
   if (overrideMode === 'component' && overrideComponent) {

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Save, X } from 'lucide-react';
 import { validateField, type FieldSchema } from '@/lib/validation';
+import { getAuthMethod } from '@/lib/oauth-token-storage';
 
 /**
  * Props interface for ProfileEditForm component
@@ -16,6 +17,25 @@ export interface ProfileEditFormProps {
   onSave: (data: Record<string, unknown>) => void; // Save callback
   onCancel: () => void;                           // Cancel callback
   isLoading?: boolean;                            // Loading state during submission
+}
+
+/**
+ * Check if the current user authenticated via OAuth
+ * When OAuth is used, certain fields like email should be readonly
+ */
+function isOAuthUser(): boolean {
+  return getAuthMethod() === 'oauth';
+}
+
+/**
+ * Check if a field should be readonly when OAuth is used
+ * Email fields are readonly for OAuth users since they come from the OAuth provider
+ */
+function isFieldReadonlyForOAuth(field: SchemaNode): boolean {
+  if (!isOAuthUser()) return false;
+  
+  // Make email fields readonly for OAuth users
+  return field.format === 'email' || field.key.toLowerCase() === 'email';
 }
 
 /**
@@ -203,6 +223,7 @@ export function ProfileEditForm({
         const fieldError = allErrors[field.key];
         const fieldValue = formData[field.key];
         const isFirstField = index === 0;
+        const isReadonlyForOAuth = isFieldReadonlyForOAuth(field);
 
         return (
           <div key={field.key} className="space-y-2">
@@ -220,13 +241,22 @@ export function ProfileEditForm({
               value={String(fieldValue ?? '')}
               onChange={(e) => handleChange(field.key, e.target.value, field)}
               className={fieldError ? 'border-destructive' : ''}
-              disabled={isLoading}
+              disabled={isLoading || isReadonlyForOAuth}
+              readOnly={isReadonlyForOAuth}
               aria-invalid={!!fieldError}
               aria-describedby={fieldError ? `${field.key}-error` : undefined}
+              title={isReadonlyForOAuth ? 'This field cannot be edited because you signed in with OAuth' : undefined}
             />
 
+            {/* OAuth readonly notice */}
+            {isReadonlyForOAuth && (
+              <p className="text-xs text-muted-foreground">
+                This field cannot be edited because you signed in with OAuth
+              </p>
+            )}
+
             {/* Field Description */}
-            {field.description && !fieldError && (
+            {field.description && !fieldError && !isReadonlyForOAuth && (
               <p className="text-xs text-muted-foreground">{field.description}</p>
             )}
 

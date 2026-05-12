@@ -20,16 +20,19 @@ A complete custom profile page with:
 **Target**: Profile page (`me` resource)
 **Mode**: Complete component replacement
 **Styling**: Uses CSS variables from `.uigen/theme.css`
+**Annotation**: Uses `x-uigen-override` in config.yaml to enable the override
 
 ---
 
 ## How It Works
 
-1. **Create Override Files**: Place `.ts` or `.tsx` files in `src/overrides/`
-2. **CLI Discovery**: The CLI automatically discovers your override files
-3. **Transpilation**: Files are transpiled using esbuild and bundled
-4. **Injection**: The bundled code is injected into your app via `window.__UIGEN_OVERRIDES__`
-5. **Registration**: The SPA reads and registers your overrides on startup
+1. **Annotate in Config**: Add `x-uigen-override` annotation to your OpenAPI spec via config.yaml
+2. **Create Override Files**: Place `.ts` or `.tsx` files in `src/overrides/`
+3. **CLI Discovery**: The CLI automatically discovers your override files
+4. **Transpilation**: Files are transpiled using esbuild and bundled
+5. **Injection**: The bundled code is injected into your app via `window.__UIGEN_OVERRIDES__`
+6. **Registration**: The SPA reads and registers your overrides on startup
+7. **Reconciliation**: The SPA checks `x-uigen-override` metadata to apply overrides
 
 ## Override Modes
 
@@ -134,10 +137,43 @@ export default override;
 - Auto-save functionality
 - Third-party integrations
 
+## Enabling Overrides with x-uigen-override
+
+To enable an override, you must add the `x-uigen-override` annotation to your OpenAPI specification via the `.uigen/config.yaml` file:
+
+```yaml
+# .uigen/config.yaml
+/api/v1/auth/me:
+  x-uigen-override:
+    id: me              # Matches targetId in override file
+    enabled: true       # Optional, defaults to true
+```
+
+The `x-uigen-override` annotation has two properties:
+- **id** (required): Stable identifier that matches the `targetId` in your override file
+- **enabled** (optional): Boolean flag to enable/disable the override (defaults to `true`)
+
+### Disabling Overrides
+
+You can temporarily disable an override without removing the annotation or override file:
+
+```yaml
+/api/v1/auth/me:
+  x-uigen-override:
+    id: me
+    enabled: false      # Override is disabled
+```
+
+This is useful for:
+- Testing the generated UI without removing your custom code
+- Temporarily reverting to default behavior
+- A/B testing between custom and generated UIs
+
 ## Target IDs
 
-Target IDs identify which view to override. They follow this pattern:
+Target IDs identify which view to override. They must match the `id` value in your `x-uigen-override` annotation.
 
+Common patterns:
 - **Resource**: `users` (overrides all user views)
 - **Resource + Operation**: `users.list` (overrides user list view)
 - **Specific Operation**: `users.detail` (overrides user detail view)
@@ -151,27 +187,37 @@ Common operation suffixes:
 
 ## Development Workflow
 
-### 1. Create Override File
+### 1. Add Annotation to Config
+
+```yaml
+# .uigen/config.yaml
+/api/v1/my-resource:
+  x-uigen-override:
+    id: my-resource.list
+    enabled: true
+```
+
+### 2. Create Override File
 
 ```bash
 # Create a new override file
 touch src/overrides/my-custom-view.tsx
 ```
 
-### 2. Define Override
+### 3. Define Override
 
 ```tsx
 import type { OverrideDefinition } from '@uigen-dev/react';
 
 const override: OverrideDefinition = {
-  targetId: 'my-resource.list',
+  targetId: 'my-resource.list',  // Must match id in x-uigen-override
   component: MyCustomComponent,
 };
 
 export default override;
 ```
 
-### 3. Start Dev Server
+### 4. Start Dev Server
 
 ```bash
 uigen serve openapi.yaml
@@ -183,7 +229,7 @@ The CLI will:
 - Inject them into the app
 - Enable hot reload for fast iteration
 
-### 4. Edit and Reload
+### 5. Edit and Reload
 
 Edit your override file and save. The browser will automatically reload with your changes.
 
@@ -251,11 +297,13 @@ src/overrides/test.tsx
 
 ### Override Not Working
 
-1. **Check target ID**: Make sure it matches the resource/operation ID (check with `x-uigen-id` in config.yaml)
-2. **Check file location**: Must be in `src/overrides/`
-3. **Check export**: Must have `export default override`
-4. **Check console**: Look for error messages
-5. **Check verbose logs**: Run with `--verbose` flag
+1. **Check annotation**: Make sure `x-uigen-override` is present in config.yaml with correct `id`
+2. **Check enabled flag**: Ensure `enabled: true` (or omit for default true)
+3. **Check target ID**: Make sure override file's `targetId` matches the `id` in `x-uigen-override`
+4. **Check file location**: Must be in `src/overrides/`
+5. **Check export**: Must have `export default override`
+6. **Check console**: Look for error messages or warnings about missing overrides
+7. **Check verbose logs**: Run with `--verbose` flag
 
 ### TypeScript Errors
 

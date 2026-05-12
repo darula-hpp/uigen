@@ -57,6 +57,11 @@ annotations:
 - **Reason**: Landing page content requires creative content generation, marketing copy, and user-specific branding decisions. It cannot be auto-detected from API specs.
 - **User action**: Run the landing page generation skill separately when a landing page is needed.
 
+### x-uigen-override (Custom View Overrides)
+- **Handled by**: `SKILLS/create-overrides.md`
+- **Reason**: Overrides require custom React components written by developers. They cannot be auto-generated from API specs and require manual implementation of component logic, state management, and UI design.
+- **User action**: Run the create overrides skill separately when custom views are needed.
+
 **Rule**: If you encounter these annotations in existing config.yaml, preserve them but do not attempt to generate or modify them.
 
 ## Available Annotations Reference
@@ -82,7 +87,7 @@ Load the annotations metadata from `annotations.json`:
 }
 ```
 
-**Note**: `x-uigen-auth` and `x-uigen-landing-page` are intentionally excluded from this list as they require dedicated skills.
+**Note**: `x-uigen-auth`, `x-uigen-landing-page`, and `x-uigen-override` are intentionally excluded from this list as they require dedicated skills.
 
 ## AI Agent Workflow
 
@@ -119,8 +124,9 @@ Run through all detection rules (see Detection Rules section below).
 **IMPORTANT**: Do not attempt to detect or generate the following annotations:
 - `x-uigen-auth` - Use the OAuth configuration skill instead
 - `x-uigen-landing-page` - Use the landing page generation skill instead
+- `x-uigen-override` - Use the create overrides skill instead
 
-If the user mentions OAuth or landing pages, inform them about the dedicated skills available.
+If the user mentions OAuth, landing pages, or custom overrides, inform them about the dedicated skills available.
 
 ### Step 4: Load Existing Config
 
@@ -1243,6 +1249,7 @@ The annotations you generate will be used by UIGen to customize the generated ap
 **Annotations Handled by Other Skills:**
 - For OAuth configuration → Use `SKILLS/configure-oauth.md`
 - For landing page content → Use `SKILLS/generate-landing-page-content.md`
+- For custom view overrides → Use `SKILLS/create-overrides.md`
 
 **Key Files:**
 - Read spec from: `openapi.yaml` (or user-provided path)

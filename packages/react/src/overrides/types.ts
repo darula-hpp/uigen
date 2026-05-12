@@ -44,7 +44,11 @@ export interface OverrideHookProps {
  */
 export interface OverrideDefinition<TData = unknown> {
   /**
-   * Stable identifier matching resource.uigenId or operation.uigenId.
+   * Stable identifier matching the override annotation ID.
+   * 
+   * This should match the `id` property in the `x-uigen-override` annotation
+   * in your OpenAPI spec config.
+   * 
    * Examples: "users", "users.list", "users.detail", "users.create"
    */
   targetId: string;

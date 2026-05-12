@@ -184,7 +184,6 @@ export interface DashboardWidget {
 export interface Resource {
   name: string;
   slug: string;
-  uigenId: string;
   label?: string; // Custom display label from x-uigen-label annotation
   schemaName?: string; // The actual OpenAPI schema name (e.g., "Template" from components/schemas)
   description?: string;
@@ -196,7 +195,7 @@ export interface Resource {
   __profileAnnotation?: boolean; // Marks resource as profile resource for specialized rendering (x-uigen-profile)
   /** Layout override for this resource (overrides global layout configuration) */
   layoutOverride?: LayoutConfig;
-  /** Override configuration (replaces uigenId for override identification) */
+  /** Override configuration for this resource */
   override?: OverrideConfig;
 }
 
@@ -214,7 +213,6 @@ export interface PaginationHint {
 
 export interface Operation {
   id: string;
-  uigenId: string;
   method: HttpMethod;
   path: string;
   summary?: string;
@@ -227,7 +225,7 @@ export interface Operation {
   responses: Record<string, ResponseDescriptor>;
   viewHint: ViewHint;
   security?: SecurityRequirement[];
-  /** Override configuration (replaces uigenId for override identification) */
+  /** Override configuration for this operation */
   override?: OverrideConfig;
 }
 

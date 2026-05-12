@@ -1,37 +1,50 @@
 import type { ReconcileResult } from './types';
+import type { OverrideConfig } from '@uigen-dev/core';
 import { overrideRegistry } from './registry';
 
 /**
  * Determines which override mode applies to a given view.
  * 
+ * Checks override enablement before applying registered overrides.
+ * 
  * Priority order: component > render > useHooks > none
  * 
- * @param uigenId - Stable identifier for the view (e.g., "users.list")
+ * @param override - Override configuration from IR (optional)
  * @returns ReconcileResult with mode and optional override artifacts
  */
-export function reconcile(uigenId: string): ReconcileResult {
-  const def = overrideRegistry.get(uigenId);
-
-  // No override registered
+export function reconcile(override?: OverrideConfig): ReconcileResult {
+  // No override configured
+  if (!override) {
+    return { mode: 'none' };
+  }
+  
+  // Override is disabled
+  if (override.enabled === false) {
+    return { mode: 'none' };
+  }
+  
+  // Look up override in registry using id
+  const def = overrideRegistry.get(override.id);
+  
+  // No override registered (but annotation exists)
   if (!def) {
     // Check for similar targetIds to help with typos
     const allTargetIds = overrideRegistry.getAllTargetIds();
     
-    // Find similar matches (case-insensitive, partial matches, or contains)
     const similar = allTargetIds.find((id) => {
       const idLower = id.toLowerCase();
-      const uigenIdLower = uigenId.toLowerCase();
+      const overrideIdLower = override.id.toLowerCase();
       
       return (
-        idLower === uigenIdLower || // Case-insensitive exact match
-        idLower.includes(uigenIdLower) || // uigenId is substring of registered ID
-        uigenIdLower.includes(idLower) // Registered ID is substring of uigenId
+        idLower === overrideIdLower ||
+        idLower.includes(overrideIdLower) ||
+        overrideIdLower.includes(idLower)
       );
     });
 
-    if (similar && similar !== uigenId) {
+    if (similar && similar !== override.id) {
       console.warn(
-        `[UIGen Override] No override found for "${uigenId}". Did you mean "${similar}"?`
+        `[UIGen Override] No override found for "${override.id}". Did you mean "${similar}"?`
       );
     }
 

@@ -190,7 +190,9 @@ annotations:
     x-uigen-signup: true
     x-uigen-label: Create Account
   /api/v1/auth/me:
-    x-uigen-id: me
+    x-uigen-override:
+      id: me
+      enabled: true
   GET:/api/v1/auth/me:
     x-uigen-profile: true
     x-uigen-label: My Profile

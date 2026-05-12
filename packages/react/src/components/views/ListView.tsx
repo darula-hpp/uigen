@@ -28,16 +28,13 @@ export function ListView({ resource, operation }: ListViewProps) {
   const [searchParams] = useSearchParams();
   const parentId = searchParams.get('parentId');
 
-  // Construct view-specific uigenId
-  const uigenId = `${resource.uigenId}.list`;
-
-  // Reconcile to determine override mode
-  const { mode, renderFn } = reconcile(uigenId);
-
   // Try to find list operation, fallback to search operation (which can also list items)
   const listOp = operation ||
     resource.operations.find(op => op.viewHint === 'list') ||
     resource.operations.find(op => op.viewHint === 'search');
+
+  // Reconcile to determine override mode using operation's override config
+  const { mode, renderFn } = reconcile(listOp?.override);
 
   // ── All hooks unconditionally before any early return ──────────────────────
 
@@ -280,7 +277,7 @@ export function ListView({ resource, operation }: ListViewProps) {
         }
       })}</>;
     } catch (err) {
-      console.error(`[UIGen Override] Error in render function for "${uigenId}":`, err);
+      console.error(`[UIGen Override] Error in render function for "${listOp?.override?.id || resource.slug}":`, err);
       // Fall through to built-in view
     }
   }
@@ -559,7 +556,7 @@ export function ListView({ resource, operation }: ListViewProps) {
   // Hooks mode: wrap in OverrideHooksHost
   if (mode === 'hooks') {
     return (
-      <OverrideHooksHost uigenId={uigenId} resource={resource} operation={listOp}>
+      <OverrideHooksHost uigenId={listOp?.override?.id || `${resource.slug}.list`} resource={resource} operation={listOp}>
         {content}
       </OverrideHooksHost>
     );

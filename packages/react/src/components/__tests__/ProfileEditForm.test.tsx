@@ -4,6 +4,12 @@ import { userEvent } from '@testing-library/user-event';
 import { axe } from 'jest-axe';
 import { ProfileEditForm } from '../ProfileEditForm';
 import type { SchemaNode } from '@uigen-dev/core';
+import * as oauthTokenStorage from '@/lib/oauth-token-storage';
+
+// Mock the oauth-token-storage module
+vi.mock('@/lib/oauth-token-storage', () => ({
+  getAuthMethod: vi.fn(),
+}));
 
 describe('ProfileEditForm', () => {
   const mockOnSave = vi.fn();
@@ -35,6 +41,8 @@ describe('ProfileEditForm', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default to non-OAuth authentication
+    vi.mocked(oauthTokenStorage.getAuthMethod).mockReturnValue(null);
   });
 
   describe('Component Rendering', () => {
@@ -923,6 +931,205 @@ describe('ProfileEditForm', () => {
       // Check for button elements
       const buttons = container.querySelectorAll('button');
       expect(buttons.length).toBe(2); // Save and Cancel
+    });
+  });
+
+  describe('OAuth Email Readonly', () => {
+    it('should make email field readonly when user authenticated via OAuth', () => {
+      // Mock OAuth authentication
+      vi.mocked(oauthTokenStorage.getAuthMethod).mockReturnValue('oauth');
+
+      render(
+        <ProfileEditForm
+          fields={mockFields}
+          data={mockData}
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+        />
+      );
+
+      const emailInput = screen.getByLabelText(/email/i) as HTMLInputElement;
+      
+      // Email field should be readonly and disabled
+      expect(emailInput).toHaveAttribute('readonly');
+      expect(emailInput).toBeDisabled();
+    });
+
+    it('should display OAuth readonly notice for email field', () => {
+      // Mock OAuth authentication
+      vi.mocked(oauthTokenStorage.getAuthMethod).mockReturnValue('oauth');
+
+      render(
+        <ProfileEditForm
+          fields={mockFields}
+          data={mockData}
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+        />
+      );
+
+      expect(screen.getByText(/this field cannot be edited because you signed in with oauth/i)).toBeInTheDocument();
+    });
+
+    it('should allow editing email field when user did not use OAuth', () => {
+      // Mock non-OAuth authentication
+      vi.mocked(oauthTokenStorage.getAuthMethod).mockReturnValue('credentials');
+
+      render(
+        <ProfileEditForm
+          fields={mockFields}
+          data={mockData}
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+        />
+      );
+
+      const emailInput = screen.getByLabelText(/email/i) as HTMLInputElement;
+      
+      // Email field should be editable
+      expect(emailInput).not.toHaveAttribute('readonly');
+      expect(emailInput).not.toBeDisabled();
+    });
+
+    it('should not display OAuth readonly notice when user did not use OAuth', () => {
+      // Mock non-OAuth authentication
+      vi.mocked(oauthTokenStorage.getAuthMethod).mockReturnValue('credentials');
+
+      render(
+        <ProfileEditForm
+          fields={mockFields}
+          data={mockData}
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+        />
+      );
+
+      expect(screen.queryByText(/this field cannot be edited because you signed in with oauth/i)).not.toBeInTheDocument();
+    });
+
+    it('should allow editing non-email fields when user authenticated via OAuth', () => {
+      // Mock OAuth authentication
+      vi.mocked(oauthTokenStorage.getAuthMethod).mockReturnValue('oauth');
+
+      render(
+        <ProfileEditForm
+          fields={mockFields}
+          data={mockData}
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+        />
+      );
+
+      const usernameInput = screen.getByLabelText(/username/i) as HTMLInputElement;
+      
+      // Username field should still be editable
+      expect(usernameInput).not.toHaveAttribute('readonly');
+      expect(usernameInput).not.toBeDisabled();
+    });
+
+    it('should show tooltip on email field when OAuth user hovers', () => {
+      // Mock OAuth authentication
+      vi.mocked(oauthTokenStorage.getAuthMethod).mockReturnValue('oauth');
+
+      render(
+        <ProfileEditForm
+          fields={mockFields}
+          data={mockData}
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+        />
+      );
+
+      const emailInput = screen.getByLabelText(/email/i) as HTMLInputElement;
+      
+      // Check for title attribute (tooltip)
+      expect(emailInput).toHaveAttribute('title', 'This field cannot be edited because you signed in with OAuth');
+    });
+
+    it('should not prevent form submission when email is readonly for OAuth users', async () => {
+      // Mock OAuth authentication
+      vi.mocked(oauthTokenStorage.getAuthMethod).mockReturnValue('oauth');
+
+      render(
+        <ProfileEditForm
+          fields={mockFields}
+          data={mockData}
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+        />
+      );
+
+      // Change username (non-readonly field)
+      const usernameInput = screen.getByLabelText(/username/i);
+      fireEvent.change(usernameInput, { target: { value: 'newusername' } });
+
+      // Submit form
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      fireEvent.click(saveButton);
+
+      await waitFor(() => {
+        expect(mockOnSave).toHaveBeenCalledWith({
+          username: 'newusername',
+          email: 'test@example.com', // Email should remain unchanged
+        });
+      });
+    });
+
+    it('should make email field with format="email" readonly for OAuth users', () => {
+      // Mock OAuth authentication
+      vi.mocked(oauthTokenStorage.getAuthMethod).mockReturnValue('oauth');
+
+      const fieldsWithEmailFormat: SchemaNode[] = [
+        {
+          type: 'string',
+          key: 'contact_email',
+          label: 'Contact Email',
+          format: 'email',
+        },
+      ];
+
+      render(
+        <ProfileEditForm
+          fields={fieldsWithEmailFormat}
+          data={{ contact_email: 'contact@example.com' }}
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+        />
+      );
+
+      const emailInput = screen.getByLabelText(/contact email/i) as HTMLInputElement;
+      
+      // Email field should be readonly
+      expect(emailInput).toHaveAttribute('readonly');
+      expect(emailInput).toBeDisabled();
+    });
+
+    it('should make email field with key="email" readonly for OAuth users', () => {
+      // Mock OAuth authentication
+      vi.mocked(oauthTokenStorage.getAuthMethod).mockReturnValue('oauth');
+
+      const fieldsWithEmailKey: SchemaNode[] = [
+        {
+          type: 'string',
+          key: 'email',
+          label: 'Email Address',
+        },
+      ];
+
+      render(
+        <ProfileEditForm
+          fields={fieldsWithEmailKey}
+          data={{ email: 'user@example.com' }}
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+        />
+      );
+
+      const emailInput = screen.getByLabelText(/email address/i) as HTMLInputElement;
+      
+      // Email field should be readonly
+      expect(emailInput).toHaveAttribute('readonly');
+      expect(emailInput).toBeDisabled();
     });
   });
 });

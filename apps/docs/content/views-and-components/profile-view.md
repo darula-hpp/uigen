@@ -219,6 +219,12 @@ PUT /api/v1/auth/me
 - `id`: User identifier
 - `created_at`: Account creation timestamp
 
+**OAuth-protected fields**: When users authenticate via OAuth (Google, GitHub, etc.), email fields become read-only:
+- Email fields are automatically detected by `format: email` or `key: email`
+- These fields display with a disabled state and explanatory message
+- Users cannot modify email addresses that come from OAuth providers
+- This prevents conflicts between OAuth provider data and local database
+
 ### Example validation error
 
 ```json
