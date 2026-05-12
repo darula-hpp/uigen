@@ -946,5 +946,3 @@ cd uigen/packages/react/src
 - [UIGen Architecture](/blog/uigen-architecture) - Complete technical architecture
 - [Config Reconciliation System](/blog/config-reconciliation-system) - How customizations work
 - [Building a Meeting Minutes App](/blog/building-meeting-minutes-app) - Real-world example
-
-Join the discussion on [GitHub](https://github.com/uigen-dev/uigen) or [Discord](https://discord.gg/uigen).
