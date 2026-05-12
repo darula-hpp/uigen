@@ -217,17 +217,17 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
   const params = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   
-  // Construct view-specific uigenId
-  const uigenId = `${resource.uigenId}.${mode}`;
-  
-  // Reconcile to determine override mode
-  const { mode: overrideMode, renderFn } = reconcile(uigenId);
-  
   // Get operation ID from query parameter (for resources with multiple create operations)
   const operationId = searchParams.get('operation');
   
   // Map mode to viewHint (edit mode uses 'update' viewHint)
   const viewHint = mode === 'edit' ? 'update' : mode;
+
+  // Find the operation for this form
+  const formOp = resource.operations.find(op => op.viewHint === viewHint);
+  
+  // Reconcile to determine override mode using operation's override config
+  const { mode: overrideMode, renderFn } = reconcile(formOp?.override);
   
   // Find operation: prioritize operationId if provided, otherwise find by viewHint
   const operation = operationId 
@@ -431,7 +431,7 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
         }
       })}</>;
     } catch (err) {
-      console.error(`[UIGen Override] Error in render function for "${uigenId}":`, err);
+      console.error(`[UIGen Override] Error in render function for "${formOp?.override?.id || `${resource.slug}.${mode}`}":`, err);
       // Fall through to built-in view
     }
   }
@@ -485,7 +485,7 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
   // Hooks mode: wrap in OverrideHooksHost
   if (overrideMode === 'hooks') {
     return (
-      <OverrideHooksHost uigenId={uigenId} resource={resource} operation={operation}>
+      <OverrideHooksHost uigenId={formOp?.override?.id || `${resource.slug}.${mode}`} resource={resource} operation={operation}>
         {content}
       </OverrideHooksHost>
     );

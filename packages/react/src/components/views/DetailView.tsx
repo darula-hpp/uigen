@@ -109,14 +109,12 @@ export function DetailView({ resource }: DetailViewProps) {
   const config = appContext?.config;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
-  // Construct view-specific uigenId
-  const uigenId = `${resource.uigenId}.detail`;
-  
-  // Reconcile to determine override mode
-  const { mode, renderFn } = reconcile(uigenId);
-  
+  // Find the detail operation
   const detailOp = resource.operations.find(op => op.viewHint === 'detail');
-
+  
+  // Reconcile to determine override mode using operation's override config
+  const { mode, renderFn } = reconcile(detailOp?.override);
+  
   const { data, isLoading, error } = useApiCall({
     operation: detailOp!,
     pathParams: detailOp ? resolvePathParams(detailOp, id) : {},
@@ -186,7 +184,7 @@ export function DetailView({ resource }: DetailViewProps) {
         error
       })}</>;
     } catch (err) {
-      console.error(`[UIGen Override] Error in render function for "${uigenId}":`, err);
+      console.error(`[UIGen Override] Error in render function for "${detailOp?.override?.id || `${resource.slug}.detail`}":`, err);
       // Fall through to built-in view
     }
   }
@@ -365,7 +363,7 @@ export function DetailView({ resource }: DetailViewProps) {
   // Hooks mode: wrap in OverrideHooksHost
   if (mode === 'hooks') {
     return (
-      <OverrideHooksHost uigenId={uigenId} resource={resource} operation={detailOp}>
+      <OverrideHooksHost uigenId={detailOp?.override?.id || `${resource.slug}.detail`} resource={resource} operation={detailOp}>
         {content}
       </OverrideHooksHost>
     );

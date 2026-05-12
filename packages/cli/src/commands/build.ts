@@ -1,6 +1,7 @@
-import { existsSync, mkdirSync, cpSync, rmSync } from 'fs';
-import { resolve } from 'path';
+import { existsSync, mkdirSync, cpSync, rmSync, writeFileSync } from 'fs';
+import { resolve, dirname } from 'path';
 import pc from 'picocolors';
+import { discoverOverrides, transpileOverrides, validateOverrides } from '../overrides/index.js';
 
 interface BuildOptions {
   output?: string;
@@ -89,6 +90,86 @@ export async function build(spec: string, options: BuildOptions) {
       console.log(pc.green('✓ Copied annotations.json'));
     }
 
+    // Process and bundle override files (Task 6.1, 6.2)
+    const specDir = dirname(specPath);
+    const srcDir = resolve(specDir, 'src');
+    
+    if (existsSync(srcDir)) {
+      console.log(pc.gray('Processing override files...'));
+      
+      try {
+        // Discover override files
+        const files = await discoverOverrides({
+          srcDir,
+          verbose: options.verbose ?? false,
+        });
+        
+        if (files.length > 0) {
+          if (options.verbose) {
+            console.log(pc.gray(`  Found ${files.length} override file(s)`));
+          }
+          
+          // Transpile with production settings (minified, no source maps)
+          const transpileResult = await transpileOverrides({
+            files,
+            mode: 'production',
+            verbose: options.verbose ?? false,
+          });
+          
+          // Log errors (non-fatal)
+          if (transpileResult.errors.length > 0) {
+            console.warn(pc.yellow(`  ⚠ Transpilation errors (${transpileResult.errors.length}):`));
+            for (const error of transpileResult.errors) {
+              console.warn(pc.yellow(`    ${error.filePath}: ${error.message}`));
+            }
+          }
+          
+          // Validate overrides
+          if (transpileResult.code && transpileResult.code.trim() !== '') {
+            const validationResult = validateOverrides({
+              code: transpileResult.code,
+              files,
+              verbose: options.verbose ?? false,
+            });
+            
+            // Log validation errors (non-fatal)
+            if (validationResult.errors.length > 0) {
+              console.warn(pc.yellow(`  ⚠ Validation errors (${validationResult.errors.length}):`));
+              for (const error of validationResult.errors) {
+                console.warn(pc.yellow(`    ${error.filePath}: ${error.message}`));
+              }
+            }
+            
+            // Save bundled overrides to build output
+            const overridesOutputPath = resolve(outputDir, 'overrides.bundle.js');
+            writeFileSync(overridesOutputPath, transpileResult.code, 'utf-8');
+            
+            // Log bundle size
+            const bundleSize = Buffer.byteLength(transpileResult.code, 'utf-8');
+            const bundleSizeKB = (bundleSize / 1024).toFixed(2);
+            
+            console.log(pc.green(`✓ Bundled overrides (${bundleSizeKB} KB)`));
+            
+            if (options.verbose) {
+              console.log(pc.gray(`  Output: ${overridesOutputPath}`));
+            }
+          } else {
+            console.warn(pc.yellow('  ⚠ Override transpilation failed, skipping'));
+          }
+        } else {
+          if (options.verbose) {
+            console.log(pc.gray('  No override files found'));
+          }
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.warn(pc.yellow(`  ⚠ Override processing failed: ${errorMessage}`));
+        console.warn(pc.yellow('  Continuing without overrides...'));
+      }
+    } else if (options.verbose) {
+      console.log(pc.gray('No src/ directory found, skipping overrides'));
+    }
+
     // Display success message
     console.log(pc.green(`\n✨ Build complete!\n`));
     console.log(pc.gray('📁 Build output:'));
@@ -100,7 +181,10 @@ export async function build(spec: string, options: BuildOptions) {
     console.log(pc.gray('   │   └── assets/'));
     console.log(pc.gray('   ├── openapi.yaml'));
     if (existsSync(annotationsPath)) {
-      console.log(pc.gray('   └── annotations.json'));
+      console.log(pc.gray('   ├── annotations.json'));
+    }
+    if (existsSync(resolve(outputDir, 'overrides.bundle.js'))) {
+      console.log(pc.gray('   └── overrides.bundle.js'));
     }
     console.log();
 

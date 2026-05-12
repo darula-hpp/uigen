@@ -277,12 +277,19 @@ export function App({ config }: AppProps) {
                 const wizardOps = resource.operations.filter(op => op.viewHint === 'wizard');
                 const actionOps = resource.operations.filter(op => op.viewHint === 'action');
                 
-                // Reconcile overrides for each view
-                const listReconcile = reconcile(`${resource.uigenId}.list`);
-                const detailReconcile = reconcile(`${resource.uigenId}.detail`);
-                const createReconcile = reconcile(`${resource.uigenId}.create`);
-                const editReconcile = reconcile(`${resource.uigenId}.edit`);
-                const searchReconcile = reconcile(`${resource.uigenId}.search`);
+                // Find operations for override reconciliation
+                const listOp = resource.operations.find(op => op.viewHint === 'list');
+                const detailOp = resource.operations.find(op => op.viewHint === 'detail');
+                const createOp = resource.operations.find(op => op.viewHint === 'create');
+                const updateOp = resource.operations.find(op => op.viewHint === 'update');
+                const searchOp = resource.operations.find(op => op.viewHint === 'search');
+                
+                // Reconcile overrides for each view using operation or resource override config
+                const listReconcile = reconcile(listOp?.override || resource.override);
+                const detailReconcile = reconcile(detailOp?.override || resource.override);
+                const createReconcile = reconcile(createOp?.override || resource.override);
+                const editReconcile = reconcile(updateOp?.override || resource.override);
+                const searchReconcile = reconcile(searchOp?.override || resource.override);
                 
                 // Determine index element based on available operations and overrides
                 let indexElement;

@@ -106,7 +106,6 @@ export class SpecParser {
     return {
       name: resource.name,
       slug: resource.slug,
-      uigenId: resource.uigenId,
       description: resource.description,
       operations,
       fields,
@@ -195,7 +194,6 @@ export class SpecParser {
     
     return {
       id: operation.id,
-      uigenId: operation.uigenId,
       method: operation.method,
       path: operation.path,
       summary: operation.summary,

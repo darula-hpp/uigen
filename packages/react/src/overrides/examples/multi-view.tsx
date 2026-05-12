@@ -51,8 +51,8 @@ overrideRegistry.register({
   targetId: 'products.detail',
   useHooks: ({ resource }) => {
     useEffect(() => {
-      console.log('[Analytics] Viewed product detail:', resource.uigenId);
-    }, [resource.uigenId]);
+      console.log('[Analytics] Viewed product detail:', resource.slug);
+    }, [resource.slug]);
   },
 });
 

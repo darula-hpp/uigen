@@ -18,16 +18,16 @@ overrideRegistry.register({
     useEffect(() => {
       // Track page view when the list view mounts
       console.log('[Analytics] Page view:', {
-        page: `${resource.uigenId}.list`,
+        page: `${resource.slug}.list`,
         resource: resource.name,
         timestamp: Date.now(),
       });
 
       return () => {
         // Track time spent on page when unmounting
-        console.log('[Analytics] Page exit:', resource.uigenId);
+        console.log('[Analytics] Page exit:', resource.slug);
       };
-    }, [resource.uigenId]);
+    }, [resource.slug]);
   },
 });
 

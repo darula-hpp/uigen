@@ -15,13 +15,10 @@ interface SearchViewProps {
 export function SearchView({ resource, operation }: SearchViewProps) {
   const navigate = useNavigate();
 
-  // Construct view-specific uigenId
-  const uigenId = `${resource.uigenId}.search`;
-
-  // Reconcile to determine override mode
-  const { mode, renderFn } = reconcile(uigenId);
-
   const searchOp = operation || resource.operations.find(op => op.viewHint === 'search');
+
+  // Reconcile to determine override mode using operation's override config
+  const { mode, renderFn } = reconcile(searchOp?.override);
 
   // Compute filter params before hooks (safe — no hooks involved)
   const paginationParams = new Set([
@@ -106,7 +103,7 @@ export function SearchView({ resource, operation }: SearchViewProps) {
         })}</>
       );
     } catch (err) {
-      console.error(`[UIGen Override] Error in render function for "${uigenId}":`, err);
+      console.error(`[UIGen Override] Error in render function for "${searchOp?.override?.id || `${resource.slug}.search`}":`, err);
       // Fall through to built-in view
     }
   }
@@ -281,7 +278,7 @@ export function SearchView({ resource, operation }: SearchViewProps) {
   // Hooks mode: wrap in OverrideHooksHost
   if (mode === 'hooks') {
     return (
-      <OverrideHooksHost uigenId={uigenId} resource={resource} operation={searchOp}>
+      <OverrideHooksHost uigenId={searchOp?.override?.id || `${resource.slug}.search`} resource={resource} operation={searchOp}>
         {content}
       </OverrideHooksHost>
     );

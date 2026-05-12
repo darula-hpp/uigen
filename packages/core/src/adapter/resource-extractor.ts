@@ -390,21 +390,9 @@ export class Resource_Extractor {
 
       // Create resource if it doesn't exist
       if (!resourceMap.has(resourceName)) {
-        // Extract x-uigen-id vendor extension from path item if present, fall back to slug
-        const vendorExtension = (pathItem as any)['x-uigen-id'];
-        
-        // Handle numeric x-uigen-id by converting to string
-        let uigenId: string;
-        if (typeof vendorExtension === 'number') {
-          uigenId = String(vendorExtension);
-        } else {
-          uigenId = vendorExtension || resourceName;
-        }
-        
         resourceMap.set(resourceName, {
           name: this.capitalize(resourceName),
           slug: resourceName,
-          uigenId: uigenId,
           operations: [],
           schema: this.createPlaceholderSchema(resourceName),
           relationships: [],
