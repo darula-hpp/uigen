@@ -190,6 +190,236 @@ type FieldType = "string" | "number" | "integer" | "boolean"
 
 ---
 
+## Override System
+
+The Override System enables selective view customization while keeping the rest of the UI auto-generated. It provides escape hatches at three levels of control, allowing developers to opt into customization only where needed.
+
+### Core Principle
+
+Overrides are **opt-in**, **composable**, and **type-safe**:
+- Default views work unchanged without any overrides
+- Each view can be independently customized
+- Overrides are discovered automatically by the CLI
+- Full TypeScript support with typed props
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Override Discovery                        │
+│                                                              │
+│  ┌────────────────────────────────────────────────────┐   │
+│  │  CLI Discovery (File-Based)                        │   │
+│  │  - Scans src/overrides/*.tsx                       │   │
+│  │  - Transpiles with esbuild                         │   │
+│  │  - Injects via window.__UIGEN_OVERRIDES__         │   │
+│  └────────────────────────────────────────────────────┘   │
+│                                                              │
+│  ┌────────────────────────────────────────────────────┐   │
+│  │  Programmatic Registration                         │   │
+│  │  - Direct API: overrideRegistry.register()        │   │
+│  │  - Runtime registration in application code       │   │
+│  └────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                  ┌───────────────────────┐
+                  │  Override Registry    │
+                  │  - Stores definitions │
+                  │  - Resolves by ID     │
+                  │  - Mode reconciliation│
+                  └───────────────────────┘
+                              │
+                              ▼
+                  ┌───────────────────────┐
+                  │  View Reconciliation  │
+                  │  - Checks annotations │
+                  │  - Applies overrides  │
+                  │  - Renders view       │
+                  └───────────────────────┘
+```
+
+### Override Modes
+
+**Component Mode** — Full ownership (data fetching + rendering):
+```typescript
+// src/overrides/custom-profile.tsx
+import type { OverrideDefinition, OverrideComponentProps } from '@uigen-dev/react';
+
+function CustomProfile({ resource }: OverrideComponentProps) {
+  const [data, setData] = useState(null);
+  // Custom data fetching, state management, everything
+  return <div>My Custom Profile</div>;
+}
+
+const override: OverrideDefinition = {
+  targetId: 'me',
+  component: CustomProfile,
+};
+
+export default override;
+```
+
+**Render Mode** — UIGen fetches data, you control rendering:
+```typescript
+// src/overrides/users-list.tsx
+import type { OverrideDefinition, ListRenderProps } from '@uigen-dev/react';
+
+const override: OverrideDefinition = {
+  targetId: 'users.list',
+  render: ({ data, isLoading, pagination }: ListRenderProps) => {
+    if (isLoading) return <div>Loading...</div>;
+    return (
+      <div className="custom-grid">
+        {data?.map(user => <UserCard key={user.id} user={user} />)}
+      </div>
+    );
+  },
+};
+
+export default override;
+```
+
+**UseHooks Mode** — Side effects only (analytics, tracking):
+```typescript
+// src/overrides/analytics.tsx
+import { useEffect } from 'react';
+import type { OverrideDefinition, OverrideHookProps } from '@uigen-dev/react';
+
+const override: OverrideDefinition = {
+  targetId: 'users.list',
+  useHooks: ({ resource }: OverrideHookProps) => {
+    useEffect(() => {
+      analytics.track('page_view', { resource: resource.name });
+    }, [resource]);
+  },
+};
+
+export default override;
+```
+
+### Configuration
+
+Add `x-uigen-override` annotation to `.uigen/config.yaml`:
+
+```yaml
+version: "1.0"
+annotations:
+  GET:/api/v1/auth/me:
+    x-uigen-override:
+      id: me              # Stable identifier (required)
+      enabled: true       # Optional, defaults to true
+  GET:/api/v1/users:
+    x-uigen-override:
+      id: users.list
+```
+
+### File-Based Workflow
+
+1. **Annotate**: Add `x-uigen-override` to config with stable `id`
+2. **Create**: Add override file to `src/overrides/` with matching `targetId`
+3. **Serve**: CLI discovers, transpiles, and injects automatically
+4. **Hot Reload**: Changes to override files trigger browser reload
+
+### Addressing Scheme
+
+Every view has a stable `uigenId` for targeting:
+
+| View | uigenId Pattern | Example |
+|------|----------------|---------|
+| List | `{resource}.list` | `users.list` |
+| Detail | `{resource}.detail` | `users.detail` |
+| Create | `{resource}.create` | `users.create` |
+| Edit | `{resource}.edit` | `users.edit` |
+| Search | `{resource}.search` | `users.search` |
+| Profile | `me` | `me` |
+| Dashboard | `dashboard` | `dashboard` |
+
+The `resource` comes from `x-uigen-id` annotation or falls back to the resource slug.
+
+### Priority Rules
+
+When multiple modes are defined, priority is:
+```
+component > render > useHooks
+```
+
+Only the highest-priority mode is used.
+
+### Error Handling
+
+The override system never crashes the application:
+- **Component errors** → caught by ErrorBoundary, shows fallback UI
+- **Render function errors** → caught with try/catch, falls back to built-in view
+- **useHooks errors** → caught with try/catch, built-in view renders normally
+
+All errors are logged to console with `targetId` for debugging.
+
+### Testing Strategy
+
+Overrides are validated through:
+- **Type checking**: Full TypeScript support with typed props
+- **Runtime validation**: Checks for required fields (targetId, at least one mode)
+- **Error boundaries**: Graceful degradation on component failures
+- **Unit tests**: Test override components independently
+
+---
+
+## Environment Variable Resolution
+
+UIGen supports environment variable resolution in `.uigen/config.yaml` using `${VAR_NAME}` syntax. This enables secure credential management without hardcoding sensitive values.
+
+### Syntax
+
+```yaml
+version: "1.0"
+annotations:
+  GET:/api/v1/auth/oauth/google:
+    x-uigen-oauth:
+      provider: google
+      clientId: ${GOOGLE_CLIENT_ID}
+      redirectUri: ${GOOGLE_REDIRECT_URI}
+      scopes:
+        - openid
+        - profile
+        - email
+```
+
+### Resolution Process
+
+1. **Load .env**: CLI loads `.env` file from spec directory
+2. **Parse config**: Reads `.uigen/config.yaml`
+3. **Resolve variables**: Replaces `${VAR_NAME}` with environment values
+4. **Validate**: Ensures all required variables are defined
+5. **Reconcile**: Merges resolved config into spec
+
+### .env File Location
+
+UIGen looks for `.env` in the same directory as the OpenAPI spec:
+
+```
+your-project/
+├── openapi.yaml
+├── .env                    # Environment variables
+└── .uigen/
+    └── config.yaml         # References ${VAR_NAME}
+```
+
+### Error Handling
+
+- **Missing variable**: Logs error with variable name, exits with non-zero status
+- **Malformed syntax**: Logs error with line number, exits
+- **Missing .env**: Gracefully degrades (variables remain as `${VAR_NAME}`)
+
+### Security
+
+- `.env` files should be gitignored
+- Never commit credentials to version control
+- Use different `.env` files for dev/staging/production
+- Environment variables are resolved at CLI startup, not stored in IR
+
+---
+
 ## Config Reconciliation System
 
 The Config Reconciliation System enables runtime merging of user-defined annotation overrides from `.uigen/config.yaml` into OpenAPI/Swagger specifications without modifying source files. This bridges the config-gui's annotation preferences with the serve command's spec processing pipeline.
@@ -394,31 +624,75 @@ uigen/
 │   │       │   ├── factories/                   # Factory pattern implementations
 │   │       │   │   └── schema-node-factory.ts
 │   │       │   └── annotations/                 # Annotation handling
-│   │       │       └── registry.ts
+│   │       │       ├── registry.ts
+│   │       │       └── handlers/                # Annotation-specific handlers
+│   │       │           ├── auth-handler.ts
+│   │       │           ├── override-handler.ts
+│   │       │           └── ...
 │   │       ├── ir/                # IR types & utilities
-│   │       └── engine/            # IR → ComponentDescriptor mapping
+│   │       ├── engine/            # IR → ComponentDescriptor mapping
+│   │       ├── reconciler/        # Config reconciliation system
+│   │       │   ├── reconciler.ts              # Main reconciler
+│   │       │   ├── path-resolver.ts           # Element path resolution
+│   │       │   ├── auth-reconciler.ts         # Auth-specific reconciliation
+│   │       │   └── ...
+│   │       └── config/            # Config loading and env var resolution
+│   │           ├── loader.ts
+│   │           └── env-var-resolver.ts
 │   │
 │   ├── react/                     # Opinionated React UI layer
 │   │   └── src/
 │   │       ├── components/
 │   │       │   ├── fields/        # TextField, SelectField, DatePicker, etc.
 │   │       │   ├── views/         # ListView, DetailView, FormView,
-│   │       │   │                  # SearchView, DashboardView, WizardView
+│   │       │   │                  # SearchView, DashboardView, WizardView, ProfileView
 │   │       │   └── layout/        # Shell, Sidebar, TopBar
+│   │       ├── overrides/         # Override system
+│   │       │   ├── registry.ts                # Override registry
+│   │       │   ├── registration.ts            # Injected override registration
+│   │       │   ├── reconcile.ts               # Override reconciliation
+│   │       │   ├── types.ts                   # TypeScript types
+│   │       │   └── OverrideHooksHost.tsx      # useHooks mode host component
 │   │       ├── registry/          # Component registry
 │   │       ├── renderer/          # Dynamic renderer
 │   │       ├── hooks/             # useResource, useApiCall, useForm (TanStack Query)
 │   │       ├── theme/             # Design tokens, CSS variables
 │   │       └── App.tsx            # Root app wired to IR config
 │   │
-│   └── cli/                       # CLI entry point
+│   ├── cli/                       # CLI entry point
+│   │   └── src/
+│   │       ├── commands/          # serve, build, init, config
+│   │       ├── overrides/         # Override discovery and transpilation
+│   │       │   ├── discovery.ts               # File discovery
+│   │       │   ├── transpiler.ts              # esbuild transpilation
+│   │       │   ├── injector.ts                # window.__UIGEN_OVERRIDES__ injection
+│   │       │   └── validator.ts               # Override validation
+│   │       ├── server.ts          # Vite server + proxy setup
+│   │       ├── utils/             # Scaffolding, file operations
+│   │       └── index.ts           # Commander.js entry
+│   │
+│   └── config-gui/                # Visual configuration editor
 │       └── src/
-│           ├── commands/          # serve, generate, validate
-│           ├── server.ts          # Vite server + proxy setup
-│           └── index.ts           # Commander.js entry
+│           ├── components/        # AnnotationForm, FieldEditor, etc.
+│           ├── hooks/             # useConfig, useAnnotations
+│           └── App.tsx            # Config GUI root
 │
 ├── examples/
-│   └── petstore.yaml              # Demo spec
+│   └── apps/
+│       └── fastapi/
+│           └── meeting-minutes/   # Full example app
+│               ├── openapi.yaml
+│               ├── .uigen/
+│               │   ├── config.yaml
+│               │   └── theme.css
+│               └── src/
+│                   └── overrides/  # Example overrides
+│                       └── profile-complete.tsx
+├── SKILLS/                        # AI agent skills
+│   ├── auto-annotate.md
+│   ├── configure-oauth.md
+│   ├── create-overrides.md
+│   └── applying-styles-to-react-spa.md
 ├── package.json                   # pnpm workspace root
 └── tsconfig.base.json
 ```
@@ -438,6 +712,86 @@ uigen/
 | **Commander.js** | CLI framework |
 | **js-yaml** | YAML parsing |
 | **Vitest** | Testing |
+
+---
+
+## Config GUI
+
+The Config GUI is a visual annotation editor served alongside the generated frontend at `/config`. It provides a point-and-click interface for configuring UIGen without editing YAML files.
+
+### Access
+
+```bash
+npx uigen serve openapi.yaml
+# Main app: http://localhost:4400
+# Config GUI: http://localhost:4400/config
+```
+
+### Features
+
+- **Visual annotation editor**: Add/edit/remove `x-uigen-*` annotations
+- **Operation browser**: Navigate spec operations with search and filtering
+- **Schema inspector**: View and annotate schema properties
+- **Live preview**: See changes reflected immediately in main app
+- **Export config**: Download `.uigen/config.yaml` with all annotations
+- **Annotation catalog**: Browse all available `x-uigen-*` annotations with descriptions
+
+### Workflow
+
+1. **Browse**: Navigate operations and schemas in the spec
+2. **Annotate**: Click to add annotations (labels, auth, file uploads, etc.)
+3. **Preview**: Switch to main app to see changes
+4. **Export**: Download config file to `.uigen/config.yaml`
+5. **Commit**: Add config to version control
+
+### Supported Annotations
+
+The Config GUI supports all `x-uigen-*` annotations:
+- `x-uigen-label`: Custom field labels
+- `x-uigen-ignore`: Hide operations/fields
+- `x-uigen-login`, `x-uigen-signup`, `x-uigen-password-reset`: Auth endpoints
+- `x-uigen-file-upload`: File upload configuration
+- `x-uigen-chart`: Chart visualization
+- `x-uigen-relationship`: Resource relationships
+- `x-uigen-override`: View overrides
+- `x-uigen-profile`: Profile page marker
+- `x-uigen-id`: Stable resource identifiers
+
+### Architecture
+
+```
+┌──────────────────────────────────────────────────────┐
+│              Config GUI (React SPA)                   │
+│                                                       │
+│  ┌────────────────────────────────────────────┐    │
+│  │  Operation Browser                         │    │
+│  │  - Lists all operations                    │    │
+│  │  - Search and filter                       │    │
+│  │  - Shows existing annotations              │    │
+│  └────────────────────────────────────────────┘    │
+│                                                       │
+│  ┌────────────────────────────────────────────┐    │
+│  │  Annotation Form                           │    │
+│  │  - Dynamic form based on annotation type  │    │
+│  │  - Validation and type checking            │    │
+│  │  - Preview and apply                       │    │
+│  └────────────────────────────────────────────┘    │
+│                                                       │
+│  ┌────────────────────────────────────────────┐    │
+│  │  Config Exporter                           │    │
+│  │  - Generates .uigen/config.yaml            │    │
+│  │  - Downloads to local filesystem           │    │
+│  └────────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────────┘
+```
+
+### Future Enhancements
+
+- **Theme editor**: Visual theme customization (colors, fonts, spacing)
+- **Resource reordering**: Drag-and-drop sidebar organization
+- **Bulk operations**: Apply annotations to multiple operations at once
+- **Undo/redo**: History management for annotation changes
+- **Collaboration**: Share config changes with team members
 
 ---
 
@@ -499,12 +853,22 @@ Real-world specs are messy. The system must degrade gracefully:
 - [x] Sidebar layout + TopBar + Breadcrumbs + responsive shell
 - [x] React Router with full URL navigation and browser history
 
-### Phase 3 — Extension & distribution 🔜 In progress
-- [ ] `x-uigen-*` vendor extension support (widget, label, hidden, order, view)
-- [ ] `uigen.config.json` — theme/behaviour/resource overrides
+### Phase 3 — Extension & distribution ✅ Complete
+- [x] `x-uigen-*` vendor extension support (label, hidden, ignore, profile, login, signup, password-reset, refresh-token, file-upload, chart, relationship, override, id)
+- [x] `.uigen/config.yaml` — annotation-based configuration system with reconciliation
+- [x] Environment variable resolution (`${VAR_NAME}` syntax in config)
+- [x] OAuth2 PKCE authentication flow (Google, GitHub, Facebook, Microsoft)
+- [x] Override system — file-based and programmatic view customization (component, render, useHooks modes)
+- [x] Config GUI — visual annotation editor served at `/config`
+- [x] AI agent skills (auto-annotate, configure-oauth, applying-styles)
+- [x] `uigen build` — static production build output
+- [x] `uigen init` — project scaffolding with config files
+- [x] Landing page support with hero, features, pricing, testimonials, FAQ sections
+- [x] Profile view with inline editing
+- [x] DateTime formatting with declarative patterns
+- [x] Chart annotations (line, bar, pie, scatter)
+- [x] File upload with type-aware validation and previews
 - [ ] `uigen validate` — spec linting with actionable errors and line numbers
-- [ ] `uigen generate` — static production build output
-- [ ] OAuth2 PKCE authentication flow
 - [ ] Spec hot-reloading (file watcher → WebSocket push to UI)
 - [ ] Loading skeletons with shimmer animation
 - [ ] Virtual scrolling for large datasets (TanStack Virtual)
