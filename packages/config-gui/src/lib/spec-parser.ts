@@ -13,7 +13,6 @@ export interface SpecStructure {
 export interface ResourceNode {
   name: string;
   slug: string;
-  uigenId: string;
   description?: string;
   operations: OperationNode[];
   fields: FieldNode[];
@@ -25,7 +24,6 @@ export interface ResourceNode {
  */
 export interface OperationNode {
   id: string;
-  uigenId: string;
   method: HttpMethod;
   path: string;
   summary?: string;

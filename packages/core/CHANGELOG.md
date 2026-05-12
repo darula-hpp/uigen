@@ -1,5 +1,11 @@
 # @uigen-dev/core
 
+## 0.9.0
+
+### Minor Changes
+
+- Complete ovveride feature
+
 ## 0.8.0
 
 ### Minor Changes
