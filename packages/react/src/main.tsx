@@ -1,7 +1,18 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { registerInjectedOverrides } from './overrides';
 import './index.css';
+import * as React from 'react';
+import { getAuthHeaders } from './lib/auth';
+
+// Expose React on window for injected overrides
+// @ts-ignore
+window.React = React;
+
+// Expose auth utilities on window for injected overrides
+// @ts-ignore
+window.getAuthHeaders = getAuthHeaders;
 
 // @ts-ignore - config is injected by CLI
 const config = window.__UIGEN_CONFIG__;
@@ -23,6 +34,10 @@ if (customCSS) {
     console.warn('Failed to apply custom CSS:', error);
   }
 }
+
+// Register injected overrides from window.__UIGEN_OVERRIDES__
+// This must be called before rendering the app so overrides are available
+registerInjectedOverrides();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

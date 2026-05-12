@@ -7,6 +7,7 @@ import { request as httpsRequest } from 'https';
 import { parseSpec, ConfigLoader, AnnotationHandlerRegistry, Reconciler } from '@uigen-dev/core';
 import { load as parseYaml } from 'js-yaml';
 import pc from 'picocolors';
+import { discoverOverrides, transpileOverrides, validateOverrides, createInjectionScript } from '../overrides/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -62,6 +63,112 @@ function loadCSS(specDir: string, verbose: boolean): string {
     console.log(pc.gray('No custom theme found, using base styles only'));
   }
   return '';
+}
+
+/**
+ * Process override files from src/ directory.
+ * Discovers, transpiles, validates, and creates injection script.
+ * All errors are non-fatal - returns empty script on failure.
+ * 
+ * @param specDir - Directory containing the spec file
+ * @param mode - Build mode (development or production)
+ * @param verbose - Enable verbose logging
+ * @returns Injection script for HTML
+ */
+async function processOverrides(
+  specDir: string,
+  mode: 'development' | 'production',
+  verbose: boolean
+): Promise<string> {
+  try {
+    const srcDir = resolve(specDir, 'src');
+    
+    if (verbose) {
+      console.log(pc.gray(`Processing overrides from ${srcDir}...`));
+    }
+    
+    // Step 1: Discover override files
+    const files = await discoverOverrides({
+      srcDir,
+      verbose,
+    });
+    
+    // If no files found, return empty injection
+    if (files.length === 0) {
+      if (verbose) {
+        console.log(pc.gray('No override files found'));
+      }
+      return createInjectionScript({ code: '', mode });
+    }
+    
+    if (verbose) {
+      console.log(pc.gray(`Found ${files.length} override file(s)`));
+    }
+    
+    // Step 2: Transpile override files
+    const transpileResult = await transpileOverrides({
+      files,
+      mode,
+      verbose,
+    });
+    
+    // Log transpilation errors (non-fatal)
+    if (transpileResult.errors.length > 0) {
+      console.warn(pc.yellow(`⚠ Override transpilation errors (${transpileResult.errors.length}):`));
+      for (const error of transpileResult.errors) {
+        console.warn(pc.yellow(`  ${error.filePath}: ${error.message}`));
+      }
+    }
+    
+    // If transpilation completely failed, return empty injection
+    if (!transpileResult.code || transpileResult.code.trim() === '') {
+      console.warn(pc.yellow('⚠ Override transpilation failed, continuing without overrides'));
+      return createInjectionScript({ code: '', mode });
+    }
+    
+    // Step 3: Validate override definitions
+    const validationResult = validateOverrides({
+      code: transpileResult.code,
+      files,
+      verbose,
+    });
+    
+    // Log validation errors (non-fatal)
+    if (validationResult.errors.length > 0) {
+      console.warn(pc.yellow(`⚠ Override validation errors (${validationResult.errors.length}):`));
+      for (const error of validationResult.errors) {
+        console.warn(pc.yellow(`  ${error.filePath}: ${error.message}`));
+      }
+    }
+    
+    // Log validation warnings
+    if (validationResult.warnings.length > 0 && verbose) {
+      console.warn(pc.yellow(`⚠ Override validation warnings (${validationResult.warnings.length}):`));
+      for (const warning of validationResult.warnings) {
+        console.warn(pc.yellow(`  ${warning.filePath}: ${warning.message}`));
+      }
+    }
+    
+    // Step 4: Create injection script
+    const injectionScript = createInjectionScript({
+      code: transpileResult.code,
+      mode,
+    });
+    
+    if (verbose) {
+      console.log(pc.green(`✓ Override processing complete`));
+    }
+    
+    return injectionScript;
+  } catch (error) {
+    // Catch any unexpected errors and log them (non-fatal)
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn(pc.yellow(`⚠ Override processing failed: ${errorMessage}`));
+    console.warn(pc.yellow('  Continuing without overrides...'));
+    
+    // Return empty injection on failure
+    return createInjectionScript({ code: '', mode });
+  }
 }
 
 /** Inject auth headers and strip uigen-specific ones. Mutates the headers object in place. */
@@ -250,6 +357,9 @@ export async function serve(specPath: string, options: ServeOptions) {
       // Load CSS content
       const cssContent = loadCSS(specDir, options.verbose ?? false);
       
+      // Process overrides
+      const overrideScript = await processOverrides(specDir, 'development', options.verbose ?? false);
+      
       const proxyConfig: ProxyOptions = {
         target: proxyTarget,
         changeOrigin: true,
@@ -297,6 +407,9 @@ export async function serve(specPath: string, options: ServeOptions) {
               injectedHtml = injectedHtml.replace('</head>', `<script>window.__UIGEN_CSS__ = ${JSON.stringify(cssContent)};</script></head>`);
             }
             
+            // Inject overrides
+            injectedHtml = injectedHtml.replace('</head>', `${overrideScript}</head>`);
+            
             return injectedHtml;
           },
           configureServer(server) {
@@ -328,6 +441,9 @@ export async function serve(specPath: string, options: ServeOptions) {
       
       // Load CSS content
       const cssContent = loadCSS(specDir, options.verbose ?? false);
+      
+      // Process overrides
+      const overrideScript = await processOverrides(specDir, 'production', options.verbose ?? false);
 
       const httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
         const url = req.url || '/';
@@ -403,6 +519,9 @@ export async function serve(specPath: string, options: ServeOptions) {
           if (cssContent) {
             html = html.replace('</head>', `<script>window.__UIGEN_CSS__ = ${JSON.stringify(cssContent)};</script></head>`);
           }
+          
+          // Inject overrides
+          html = html.replace('</head>', `${overrideScript}</head>`);
           
           res.writeHead(200, { 'Content-Type': 'text/html' });
           res.end(html);

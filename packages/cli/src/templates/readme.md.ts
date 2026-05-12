@@ -25,7 +25,33 @@ This project was scaffolded with \`uigen init\`.
 - \`.uigen/config.yaml\` - UIGen configuration and annotations
 - \`.uigen/base-styles.css\` - Base Tailwind CSS styles (do not modify)
 - \`.uigen/theme.css\` - Your custom CSS overrides
+- \`src/overrides/\` - Custom view overrides (TypeScript/TSX)
 - \`.agents/skills/\` - AI agent skills for automation
+
+## Customization
+
+### Theme Customization
+
+Edit \`.uigen/theme.css\` to change colors, fonts, and styles.
+The base styles are in \`.uigen/base-styles.css\` (do not modify).
+
+### View Overrides
+
+Create custom views by adding TypeScript/TSX files to \`src/overrides/\`:
+
+\`\`\`tsx
+// src/overrides/users-list.tsx
+import type { OverrideDefinition } from '@uigen-dev/react';
+
+const override: OverrideDefinition = {
+  targetId: 'users.list',
+  component: MyCustomComponent,
+};
+
+export default override;
+\`\`\`
+
+See \`src/overrides/README.md\` for detailed documentation and examples.
 
 ## AI Agent Skills
 

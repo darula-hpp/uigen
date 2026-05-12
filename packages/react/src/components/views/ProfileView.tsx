@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ProfileEditForm } from '@/components/ProfileEditForm';
 import { useProfileUpdate } from '@/hooks/useProfileUpdate';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { reconcile } from '@/overrides/reconcile';
 
 /**
  * API Error type with status and response
@@ -249,6 +250,15 @@ export function ProfileView({ config, resourceSlug }: ProfileViewProps) {
         </div>
       </div>
     );
+  }
+
+  // Check for component override using resource's uigenId
+  const { mode: overrideMode, overrideComponent } = reconcile(resource.uigenId);
+  
+  // If component override exists, render it instead
+  if (overrideMode === 'component' && overrideComponent) {
+    const OverrideComponent = overrideComponent;
+    return <OverrideComponent resource={resource} config={config} />;
   }
   
   // Find the detail operation (GET) for fetching profile data

@@ -14,6 +14,7 @@ import type {
   Logger,
 } from './types.js';
 import type { RelationshipConfig } from '../config/types.js';
+import type { OverrideConfig } from '../ir/types.js';
 import { ElementPathResolver } from './path-resolver.js';
 import { AnnotationMerger } from './merger.js';
 import { Validator } from './validator.js';
@@ -33,6 +34,34 @@ interface ConfigFile {
   relationships?: RelationshipConfig[];
   auth?: {
     providers?: OAuthProviderConfig[];
+  };
+}
+
+/**
+ * Parse x-uigen-override annotation
+ * 
+ * @param annotation - Raw annotation value from OpenAPI spec
+ * @returns Parsed OverrideConfig or undefined if invalid
+ */
+export function parseOverrideAnnotation(annotation: unknown): OverrideConfig | undefined {
+  // Annotation must be an object
+  if (typeof annotation !== 'object' || annotation === null) {
+    return undefined;
+  }
+  
+  const obj = annotation as Record<string, unknown>;
+  
+  // id property is required and must be a string
+  if (typeof obj.id !== 'string' || obj.id.trim() === '') {
+    return undefined;
+  }
+  
+  // enabled property is optional and defaults to true
+  const enabled = typeof obj.enabled === 'boolean' ? obj.enabled : true;
+  
+  return {
+    id: obj.id.trim(),
+    enabled,
   };
 }
 

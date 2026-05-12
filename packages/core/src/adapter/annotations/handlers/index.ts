@@ -16,6 +16,7 @@ import { LayoutHandler } from './layout-handler.js';
 import { LandingPageHandler } from './landing-page-handler.js';
 import { AppHandler } from './app-handler.js';
 import { AuthHandler } from './auth-handler.js';
+import { OverrideHandler } from './override-handler.js';
 
 /**
  * Initialize and register all annotation handlers.
@@ -54,6 +55,7 @@ function registerHandlers(): void {
   
   // Register resource-level handlers
   registry.register(new ProfileHandler());
+  registry.register(new OverrideHandler());
   
   // Register document/operation-level handlers
   registry.register(new LayoutHandler());
@@ -82,6 +84,7 @@ export { ChartHandler } from './chart-handler.js';
 export { DateTimeHandler } from './datetime-handler.js';
 export { DateTimeTimezoneHandler } from './datetime-timezone-handler.js';
 export { ProfileHandler } from './profile-handler.js';
+export { OverrideHandler } from './override-handler.js';
 export { LayoutHandler } from './layout-handler.js';
 export { LandingPageHandler } from './landing-page-handler.js';
 export { AppHandler } from './app-handler.js';

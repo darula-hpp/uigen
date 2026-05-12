@@ -8,7 +8,9 @@ import {
   getGitignoreTemplate, 
   getReadmeTemplate,
   getExampleSpecTemplate,
-  getEnvExampleTemplate
+  getEnvExampleTemplate,
+  getOverrideReadmeTemplate,
+  getExampleOverrideTemplate
 } from '../templates/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -29,6 +31,7 @@ export async function scaffoldProject(
     '.agents/skills',
     '.uigen',
     '.uigen/assets',
+    'src/overrides',
   ];
 
   for (const dir of dirs) {
@@ -99,6 +102,20 @@ export async function scaffoldProject(
   writeFileSync(readmePath, getReadmeTemplate(config.name), 'utf-8');
   if (verbose) {
     console.log(pc.gray('  Created README.md'));
+  }
+
+  // Create src/overrides/README.md
+  const overrideReadmePath = resolve(projectPath, 'src/overrides/README.md');
+  writeFileSync(overrideReadmePath, getOverrideReadmeTemplate(), 'utf-8');
+  if (verbose) {
+    console.log(pc.gray('  Created src/overrides/README.md'));
+  }
+
+  // Create example override file
+  const exampleOverridePath = resolve(projectPath, 'src/overrides/example-override.tsx.example');
+  writeFileSync(exampleOverridePath, getExampleOverrideTemplate(), 'utf-8');
+  if (verbose) {
+    console.log(pc.gray('  Created src/overrides/example-override.tsx.example'));
   }
 
   console.log(pc.green('\n✓ Project structure created'));
