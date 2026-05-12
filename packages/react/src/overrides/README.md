@@ -38,7 +38,52 @@ The `resource.uigenId` comes from the `x-uigen-id` vendor extension in your spec
 
 ## Usage
 
-Register overrides before your app renders:
+UIGen supports two approaches for creating overrides:
+
+### File-Based Approach (Recommended)
+
+Create override files in `src/overrides/` and annotate your config. The CLI discovers, transpiles, and injects them automatically.
+
+**Step 1**: Add `x-uigen-override` annotation to `.uigen/config.yaml`:
+
+```yaml
+annotations:
+  GET:/api/v1/users:
+    x-uigen-override:
+      id: users.list
+      enabled: true
+```
+
+**Step 2**: Create override file in `src/overrides/`:
+
+```typescript
+// src/overrides/users-list.tsx
+import type { OverrideDefinition, ListRenderProps } from '@uigen-dev/react';
+
+function renderUsersList({ data, isLoading }: ListRenderProps) {
+  if (isLoading) return <div>Loading...</div>;
+  return <div className="custom-grid">{/* your UI */}</div>;
+}
+
+const override: OverrideDefinition = {
+  targetId: 'users.list',
+  render: renderUsersList,
+};
+
+export default override;
+```
+
+**Step 3**: Run `uigen serve` — your override is automatically discovered and applied.
+
+**Benefits**:
+- No manual registration needed
+- Hot reload during development
+- Type-safe with full TypeScript support
+- Keeps overrides separate from generated code
+
+### Programmatic Approach
+
+Register overrides directly in your application code before React renders:
 
 ```typescript
 import { overrideRegistry } from '@uigen-dev/react';
@@ -49,6 +94,8 @@ overrideRegistry.register({
   component: MyCustomUserList,
 });
 ```
+
+**Use when**: You need dynamic override registration or are building a custom UIGen integration.
 
 ---
 
@@ -127,6 +174,66 @@ overrideRegistry.register({
 ```
 
 **Use when:** You need side effects without changing the UI.
+
+---
+
+## File-Based Override Workflow
+
+The recommended workflow uses file-based overrides with automatic discovery:
+
+### 1. Annotate Your Config
+
+Add `x-uigen-override` to the operation in `.uigen/config.yaml`:
+
+```yaml
+version: '1.0'
+annotations:
+  GET:/api/v1/auth/me:
+    x-uigen-override:
+      id: me              # Stable identifier (required)
+      enabled: true       # Optional, defaults to true
+    x-uigen-profile: true # Other annotations can coexist
+```
+
+### 2. Create Override File
+
+Create a file in `src/overrides/` with any descriptive name:
+
+```typescript
+// src/overrides/profile-custom.tsx
+import type { OverrideDefinition, OverrideComponentProps } from '@uigen-dev/react';
+
+function CustomProfile({ resource }: OverrideComponentProps) {
+  return <div>My Custom Profile</div>;
+}
+
+const override: OverrideDefinition = {
+  targetId: 'me',  // Must match the 'id' in config annotation
+  component: CustomProfile,
+};
+
+export default override;
+```
+
+### 3. Run Development Server
+
+```bash
+uigen serve openapi.yaml
+```
+
+The CLI automatically:
+- Discovers all files in `src/overrides/`
+- Transpiles them using esbuild
+- Injects them via `window.__UIGEN_OVERRIDES__`
+- Enables hot reload for fast iteration
+
+### 4. Verify Override
+
+Navigate to the view in your browser. The custom component should render instead of the default view.
+
+**File Naming**: Use descriptive names like `profile-custom.tsx`, `users-list.tsx`, `meetings-detail.tsx`. Avoid generic names like `override1.tsx`.
+
+**One Override Per File**: Each file should export a single override definition as the default export.
 
 ---
 
@@ -305,6 +412,63 @@ All errors are logged to the console with the `targetId` for easy debugging.
 ## Backward Compatibility
 
 The override system is fully opt-in. Existing UIGen apps work unchanged — no overrides registered means no behavior change.
+
+---
+
+## Troubleshooting
+
+### Override Not Applied
+
+If your file-based override isn't working:
+
+1. **Check annotation exists** in `.uigen/config.yaml`:
+   ```yaml
+   GET:/api/v1/users:
+     x-uigen-override:
+       id: users.list
+       enabled: true
+   ```
+
+2. **Check targetId matches** the annotation `id`:
+   ```typescript
+   const override: OverrideDefinition = {
+     targetId: 'users.list',  // Must match annotation id
+     component: MyComponent,
+   };
+   ```
+
+3. **Check file location** is in `src/overrides/`:
+   ```
+   src/overrides/users-list.tsx  ✅
+   overrides/users-list.tsx      ❌
+   ```
+
+4. **Check default export** exists:
+   ```typescript
+   export default override;  ✅
+   export { override };      ❌
+   ```
+
+5. **Restart dev server** if changes aren't detected:
+   ```bash
+   uigen serve openapi.yaml
+   ```
+
+6. **Check browser console** for error messages
+
+### TypeScript Errors
+
+Install types if you see import errors:
+
+```bash
+npm install @uigen-dev/react
+```
+
+Ensure your override file uses correct imports:
+
+```typescript
+import type { OverrideDefinition } from '@uigen-dev/react';
+```
 
 ---
 
