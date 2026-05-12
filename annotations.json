@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-05-10T08:19:33.229Z",
-  "totalAnnotations": 15,
+  "generatedAt": "2026-05-12T12:53:30.475Z",
+  "totalAnnotations": 16,
   "annotations": [
     {
       "name": "x-uigen-active-server",
@@ -116,6 +116,10 @@
                 "refreshTokenEndpoint": {
                   "type": "string",
                   "description": "Custom refresh token endpoint URL (optional)"
+                },
+                "sessionValidationEndpoint": {
+                  "type": "string",
+                  "description": "Session validation endpoint for cookie-based auth (optional, e.g., /api/v1/auth/me)"
                 }
               }
             }
@@ -607,6 +611,49 @@
         {
           "description": "100MB",
           "value": 104857600
+        }
+      ]
+    },
+    {
+      "name": "x-uigen-override",
+      "description": "Provides structured override configuration with identification and enablement control. Replaces the legacy x-uigen-id annotation.",
+      "targetType": "operation",
+      "parameterSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable identifier for the override (matches targetId in override files)"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether this override is enabled (defaults to true if omitted)"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "examples": [
+        {
+          "description": "Enable override with custom ID",
+          "value": {
+            "id": "custom-profile",
+            "enabled": true
+          }
+        },
+        {
+          "description": "Override with ID only (enabled defaults to true)",
+          "value": {
+            "id": "users-list"
+          }
+        },
+        {
+          "description": "Disabled override (annotation present but inactive)",
+          "value": {
+            "id": "meetings-detail",
+            "enabled": false
+          }
         }
       ]
     },

@@ -192,7 +192,7 @@ annotations:
   /api/v1/auth/me:
     x-uigen-override:
       id: me
-      enabled: true
+      enabled: false
   GET:/api/v1/auth/me:
     x-uigen-profile: true
     x-uigen-label: My Profile
