@@ -51,7 +51,7 @@ UIGen scaffolds a complete project with configuration files (`.uigen/config.yaml
 ### Developer Experience
 - **Runtime Rendering** - No code generation, UI stays in sync with spec changes
 - **AI Agent Skills** - Automate configuration with your favorite coding assistant
-- **Override System** - Replace any view with custom React components in `src/overrides/`
+- **Override System** - Replace any view with custom React components (file-based or programmatic)
 - **Build Command** - Package for production deployment with `uigen build`
 
 ---
@@ -174,6 +174,73 @@ The React renderer interprets this IR at runtime and creates:
 - Dark/light theme toggle
 
 **Key advantage:** Runtime rendering means no regeneration step, no code to maintain, no drift between spec and UI. Because the IR is framework-agnostic, you can swap renderers. The same spec works with `@uigen-dev/react`, `@uigen-dev/svelte`, or `@uigen-dev/vue` (coming soon).
+
+---
+
+## Override System
+
+Customize any view while keeping the rest auto-generated. UIGen provides escape hatches at three levels:
+
+**Component Mode** - Full control over data fetching and rendering:
+```typescript
+// src/overrides/custom-profile.tsx
+import type { OverrideDefinition } from '@uigen-dev/react';
+
+function CustomProfile() {
+  return <div>My Custom Profile View</div>;
+}
+
+const override: OverrideDefinition = {
+  targetId: 'me',
+  component: CustomProfile,
+};
+
+export default override;
+```
+
+**Render Mode** - UIGen fetches data, you control the UI:
+```typescript
+// src/overrides/users-list.tsx
+import type { OverrideDefinition, ListRenderProps } from '@uigen-dev/react';
+
+const override: OverrideDefinition = {
+  targetId: 'users.list',
+  render: ({ data, isLoading }: ListRenderProps) => {
+    if (isLoading) return <div>Loading...</div>;
+    return <div className="grid">{/* your custom UI */}</div>;
+  },
+};
+
+export default override;
+```
+
+**UseHooks Mode** - Side effects only (analytics, tracking):
+```typescript
+// src/overrides/analytics.tsx
+import { useEffect } from 'react';
+import type { OverrideDefinition } from '@uigen-dev/react';
+
+const override: OverrideDefinition = {
+  targetId: 'users.list',
+  useHooks: ({ resource }) => {
+    useEffect(() => {
+      analytics.track('page_view', { resource: resource.name });
+    }, [resource]);
+  },
+};
+
+export default override;
+```
+
+Add `x-uigen-override` annotation to `.uigen/config.yaml`:
+```yaml
+annotations:
+  GET:/api/v1/auth/me:
+    x-uigen-override:
+      id: me
+```
+
+The CLI automatically discovers, transpiles, and injects your overrides. See [packages/react/src/overrides/README.md](./packages/react/src/overrides/README.md) for complete documentation.
 
 ---
 
