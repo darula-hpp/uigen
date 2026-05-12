@@ -1,5 +1,18 @@
 # @uigen-dev/cli
 
+## 0.9.0
+
+### Minor Changes
+
+- Complete ovveride feature
+
+### Patch Changes
+
+- Updated dependencies
+  - @uigen-dev/config-gui@0.9.0
+  - @uigen-dev/react@0.9.0
+  - @uigen-dev/core@0.9.0
+
 ## 0.8.0
 
 ### Minor Changes
