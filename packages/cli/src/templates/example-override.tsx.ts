@@ -1,0 +1,73 @@
+export function getExampleOverrideTemplate(): string {
+  return `/**
+ * Example Override File
+ * 
+ * This is an example of how to create a custom override for UIGen views.
+ * To use this example:
+ * 
+ * 1. Rename this file (remove .example extension)
+ * 2. Update the targetId to match your resource/operation
+ * 3. Implement your custom component or render function
+ * 4. Run \`uigen serve\` to see your changes
+ * 
+ * Learn more: https://uigen.dev/docs/overrides
+ */
+
+import type { OverrideDefinition, OverrideComponentProps } from '@uigen-dev/react';
+
+/**
+ * Example: Component Mode Override
+ * 
+ * Component mode gives you full control over the view.
+ * Use this when you need custom data fetching, state management, or routing.
+ */
+function ExampleComponent({ resource, operation }: OverrideComponentProps) {
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">
+        Custom {resource.name} View
+      </h1>
+      <p className="text-gray-600">
+        This is a custom override. Replace this with your own implementation.
+      </p>
+      
+      {/* Your custom implementation here */}
+    </div>
+  );
+}
+
+/**
+ * Override Definition
+ * 
+ * Change the targetId to match the view you want to override.
+ * Examples:
+ * - 'users.list' - Override the users list view
+ * - 'posts.detail' - Override the posts detail view
+ * - 'products.create' - Override the products create form
+ */
+const override: OverrideDefinition = {
+  // TODO: Change this to your target resource/operation
+  targetId: 'example.list',
+  
+  // Component mode: Full control
+  component: ExampleComponent,
+  
+  // Or use render mode: Custom UI with UIGen data fetching
+  // render: (props) => {
+  //   const { data, isLoading, error } = props;
+  //   if (isLoading) return <div>Loading...</div>;
+  //   if (error) return <div>Error: {error.message}</div>;
+  //   return <div>{JSON.stringify(data)}</div>;
+  // },
+  
+  // Or use useHooks mode: Side effects only
+  // useHooks: ({ resource }) => {
+  //   useEffect(() => {
+  //     console.log('View loaded:', resource.name);
+  //   }, [resource]);
+  // },
+};
+
+export default override;
+`;
+}

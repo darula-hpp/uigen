@@ -25,6 +25,20 @@ export type FieldType =
 export type FileTypeCategory = 'image' | 'document' | 'video' | 'audio' | 'generic';
 
 /**
+ * Override configuration metadata
+ * 
+ * Defines override identification and enablement control.
+ * Set by reconciler when x-uigen-override annotation is present.
+ */
+export interface OverrideConfig {
+  /** Stable identifier for the override (matches targetId in override files) */
+  id: string;
+  
+  /** Whether this override is enabled (defaults to true if omitted) */
+  enabled: boolean;
+}
+
+/**
  * Application configuration metadata
  */
 export interface AppConfig {
@@ -182,6 +196,8 @@ export interface Resource {
   __profileAnnotation?: boolean; // Marks resource as profile resource for specialized rendering (x-uigen-profile)
   /** Layout override for this resource (overrides global layout configuration) */
   layoutOverride?: LayoutConfig;
+  /** Override configuration (replaces uigenId for override identification) */
+  override?: OverrideConfig;
 }
 
 export interface Relationship {
@@ -211,6 +227,8 @@ export interface Operation {
   responses: Record<string, ResponseDescriptor>;
   viewHint: ViewHint;
   security?: SecurityRequirement[];
+  /** Override configuration (replaces uigenId for override identification) */
+  override?: OverrideConfig;
 }
 
 export interface SecurityRequirement {

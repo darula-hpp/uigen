@@ -4,6 +4,7 @@ node_modules/
 
 # UIGen
 annotations.json
+.uigen/build/
 
 # Environment Variables
 .env

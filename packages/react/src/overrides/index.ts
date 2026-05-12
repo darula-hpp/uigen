@@ -11,6 +11,9 @@
 // Registry
 export { overrideRegistry, OverrideRegistry } from './registry';
 
+// Registration
+export { registerInjectedOverrides } from './registration';
+
 // Reconciliation
 export { reconcile } from './reconcile';
 
