@@ -16,3 +16,7 @@ export type {
   CanvasLayout,
   AnnotationConfig
 } from './types.js';
+
+// Icon validator
+export { IconValidator, iconValidator } from './icon-validator.js';
+export type { IIconValidator, IconLibrary } from './icon-validator.js';
