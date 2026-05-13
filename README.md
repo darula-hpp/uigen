@@ -252,7 +252,8 @@ The CLI automatically discovers, transpiles, and injects your overrides. See [pa
 ---
 
 ## Current Priorities
-- Component override system (x-uigen-id based customization)
+- Polish
+- Stripe Integration
 - Better relationship handling and visualization
 - Additional renderers (Svelte, Vue)
 
