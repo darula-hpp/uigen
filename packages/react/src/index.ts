@@ -3,6 +3,12 @@ export { App } from './App';
 // View exports
 export { LandingPageView } from './components/views/LandingPageView';
 
+// Icon exports
+export { Icon } from './components/Icon';
+export { FallbackIcon } from './components/FallbackIcon';
+export type { IconProps } from './components/Icon';
+export type { FallbackIconProps } from './components/FallbackIcon';
+
 // Override system exports
 export { overrideRegistry, OverrideRegistry } from './overrides/registry';
 export { reconcile } from './overrides/reconcile';

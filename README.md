@@ -41,6 +41,7 @@ UIGen scaffolds a complete project with configuration files (`.uigen/config.yaml
 - **DateTime Formatting** - Declarative format patterns with timezone support
 - **File Uploads** - Type-aware validation, previews, drag-and-drop (images, documents, videos)
 - **Chart Annotations** - Line, bar, pie, scatter charts from array data
+- **Icon Library Support** - Professional icons from Lucide, Heroicons, React Icons with `library:iconName` syntax
 
 ### Relationships & Navigation
 - **Auto-detected Relationships** - `hasMany`, `belongsTo`, `manyToMany` from path patterns
@@ -117,6 +118,12 @@ UIGen includes AI agent skills that automate configuration through intelligent a
 - Animations and transitions
 - Responsive design (mobile, tablet, desktop)
 
+**Configure Icons** (`configure-icons.md`)
+- Professional icon library integration (Lucide, Heroicons, React Icons)
+- Icon reference format and usage examples
+- Landing page and feature section icons
+- Best practices and troubleshooting
+
 ### Usage
 
 Skills work with any AI coding assistant that can read files:
@@ -131,6 +138,7 @@ Example workflow:
 npx @uigen-dev/cli@latest init my-app --spec openapi.yaml
 # Ask AI: "Use the auto-annotate skill to configure my spec"
 # Ask AI: "Use the configure-oauth skill to add Google login"
+# Ask AI: "Use the configure-icons skill to add professional icons"
 # Ask AI: "Use the applying-styles skill to create a professional theme"
 npx @uigen-dev/cli@latest serve openapi.yaml
 ```

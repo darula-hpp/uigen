@@ -623,6 +623,11 @@ h3 {
   border: 1px solid var(--border);
 }
 
+.feature-icon {
+  color: var(--primary);
+  margin-bottom: 1rem;
+}
+
 .feature-item span {
   font-size: 3rem;
   display: block;

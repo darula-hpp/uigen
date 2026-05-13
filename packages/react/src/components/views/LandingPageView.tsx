@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import type { UIGenApp } from '@uigen-dev/core';
+import { Icon } from '../Icon';
 
 interface LandingPageViewProps {
   config: UIGenApp;
@@ -52,9 +53,13 @@ export function LandingPageView({ config }: LandingPageViewProps) {
             <div className="features-grid">
               {sections.features.items.map((item, index) => (
                 <div key={index} data-testid={`feature-item-${index}`} className="feature-item">
+                  {item.icon && (
+                    <div className="feature-icon" data-testid={`feature-icon-${index}`}>
+                      <Icon icon={item.icon} size={48} ariaLabel={item.title} />
+                    </div>
+                  )}
                   <h3>{item.title}</h3>
                   <p>{item.description}</p>
-                  {item.icon && <span data-testid={`feature-icon-${index}`}>{item.icon}</span>}
                   {item.image && <img src={item.image} alt={item.title} data-testid={`feature-image-${index}`} />}
                 </div>
               ))}
