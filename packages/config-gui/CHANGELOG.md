@@ -1,42 +1,5 @@
 # @uigen-dev/config-gui
 
-## 0.10.0
-
-### Minor Changes
-
-- # Icon Library Integration (v0.10.0)
-
-  Professional icon support for landing pages and UI components with dynamic resolution from Lucide, Heroicons, and React Icons.
-
-  ## Features
-
-  - **Icon Resolver** - Dynamic icon resolution with `library:iconName` syntax (e.g., `lucide:FileText`)
-  - **Icon Component** - Reusable React component with fallback, theming, and accessibility
-  - **Icon Validator** - Config validation with helpful suggestions
-  - **Landing Page Icons** - Professional icons in feature sections with theme-aware styling
-  - **Configure Icons Skill** - AI-assisted icon configuration guide
-
-  ## Breaking Changes
-
-  None - fully backward compatible
-
-  ## Migration
-
-  Update your landing page config to use icon references:
-
-  ```yaml
-  sections:
-    features:
-      items:
-        - icon: "lucide:FileText" # instead of "📄"
-          title: "Feature Name"
-  ```
-
-### Patch Changes
-
-- Updated dependencies
-  - @uigen-dev/core@0.10.0
-
 ## 0.9.0
 
 ### Minor Changes
