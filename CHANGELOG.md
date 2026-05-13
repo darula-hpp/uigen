@@ -5,6 +5,84 @@ All notable changes to UIGen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [0.10.0] - 2026-05-13
+
+### Added
+
+**Core package (`@uigen-dev/core`)**
+- **Icon library integration** - Professional icon support for landing pages and UI components
+  - `IconResolver` interface with library-specific implementations for Lucide, Heroicons, and React Icons
+  - Dynamic icon resolution from config strings (e.g., `lucide:FileText`, `heroicons:HomeIcon`, `react-icons:FaHome`)
+  - In-memory caching with Map for performance optimization
+  - Format validation and parsing with helpful error messages
+  - `IconValidator` for validating icon references in config files with suggestion system
+  - Full TypeScript type definitions
+  - 56 unit tests for icon resolver
+  - 52 unit tests for icon validator
+
+**React package (`@uigen-dev/react`)**
+- **Icon component** - Reusable component for rendering icons from multiple libraries
+  - Supports `library:iconName` reference format
+  - Automatic fallback to HelpCircle icon for invalid references
+  - Customizable size, color, and className
+  - Full accessibility support with aria-label
+  - Async icon resolution with loading states
+  - 29 unit tests covering rendering, resolution, and accessibility
+- **FallbackIcon component** - Graceful fallback for invalid icon references
+  - Uses Lucide's HelpCircle icon
+  - Consistent styling with main Icon component
+  - 18 unit tests
+- **Landing page icon integration** - Icons now render in feature sections
+  - Icon component integrated into LandingPageView
+  - Theme-aware styling with CSS variables
+  - Icons inherit primary color from theme
+  - Dark mode support
+
+**CLI (`@uigen-dev/cli`)**
+- **Icon library dependencies** - Added icon libraries to React package
+  - `@heroicons/react@^2.2.0` for Heroicons support
+  - `react-icons@^5.6.0` for React Icons support
+  - `lucide-react@^0.468.0` already installed
+
+**Skills**
+- **Configure Icons skill** - `configure-icons.md` for AI-assisted icon configuration
+  - Overview of three icon libraries (Lucide, Heroicons, React Icons)
+  - Icon reference format explanation and examples
+  - Comprehensive examples for landing pages, pricing, testimonials
+  - Icon categories (Business, Communication, Files, Technology, E-commerce, UI Actions)
+  - Best practices and troubleshooting guide
+  - Complete working example
+
+**Documentation**
+- Updated README with icon library support in Key Features section
+- Added Configure Icons skill to AI Agent Skills section
+- Updated example workflow to include icon configuration
+
+### Changed
+
+**React package (`@uigen-dev/react`)**
+- Icon component now uses `currentColor` by default for theme inheritance
+- Landing page feature icons styled with primary theme color
+- Icons properly positioned and themed in feature cards
+
+**Examples**
+- Updated meeting-minutes example config to use icon references instead of emojis
+  - "📄" → "lucide:FileText"
+  - "🤖" → "lucide:Bot"
+  - "✍️" → "lucide:PenTool"
+  - "📥" → "lucide:Download"
+  - "📅" → "lucide:Calendar"
+  - "🔒" → "lucide:Lock"
+
+### Tests
+- 56 unit tests for icon resolver (resolution, caching, validation)
+- 52 unit tests for icon validator (validation, suggestions)
+- 29 unit tests for Icon component (rendering, accessibility, error handling)
+- 18 unit tests for FallbackIcon component
+- All existing tests continue to pass
+
+---
+
 ## [0.9.0] - 2026-05-12
 
 ### Changed
@@ -1365,6 +1443,9 @@ This is the first release of UIGen — point it at an OpenAPI spec, get a fully 
 
 ---
 
+[0.10.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.10.0
+[0.9.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.9.0
+[0.8.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.8.0
 [0.7.3]: https://github.com/darula-hpp/uigen/releases/tag/v0.7.3
 [0.7.2]: https://github.com/darula-hpp/uigen/releases/tag/v0.7.2
 [0.7.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.7.0
