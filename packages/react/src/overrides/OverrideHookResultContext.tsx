@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { OverrideHookResult } from './types';
+import type { OverrideHookProps } from './types';
 
 /**
  * Context for exposing the result of useHooks override functions.
@@ -7,7 +7,7 @@ import type { OverrideHookResult } from './types';
  * 
  * Provides access to transformation functions like transformSubmit, validate, etc.
  */
-export const OverrideHookResultContext = createContext<OverrideHookResult | null>(null);
+export const OverrideHookResultContext = createContext<OverrideHookProps | null>(null);
 
 /**
  * Hook to access the result of a useHooks override function.
@@ -41,6 +41,6 @@ export const OverrideHookResultContext = createContext<OverrideHookResult | null
  * }
  * ```
  */
-export function useOverrideHookResult(): OverrideHookResult | null {
+export function useOverrideHookResult(): OverrideHookProps | null {
   return useContext(OverrideHookResultContext);
 }
