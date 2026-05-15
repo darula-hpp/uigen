@@ -1,5 +1,31 @@
 # @uigen-dev/cli
 
+## 0.12.0
+
+### Minor Changes
+
+- Add HTTP method override annotations (x-uigen-http-get, x-uigen-http-post, x-uigen-http-put, x-uigen-http-delete, x-uigen-http-patch) to force operations to use specific HTTP methods during reconciliation. This addresses scenarios where OpenAPI specs contain incorrect HTTP methods that don't match actual API implementations.
+
+### Patch Changes
+
+- Updated dependencies
+  - @uigen-dev/config-gui@0.12.0
+  - @uigen-dev/react@0.12.0
+  - @uigen-dev/core@0.12.0
+
+## 0.10.0
+
+### Minor Changes
+
+- Add HTTP method override annotations (x-uigen-http-get, x-uigen-http-post, x-uigen-http-put, x-uigen-http-delete, x-uigen-http-patch) to force operations to use specific HTTP methods during reconciliation. This addresses scenarios where OpenAPI specs contain incorrect HTTP methods that don't match actual API implementations.
+
+### Patch Changes
+
+- Updated dependencies
+  - @uigen-dev/config-gui@0.10.0
+  - @uigen-dev/react@0.10.0
+  - @uigen-dev/core@0.10.0
+
 ## 0.9.0
 
 ### Minor Changes
