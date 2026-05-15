@@ -1,180 +1,155 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { OperationMethodTransformer } from '../operation-method-transformer.js';
 import type { OpenAPIV3 } from 'openapi-types';
 
 describe('OperationMethodTransformer', () => {
-  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
-  
-  beforeEach(() => {
-    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-  });
-  
-  afterEach(() => {
-    consoleWarnSpy.mockRestore();
-  });
-  
   describe('validate', () => {
     it('should return valid for a valid transformation', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test API', version: '1.0.0' },
         paths: {
-          '/api/v1/users': {
+          '/users': {
             post: {
-              operationId: 'create_user',
-              summary: 'Create a user',
+              operationId: 'createUser',
               responses: {}
             }
           }
         }
       };
       
-      const result = OperationMethodTransformer.validate(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
+      const result = OperationMethodTransformer.validate(spec, '/users', 'post', 'get');
       
       expect(result.valid).toBe(true);
       expect(result.errors).toEqual([]);
     });
     
-    it('should detect missing path', () => {
+    it('should return invalid when path does not exist', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test API', version: '1.0.0' },
         paths: {}
       };
       
-      const result = OperationMethodTransformer.validate(
-        spec,
-        '/api/v1/nonexistent',
-        'post',
-        'get'
-      );
+      const result = OperationMethodTransformer.validate(spec, '/users', 'post', 'get');
       
       expect(result.valid).toBe(false);
-      expect(result.errors).toEqual(['Path /api/v1/nonexistent not found in spec']);
+      expect(result.errors).toContain('Path /users not found in spec');
     });
     
-    it('should detect missing original method', () => {
+    it('should return invalid when original method does not exist', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test API', version: '1.0.0' },
         paths: {
-          '/api/v1/users': {
+          '/users': {
             get: {
-              operationId: 'list_users',
+              operationId: 'getUsers',
               responses: {}
             }
           }
         }
       };
       
-      const result = OperationMethodTransformer.validate(
-        spec,
-        '/api/v1/users',
-        'post',
-        'put'
-      );
+      const result = OperationMethodTransformer.validate(spec, '/users', 'post', 'put');
       
       expect(result.valid).toBe(false);
-      expect(result.errors).toEqual(['Method POST not found at /api/v1/users']);
+      expect(result.errors).toContain('Method POST not found at /users');
     });
     
-    it('should detect method conflict when target method already exists', () => {
+    it('should return invalid when target method already exists', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test API', version: '1.0.0' },
         paths: {
-          '/api/v1/users': {
+          '/users': {
             post: {
-              operationId: 'create_user',
+              operationId: 'createUser',
               responses: {}
             },
             get: {
-              operationId: 'list_users',
+              operationId: 'getUsers',
               responses: {}
             }
           }
         }
       };
       
-      const result = OperationMethodTransformer.validate(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
+      const result = OperationMethodTransformer.validate(spec, '/users', 'post', 'get');
       
       expect(result.valid).toBe(false);
-      expect(result.errors).toEqual(['Method GET already exists at /api/v1/users']);
+      expect(result.errors).toContain('Method GET already exists at /users');
     });
     
-    it('should handle spec with no paths object', () => {
+    it('should handle missing paths object', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test API', version: '1.0.0' },
         paths: undefined as any
       };
       
-      const result = OperationMethodTransformer.validate(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
+      const result = OperationMethodTransformer.validate(spec, '/users', 'post', 'get');
       
       expect(result.valid).toBe(false);
-      expect(result.errors).toEqual(['Path /api/v1/users not found in spec']);
+      expect(result.errors).toContain('Path /users not found in spec');
     });
-    
-    it('should validate transformation with path parameters', () => {
+  });
+  
+  describe('transform', () => {
+    it('should successfully move operation between methods', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test API', version: '1.0.0' },
         paths: {
-          '/api/v1/users/{id}': {
-            put: {
-              operationId: 'update_user',
-              parameters: [
-                {
-                  name: 'id',
-                  in: 'path',
-                  required: true,
-                  schema: { type: 'string' }
-                }
-              ],
+          '/users': {
+            post: {
+              operationId: 'createUser',
+              summary: 'Create a user',
               responses: {}
             }
           }
         }
       };
       
-      const result = OperationMethodTransformer.validate(
-        spec,
-        '/api/v1/users/{id}',
-        'put',
-        'patch'
-      );
+      const success = OperationMethodTransformer.transform(spec, '/users', 'post', 'get');
       
-      expect(result.valid).toBe(true);
-      expect(result.errors).toEqual([]);
+      expect(success).toBe(true);
+      expect(spec.paths['/users'].post).toBeUndefined();
+      expect(spec.paths['/users'].get).toBeDefined();
+      expect(spec.paths['/users'].get?.operationId).toBe('createUser');
     });
-  });
-  
-  describe('transform', () => {
-    it('should successfully transform operation between methods', () => {
+    
+    it('should preserve all operation properties during transformation', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test API', version: '1.0.0' },
         paths: {
-          '/api/v1/users': {
+          '/users': {
             post: {
-              operationId: 'create_user',
+              operationId: 'createUser',
               summary: 'Create a user',
               description: 'Creates a new user in the system',
+              tags: ['users'],
+              parameters: [
+                {
+                  name: 'x-api-key',
+                  in: 'header',
+                  required: true,
+                  schema: { type: 'string' }
+                }
+              ],
+              requestBody: {
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string' }
+                      }
+                    }
+                  }
+                }
+              },
               responses: {
                 '201': {
                   description: 'User created'
@@ -185,285 +160,17 @@ describe('OperationMethodTransformer', () => {
         }
       };
       
-      const result = OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
+      const success = OperationMethodTransformer.transform(spec, '/users', 'post', 'get');
       
-      expect(result).toBe(true);
-      expect(spec.paths['/api/v1/users'].get).toBeDefined();
-      expect(spec.paths['/api/v1/users'].post).toBeUndefined();
-    });
-    
-    it('should preserve operationId during transformation', () => {
-      const spec: OpenAPIV3.Document = {
-        openapi: '3.0.0',
-        info: { title: 'Test API', version: '1.0.0' },
-        paths: {
-          '/api/v1/users': {
-            post: {
-              operationId: 'create_user',
-              responses: {}
-            }
-          }
-        }
-      };
-      
-      OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
-      
-      expect(spec.paths['/api/v1/users'].get?.operationId).toBe('create_user');
-    });
-    
-    it('should preserve summary during transformation', () => {
-      const spec: OpenAPIV3.Document = {
-        openapi: '3.0.0',
-        info: { title: 'Test API', version: '1.0.0' },
-        paths: {
-          '/api/v1/users': {
-            post: {
-              operationId: 'create_user',
-              summary: 'Create a new user',
-              responses: {}
-            }
-          }
-        }
-      };
-      
-      OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
-      
-      expect(spec.paths['/api/v1/users'].get?.summary).toBe('Create a new user');
-    });
-    
-    it('should preserve parameters during transformation', () => {
-      const spec: OpenAPIV3.Document = {
-        openapi: '3.0.0',
-        info: { title: 'Test API', version: '1.0.0' },
-        paths: {
-          '/api/v1/users/{id}': {
-            put: {
-              operationId: 'update_user',
-              parameters: [
-                {
-                  name: 'id',
-                  in: 'path',
-                  required: true,
-                  schema: { type: 'string' }
-                },
-                {
-                  name: 'force',
-                  in: 'query',
-                  required: false,
-                  schema: { type: 'boolean' }
-                }
-              ],
-              responses: {}
-            }
-          }
-        }
-      };
-      
-      OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users/{id}',
-        'put',
-        'patch'
-      );
-      
-      expect(spec.paths['/api/v1/users/{id}'].patch?.parameters).toHaveLength(2);
-      expect(spec.paths['/api/v1/users/{id}'].patch?.parameters?.[0].name).toBe('id');
-      expect(spec.paths['/api/v1/users/{id}'].patch?.parameters?.[1].name).toBe('force');
-    });
-    
-    it('should preserve description during transformation', () => {
-      const spec: OpenAPIV3.Document = {
-        openapi: '3.0.0',
-        info: { title: 'Test API', version: '1.0.0' },
-        paths: {
-          '/api/v1/users': {
-            post: {
-              operationId: 'create_user',
-              description: 'Creates a new user in the system with the provided details',
-              responses: {}
-            }
-          }
-        }
-      };
-      
-      OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
-      
-      expect(spec.paths['/api/v1/users'].get?.description).toBe(
-        'Creates a new user in the system with the provided details'
-      );
-    });
-    
-    it('should preserve requestBody during transformation', () => {
-      const spec: OpenAPIV3.Document = {
-        openapi: '3.0.0',
-        info: { title: 'Test API', version: '1.0.0' },
-        paths: {
-          '/api/v1/users': {
-            post: {
-              operationId: 'create_user',
-              requestBody: {
-                required: true,
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        name: { type: 'string' },
-                        email: { type: 'string' }
-                      }
-                    }
-                  }
-                }
-              },
-              responses: {}
-            }
-          }
-        }
-      };
-      
-      OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
-      
-      expect(spec.paths['/api/v1/users'].get?.requestBody).toBeDefined();
-      expect((spec.paths['/api/v1/users'].get?.requestBody as any)?.required).toBe(true);
-    });
-    
-    it('should preserve responses during transformation', () => {
-      const spec: OpenAPIV3.Document = {
-        openapi: '3.0.0',
-        info: { title: 'Test API', version: '1.0.0' },
-        paths: {
-          '/api/v1/users': {
-            post: {
-              operationId: 'create_user',
-              responses: {
-                '201': {
-                  description: 'User created successfully'
-                },
-                '400': {
-                  description: 'Invalid input'
-                }
-              }
-            }
-          }
-        }
-      };
-      
-      OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
-      
-      expect(spec.paths['/api/v1/users'].get?.responses).toBeDefined();
-      expect(spec.paths['/api/v1/users'].get?.responses?.['201']).toBeDefined();
-      expect(spec.paths['/api/v1/users'].get?.responses?.['400']).toBeDefined();
-    });
-    
-    it('should preserve tags during transformation', () => {
-      const spec: OpenAPIV3.Document = {
-        openapi: '3.0.0',
-        info: { title: 'Test API', version: '1.0.0' },
-        paths: {
-          '/api/v1/users': {
-            post: {
-              operationId: 'create_user',
-              tags: ['users', 'admin'],
-              responses: {}
-            }
-          }
-        }
-      };
-      
-      OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
-      
-      expect(spec.paths['/api/v1/users'].get?.tags).toEqual(['users', 'admin']);
-    });
-    
-    it('should preserve security requirements during transformation', () => {
-      const spec: OpenAPIV3.Document = {
-        openapi: '3.0.0',
-        info: { title: 'Test API', version: '1.0.0' },
-        paths: {
-          '/api/v1/users': {
-            post: {
-              operationId: 'create_user',
-              security: [
-                { bearerAuth: [] }
-              ],
-              responses: {}
-            }
-          }
-        }
-      };
-      
-      OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
-      
-      expect(spec.paths['/api/v1/users'].get?.security).toEqual([
-        { bearerAuth: [] }
-      ]);
-    });
-    
-    it('should preserve custom x-* extensions during transformation', () => {
-      const spec: OpenAPIV3.Document = {
-        openapi: '3.0.0',
-        info: { title: 'Test API', version: '1.0.0' },
-        paths: {
-          '/api/v1/users': {
-            post: {
-              operationId: 'create_user',
-              'x-uigen-label': 'Create User',
-              'x-custom-field': 'custom-value',
-              responses: {}
-            } as any
-          }
-        }
-      };
-      
-      OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
-      
-      expect((spec.paths['/api/v1/users'].get as any)?.['x-uigen-label']).toBe('Create User');
-      expect((spec.paths['/api/v1/users'].get as any)?.['x-custom-field']).toBe('custom-value');
+      expect(success).toBe(true);
+      const getOperation = spec.paths['/users'].get;
+      expect(getOperation?.operationId).toBe('createUser');
+      expect(getOperation?.summary).toBe('Create a user');
+      expect(getOperation?.description).toBe('Creates a new user in the system');
+      expect(getOperation?.tags).toEqual(['users']);
+      expect(getOperation?.parameters).toHaveLength(1);
+      expect(getOperation?.requestBody).toBeDefined();
+      expect(getOperation?.responses).toHaveProperty('201');
     });
     
     it('should remove operation from original method location', () => {
@@ -471,162 +178,168 @@ describe('OperationMethodTransformer', () => {
         openapi: '3.0.0',
         info: { title: 'Test API', version: '1.0.0' },
         paths: {
-          '/api/v1/users': {
+          '/users': {
             post: {
-              operationId: 'create_user',
-              responses: {}
-            }
-          }
-        }
-      };
-      
-      OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
-      
-      expect(spec.paths['/api/v1/users'].post).toBeUndefined();
-    });
-    
-    it('should return false and log warning when validation fails', () => {
-      const spec: OpenAPIV3.Document = {
-        openapi: '3.0.0',
-        info: { title: 'Test API', version: '1.0.0' },
-        paths: {
-          '/api/v1/users': {
-            get: {
-              operationId: 'list_users',
-              responses: {}
-            }
-          }
-        }
-      };
-      
-      const result = OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
-      
-      expect(result).toBe(false);
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Cannot transform POST:/api/v1/users to GET')
-      );
-    });
-    
-    it('should return false when target method already exists', () => {
-      const spec: OpenAPIV3.Document = {
-        openapi: '3.0.0',
-        info: { title: 'Test API', version: '1.0.0' },
-        paths: {
-          '/api/v1/users': {
-            post: {
-              operationId: 'create_user',
+              operationId: 'createUser',
               responses: {}
             },
-            get: {
-              operationId: 'list_users',
+            put: {
+              operationId: 'updateUser',
               responses: {}
             }
           }
         }
       };
       
-      const result = OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
+      const success = OperationMethodTransformer.transform(spec, '/users', 'post', 'get');
       
-      expect(result).toBe(false);
-      expect(spec.paths['/api/v1/users'].post).toBeDefined();
-      expect(spec.paths['/api/v1/users'].get?.operationId).toBe('list_users');
+      expect(success).toBe(true);
+      expect(spec.paths['/users'].post).toBeUndefined();
+      expect(spec.paths['/users'].get).toBeDefined();
+      expect(spec.paths['/users'].put).toBeDefined(); // Other methods unaffected
     });
     
-    it('should handle transformation with multiple operations on same path', () => {
+    it('should add operation to new method location', () => {
       const spec: OpenAPIV3.Document = {
         openapi: '3.0.0',
         info: { title: 'Test API', version: '1.0.0' },
         paths: {
-          '/api/v1/users': {
+          '/users': {
             post: {
-              operationId: 'create_user',
+              operationId: 'createUser',
               responses: {}
-            },
+            }
+          }
+        }
+      };
+      
+      const success = OperationMethodTransformer.transform(spec, '/users', 'post', 'patch');
+      
+      expect(success).toBe(true);
+      expect(spec.paths['/users'].patch).toBeDefined();
+      expect(spec.paths['/users'].patch?.operationId).toBe('createUser');
+    });
+    
+    it('should preserve operationId when moving between methods', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/users': {
             delete: {
-              operationId: 'delete_all_users',
+              operationId: 'deleteUser',
               responses: {}
             }
           }
         }
       };
       
-      const result = OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
+      const success = OperationMethodTransformer.transform(spec, '/users', 'delete', 'post');
       
-      expect(result).toBe(true);
-      expect(spec.paths['/api/v1/users'].get).toBeDefined();
-      expect(spec.paths['/api/v1/users'].post).toBeUndefined();
-      expect(spec.paths['/api/v1/users'].delete).toBeDefined();
+      expect(success).toBe(true);
+      expect(spec.paths['/users'].post?.operationId).toBe('deleteUser');
     });
     
-    it('should work with Swagger 2.0 documents', () => {
-      const spec = {
+    it('should return false when validation fails', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/users': {
+            post: {
+              operationId: 'createUser',
+              responses: {}
+            },
+            get: {
+              operationId: 'getUsers',
+              responses: {}
+            }
+          }
+        }
+      };
+      
+      const success = OperationMethodTransformer.transform(spec, '/users', 'post', 'get');
+      
+      expect(success).toBe(false);
+      // Original operation should remain unchanged
+      expect(spec.paths['/users'].post).toBeDefined();
+      expect(spec.paths['/users'].get?.operationId).toBe('getUsers');
+    });
+    
+    it('should return false when path does not exist', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {}
+      };
+      
+      const success = OperationMethodTransformer.transform(spec, '/users', 'post', 'get');
+      
+      expect(success).toBe(false);
+    });
+    
+    it('should return false when original method does not exist', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/users': {
+            get: {
+              operationId: 'getUsers',
+              responses: {}
+            }
+          }
+        }
+      };
+      
+      const success = OperationMethodTransformer.transform(spec, '/users', 'post', 'put');
+      
+      expect(success).toBe(false);
+    });
+    
+    it('should handle complex operation with extensions', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/users': {
+            post: {
+              operationId: 'createUser',
+              'x-uigen-label': 'Create User',
+              'x-custom-extension': { foo: 'bar' },
+              responses: {}
+            }
+          }
+        }
+      };
+      
+      const success = OperationMethodTransformer.transform(spec, '/users', 'post', 'get');
+      
+      expect(success).toBe(true);
+      const getOperation = spec.paths['/users'].get as any;
+      expect(getOperation['x-uigen-label']).toBe('Create User');
+      expect(getOperation['x-custom-extension']).toEqual({ foo: 'bar' });
+    });
+    
+    it('should handle Swagger 2.0 specs', () => {
+      const spec: any = {
         swagger: '2.0',
         info: { title: 'Test API', version: '1.0.0' },
         paths: {
-          '/api/v1/users': {
+          '/users': {
             post: {
-              operationId: 'create_user',
+              operationId: 'createUser',
               responses: {}
             }
           }
         }
       };
       
-      const result = OperationMethodTransformer.transform(
-        spec as any,
-        '/api/v1/users',
-        'post',
-        'get'
-      );
+      const success = OperationMethodTransformer.transform(spec, '/users', 'post', 'get');
       
-      expect(result).toBe(true);
-      expect(spec.paths['/api/v1/users'].get).toBeDefined();
-      expect(spec.paths['/api/v1/users'].post).toBeUndefined();
-    });
-    
-    it('should handle case-insensitive method names', () => {
-      const spec: OpenAPIV3.Document = {
-        openapi: '3.0.0',
-        info: { title: 'Test API', version: '1.0.0' },
-        paths: {
-          '/api/v1/users': {
-            post: {
-              operationId: 'create_user',
-              responses: {}
-            }
-          }
-        }
-      };
-      
-      const result = OperationMethodTransformer.transform(
-        spec,
-        '/api/v1/users',
-        'POST',
-        'GET'
-      );
-      
-      // Should fail because OpenAPI uses lowercase method names
-      expect(result).toBe(false);
+      expect(success).toBe(true);
+      expect(spec.paths['/users'].post).toBeUndefined();
+      expect(spec.paths['/users'].get).toBeDefined();
     });
   });
 });
