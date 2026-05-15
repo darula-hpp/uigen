@@ -4,18 +4,13 @@ Build & Run Declarative UI Apps. OpenAPI is your foundation.
 
 ![UIGen Demo](https://github.com/darula-hpp/uigen/raw/main/examples/output.gif)
 
-
 ---
 
 ## Getting Started
 
-### Quick Start
-
 ```bash
 # Initialize a new UIGen project
 npx @uigen-dev/cli@latest init my-app
-
-# Navigate to your project
 cd my-app
 
 # Start the development server
@@ -57,23 +52,7 @@ UIGen scaffolds a complete project with configuration files (`.uigen/config.yaml
 
 ---
 
-## Configuration
-
-**AI-Powered Configuration**
-
-Use AI agent skills with your favorite coding assistant (Cursor, Windsurf, Cline, etc.):
-
-```
-Ask your AI: "Use the auto-annotate skill to configure my OpenAPI spec"
-Ask your AI: "Use the applying-styles skill to create a modern dark theme"
-Ask your AI: "Use the configure-oauth skill to set up social login"
-```
-
-Skills are located in `.agents/skills/` and automate pattern detection, annotation generation, OAuth setup, and styling.
-
-**Environment Variables**: Keep sensitive values like OAuth credentials secure by using `${ENV_VAR_NAME}` syntax in your config file. UIGen automatically loads `.env` files from your spec directory. See the [Environment Variables Guide](https://uigen-docs.vercel.app/docs/guides/environment-variables) for details.
-
-### Try the Example App
+## Example App
 
 ```bash
 git clone https://github.com/darula-hpp/uigen
@@ -94,46 +73,19 @@ Visit `http://localhost:4400` to explore a full meeting minutes application with
 
 ## AI Agent Skills
 
-UIGen includes AI agent skills that automate configuration through intelligent analysis of your OpenAPI spec.
+UIGen includes AI agent skills that automate configuration through intelligent analysis of your OpenAPI spec. Skills work with any AI coding assistant (Cursor, Windsurf, Cline, GitHub Copilot).
 
 ### Available Skills
 
-**Auto-Annotate** (`auto-annotate.md`)
-- Detects auth endpoints (login, signup, password reset)
-- Configures file uploads (types, size limits)
-- Links relationships (foreign keys to resources)
-- Hides internal endpoints (debug, health checks)
-- Adds chart visualizations for array data
-- Applies smart labels (technical names to human-readable)
-
-**Configure OAuth** (`configure-oauth.md`)
-- Sets up OAuth 2.0 social login (Google, GitHub, Facebook, Microsoft)
-- Configures client IDs, redirect URIs, and scopes
-- Generates environment variable placeholders
-- Provides provider-specific setup instructions
-
-**Applying Styles** (`applying-styles-to-react-spa.md`)
-- Brand colors and dark mode support
-- Component styling (buttons, forms, tables, cards)
-- Animations and transitions
-- Responsive design (mobile, tablet, desktop)
-
-**Configure Icons** (`configure-icons.md`)
-- Professional icon library integration (Lucide, Heroicons, React Icons)
-- Icon reference format and usage examples
-- Landing page and feature section icons
-- Best practices and troubleshooting
+- **Auto-Annotate** - Detects auth endpoints, file uploads, relationships, charts, and smart labels
+- **Configure OAuth** - Sets up OAuth 2.0 social login (Google, GitHub, Facebook, Microsoft)
+- **Applying Styles** - Brand colors, dark mode, component styling, animations, responsive design
+- **Configure Icons** - Professional icon library integration (Lucide, Heroicons, React Icons)
 
 ### Usage
 
-Skills work with any AI coding assistant that can read files:
+Reference skills with your AI assistant:
 
-- **Cursor**: Reference with `@.agents/skills/auto-annotate.md`
-- **Windsurf**: Ask "Use the auto-annotate skill"
-- **Cline**: Provide skill file path in context
-- **GitHub Copilot Chat**: Reference skill files in prompts
-
-Example workflow:
 ```bash
 npx @uigen-dev/cli@latest init my-app --spec openapi.yaml
 # Ask AI: "Use the auto-annotate skill to configure my spec"
@@ -142,6 +94,8 @@ npx @uigen-dev/cli@latest init my-app --spec openapi.yaml
 # Ask AI: "Use the applying-styles skill to create a professional theme"
 npx @uigen-dev/cli@latest serve openapi.yaml
 ```
+
+**Environment Variables**: Keep sensitive values secure by using `${ENV_VAR_NAME}` syntax in your config file. UIGen automatically loads `.env` files from your spec directory. See the [Environment Variables Guide](https://uigen-docs.vercel.app/docs/guides/environment-variables) for details.
 
 ---
 
@@ -170,16 +124,7 @@ CLI Command
 
 UIGen reconciles your config with the spec, then parses it into a framework-agnostic Intermediate Representation (IR) containing resources, operations, schemas, authentication flows, and pagination strategies.
 
-The React renderer interprets this IR at runtime and creates:
-- Table views with sorting, filtering, pagination
-- Create & edit forms with validation
-- Detail views with related resource links
-- Search interfaces from query parameters
-- Authentication flows (Bearer, API Key, HTTP Basic, credential-based login)
-- Multi-step wizards for complex forms
-- Custom action buttons for non-CRUD endpoints
-- Dashboard with resource overview
-- Dark/light theme toggle
+The React renderer interprets this IR at runtime and creates table views, forms, detail views, search interfaces, authentication flows, wizards, custom actions, dashboards, and theme support.
 
 **Key advantage:** Runtime rendering means no regeneration step, no code to maintain, no drift between spec and UI. Because the IR is framework-agnostic, you can swap renderers. The same spec works with `@uigen-dev/react`, `@uigen-dev/svelte`, or `@uigen-dev/vue` (coming soon).
 
