@@ -5,6 +5,54 @@ All notable changes to UIGen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [0.11.0] - 2026-05-15
+
+### Added
+
+**Core package (`@uigen-dev/core`)**
+- **HTTP method override annotations** - Force operations to use specific HTTP methods during reconciliation
+  - Five new annotations: `x-uigen-http-get`, `x-uigen-http-post`, `x-uigen-http-put`, `x-uigen-http-delete`, `x-uigen-http-patch`
+  - `HttpMethodOverrideReconciler` - Scans specs for HTTP method override annotations and transforms operations
+  - `OperationMethodTransformer` - Utility class for moving operations between HTTP methods with validation
+  - Integrated into main Reconciler after annotation merging, before OAuth reconciliation
+  - Supports both OpenAPI 3.x and Swagger 2.0 specs
+  - Preserves all operation properties during transformation
+  - Graceful error handling with warnings for conflicts and missing operations
+  - 43 comprehensive tests (15 unit + 17 reconciler + 11 integration)
+  ```yaml
+  # Override logout endpoint from DELETE to POST
+  annotations:
+    DELETE:/auth/logout:
+      x-uigen-http-post: true
+      x-uigen-label: Logout
+  
+  # Override search endpoint from POST to GET
+  annotations:
+    POST:/users/search:
+      x-uigen-http-get: true
+      x-uigen-label: Search Users
+  ```
+
+**Skills**
+- **HTTP method override skill** - `http-method-override.md` for AI-assisted method override configuration
+  - Detection rules for common method discrepancies (logout, search, partial update, etc.)
+  - Annotation syntax and examples for all five HTTP methods
+  - Complete config file examples for common scenarios
+  - Troubleshooting guide for method conflicts and validation errors
+
+**Documentation**
+- Added comprehensive documentation for HTTP method override feature
+- Documented architectural decision to use reconciler approach instead of handlers
+- Updated design document with reconciler architecture and data flow
+
+### Tests
+- 15 unit tests for OperationMethodTransformer (transformation, validation, edge cases)
+- 17 unit tests for HttpMethodOverrideReconciler (all HTTP methods, conflicts, warnings)
+- 11 integration tests for end-to-end reconciliation flow
+- All 43 tests passing
+
+---
+
 ## [0.10.0] - 2026-05-13
 
 ### Added
@@ -1443,6 +1491,7 @@ This is the first release of UIGen — point it at an OpenAPI spec, get a fully 
 
 ---
 
+[0.11.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.11.0
 [0.10.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.10.0
 [0.9.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.9.0
 [0.8.0]: https://github.com/darula-hpp/uigen/releases/tag/v0.8.0

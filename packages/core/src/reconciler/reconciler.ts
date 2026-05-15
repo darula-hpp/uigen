@@ -21,6 +21,7 @@ import { Validator } from './validator.js';
 import { deepClone } from './utils.js';
 import { validateRelationships } from './relationship-validator.js';
 import { AuthReconciler, type OAuthProviderConfig } from './auth-reconciler.js';
+import { HttpMethodOverrideReconciler } from './http-method-override-reconciler.js';
 import { EnvVarResolver } from '../config/env-var-resolver.js';
 
 /**
@@ -117,6 +118,7 @@ export class Reconciler {
   private merger: AnnotationMerger;
   private validator: Validator;
   private authReconciler: AuthReconciler;
+  private httpMethodOverrideReconciler: HttpMethodOverrideReconciler;
   private envVarResolver: EnvVarResolver;
 
   constructor(options: ReconcilerOptions = {}) {
@@ -131,6 +133,7 @@ export class Reconciler {
     this.merger = new AnnotationMerger(this.logger);
     this.validator = new Validator();
     this.authReconciler = new AuthReconciler();
+    this.httpMethodOverrideReconciler = new HttpMethodOverrideReconciler();
     this.envVarResolver = new EnvVarResolver({
       logger: this.logger,
       strict: true,
@@ -176,6 +179,18 @@ export class Reconciler {
       // Merge annotations using resolved config
       const mergeResult = this.merger.merge(clonedSpec, resolvedConfig, this.resolver);
 
+      // Reconcile HTTP method overrides after annotation merging
+      this.logger.info('Reconciling HTTP method overrides');
+      const httpMethodOverrideResult = this.httpMethodOverrideReconciler.reconcile(mergeResult.modifiedSpec);
+      
+      this.logger.info('HTTP method override reconciliation complete', {
+        overrideCount: httpMethodOverrideResult.overrideCount,
+        warnings: httpMethodOverrideResult.warnings.length,
+      });
+      
+      // Use the spec with HTTP method overrides applied
+      let reconciledSpec = httpMethodOverrideResult.spec;
+
       // Build warnings for unresolved paths
       const warnings: ReconciliationWarning[] = mergeResult.skippedPaths.map((elementPath) => {
         const suggestions = this.resolver.suggestSimilarPaths(sourceSpec, elementPath);
@@ -185,9 +200,17 @@ export class Reconciler {
           suggestion: suggestions.length > 0 ? `Did you mean: ${suggestions.join(', ')}?` : undefined,
         };
       });
+      
+      // Add HTTP method override warnings
+      for (const warning of httpMethodOverrideResult.warnings) {
+        this.logger.warn(`HTTP method override warning: ${warning}`);
+        warnings.push({
+          elementPath: 'http-method-override',
+          message: warning,
+        });
+      }
 
       // Reconcile OAuth providers if auth config exists
-      let reconciledSpec = mergeResult.modifiedSpec;
       if ((resolvedConfig as any).auth) {
         this.logger.info('Reconciling OAuth providers', {
           providerCount: (resolvedConfig as any).auth.providers?.length || 0,

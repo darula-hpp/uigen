@@ -30,17 +30,29 @@ export function DateTimeField({ schema, register, errors }: FieldProps) {
   // Default to ISO 8601 when apiFormat not specified
   const apiFormat = config.apiFormat || 'ISO8601';
   
+  // Determine if we should use HTML datetime-local conversion
+  const useHtmlDateTimeLocal = config.inputType === 'datetime-local';
+  
   // Convert API value to display format
   const displayValue = useMemo(() => {
     if (!apiValue) return '';
     
+    if (useHtmlDateTimeLocal && apiFormat === 'ISO8601') {
+      // Use specialized HTML datetime-local conversion
+      return DateTimeConverter.isoToHtmlDateTimeLocal(
+        apiValue,
+        config.timezone
+      );
+    }
+    
+    // Use existing generic conversion for other formats
     return DateTimeConverter.fromApi(
       apiValue,
       apiFormat,
       config.format,
       config.timezone
     );
-  }, [apiValue, config.format, apiFormat, config.timezone]);
+  }, [apiValue, config.format, apiFormat, config.timezone, useHtmlDateTimeLocal]);
   
   // Handle input change - convert display format to API format
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,12 +66,23 @@ export function DateTimeField({ schema, register, errors }: FieldProps) {
       return;
     }
     
-    const convertedApiValue = DateTimeConverter.toApi(
-      inputValue,
-      config.format,
-      apiFormat,
-      config.timezone
-    );
+    let convertedApiValue: string | number | null;
+    
+    if (useHtmlDateTimeLocal && apiFormat === 'ISO8601') {
+      // Use specialized HTML datetime-local conversion
+      convertedApiValue = DateTimeConverter.htmlDateTimeLocalToISO(
+        inputValue,
+        config.timezone
+      );
+    } else {
+      // Use existing generic conversion
+      convertedApiValue = DateTimeConverter.toApi(
+        inputValue,
+        config.format,
+        apiFormat,
+        config.timezone
+      );
+    }
     
     if (convertedApiValue !== null) {
       setValue(schema.key, convertedApiValue, {
