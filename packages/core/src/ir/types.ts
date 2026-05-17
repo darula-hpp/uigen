@@ -316,6 +316,9 @@ export interface PaymentConfig {
   
   /** Default cancel redirect URL if payment is canceled */
   cancelUrl?: string;
+  
+  /** Checkout endpoint path for creating payment sessions (defaults to /api/v1/pricing/create-checkout) */
+  checkoutEndpoint?: string;
 }
 
 

@@ -29,6 +29,7 @@ annotations:
       defaultCurrency: usd
       successUrl: http://localhost:5173/payment/success
       cancelUrl: http://localhost:5173/payment/cancel
+      checkoutEndpoint: /v1/pricing/create-checkout
     x-uigen-landing-page:
       enabled: true
       sections:
@@ -217,6 +218,9 @@ annotations:
     x-uigen-ignore: true
   GET:/api/v1/pricing/plans:
     x-uigen-ignore: true
+  POST:/api/v1/pricing/create-checkout:
+    x-uigen-ignore: true
+    x-uigen-label: Create Checkout Session
   GET:/health:
     x-uigen-ignore: true
   GET:/:

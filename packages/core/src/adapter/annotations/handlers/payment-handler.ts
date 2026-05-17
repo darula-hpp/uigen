@@ -79,6 +79,7 @@ export interface PaymentAnnotation {
   defaultCurrency?: string;
   successUrl?: string;
   cancelUrl?: string;
+  checkoutEndpoint?: string;
 }
 
 /**
@@ -229,6 +230,10 @@ export class PaymentHandler implements AnnotationHandler<PaymentAnnotation> {
         cancelUrl: {
           type: 'string',
           description: 'Default cancel redirect URL if payment is canceled'
+        },
+        checkoutEndpoint: {
+          type: 'string',
+          description: 'Checkout endpoint path for creating payment sessions (defaults to /api/v1/pricing/create-checkout)'
         }
       },
       required: ['providers']
@@ -323,7 +328,8 @@ export class PaymentHandler implements AnnotationHandler<PaymentAnnotation> {
       pricingPage: annotation.pricingPage,
       defaultCurrency: annotation.defaultCurrency,
       successUrl: annotation.successUrl,
-      cancelUrl: annotation.cancelUrl
+      cancelUrl: annotation.cancelUrl,
+      checkoutEndpoint: annotation.checkoutEndpoint
     };
   }
   
@@ -779,7 +785,8 @@ export class PaymentHandler implements AnnotationHandler<PaymentAnnotation> {
         products: [],
         defaultCurrency: value.defaultCurrency,
         successUrl: value.successUrl,
-        cancelUrl: value.cancelUrl
+        cancelUrl: value.cancelUrl,
+        checkoutEndpoint: value.checkoutEndpoint
       };
     }
     

@@ -3,6 +3,7 @@ import type { UIGenApp, PaymentProduct } from '@uigen-dev/core';
 import { PricingSourceFactory } from '../../lib/pricing-source';
 import { usePaymentStatus } from '../../lib/use-payment-status';
 import { PricingTable } from '../payments/PricingTable';
+import { useApiMutation } from '../../hooks/useApiCall';
 
 /**
  * Props for PricingView component
@@ -33,7 +34,70 @@ export function PricingView({ config }: PricingViewProps) {
   const [products, setProducts] = useState<PaymentProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const { currentPlan } = usePaymentStatus();
+
+  // Create checkout operation definition
+  const checkoutEndpoint = config.payments?.checkoutEndpoint || '/api/v1/pricing/create-checkout';
+  
+  const checkoutOperation = {
+    id: 'create-checkout',
+    method: 'POST' as const,
+    path: checkoutEndpoint,
+    summary: 'Create checkout session',
+    requestContentType: 'application/json',
+    parameters: [],
+    responses: {},
+    viewHint: 'action' as const,
+  };
+
+  const { mutate: createCheckout } = useApiMutation(checkoutOperation);
+
+  /**
+   * Handle plan selection and checkout session creation
+   * Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 7.1, 7.2, 7.3, 10.1, 10.2, 10.3, 10.4
+   */
+  const handleSelectPlan = (productId: string) => {
+    // Clear any previous errors
+    setCheckoutError(null);
+
+    // Get success and cancel URLs from config
+    const successUrl = config.payments?.successUrl || `${window.location.origin}/payment/success`;
+    const cancelUrl = config.payments?.cancelUrl || `${window.location.origin}/payment/cancel`;
+
+    // Call checkout endpoint
+    createCheckout(
+      {
+        body: {
+          product_id: productId,
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+        },
+      },
+      {
+        onSuccess: (response: { checkout_url: string; session_id: string }) => {
+          // Redirect to Stripe checkout page
+          window.location.href = response.checkout_url;
+        },
+        onError: (err: any) => {
+          // Handle different error types
+          if (err.status === 401) {
+            // Redirect to login page
+            window.location.href = '/login';
+          } else if (err.status === 400) {
+            // Display validation error from backend
+            setCheckoutError(err.message || 'Invalid plan selection. Please try again.');
+          } else if (err.status === 500) {
+            // Display generic server error
+            setCheckoutError('Something went wrong. Please try again in a few moments.');
+          } else {
+            // Network or other errors
+            setCheckoutError('Unable to connect. Please check your internet connection and try again.');
+          }
+        },
+      }
+    );
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -156,6 +220,46 @@ export function PricingView({ config }: PricingViewProps) {
   // Note: Header is provided by layout, no need to duplicate
   return (
     <div className="w-full">
+      {checkoutError && (
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <div className="flex items-start">
+            <svg
+              className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1">
+                Checkout Error
+              </h4>
+              <p className="text-sm text-red-700 dark:text-red-300">{checkoutError}</p>
+            </div>
+            <button
+              onClick={() => setCheckoutError(null)}
+              className="ml-3 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200"
+              aria-label="Dismiss error"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
       <PricingTable
         products={products.map(product => ({
           ...product,
@@ -164,6 +268,7 @@ export function PricingView({ config }: PricingViewProps) {
         }))}
         title="Choose Your Plan"
         subtitle="Select the plan that works best for you"
+        onSelectPlan={handleSelectPlan}
       />
     </div>
   );

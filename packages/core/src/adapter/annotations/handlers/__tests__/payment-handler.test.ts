@@ -38,7 +38,8 @@ describe('PaymentHandler', () => {
 
   describe('extract', () => {
     it('should extract payment configuration from spec root', () => {
-      (context.element as any)['x-uigen-payments'] = {
+      const info = (context.element as any).info;
+      info['x-uigen-payments'] = {
         providers: [
           {
             provider: 'stripe',
@@ -59,6 +60,7 @@ describe('PaymentHandler', () => {
             interval: 'month',
           },
         ],
+        checkoutEndpoint: '/api/v1/pricing/create-checkout',
       };
 
       const result = handler.extract(context);
@@ -68,6 +70,7 @@ describe('PaymentHandler', () => {
       expect(result?.providers[0].provider).toBe('stripe');
       expect(result?.products).toHaveLength(1);
       expect(result?.products[0].id).toBe('pro-monthly');
+      expect(result?.checkoutEndpoint).toBe('/api/v1/pricing/create-checkout');
     });
 
     it('should return undefined when no payment config exists', () => {
@@ -76,7 +79,8 @@ describe('PaymentHandler', () => {
     });
 
     it('should handle multiple providers', () => {
-      (context.element as any)['x-uigen-payments'] = {
+      const info = (context.element as any).info;
+      info['x-uigen-payments'] = {
         providers: [
           {
             provider: 'stripe',
@@ -105,7 +109,8 @@ describe('PaymentHandler', () => {
     });
 
     it('should extract pricing page config', () => {
-      (context.element as any)['x-uigen-payments'] = {
+      const info = (context.element as any).info;
+      info['x-uigen-payments'] = {
         providers: [
           {
             provider: 'stripe',
@@ -288,6 +293,7 @@ describe('PaymentHandler', () => {
           {
             provider: 'stripe' as const,
             apiKey: '${STRIPE_SECRET_KEY}',
+            publishableKey: '${STRIPE_PUBLISHABLE_KEY}',
             webhookSecret: '${STRIPE_WEBHOOK_SECRET}',
             mode: 'test' as const,
             enabled: true,
@@ -338,6 +344,7 @@ describe('PaymentHandler', () => {
           {
             provider: 'stripe' as const,
             apiKey: '${STRIPE_SECRET_KEY}',
+            publishableKey: '${STRIPE_PUBLISHABLE_KEY}',
             webhookSecret: '${STRIPE_WEBHOOK_SECRET}',
             mode: 'test' as const,
             enabled: true,
@@ -364,6 +371,7 @@ describe('PaymentHandler', () => {
           {
             provider: 'stripe' as const,
             apiKey: '${STRIPE_SECRET_KEY}',
+            publishableKey: '${STRIPE_PUBLISHABLE_KEY}',
             webhookSecret: '${STRIPE_WEBHOOK_SECRET}',
             mode: 'test' as const,
             enabled: true,
@@ -415,6 +423,7 @@ describe('PaymentHandler', () => {
           {
             provider: 'stripe' as const,
             apiKey: '${STRIPE_SECRET_KEY}',
+            publishableKey: '${STRIPE_PUBLISHABLE_KEY}',
             webhookSecret: '${STRIPE_WEBHOOK_SECRET}',
             mode: 'test' as const,
             enabled: true,
@@ -458,6 +467,7 @@ describe('PaymentHandler', () => {
           {
             provider: 'stripe' as const,
             apiKey: '${STRIPE_SECRET_KEY}',
+            publishableKey: '${STRIPE_PUBLISHABLE_KEY}',
             webhookSecret: '${STRIPE_WEBHOOK_SECRET}',
             mode: 'test' as const,
             enabled: true,
@@ -638,6 +648,7 @@ describe('PaymentHandler', () => {
         defaultCurrency: 'eur',
         successUrl: 'https://example.com/success',
         cancelUrl: 'https://example.com/cancel',
+        checkoutEndpoint: '/api/v1/custom/checkout',
       };
 
       handler.apply(config, context);
@@ -645,6 +656,7 @@ describe('PaymentHandler', () => {
       expect(context.ir.payments?.defaultCurrency).toBe('eur');
       expect(context.ir.payments?.successUrl).toBe('https://example.com/success');
       expect(context.ir.payments?.cancelUrl).toBe('https://example.com/cancel');
+      expect(context.ir.payments?.checkoutEndpoint).toBe('/api/v1/custom/checkout');
     });
 
     it('should apply pricing page config to IR', () => {
@@ -869,8 +881,9 @@ describe('PaymentHandler', () => {
 
   describe('integration', () => {
     it('should handle complete payment configuration flow', () => {
-      // Setup spec with payment config at document root
-      (context.element as any)['x-uigen-payments'] = {
+      // Setup spec with payment config in info object
+      const info = (context.element as any).info;
+      info['x-uigen-payments'] = {
         providers: [
           {
             provider: 'stripe',
@@ -927,7 +940,8 @@ describe('PaymentHandler', () => {
 
     it('should handle complete payment configuration with pricing page', () => {
       // Setup spec with payment config including pricing page
-      (context.element as any)['x-uigen-payments'] = {
+      const info = (context.element as any).info;
+      info['x-uigen-payments'] = {
         providers: [
           {
             provider: 'stripe',
