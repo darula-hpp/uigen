@@ -96,6 +96,7 @@ payments:
         features:
           - Unlimited meetings
           - Priority support
+  checkoutEndpoint: /v1/pricing/create-checkout  # WITHOUT /api prefix - useApiMutation adds it automatically
   defaultCurrency: usd
   successUrl: /payment/success
   cancelUrl: /payment/cancel
@@ -363,6 +364,7 @@ payments:
         features:
           - Unlimited meetings
           - Priority support
+  checkoutEndpoint: /api/v1/pricing/create-checkout
   defaultCurrency: usd
   successUrl: /payment/success
   cancelUrl: /payment/cancel

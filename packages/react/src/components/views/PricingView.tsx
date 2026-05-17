@@ -38,12 +38,18 @@ export function PricingView({ config }: PricingViewProps) {
   const { currentPlan } = usePaymentStatus();
 
   // Create checkout operation definition
-  const checkoutEndpoint = config.payments?.checkoutEndpoint || '/api/v1/pricing/create-checkout';
+  //TODO: Remove this fallback: checkoutEndpoint must exist.
+  const rawCheckoutEndpoint = config.payments?.checkoutEndpoint || '/api/v1/pricing/create-checkout';
+  
+  if (!rawCheckoutEndpoint) {
+    console.warn('checkoutEndpoint not configured in payments config. Checkout functionality will not work.');
+  }
+
   
   const checkoutOperation = {
     id: 'create-checkout',
     method: 'POST' as const,
-    path: checkoutEndpoint,
+    path: rawCheckoutEndpoint,
     summary: 'Create checkout session',
     requestContentType: 'application/json',
     parameters: [],

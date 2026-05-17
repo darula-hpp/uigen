@@ -31,6 +31,10 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8000/api/v1/auth/oauth/google/callback}
       SPA_URL: ${SPA_URL:-http://localhost:4400}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PRICE_ID_PRO: ${STRIPE_PRICE_ID_PRO}
     volumes:
       - upload_data:/data/uploads
       - ./app:/app/app
