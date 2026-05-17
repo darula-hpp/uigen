@@ -39,9 +39,9 @@ describe('PaymentReconciler', () => {
 
       const result = reconciler.reconcile(spec, config);
 
-      expect(result.config.payments).toBeDefined();
-      expect(result.config.payments?.providers).toHaveLength(1);
-      expect(result.config.payments?.providers[0].provider).toBe('stripe');
+      expect(result.config.annotations?.document?.['x-uigen-payments']).toBeDefined();
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.providers).toHaveLength(1);
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.providers[0].provider).toBe('stripe');
     });
 
     it('should prefer config file over spec', () => {
@@ -57,26 +57,30 @@ describe('PaymentReconciler', () => {
         ],
       };
 
-      config.payments = {
-        providers: [
-          {
-            provider: 'paypal',
-            clientId: '${PAYPAL_CLIENT_ID}',
-            clientSecret: '${PAYPAL_CLIENT_SECRET}',
-            webhookSecret: '${PAYPAL_WEBHOOK_SECRET}',
-            mode: 'sandbox',
-            enabled: true,
+      config.annotations = {
+        document: {
+          'x-uigen-payments': {
+            providers: [
+              {
+                provider: 'paypal',
+                clientId: '${PAYPAL_CLIENT_ID}',
+                clientSecret: '${PAYPAL_CLIENT_SECRET}',
+                webhookSecret: '${PAYPAL_WEBHOOK_SECRET}',
+                mode: 'sandbox',
+                enabled: true,
+              },
+            ],
           },
-        ],
+        },
       };
 
       const result = reconciler.reconcile(spec, config);
 
       // Config should win
-      expect(result.config.payments?.providers[0].provider).toBe('paypal');
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.providers[0].provider).toBe('paypal');
       
       // Spec should be updated to match config
-      expect(result.spec.info['x-uigen-payments']?.providers[0].provider).toBe('paypal');
+      expect((result.spec.info as any)['x-uigen-payments']?.providers[0].provider).toBe('paypal');
     });
 
     it('should merge products from both sources', () => {
@@ -101,32 +105,36 @@ describe('PaymentReconciler', () => {
         ],
       };
 
-      config.payments = {
-        providers: [
-          {
-            provider: 'stripe',
-            apiKey: '${STRIPE_SECRET_KEY}',
-            webhookSecret: '${STRIPE_WEBHOOK_SECRET}',
-            mode: 'test',
-            enabled: true,
+      config.annotations = {
+        document: {
+          'x-uigen-payments': {
+            providers: [
+              {
+                provider: 'stripe',
+                apiKey: '${STRIPE_SECRET_KEY}',
+                webhookSecret: '${STRIPE_WEBHOOK_SECRET}',
+                mode: 'test',
+                enabled: true,
+              },
+            ],
+            products: [
+              {
+                id: 'enterprise',
+                name: 'Enterprise',
+                type: 'subscription',
+                price: 'custom',
+                interval: 'year',
+              },
+            ],
           },
-        ],
-        products: [
-          {
-            id: 'enterprise',
-            name: 'Enterprise',
-            type: 'subscription',
-            price: 'custom',
-            interval: 'year',
-          },
-        ],
+        },
       };
 
       const result = reconciler.reconcile(spec, config);
 
       // Config products should be used
-      expect(result.config.payments?.products).toHaveLength(1);
-      expect(result.config.payments?.products?.[0].id).toBe('enterprise');
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.products).toHaveLength(1);
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.products?.[0].id).toBe('enterprise');
     });
 
     it('should handle provider enable/disable', () => {
@@ -142,23 +150,27 @@ describe('PaymentReconciler', () => {
         ],
       };
 
-      config.payments = {
-        providers: [
-          {
-            provider: 'stripe',
-            apiKey: '${STRIPE_SECRET_KEY}',
-            webhookSecret: '${STRIPE_WEBHOOK_SECRET}',
-            mode: 'test',
-            enabled: false, // Disabled in config
+      config.annotations = {
+        document: {
+          'x-uigen-payments': {
+            providers: [
+              {
+                provider: 'stripe',
+                apiKey: '${STRIPE_SECRET_KEY}',
+                webhookSecret: '${STRIPE_WEBHOOK_SECRET}',
+                mode: 'test',
+                enabled: false, // Disabled in config
+              },
+            ],
           },
-        ],
+        },
       };
 
       const result = reconciler.reconcile(spec, config);
 
-      // Config should win
-      expect(result.config.payments?.providers[0].enabled).toBe(false);
-      expect(result.spec.info['x-uigen-payments']?.providers[0].enabled).toBe(false);
+      // Config should win - disabled providers are filtered out
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.providers).toHaveLength(0);
+      expect((result.spec.info as any)['x-uigen-payments']?.providers).toHaveLength(0);
     });
 
     it('should sync global payment settings', () => {
@@ -179,9 +191,9 @@ describe('PaymentReconciler', () => {
 
       const result = reconciler.reconcile(spec, config);
 
-      expect(result.config.payments?.defaultCurrency).toBe('usd');
-      expect(result.config.payments?.successUrl).toBe('https://example.com/success');
-      expect(result.config.payments?.cancelUrl).toBe('https://example.com/cancel');
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.defaultCurrency).toBe('usd');
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.successUrl).toBe('https://example.com/success');
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.cancelUrl).toBe('https://example.com/cancel');
     });
 
     it('should handle missing payment config gracefully', () => {
@@ -189,7 +201,7 @@ describe('PaymentReconciler', () => {
 
       expect(result.spec).toBeDefined();
       expect(result.config).toBeDefined();
-      expect(result.warnings).toHaveLength(0);
+      expect(result.errors).toHaveLength(0);
     });
 
     it('should validate providers during reconciliation', () => {
@@ -207,8 +219,8 @@ describe('PaymentReconciler', () => {
 
       const result = reconciler.reconcile(spec, config);
 
-      expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.warnings[0]).toContain('Unsupported payment provider');
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors[0]).toContain('Unsupported provider');
     });
 
     it('should validate products during reconciliation', () => {
@@ -235,8 +247,8 @@ describe('PaymentReconciler', () => {
 
       const result = reconciler.reconcile(spec, config);
 
-      expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.warnings[0]).toContain('Invalid product price');
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors[0]).toContain('price must be a positive number');
     });
 
     it('should handle multiple providers', () => {
@@ -263,9 +275,9 @@ describe('PaymentReconciler', () => {
 
       const result = reconciler.reconcile(spec, config);
 
-      expect(result.config.payments?.providers).toHaveLength(2);
-      expect(result.config.payments?.providers[0].provider).toBe('stripe');
-      expect(result.config.payments?.providers[1].provider).toBe('paypal');
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.providers).toHaveLength(2);
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.providers[0].provider).toBe('stripe');
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.providers[1].provider).toBe('paypal');
     });
 
     it('should preserve provider-specific fields', () => {
@@ -285,7 +297,7 @@ describe('PaymentReconciler', () => {
 
       const result = reconciler.reconcile(spec, config);
 
-      const provider = result.config.payments?.providers[0];
+      const provider = result.config.annotations?.document?.['x-uigen-payments']?.providers[0];
       expect(provider?.publishableKey).toBe('${STRIPE_PUBLISHABLE_KEY}');
       expect(provider?.currency).toBe('eur');
     });
@@ -317,7 +329,7 @@ describe('PaymentReconciler', () => {
 
       const result = reconciler.reconcile(spec, config);
 
-      const product = result.config.payments?.products?.[0];
+      const product = result.config.annotations?.document?.['x-uigen-payments']?.products?.[0];
       expect(product?.features).toEqual(['Feature 1', 'Feature 2']);
       expect(product?.highlighted).toBe(true);
       expect(product?.metadata).toEqual({ key: 'value' });
@@ -345,37 +357,41 @@ describe('PaymentReconciler', () => {
         ],
       };
 
-      config.payments = {
-        providers: [
-          {
-            provider: 'paypal',
-            clientId: '${PAYPAL_CLIENT_ID}',
-            clientSecret: '${PAYPAL_CLIENT_SECRET}',
-            webhookSecret: '${PAYPAL_WEBHOOK_SECRET}',
-            mode: 'live',
-            enabled: true,
+      config.annotations = {
+        document: {
+          'x-uigen-payments': {
+            providers: [
+              {
+                provider: 'paypal',
+                clientId: '${PAYPAL_CLIENT_ID}',
+                clientSecret: '${PAYPAL_CLIENT_SECRET}',
+                webhookSecret: '${PAYPAL_WEBHOOK_SECRET}',
+                mode: 'live',
+                enabled: true,
+              },
+            ],
+            products: [
+              {
+                id: 'new-product',
+                name: 'New Product',
+                type: 'one-time',
+                price: 5000,
+              },
+            ],
           },
-        ],
-        products: [
-          {
-            id: 'new-product',
-            name: 'New Product',
-            type: 'one-time',
-            price: 5000,
-          },
-        ],
+        },
       };
 
       const result = reconciler.reconcile(spec, config);
 
       // Config should completely override spec
-      expect(result.config.payments?.providers[0].provider).toBe('paypal');
-      expect(result.config.payments?.providers[0].mode).toBe('live');
-      expect(result.config.payments?.products?.[0].id).toBe('new-product');
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.providers[0].provider).toBe('paypal');
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.providers[0].mode).toBe('live');
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.products?.[0].id).toBe('new-product');
       
       // Spec should be updated to match config
-      expect(result.spec.info['x-uigen-payments']?.providers[0].provider).toBe('paypal');
-      expect(result.spec.info['x-uigen-payments']?.products?.[0].id).toBe('new-product');
+      expect((result.spec.info as any)['x-uigen-payments']?.providers[0].provider).toBe('paypal');
+      expect((result.spec.info as any)['x-uigen-payments']?.products?.[0].id).toBe('new-product');
     });
   });
 
@@ -387,8 +403,8 @@ describe('PaymentReconciler', () => {
 
       const result = reconciler.reconcile(spec, config);
 
-      expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.warnings[0]).toContain('No payment providers configured');
+      // Empty providers array should result in no providers
+      expect(result.config.annotations?.document?.['x-uigen-payments']).toBeUndefined();
     });
 
     it('should handle missing required fields', () => {
@@ -406,7 +422,7 @@ describe('PaymentReconciler', () => {
 
       const result = reconciler.reconcile(spec, config);
 
-      expect(result.warnings.length).toBeGreaterThan(0);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
 
     it('should handle custom price products', () => {
@@ -433,8 +449,8 @@ describe('PaymentReconciler', () => {
 
       const result = reconciler.reconcile(spec, config);
 
-      expect(result.config.payments?.products?.[0].price).toBe('custom');
-      expect(result.warnings).toHaveLength(0);
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.products?.[0].price).toBe('custom');
+      expect(result.errors).toHaveLength(0);
     });
 
     it('should handle products without interval for one-time payments', () => {
@@ -460,8 +476,8 @@ describe('PaymentReconciler', () => {
 
       const result = reconciler.reconcile(spec, config);
 
-      expect(result.warnings).toHaveLength(0);
-      expect(result.config.payments?.products?.[0].type).toBe('one-time');
+      expect(result.errors).toHaveLength(0);
+      expect(result.config.annotations?.document?.['x-uigen-payments']?.products?.[0].type).toBe('one-time');
     });
   });
 });

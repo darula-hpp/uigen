@@ -1,5 +1,11 @@
 # @uigen-dev/core
 
+## 0.13.0
+
+### Minor Changes
+
+- Added Payments Support
+
 ## 0.12.0
 
 ### Minor Changes

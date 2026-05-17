@@ -1,5 +1,18 @@
 # @uigen-dev/cli
 
+## 0.13.0
+
+### Minor Changes
+
+- Added Payments Support
+
+### Patch Changes
+
+- Updated dependencies
+  - @uigen-dev/config-gui@0.13.0
+  - @uigen-dev/react@0.13.0
+  - @uigen-dev/core@0.13.0
+
 ## 0.12.0
 
 ### Minor Changes
