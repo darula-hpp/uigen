@@ -157,7 +157,7 @@ export class Reconciler {
   ): ReconciledSpec {
     this.logger.info('Starting reconciliation', {
       configVersion: config.version,
-      annotationCount: Object.keys(config.annotations).length,
+      annotationCount: Object.keys(config.annotations || {}).length,
     });
 
     try {
@@ -240,10 +240,10 @@ export class Reconciler {
       }
 
       // Reconcile payment providers if payments config exists
-      if ((resolvedConfig as any).payments) {
+      if ((resolvedConfig as any).annotations?.document?.['x-uigen-payments']) {
         this.logger.info('Reconciling payment providers', {
-          providerCount: (resolvedConfig as any).payments.providers?.length || 0,
-          productCount: (resolvedConfig as any).payments.products?.length || 0,
+          providerCount: (resolvedConfig as any).annotations.document['x-uigen-payments'].providers?.length || 0,
+          productCount: (resolvedConfig as any).annotations.document['x-uigen-payments'].products?.length || 0,
         });
 
         const paymentResult = this.paymentReconciler.reconcile(reconciledSpec, resolvedConfig as any);
@@ -254,7 +254,7 @@ export class Reconciler {
           for (const error of paymentResult.errors) {
             this.logger.warn(`Payment configuration error: ${error}`);
             warnings.push({
-              elementPath: 'config.payments',
+              elementPath: 'config.annotations.document.x-uigen-payments',
               message: error,
             });
           }

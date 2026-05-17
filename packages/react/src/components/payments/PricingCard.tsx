@@ -94,19 +94,9 @@ export function PricingCard({
   
   return (
     <div
-      className={`
-        pricing-card
-        ${highlighted ? 'pricing-card--highlighted' : ''}
-        ${className}
-      `}
+      className={`pricing-card ${highlighted ? 'highlighted' : ''} ${className}`}
       data-product-id={product.id}
     >
-      {highlighted && (
-        <div className="pricing-card__badge">
-          Recommended
-        </div>
-      )}
-      
       <div className="pricing-card__header">
         <h3 className="pricing-card__name">{product.name}</h3>
         {product.description && (
@@ -125,19 +115,6 @@ export function PricingCard({
         <ul className="pricing-card__features">
           {product.features.map((feature, index) => (
             <li key={index} className="pricing-card__feature">
-              <svg
-                className="pricing-card__feature-icon"
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  fill="currentColor"
-                />
-              </svg>
               <span>{feature}</span>
             </li>
           ))}
@@ -145,10 +122,7 @@ export function PricingCard({
       )}
       
       <button
-        className={`
-          pricing-card__cta
-          ${highlighted ? 'pricing-card__cta--highlighted' : ''}
-        `}
+        className={`pricing-card__button ${highlighted ? 'highlighted' : ''}`}
         onClick={onSelect}
         disabled={loading}
         aria-label={`Select ${product.name} plan`}

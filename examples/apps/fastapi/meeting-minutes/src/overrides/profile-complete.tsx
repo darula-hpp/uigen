@@ -26,16 +26,33 @@ interface UpdateProfileData {
   email?: string;
 }
 
+interface PricingPlan {
+  id: string;
+  name: string;
+  description?: string;
+  type: string;
+  price: number | string;
+  currency?: string;
+  interval?: string;
+  intervalCount?: number;
+  features?: string[];
+  highlighted?: boolean;
+}
+
 interface ProfileOverrideInternalProps {
   profileData: ProfileData;
   onUpdate: (data: UpdateProfileData) => Promise<void>;
   isUpdating: boolean;
+  currentPlan: PricingPlan | null;
+  planLoading: boolean;
 }
 
 const ProfileOverrideInternal: React.FC<ProfileOverrideInternalProps> = ({ 
   profileData, 
   onUpdate, 
-  isUpdating 
+  isUpdating,
+  currentPlan,
+  planLoading
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -105,7 +122,7 @@ const ProfileOverrideInternal: React.FC<ProfileOverrideInternalProps> = ({
   });
 
   return (
-    <div className="profile-container">
+    <div className="profile-page-wrapper">
       <div className="profile-card bg-card">
         {/* Header Section */}
         <div className="profile-header">
@@ -232,23 +249,90 @@ const ProfileOverrideInternal: React.FC<ProfileOverrideInternalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Subscription Plan Card */}
+      <div className="subscription-card bg-card">
+        {planLoading ? (
+          <div className="subscription-loading">
+            <div className="profile-spinner"></div>
+            <p>Loading subscription...</p>
+          </div>
+        ) : currentPlan ? (
+          <>
+            <div className="subscription-header">
+              <div>
+                <h2>Your Subscription</h2>
+                <p>Manage your plan and billing</p>
+              </div>
+              <div className="subscription-badge">{currentPlan.name}</div>
+            </div>
+
+            <div className="subscription-features">
+              <h3>What's Included</h3>
+              <ul>
+                {currentPlan.features && currentPlan.features.length > 0 ? (
+                  currentPlan.features.map((feature, index) => (
+                    <li key={index}>
+                      <span className="feature-icon">✓</span>
+                      <span>{feature}</span>
+                    </li>
+                  ))
+                ) : (
+                  <li>
+                    <span className="feature-icon">✓</span>
+                    <span>Basic features included</span>
+                  </li>
+                )}
+              </ul>
+            </div>
+
+            <div className="subscription-upgrade">
+              <div className="upgrade-content">
+                <h3>Want More?</h3>
+                <p>Explore our other plans for additional features and benefits.</p>
+              </div>
+              <a href="/pricing" className="upgrade-button bg-primary">
+                View Plans
+              </a>
+            </div>
+          </>
+        ) : (
+          <div className="subscription-error">
+            <p>Unable to load subscription information</p>
+            <a href="/pricing" className="upgrade-button bg-primary">
+              View Plans
+            </a>
+          </div>
+        )}
+      </div>
       
       <style>{`
-        .profile-container {
+        .profile-page-wrapper {
           width: 100%;
+          max-width: 1400px;
+          margin: 0 auto;
           padding: 40px 20px;
-          display: flex;
-          justify-content: center;
-          align-items: flex-start;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 32px;
+          align-items: stretch;
+        }
+        
+        @media (max-width: 1024px) {
+          .profile-page-wrapper {
+            grid-template-columns: 1fr;
+            gap: 24px;
+          }
         }
         
         .profile-card {
           border-radius: var(--radius);
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 600px;
           width: 100%;
           overflow: hidden;
           border: 1px solid var(--border);
+          display: flex;
+          flex-direction: column;
         }
         
         .profile-header {
@@ -527,7 +611,162 @@ const ProfileOverrideInternal: React.FC<ProfileOverrideInternalProps> = ({
           100% { transform: rotate(360deg); }
         }
         
+        /* Subscription Card Styles */
+        .subscription-card {
+          border-radius: var(--radius);
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          width: 100%;
+          overflow: hidden;
+          border: 1px solid var(--border);
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .subscription-loading {
+          text-align: center;
+          padding: 60px 32px;
+        }
+        
+        .subscription-error {
+          text-align: center;
+          padding: 60px 32px;
+        }
+        
+        .subscription-error p {
+          color: var(--muted-foreground);
+          margin-bottom: 24px;
+          font-size: 16px;
+        }
+        
+        .subscription-header {
+          background: linear-gradient(135deg, var(--primary) 0%, #b45309 100%);
+          padding: 32px;
+          color: var(--primary-foreground);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 16px;
+        }
+        
+        .subscription-header h2 {
+          margin: 0;
+          font-size: 24px;
+          font-weight: bold;
+          color: var(--primary-foreground);
+        }
+        
+        .subscription-header p {
+          margin: 4px 0 0 0;
+          font-size: 14px;
+          opacity: 0.9;
+          color: var(--primary-foreground);
+        }
+        
+        .subscription-badge {
+          background-color: var(--accent);
+          color: var(--accent-foreground);
+          padding: 8px 20px;
+          border-radius: 20px;
+          font-size: 14px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          border: 2px solid var(--border);
+        }
+        
+        .subscription-features {
+          padding: 32px;
+          border-bottom: 1px solid var(--border);
+        }
+        
+        .subscription-features h3 {
+          margin: 0 0 20px 0;
+          font-size: 18px;
+          font-weight: 600;
+          color: var(--foreground);
+        }
+        
+        .subscription-features ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        
+        .subscription-features li {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 15px;
+          color: var(--foreground);
+        }
+        
+        .feature-icon {
+          width: 24px;
+          height: 24px;
+          background-color: var(--primary);
+          color: var(--primary-foreground);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          font-weight: bold;
+          flex-shrink: 0;
+        }
+        
+        .subscription-upgrade {
+          padding: 32px;
+          background-color: var(--muted);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 24px;
+          flex-wrap: wrap;
+        }
+        
+        .upgrade-content h3 {
+          margin: 0 0 8px 0;
+          font-size: 20px;
+          font-weight: 700;
+          color: var(--foreground);
+        }
+        
+        .upgrade-content p {
+          margin: 0;
+          font-size: 14px;
+          color: var(--muted-foreground);
+          line-height: 1.5;
+        }
+        
+        .upgrade-button {
+          padding: 12px 32px;
+          font-size: 16px;
+          font-weight: 600;
+          border: none;
+          color: var(--primary-foreground);
+          border-radius: 0.25rem;
+          cursor: pointer;
+          text-decoration: none;
+          transition: all 0.3s ease;
+          white-space: nowrap;
+          display: inline-block;
+        }
+        
+        .upgrade-button:hover {
+          opacity: 0.9;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
         @media (max-width: 768px) {
+          .profile-page-wrapper {
+            grid-template-columns: 1fr;
+          }
+          
           .profile-header {
             flex-direction: column;
             align-items: flex-start;
@@ -545,6 +784,25 @@ const ProfileOverrideInternal: React.FC<ProfileOverrideInternalProps> = ({
           .profile-save-button {
             width: 100%;
           }
+          
+          .subscription-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          
+          .subscription-badge {
+            align-self: flex-start;
+          }
+          
+          .subscription-upgrade {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          
+          .upgrade-button {
+            width: 100%;
+            text-align: center;
+          }
         }
       `}</style>
     </div>
@@ -559,6 +817,8 @@ const ProfileOverride: React.FC<OverrideComponentProps> = ({ resource }) => {
     error: null,
   });
   const [isUpdating, setIsUpdating] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState<PricingPlan | null>(null);
+  const [planLoading, setPlanLoading] = useState(true);
 
   // Find GET operation for fetching profile
   const getOperation = resource.operations.find((op: any) => op.method === 'GET');
@@ -585,7 +845,7 @@ const ProfileOverride: React.FC<OverrideComponentProps> = ({ resource }) => {
         const url = `/api${getOperation.path}`;
         
         // Get auth headers from window (same as SPA)
-        const authHeaders = window.getAuthHeaders();
+        const authHeaders = (window as any).getAuthHeaders?.() || {};
         
         const response = await fetch(url, {
           method: 'GET',
@@ -617,6 +877,46 @@ const ProfileOverride: React.FC<OverrideComponentProps> = ({ resource }) => {
     fetchProfile();
   }, [getOperation]);
 
+  // Fetch pricing plans
+  useEffect(() => {
+    const fetchPricingPlans = async () => {
+      try {
+        // Fetch pricing plans from backend endpoint
+        const url = '/api/api/v1/pricing/plans';
+        
+        // Get auth headers
+        const authHeaders = (window as any).getAuthHeaders?.() || {};
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch pricing plans: ${response.statusText}`);
+        }
+
+        const plans: PricingPlan[] = await response.json();
+        
+        // For now, use the first plan as the current plan
+        // In a real app, you'd determine this from user data or subscription status
+        if (plans.length > 0) {
+          setCurrentPlan(plans[0]);
+        }
+        
+        setPlanLoading(false);
+      } catch (error) {
+        console.error('Failed to load pricing plans:', error);
+        setPlanLoading(false);
+      }
+    };
+
+    fetchPricingPlans();
+  }, []);
+
   // Handle profile update
   const handleUpdate = async (updatedData: UpdateProfileData) => {
     if (!updateOperation) {
@@ -629,7 +929,7 @@ const ProfileOverride: React.FC<OverrideComponentProps> = ({ resource }) => {
       const url = `/api${updateOperation.path}`;
       
       // Get auth headers from window (same as SPA)
-      const authHeaders = window.getAuthHeaders();
+      const authHeaders = (window as any).getAuthHeaders?.() || {};
       
       const response = await fetch(url, {
         method: updateOperation.method,
@@ -660,6 +960,8 @@ const ProfileOverride: React.FC<OverrideComponentProps> = ({ resource }) => {
       profileData={profileData}
       onUpdate={handleUpdate}
       isUpdating={isUpdating}
+      currentPlan={currentPlan}
+      planLoading={planLoading}
     />
   );
 };

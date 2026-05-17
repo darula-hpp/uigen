@@ -264,7 +264,7 @@ export function App({ config }: AppProps) {
               </ProtectedRoute>
             } />
             
-            {/* Pricing route - public, uses centered layout */}
+            {/* Pricing route - public, uses centered layout with wider maxWidth */}
             {config.payments?.pricingPage?.enabled && (
               <Route path="/pricing" element={
                 <ProtectedRoute 
@@ -274,7 +274,8 @@ export function App({ config }: AppProps) {
                     type: 'centered',
                     metadata: {
                       showHeader: true,
-                      verticalCenter: false
+                      verticalCenter: false,
+                      maxWidth: 1280
                     }
                   }}
                 >

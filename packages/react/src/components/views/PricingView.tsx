@@ -153,8 +153,9 @@ export function PricingView({ config }: PricingViewProps) {
   }
 
   // Render pricing table with products
+  // Note: Header is provided by layout, no need to duplicate
   return (
-    <div className="pricing-view-container py-8 px-4">
+    <div className="w-full">
       <PricingTable
         products={products.map(product => ({
           ...product,
@@ -163,7 +164,6 @@ export function PricingView({ config }: PricingViewProps) {
         }))}
         title="Choose Your Plan"
         subtitle="Select the plan that works best for you"
-        columns={3}
       />
     </div>
   );

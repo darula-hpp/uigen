@@ -24,16 +24,19 @@ export class InlinePricingSource implements PricingSource {
 }
 
 /**
- * Phase 2: Endpoint source (Future)
+ * Phase 2: Endpoint source
  * Products fetched from backend API
  */
 export class EndpointPricingSource implements PricingSource {
   readonly type = 'endpoint' as const;
   
-  constructor(private endpoint: string) {}
+  constructor(
+    private endpoint: string,
+    private serverUrl?: string
+  ) {}
   
   async load(): Promise<PaymentProduct[]> {
-    const response = await fetch(this.endpoint);
+    const response = await fetch(`/api${this.endpoint}`);
     if (!response.ok) {
       throw new Error(`Failed to fetch pricing data: ${response.statusText}`);
     }
