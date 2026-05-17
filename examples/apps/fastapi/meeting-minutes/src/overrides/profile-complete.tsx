@@ -344,6 +344,7 @@ const ProfileOverrideInternal: React.FC<ProfileOverrideInternalProps> = ({
           align-items: center;
           flex-wrap: wrap;
           gap: 16px;
+          min-height: 144px;
         }
         
         .profile-avatar-section {
@@ -647,6 +648,7 @@ const ProfileOverrideInternal: React.FC<ProfileOverrideInternalProps> = ({
           align-items: center;
           flex-wrap: wrap;
           gap: 16px;
+          min-height: 144px;
         }
         
         .subscription-header h2 {

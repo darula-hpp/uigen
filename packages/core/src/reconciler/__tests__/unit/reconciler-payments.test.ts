@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { PaymentReconciler } from '../../payment-reconciler.js';
+import { PaymentReconciler, type PaymentConfigFile } from '../../payment-reconciler.js';
 import type { OpenAPIV3 } from 'openapi-types';
-import type { PaymentConfigFile } from '../../types.js';
 
 describe('PaymentReconciler', () => {
   let reconciler: PaymentReconciler;
@@ -20,9 +19,7 @@ describe('PaymentReconciler', () => {
       paths: {},
     };
 
-    config = {
-      version: '1.0',
-    };
+    config = {};
   });
 
   describe('reconcile', () => {

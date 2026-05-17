@@ -17,6 +17,8 @@ import { SignUpView } from './components/views/SignUpView';
 import { PasswordResetView } from './components/views/PasswordResetView';
 import { ProfileView } from './components/views/ProfileView';
 import { PricingView } from './components/views/PricingView';
+import { PaymentSuccess } from './components/payments/PaymentSuccess';
+import { PaymentCancel } from './components/payments/PaymentCancel';
 import { OAuthCallback } from './components/auth/OAuthCallback';
 import { ToastProvider } from './components/Toast';
 import { AppProvider } from './contexts/AppContext';
@@ -283,6 +285,40 @@ export function App({ config }: AppProps) {
                 </ProtectedRoute>
               } />
             )}
+            
+            {/* Payment success route - public, uses centered layout */}
+            <Route path="/payment/success" element={
+              <ProtectedRoute 
+                config={config} 
+                requiresAuth={false}
+                layoutOverride={{ 
+                  type: 'centered',
+                  metadata: {
+                    showHeader: true,
+                    verticalCenter: true
+                  }
+                }}
+              >
+                <PaymentSuccess />
+              </ProtectedRoute>
+            } />
+            
+            {/* Payment cancel route - public, uses centered layout */}
+            <Route path="/payment/cancel" element={
+              <ProtectedRoute 
+                config={config} 
+                requiresAuth={false}
+                layoutOverride={{ 
+                  type: 'centered',
+                  metadata: {
+                    showHeader: true,
+                    verticalCenter: true
+                  }
+                }}
+              >
+                <PaymentCancel />
+              </ProtectedRoute>
+            } />
             
             {/* Resource routes - each protected with layout */}
             {config.resources

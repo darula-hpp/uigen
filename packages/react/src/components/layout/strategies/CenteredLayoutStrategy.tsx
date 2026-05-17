@@ -65,7 +65,13 @@ const CenteredLayoutComponent = memo(function CenteredLayoutComponent({ children
       {showHeader && (
         <header role="banner" className="border-b bg-card transition-all duration-300 ease-in-out">
           <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-            <h1 className="text-xl font-bold">{config.appConfig?.name || config.meta.title}</h1>
+            <a 
+              href="/dashboard" 
+              className="text-xl font-bold hover:opacity-80 transition-opacity cursor-pointer no-underline"
+              style={{ color: 'inherit', textDecoration: 'none' }}
+            >
+              {config.appConfig?.name || config.meta.title}
+            </a>
             <ThemeToggle />
           </div>
         </header>

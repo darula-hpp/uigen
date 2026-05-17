@@ -18,3 +18,5 @@ export type { SubscriptionManagerProps, Subscription } from './SubscriptionManag
 
 export { PaymentCallback } from './PaymentCallback.js';
 export type { PaymentCallbackProps } from './PaymentCallback.js';
+
+export { PaymentSuccess } from './PaymentSuccess.js';

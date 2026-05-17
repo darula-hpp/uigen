@@ -79,6 +79,7 @@ export interface PaymentAnnotation {
   defaultCurrency?: string;
   successUrl?: string;
   cancelUrl?: string;
+  checkoutEndpoint?: string;
 }
 
 /**
@@ -229,6 +230,10 @@ export class PaymentHandler implements AnnotationHandler<PaymentAnnotation> {
         cancelUrl: {
           type: 'string',
           description: 'Default cancel redirect URL if payment is canceled'
+        },
+        checkoutEndpoint: {
+          type: 'string',
+          description: 'Checkout endpoint path for creating payment sessions (defaults to /api/v1/pricing/create-checkout)'
         }
       },
       required: ['providers']
@@ -323,7 +328,8 @@ export class PaymentHandler implements AnnotationHandler<PaymentAnnotation> {
       pricingPage: annotation.pricingPage,
       defaultCurrency: annotation.defaultCurrency,
       successUrl: annotation.successUrl,
-      cancelUrl: annotation.cancelUrl
+      cancelUrl: annotation.cancelUrl,
+      checkoutEndpoint: annotation.checkoutEndpoint
     };
   }
   
@@ -393,35 +399,39 @@ export class PaymentHandler implements AnnotationHandler<PaymentAnnotation> {
       });
     }
     
-    // Validate URLs
+    // Validate URLs (allow relative paths starting with /)
     if (value.successUrl) {
+      const isRelativePath = value.successUrl.startsWith('/') && !value.successUrl.startsWith('//');
       const isLocalhost = value.successUrl.includes('localhost') || value.successUrl.includes('127.0.0.1');
       const isEnvVar = /^\$\{[A-Z_][A-Z0-9_]*\}$/.test(value.successUrl);
-      if (!isLocalhost && !isEnvVar && !value.successUrl.startsWith('https://')) {
+      
+      if (!isRelativePath && !isLocalhost && !isEnvVar && !value.successUrl.startsWith('https://')) {
         errors.push({
           field: 'successUrl',
-          message: 'Success URL must use HTTPS (except localhost)'
+          message: 'Success URL must be a relative path (starting with /) or use HTTPS (except localhost)'
         });
-      } else if (!isEnvVar && !HTTP_OR_HTTPS_URL_PATTERN.test(value.successUrl)) {
+      } else if (!isRelativePath && !isEnvVar && !HTTP_OR_HTTPS_URL_PATTERN.test(value.successUrl)) {
         errors.push({
           field: 'successUrl',
-          message: 'Success URL must be a valid URL'
+          message: 'Success URL must be a valid URL or relative path'
         });
       }
     }
     
     if (value.cancelUrl) {
+      const isRelativePath = value.cancelUrl.startsWith('/') && !value.cancelUrl.startsWith('//');
       const isLocalhost = value.cancelUrl.includes('localhost') || value.cancelUrl.includes('127.0.0.1');
       const isEnvVar = /^\$\{[A-Z_][A-Z0-9_]*\}$/.test(value.cancelUrl);
-      if (!isLocalhost && !isEnvVar && !value.cancelUrl.startsWith('https://')) {
+      
+      if (!isRelativePath && !isLocalhost && !isEnvVar && !value.cancelUrl.startsWith('https://')) {
         errors.push({
           field: 'cancelUrl',
-          message: 'Cancel URL must use HTTPS (except localhost)'
+          message: 'Cancel URL must be a relative path (starting with /) or use HTTPS (except localhost)'
         });
-      } else if (!isEnvVar && !HTTP_OR_HTTPS_URL_PATTERN.test(value.cancelUrl)) {
+      } else if (!isRelativePath && !isEnvVar && !HTTP_OR_HTTPS_URL_PATTERN.test(value.cancelUrl)) {
         errors.push({
           field: 'cancelUrl',
-          message: 'Cancel URL must be a valid URL'
+          message: 'Cancel URL must be a valid URL or relative path'
         });
       }
     }
@@ -779,7 +789,8 @@ export class PaymentHandler implements AnnotationHandler<PaymentAnnotation> {
         products: [],
         defaultCurrency: value.defaultCurrency,
         successUrl: value.successUrl,
-        cancelUrl: value.cancelUrl
+        cancelUrl: value.cancelUrl,
+        checkoutEndpoint: value.checkoutEndpoint
       };
     }
     

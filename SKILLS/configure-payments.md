@@ -96,9 +96,10 @@ payments:
         features:
           - Unlimited meetings
           - Priority support
-  defaultCurrency: usd
-  successUrl: /payment/success
-  cancelUrl: /payment/cancel
+  checkoutEndpoint: /api/v1/pricing/create-checkout  # Full path including /api prefix
+  defaultCurrency: usd  # Optional: defaults to provider currency
+  successUrl: /payment/success  # Optional: relative path, defaults to {origin}/payment/success
+  cancelUrl: /payment/cancel  # Optional: relative path, defaults to {origin}/payment/cancel
 ```
 
 **Security Note:** Only `publishableKey` is exposed to the frontend. Backend secrets (`apiKey`, `webhookSecret`, `clientSecret`) must stay in `.env` and never be added to the spec or config.yaml.
@@ -363,9 +364,10 @@ payments:
         features:
           - Unlimited meetings
           - Priority support
-  defaultCurrency: usd
-  successUrl: /payment/success
-  cancelUrl: /payment/cancel
+  checkoutEndpoint: /api/v1/pricing/create-checkout  # Full path including /api prefix
+  defaultCurrency: usd  # Optional: defaults to provider currency
+  successUrl: /payment/success  # Optional: relative path, defaults to {origin}/payment/success
+  cancelUrl: /payment/cancel  # Optional: relative path, defaults to {origin}/payment/cancel
 ```
 
 **Note:** Payment gates (`x-uigen-monetized`) must be defined in the OpenAPI spec, not config.yaml.
