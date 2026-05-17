@@ -38,18 +38,16 @@ export function PricingView({ config }: PricingViewProps) {
   const { currentPlan } = usePaymentStatus();
 
   // Create checkout operation definition
-  //TODO: Remove this fallback: checkoutEndpoint must exist.
-  const rawCheckoutEndpoint = config.payments?.checkoutEndpoint || '/api/v1/pricing/create-checkout';
+  const rawCheckoutEndpoint = config.payments?.checkoutEndpoint;
   
   if (!rawCheckoutEndpoint) {
     console.warn('checkoutEndpoint not configured in payments config. Checkout functionality will not work.');
   }
 
-  
   const checkoutOperation = {
     id: 'create-checkout',
     method: 'POST' as const,
-    path: rawCheckoutEndpoint,
+    path: rawCheckoutEndpoint || '',
     summary: 'Create checkout session',
     requestContentType: 'application/json',
     parameters: [],
@@ -68,8 +66,17 @@ export function PricingView({ config }: PricingViewProps) {
     setCheckoutError(null);
 
     // Get success and cancel URLs from config
-    const successUrl = config.payments?.successUrl || `${window.location.origin}/payment/success`;
-    const cancelUrl = config.payments?.cancelUrl || `${window.location.origin}/payment/cancel`;
+    // Convert relative paths to absolute URLs for Stripe
+    const configSuccessUrl = config.payments?.successUrl;
+    const configCancelUrl = config.payments?.cancelUrl;
+    
+    const successUrl = configSuccessUrl
+      ? (configSuccessUrl.startsWith('/') ? `${window.location.origin}${configSuccessUrl}` : configSuccessUrl)
+      : `${window.location.origin}/payment/success`;
+    
+    const cancelUrl = configCancelUrl
+      ? (configCancelUrl.startsWith('/') ? `${window.location.origin}${configCancelUrl}` : configCancelUrl)
+      : `${window.location.origin}/payment/cancel`;
 
     // Call checkout endpoint
     createCheckout(

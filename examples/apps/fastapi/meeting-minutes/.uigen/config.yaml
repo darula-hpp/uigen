@@ -26,10 +26,10 @@ annotations:
         enabled: true
         source: endpoint
         endpoint: /api/v1/pricing/plans
-      defaultCurrency: usd
-      successUrl: http://localhost:4400/payment/success
-      cancelUrl: http://localhost:4400/payment/cancel
       checkoutEndpoint: /api/v1/pricing/create-checkout
+      defaultCurrency: usd
+      successUrl: /payment/success
+      cancelUrl: /payment/cancel
     x-uigen-landing-page:
       enabled: true
       sections:

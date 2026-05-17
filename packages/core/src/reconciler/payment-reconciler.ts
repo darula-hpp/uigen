@@ -25,6 +25,7 @@ export interface PaymentConfig {
   defaultCurrency?: string;
   successUrl?: string;
   cancelUrl?: string;
+  checkoutEndpoint?: string;
   pricingPage?: {
     enabled: boolean;
     source: 'inline' | 'endpoint' | 'component';
@@ -146,7 +147,8 @@ export class PaymentReconciler {
       pricingPage: configPayments.pricingPage || specPayments?.pricingPage,
       defaultCurrency: configPayments.defaultCurrency || specPayments?.defaultCurrency,
       successUrl: configPayments.successUrl || specPayments?.successUrl,
-      cancelUrl: configPayments.cancelUrl || specPayments?.cancelUrl
+      cancelUrl: configPayments.cancelUrl || specPayments?.cancelUrl,
+      checkoutEndpoint: configPayments.checkoutEndpoint || specPayments?.checkoutEndpoint
     };
     
     // Create updated spec and config
@@ -184,7 +186,8 @@ export class PaymentReconciler {
       pricingPage: paymentsAnnotation.pricingPage,
       defaultCurrency: paymentsAnnotation.defaultCurrency,
       successUrl: paymentsAnnotation.successUrl,
-      cancelUrl: paymentsAnnotation.cancelUrl
+      cancelUrl: paymentsAnnotation.cancelUrl,
+      checkoutEndpoint: paymentsAnnotation.checkoutEndpoint
     };
   }
   
@@ -279,13 +282,23 @@ export class PaymentReconciler {
       }
     });
     
-    // Validate URLs
-    if (payments?.successUrl && !urlPattern.test(payments.successUrl)) {
-      errors.push('successUrl must be a valid URL');
+    // Validate URLs (allow relative paths starting with /)
+    if (payments?.successUrl) {
+      const isRelativePath = payments.successUrl.startsWith('/') && !payments.successUrl.startsWith('//');
+      const isEnvVar = /^\$\{[A-Z_][A-Z0-9_]*\}$/.test(payments.successUrl);
+      
+      if (!isRelativePath && !isEnvVar && !urlPattern.test(payments.successUrl)) {
+        errors.push('successUrl must be a valid URL or relative path (starting with /)');
+      }
     }
     
-    if (payments?.cancelUrl && !urlPattern.test(payments.cancelUrl)) {
-      errors.push('cancelUrl must be a valid URL');
+    if (payments?.cancelUrl) {
+      const isRelativePath = payments.cancelUrl.startsWith('/') && !payments.cancelUrl.startsWith('//');
+      const isEnvVar = /^\$\{[A-Z_][A-Z0-9_]*\}$/.test(payments.cancelUrl);
+      
+      if (!isRelativePath && !isEnvVar && !urlPattern.test(payments.cancelUrl)) {
+        errors.push('cancelUrl must be a valid URL or relative path (starting with /)');
+      }
     }
     
     return errors;
@@ -371,6 +384,7 @@ export class PaymentReconciler {
       defaultCurrency?: string;
       successUrl?: string;
       cancelUrl?: string;
+      checkoutEndpoint?: string;
     },
     spec: OpenAPIV3.Document | Swagger2Document
   ): OpenAPIV3.Document | Swagger2Document {
@@ -416,6 +430,7 @@ export class PaymentReconciler {
         ...(payments.defaultCurrency && { defaultCurrency: payments.defaultCurrency }),
         ...(payments.successUrl && { successUrl: payments.successUrl }),
         ...(payments.cancelUrl && { cancelUrl: payments.cancelUrl }),
+        ...(payments.checkoutEndpoint && { checkoutEndpoint: payments.checkoutEndpoint }),
       };
     }
     
@@ -448,6 +463,7 @@ export class PaymentReconciler {
       defaultCurrency?: string;
       successUrl?: string;
       cancelUrl?: string;
+      checkoutEndpoint?: string;
     },
     config: PaymentConfigFile
   ): PaymentConfigFile {
@@ -498,6 +514,7 @@ export class PaymentReconciler {
         ...(payments.defaultCurrency && { defaultCurrency: payments.defaultCurrency }),
         ...(payments.successUrl && { successUrl: payments.successUrl }),
         ...(payments.cancelUrl && { cancelUrl: payments.cancelUrl }),
+        ...(payments.checkoutEndpoint && { checkoutEndpoint: payments.checkoutEndpoint }),
       };
     }
     
