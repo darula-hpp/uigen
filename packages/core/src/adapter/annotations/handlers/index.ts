@@ -16,6 +16,8 @@ import { LayoutHandler } from './layout-handler.js';
 import { LandingPageHandler } from './landing-page-handler.js';
 import { AppHandler } from './app-handler.js';
 import { AuthHandler } from './auth-handler.js';
+import { PaymentHandler } from './payment-handler.js';
+import { MonetizationHandler } from './monetization-handler.js';
 import { OverrideHandler } from './override-handler.js';
 
 /**
@@ -41,6 +43,8 @@ function registerHandlers(): void {
   
   // Register auth handlers (document-level)
   registry.register(new AuthHandler());
+  registry.register(new PaymentHandler());
+  registry.register(new MonetizationHandler());
   
   // Register operation-level handlers (Requirements 1.2, 1.3, 1.4)
   registry.register(new PasswordResetHandler());
@@ -75,6 +79,8 @@ export { LabelHandler } from './label-handler.js';
 export { RefHandler } from './ref-handler.js';
 export { LoginHandler } from './login-handler.js';
 export { AuthHandler } from './auth-handler.js';
+export { PaymentHandler } from './payment-handler.js';
+export { MonetizationHandler } from './monetization-handler.js';
 export { PasswordResetHandler } from './password-reset-handler.js';
 export { SignUpHandler } from './sign-up-handler.js';
 export { ActiveServerHandler } from './active-server-handler.js';

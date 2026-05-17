@@ -16,6 +16,7 @@ import { LoginView } from './components/views/LoginView';
 import { SignUpView } from './components/views/SignUpView';
 import { PasswordResetView } from './components/views/PasswordResetView';
 import { ProfileView } from './components/views/ProfileView';
+import { PricingView } from './components/views/PricingView';
 import { OAuthCallback } from './components/auth/OAuthCallback';
 import { ToastProvider } from './components/Toast';
 import { AppProvider } from './contexts/AppContext';
@@ -262,6 +263,25 @@ export function App({ config }: AppProps) {
                 <ProfileView config={config} />
               </ProtectedRoute>
             } />
+            
+            {/* Pricing route - public, uses centered layout */}
+            {config.payments?.pricingPage?.enabled && (
+              <Route path="/pricing" element={
+                <ProtectedRoute 
+                  config={config} 
+                  requiresAuth={false}
+                  layoutOverride={{ 
+                    type: 'centered',
+                    metadata: {
+                      showHeader: true,
+                      verticalCenter: false
+                    }
+                  }}
+                >
+                  <PricingView config={config} />
+                </ProtectedRoute>
+              } />
+            )}
             
             {/* Resource routes - each protected with layout */}
             {config.resources

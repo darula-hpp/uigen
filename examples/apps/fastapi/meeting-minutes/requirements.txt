@@ -16,6 +16,9 @@ pydantic-settings>=2.6.0
 PyJWT>=2.8.0
 bcrypt>=4.1.0
 
+# Payment processing
+stripe>=11.0.0
+
 # File handling
 python-multipart>=0.0.20
 python-docx>=1.1.2

@@ -2,6 +2,8 @@ export { App } from './App';
 
 // View exports
 export { LandingPageView } from './components/views/LandingPageView';
+export { PricingView } from './components/views/PricingView';
+export type { PricingViewProps } from './components/views/PricingView';
 
 // Icon exports
 export { Icon } from './components/Icon';

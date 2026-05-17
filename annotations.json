@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-05-12T12:53:30.475Z",
-  "totalAnnotations": 16,
+  "generatedAt": "2026-05-17T11:12:02.811Z",
+  "totalAnnotations": 18,
   "annotations": [
     {
       "name": "x-uigen-active-server",
@@ -615,6 +615,75 @@
       ]
     },
     {
+      "name": "x-uigen-monetized",
+      "description": "Marks resources or operations as requiring payment/subscription. Backend enforces limits and returns 402 when exceeded.",
+      "targetType": [
+        "path",
+        "operation"
+      ],
+      "parameterSchema": {
+        "type": "boolean | object",
+        "properties": {
+          "monetized": {
+            "type": "boolean",
+            "description": "Whether this resource/operation is monetized (defaults to true if object present)"
+          },
+          "message": {
+            "type": "string",
+            "description": "Custom message to show in upgrade prompt when 402 received"
+          },
+          "redirectTo": {
+            "type": "string",
+            "description": "Custom redirect URL instead of default /pricing page"
+          }
+        }
+      },
+      "examples": [
+        {
+          "description": "Resource-level monetization (boolean shorthand)",
+          "value": true
+        },
+        {
+          "description": "Resource-level monetization with custom message",
+          "value": {
+            "monetized": true,
+            "message": "Upgrade to Professional to access meetings"
+          }
+        },
+        {
+          "description": "Operation-level monetization with custom redirect",
+          "value": {
+            "monetized": true,
+            "message": "This feature requires an Enterprise plan",
+            "redirectTo": "/contact-sales"
+          }
+        },
+        {
+          "description": "Full OpenAPI spec example",
+          "value": {
+            "paths": {
+              "/api/v1/meetings": {
+                "x-uigen-monetized": true,
+                "post": {
+                  "summary": "Create meeting",
+                  "description": "Backend enforces limits, returns 402 if exceeded"
+                }
+              },
+              "/api/v1/templates": {
+                "post": {
+                  "summary": "Create template",
+                  "x-uigen-monetized": {
+                    "monetized": true,
+                    "message": "Upgrade to Professional to create custom templates"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "x-uigen-override",
       "description": "Provides structured override configuration with identification and enablement control. Replaces the legacy x-uigen-id annotation.",
       "targetType": "operation",
@@ -672,6 +741,203 @@
         {
           "description": "Explicitly exclude from auto-detection",
           "value": false
+        }
+      ]
+    },
+    {
+      "name": "x-uigen-payments",
+      "description": "Configures payment providers and products for payment processing at the document level",
+      "targetType": "info",
+      "parameterSchema": {
+        "type": "object",
+        "properties": {
+          "providers": {
+            "type": "array",
+            "description": "Array of payment provider configurations",
+            "items": {
+              "type": "object",
+              "properties": {
+                "provider": {
+                  "type": "enum",
+                  "enum": [
+                    "stripe",
+                    "paypal",
+                    "square"
+                  ],
+                  "description": "Payment provider identifier"
+                },
+                "apiKey": {
+                  "type": "string",
+                  "description": "API key or secret key from provider console"
+                },
+                "publishableKey": {
+                  "type": "string",
+                  "description": "Publishable key for client-side operations (Stripe)"
+                },
+                "clientId": {
+                  "type": "string",
+                  "description": "Client ID for OAuth-based providers (PayPal)"
+                },
+                "clientSecret": {
+                  "type": "string",
+                  "description": "Client secret for OAuth-based providers (PayPal)"
+                },
+                "webhookSecret": {
+                  "type": "string",
+                  "description": "Webhook secret for signature verification"
+                },
+                "mode": {
+                  "type": "enum",
+                  "enum": [
+                    "test",
+                    "live"
+                  ],
+                  "description": "Operating mode (test/sandbox vs production)"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "Default currency code (ISO 4217, e.g., usd, eur, gbp)"
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Whether this provider is enabled (defaults to true)"
+                }
+              }
+            }
+          },
+          "products": {
+            "type": "array",
+            "description": "Array of payment product configurations",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Unique product identifier"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Display name for the product"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Product description"
+                },
+                "type": {
+                  "type": "enum",
+                  "enum": [
+                    "one-time",
+                    "subscription",
+                    "usage-based"
+                  ],
+                  "description": "Payment type"
+                },
+                "price": {
+                  "type": "number",
+                  "description": "Price in cents or \"custom\" for contact sales"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "Currency code (overrides provider default)"
+                },
+                "interval": {
+                  "type": "enum",
+                  "enum": [
+                    "day",
+                    "week",
+                    "month",
+                    "year"
+                  ],
+                  "description": "Billing interval for subscriptions"
+                },
+                "intervalCount": {
+                  "type": "number",
+                  "description": "Interval count (e.g., 3 for \"every 3 months\")"
+                },
+                "features": {
+                  "type": "array",
+                  "description": "List of features included in this product",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "highlighted": {
+                  "type": "boolean",
+                  "description": "Whether to highlight this product as recommended"
+                },
+                "metadata": {
+                  "type": "object",
+                  "description": "Custom metadata for provider-specific configuration"
+                }
+              }
+            }
+          },
+          "defaultCurrency": {
+            "type": "string",
+            "description": "Default currency for the application"
+          },
+          "successUrl": {
+            "type": "string",
+            "description": "Default success redirect URL after payment"
+          },
+          "cancelUrl": {
+            "type": "string",
+            "description": "Default cancel redirect URL if payment is canceled"
+          }
+        },
+        "required": [
+          "providers"
+        ]
+      },
+      "examples": [
+        {
+          "description": "Stripe payment configuration",
+          "value": {
+            "providers": [
+              {
+                "provider": "stripe",
+                "apiKey": "${STRIPE_SECRET_KEY}",
+                "publishableKey": "${STRIPE_PUBLISHABLE_KEY}",
+                "webhookSecret": "${STRIPE_WEBHOOK_SECRET}",
+                "mode": "test",
+                "currency": "usd"
+              }
+            ],
+            "products": [
+              {
+                "id": "pro-monthly",
+                "name": "Professional",
+                "type": "subscription",
+                "price": 2900,
+                "interval": "month",
+                "features": [
+                  "Unlimited meetings",
+                  "Priority support"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "description": "Multiple payment providers",
+          "value": {
+            "providers": [
+              {
+                "provider": "stripe",
+                "apiKey": "${STRIPE_SECRET_KEY}",
+                "publishableKey": "${STRIPE_PUBLISHABLE_KEY}",
+                "webhookSecret": "${STRIPE_WEBHOOK_SECRET}",
+                "mode": "test"
+              },
+              {
+                "provider": "paypal",
+                "clientId": "${PAYPAL_CLIENT_ID}",
+                "clientSecret": "${PAYPAL_CLIENT_SECRET}",
+                "webhookSecret": "${PAYPAL_WEBHOOK_SECRET}",
+                "mode": "sandbox"
+              }
+            ]
+          }
         }
       ]
     },

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Resource, Relationship } from '../types.js';
+import type { Resource, Relationship, PricingSourceType, PricingPageConfig, MonetizationConfig, Operation } from '../types.js';
 
 describe('IR Type Extensions', () => {
   describe('manyToMany relationship type', () => {
@@ -88,7 +88,6 @@ describe('IR Type Extensions', () => {
       const resource: Resource = {
         name: 'Template',
         slug: 'templates',
-        uigenId: 'resource-templates',
         description: 'Meeting templates',
         operations: [],
         schema: {
@@ -108,7 +107,6 @@ describe('IR Type Extensions', () => {
       const resource: Resource = {
         name: 'Meeting',
         slug: 'meetings',
-        uigenId: 'resource-meetings',
         description: 'Meetings',
         operations: [],
         schema: {
@@ -128,7 +126,6 @@ describe('IR Type Extensions', () => {
       const resource: Resource = {
         name: 'Meeting',
         slug: 'meetings',
-        uigenId: 'resource-meetings',
         operations: [],
         schema: {
           type: 'object',
@@ -146,7 +143,6 @@ describe('IR Type Extensions', () => {
       const resource: Resource = {
         name: 'Template',
         slug: 'templates',
-        uigenId: 'resource-templates',
         operations: [],
         schema: {
           type: 'object',
@@ -170,7 +166,6 @@ describe('IR Type Extensions', () => {
       const resource: Resource = {
         name: 'Meeting',
         slug: 'meetings',
-        uigenId: 'resource-meetings',
         operations: [],
         schema: {
           type: 'object',
@@ -193,7 +188,6 @@ describe('IR Type Extensions', () => {
       const libraryResource: Resource = {
         name: 'Template',
         slug: 'templates',
-        uigenId: 'resource-templates',
         operations: [],
         schema: {
           type: 'object',
@@ -208,7 +202,6 @@ describe('IR Type Extensions', () => {
       const consumerResource: Resource = {
         name: 'Meeting',
         slug: 'meetings',
-        uigenId: 'resource-meetings',
         operations: [],
         schema: {
           type: 'object',
@@ -238,7 +231,6 @@ describe('IR Type Extensions', () => {
         {
           name: 'Template',
           slug: 'templates',
-          uigenId: 'resource-templates',
           operations: [],
           schema: {
             type: 'object',
@@ -252,7 +244,6 @@ describe('IR Type Extensions', () => {
         {
           name: 'Meeting',
           slug: 'meetings',
-          uigenId: 'resource-meetings',
           operations: [],
           schema: {
             type: 'object',
@@ -282,7 +273,6 @@ describe('IR Type Extensions', () => {
       const resource: Resource = {
         name: 'Meeting',
         slug: 'meetings',
-        uigenId: 'resource-meetings',
         operations: [],
         schema: {
           type: 'object',
@@ -311,6 +301,323 @@ describe('IR Type Extensions', () => {
 
       expect(resource.relationships).toHaveLength(3);
       expect(resource.relationships.every(rel => rel.type === 'manyToMany')).toBe(true);
+    });
+  });
+
+  describe('PricingSourceType', () => {
+    it('should accept inline as a valid pricing source type', () => {
+      const source: PricingSourceType = 'inline';
+      expect(source).toBe('inline');
+    });
+
+    it('should accept endpoint as a valid pricing source type', () => {
+      const source: PricingSourceType = 'endpoint';
+      expect(source).toBe('endpoint');
+    });
+
+    it('should accept component as a valid pricing source type', () => {
+      const source: PricingSourceType = 'component';
+      expect(source).toBe('component');
+    });
+
+    it('should create a PricingPageConfig with inline source', () => {
+      const config: PricingPageConfig = {
+        enabled: true,
+        source: 'inline',
+        products: [
+          {
+            id: 'free',
+            name: 'Free',
+            type: 'subscription',
+            price: 0,
+            interval: 'month',
+          },
+        ],
+      };
+
+      expect(config.source).toBe('inline');
+      expect(config.enabled).toBe(true);
+      expect(config.products).toHaveLength(1);
+    });
+
+    it('should create a PricingPageConfig with endpoint source', () => {
+      const config: PricingPageConfig = {
+        enabled: true,
+        source: 'endpoint',
+        endpoint: '/api/v1/pricing/products',
+      };
+
+      expect(config.source).toBe('endpoint');
+      expect(config.endpoint).toBe('/api/v1/pricing/products');
+    });
+
+    it('should create a PricingPageConfig with component source', () => {
+      const config: PricingPageConfig = {
+        enabled: true,
+        source: 'component',
+        override: {
+          id: 'custom-pricing',
+          enabled: true,
+        },
+      };
+
+      expect(config.source).toBe('component');
+      expect(config.override?.id).toBe('custom-pricing');
+    });
+
+    it('should serialize PricingPageConfig to JSON', () => {
+      const config: PricingPageConfig = {
+        enabled: true,
+        source: 'inline',
+        products: [
+          {
+            id: 'pro',
+            name: 'Professional',
+            type: 'subscription',
+            price: 2900,
+            interval: 'month',
+          },
+        ],
+      };
+
+      const serialized = JSON.stringify(config);
+      const deserialized = JSON.parse(serialized) as PricingPageConfig;
+
+      expect(deserialized.source).toBe('inline');
+      expect(deserialized.products?.[0].price).toBe(2900);
+    });
+  });
+
+  describe('MonetizationConfig', () => {
+    it('should create a basic monetization config with only monetized flag', () => {
+      const config: MonetizationConfig = {
+        monetized: true,
+      };
+
+      expect(config.monetized).toBe(true);
+      expect(config.message).toBeUndefined();
+      expect(config.redirectTo).toBeUndefined();
+    });
+
+    it('should create a monetization config with custom message', () => {
+      const config: MonetizationConfig = {
+        monetized: true,
+        message: 'Upgrade to Pro to access this feature',
+      };
+
+      expect(config.monetized).toBe(true);
+      expect(config.message).toBe('Upgrade to Pro to access this feature');
+    });
+
+    it('should create a monetization config with custom redirect URL', () => {
+      const config: MonetizationConfig = {
+        monetized: true,
+        redirectTo: '/pricing',
+      };
+
+      expect(config.monetized).toBe(true);
+      expect(config.redirectTo).toBe('/pricing');
+    });
+
+    it('should create a monetization config with all fields', () => {
+      const config: MonetizationConfig = {
+        monetized: true,
+        message: 'This feature requires a paid subscription',
+        redirectTo: '/upgrade',
+      };
+
+      expect(config.monetized).toBe(true);
+      expect(config.message).toBe('This feature requires a paid subscription');
+      expect(config.redirectTo).toBe('/upgrade');
+    });
+
+    it('should create a monetization config with monetized set to false', () => {
+      const config: MonetizationConfig = {
+        monetized: false,
+      };
+
+      expect(config.monetized).toBe(false);
+    });
+
+    it('should serialize MonetizationConfig to JSON', () => {
+      const config: MonetizationConfig = {
+        monetized: true,
+        message: 'Upgrade required',
+        redirectTo: '/pricing',
+      };
+
+      const serialized = JSON.stringify(config);
+      const deserialized = JSON.parse(serialized) as MonetizationConfig;
+
+      expect(deserialized.monetized).toBe(true);
+      expect(deserialized.message).toBe('Upgrade required');
+      expect(deserialized.redirectTo).toBe('/pricing');
+    });
+
+    it('should add monetization config to a Resource', () => {
+      const resource: Resource = {
+        name: 'Meeting',
+        slug: 'meetings',
+        operations: [],
+        schema: {
+          type: 'object',
+          key: 'meeting',
+          label: 'Meeting',
+          required: false,
+        },
+        relationships: [],
+        monetization: {
+          monetized: true,
+          message: 'Upgrade to create meetings',
+          redirectTo: '/pricing',
+        },
+      };
+
+      expect(resource.monetization).toBeDefined();
+      expect(resource.monetization?.monetized).toBe(true);
+      expect(resource.monetization?.message).toBe('Upgrade to create meetings');
+      expect(resource.monetization?.redirectTo).toBe('/pricing');
+    });
+
+    it('should add monetization config to an Operation', () => {
+      const operation: Operation = {
+        id: 'createMeeting',
+        method: 'POST',
+        path: '/api/v1/meetings',
+        summary: 'Create a new meeting',
+        parameters: [],
+        responses: {},
+        viewHint: 'create',
+        monetization: {
+          monetized: true,
+          message: 'Upgrade to Pro to create meetings',
+        },
+      };
+
+      expect(operation.monetization).toBeDefined();
+      expect(operation.monetization?.monetized).toBe(true);
+      expect(operation.monetization?.message).toBe('Upgrade to Pro to create meetings');
+    });
+
+    it('should allow Resource without monetization config', () => {
+      const resource: Resource = {
+        name: 'Template',
+        slug: 'templates',
+        operations: [],
+        schema: {
+          type: 'object',
+          key: 'template',
+          label: 'Template',
+          required: false,
+        },
+        relationships: [],
+      };
+
+      expect(resource.monetization).toBeUndefined();
+    });
+
+    it('should allow Operation without monetization config', () => {
+      const operation: Operation = {
+        id: 'listTemplates',
+        method: 'GET',
+        path: '/api/v1/templates',
+        parameters: [],
+        responses: {},
+        viewHint: 'list',
+      };
+
+      expect(operation.monetization).toBeUndefined();
+    });
+
+    it('should serialize Resource with monetization config to JSON', () => {
+      const resource: Resource = {
+        name: 'Meeting',
+        slug: 'meetings',
+        operations: [],
+        schema: {
+          type: 'object',
+          key: 'meeting',
+          label: 'Meeting',
+          required: false,
+        },
+        relationships: [],
+        monetization: {
+          monetized: true,
+          message: 'Upgrade required',
+        },
+      };
+
+      const serialized = JSON.stringify(resource);
+      const deserialized = JSON.parse(serialized) as Resource;
+
+      expect(deserialized.monetization?.monetized).toBe(true);
+      expect(deserialized.monetization?.message).toBe('Upgrade required');
+    });
+
+    it('should serialize Operation with monetization config to JSON', () => {
+      const operation: Operation = {
+        id: 'createMeeting',
+        method: 'POST',
+        path: '/api/v1/meetings',
+        parameters: [],
+        responses: {},
+        viewHint: 'create',
+        monetization: {
+          monetized: true,
+          redirectTo: '/upgrade',
+        },
+      };
+
+      const serialized = JSON.stringify(operation);
+      const deserialized = JSON.parse(serialized) as Operation;
+
+      expect(deserialized.monetization?.monetized).toBe(true);
+      expect(deserialized.monetization?.redirectTo).toBe('/upgrade');
+    });
+
+    it('should handle mixed monetization configs on Resource and Operations', () => {
+      const resource: Resource = {
+        name: 'Meeting',
+        slug: 'meetings',
+        operations: [
+          {
+            id: 'listMeetings',
+            method: 'GET',
+            path: '/api/v1/meetings',
+            parameters: [],
+            responses: {},
+            viewHint: 'list',
+            // No monetization - free for all
+          },
+          {
+            id: 'createMeeting',
+            method: 'POST',
+            path: '/api/v1/meetings',
+            parameters: [],
+            responses: {},
+            viewHint: 'create',
+            monetization: {
+              monetized: true,
+              message: 'Upgrade to create meetings',
+            },
+          },
+        ],
+        schema: {
+          type: 'object',
+          key: 'meeting',
+          label: 'Meeting',
+          required: false,
+        },
+        relationships: [],
+        monetization: {
+          monetized: true,
+          message: 'Upgrade to access meetings',
+        },
+      };
+
+      expect(resource.monetization?.monetized).toBe(true);
+      expect(resource.operations[0].monetization).toBeUndefined();
+      expect(resource.operations[1].monetization?.monetized).toBe(true);
     });
   });
 });
