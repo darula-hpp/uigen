@@ -284,8 +284,8 @@ export class PaymentHandler implements AnnotationHandler<PaymentAnnotation> {
   };
   
   /**
-   * Extract the x-uigen-payments annotation value from the OpenAPI document root.
-   * Reads from spec root (not info object) for consistency with other document-level annotations.
+   * Extract the x-uigen-payments annotation value from the OpenAPI info object.
+   * Reads from info object for consistency with other document-level annotations like x-uigen-auth.
    * Only accepts objects with a providers array.
    * 
    * @param context - The annotation context containing the spec element
@@ -294,8 +294,13 @@ export class PaymentHandler implements AnnotationHandler<PaymentAnnotation> {
   extract(context: AnnotationContext): PaymentAnnotation | undefined {
     const element = context.element as any;
     
-    // Read from document root (element['x-uigen-payments'])
-    const annotation = element['x-uigen-payments'];
+    // x-uigen-payments is in the info object, not at document root
+    const info = element.info;
+    if (!info || typeof info !== 'object') {
+      return undefined;
+    }
+    
+    const annotation = info['x-uigen-payments'];
     
     // Must be an object
     if (typeof annotation !== 'object' || annotation === null || Array.isArray(annotation)) {
@@ -391,12 +396,13 @@ export class PaymentHandler implements AnnotationHandler<PaymentAnnotation> {
     // Validate URLs
     if (value.successUrl) {
       const isLocalhost = value.successUrl.includes('localhost') || value.successUrl.includes('127.0.0.1');
-      if (!isLocalhost && !value.successUrl.startsWith('https://')) {
+      const isEnvVar = /^\$\{[A-Z_][A-Z0-9_]*\}$/.test(value.successUrl);
+      if (!isLocalhost && !isEnvVar && !value.successUrl.startsWith('https://')) {
         errors.push({
           field: 'successUrl',
           message: 'Success URL must use HTTPS (except localhost)'
         });
-      } else if (!HTTP_OR_HTTPS_URL_PATTERN.test(value.successUrl)) {
+      } else if (!isEnvVar && !HTTP_OR_HTTPS_URL_PATTERN.test(value.successUrl)) {
         errors.push({
           field: 'successUrl',
           message: 'Success URL must be a valid URL'
@@ -406,12 +412,13 @@ export class PaymentHandler implements AnnotationHandler<PaymentAnnotation> {
     
     if (value.cancelUrl) {
       const isLocalhost = value.cancelUrl.includes('localhost') || value.cancelUrl.includes('127.0.0.1');
-      if (!isLocalhost && !value.cancelUrl.startsWith('https://')) {
+      const isEnvVar = /^\$\{[A-Z_][A-Z0-9_]*\}$/.test(value.cancelUrl);
+      if (!isLocalhost && !isEnvVar && !value.cancelUrl.startsWith('https://')) {
         errors.push({
           field: 'cancelUrl',
           message: 'Cancel URL must use HTTPS (except localhost)'
         });
-      } else if (!HTTP_OR_HTTPS_URL_PATTERN.test(value.cancelUrl)) {
+      } else if (!isEnvVar && !HTTP_OR_HTTPS_URL_PATTERN.test(value.cancelUrl)) {
         errors.push({
           field: 'cancelUrl',
           message: 'Cancel URL must be a valid URL'
@@ -464,17 +471,11 @@ export class PaymentHandler implements AnnotationHandler<PaymentAnnotation> {
       });
     }
     
-    if (!provider.apiKey && !provider.clientId) {
+    // publishableKey is required for frontend (apiKey/clientId/webhookSecret are backend-only)
+    if (!provider.publishableKey && !provider.clientId) {
       errors.push({
-        field: `${prefix}.apiKey`,
-        message: 'Either apiKey or clientId is required'
-      });
-    }
-    
-    if (!provider.webhookSecret) {
-      errors.push({
-        field: `${prefix}.webhookSecret`,
-        message: 'WebhookSecret field is required'
+        field: `${prefix}.publishableKey`,
+        message: 'Either publishableKey or clientId is required for frontend'
       });
     }
     

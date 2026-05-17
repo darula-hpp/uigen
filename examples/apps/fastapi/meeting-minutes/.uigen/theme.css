@@ -865,7 +865,8 @@ h3 {
   font-size: 1.25rem;
 }
 
-.pricing-plan a {
+.pricing-plan a,
+.pricing-plan button {
   display: block;
   text-align: center;
   padding: 1rem 2rem;
@@ -875,6 +876,179 @@ h3 {
   border-radius: 0.25rem;
   font-weight: 600;
   font-size: 1.0625rem;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+}
+
+.pricing-plan a:hover,
+.pricing-plan button:hover {
+  background: #b45309;
+}
+
+/* Pricing View Container - Full page pricing */
+.pricing-view-container {
+  min-height: 100vh;
+  background-color: var(--muted);
+  padding: 6rem 2rem;
+}
+
+.pricing-view-container .max-w-7xl {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.pricing-view-container h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--foreground);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.pricing-view-container .text-center p {
+  font-size: 1.25rem;
+  color: var(--muted-foreground);
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+/* Pricing Card Component Styles */
+.pricing-card {
+  background-color: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pricing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+.dark .pricing-card:hover {
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+.pricing-card.highlighted {
+  border-color: var(--primary);
+  border-width: 3px;
+  position: relative;
+}
+
+.pricing-card.highlighted::before {
+  content: "Recommended";
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--primary);
+  color: white;
+  padding: 0.375rem 1.25rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pricing-card__header {
+  margin-bottom: 2rem;
+}
+
+.pricing-card__name {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+}
+
+.pricing-card__description {
+  font-size: 1rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+.pricing-card__price {
+  margin-bottom: 2rem;
+}
+
+.pricing-card__price-amount {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.pricing-card__price-interval {
+  font-size: 1.125rem;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.pricing-card__features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem 0;
+  flex-grow: 1;
+}
+
+.pricing-card__feature {
+  padding: 0.875rem 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pricing-card__feature::before {
+  content: "✓";
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.pricing-card__cta {
+  margin-top: auto;
+}
+
+.pricing-card__button {
+  width: 100%;
+  padding: 1rem 2rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  font-size: 1.0625rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.pricing-card__button:hover {
+  background: #b45309;
+}
+
+.pricing-card__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pricing-card.highlighted .pricing-card__button {
+  background: var(--primary);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+}
+
+.pricing-card.highlighted .pricing-card__button:hover {
+  background: #b45309;
+  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.4);
 }
 
 /* FAQ Section - Simple accordion style */

@@ -1,19 +1,6 @@
 version: '1.0'
 enabled: {}
 defaults: {}
-payments:
-  providers:
-    - provider: stripe
-      publishableKey: ${STRIPE_PUBLISHABLE_KEY}
-      mode: test
-      currency: usd
-  pricingPage:
-    enabled: true
-    source: endpoint
-    endpoint: /api/v1/pricing/plans
-  defaultCurrency: usd
-  successUrl: /payment/success
-  cancelUrl: /payment/cancel
 annotations:
   document:
     x-uigen-app:
@@ -29,6 +16,19 @@ annotations:
             - email
             - profile
           sessionValidationEndpoint: /api/v1/auth/me
+    x-uigen-payments:
+      providers:
+        - provider: stripe
+          publishableKey: ${STRIPE_PUBLISHABLE_KEY}
+          mode: test
+          currency: usd
+      pricingPage:
+        enabled: true
+        source: endpoint
+        endpoint: /api/v1/pricing/plans
+      defaultCurrency: usd
+      successUrl: http://localhost:5173/payment/success
+      cancelUrl: http://localhost:5173/payment/cancel
     x-uigen-landing-page:
       enabled: true
       sections:

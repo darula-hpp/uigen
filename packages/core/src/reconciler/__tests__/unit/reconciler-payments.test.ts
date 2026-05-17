@@ -468,3 +468,117 @@ describe('PaymentReconciler', () => {
     });
   });
 });
+
+  describe('pricingPage reconciliation', () => {
+    it('should preserve pricingPage config with endpoint source', () => {
+      const configWithPricingPage: any = {
+        version: '1.0',
+        annotations: {
+          document: {
+            'x-uigen-payments': {
+              providers: [
+                {
+                  provider: 'stripe',
+                  publishableKey: '${STRIPE_PUBLISHABLE_KEY}',
+                  mode: 'test',
+                },
+              ],
+              pricingPage: {
+                enabled: true,
+                source: 'endpoint',
+                endpoint: '/api/v1/pricing/plans',
+              },
+              defaultCurrency: 'usd',
+              successUrl: 'http://localhost:5173/payment/success',
+              cancelUrl: 'http://localhost:5173/payment/cancel',
+            },
+          },
+        },
+      };
+
+      const result = reconciler.reconcile(spec, configWithPricingPage);
+
+      // pricingPage should be preserved in the reconciled spec
+      const paymentsAnnotation = (result.spec.info as any)['x-uigen-payments'];
+      expect(paymentsAnnotation).toBeDefined();
+      expect(paymentsAnnotation.pricingPage).toBeDefined();
+      expect(paymentsAnnotation.pricingPage.enabled).toBe(true);
+      expect(paymentsAnnotation.pricingPage.source).toBe('endpoint');
+      expect(paymentsAnnotation.pricingPage.endpoint).toBe('/api/v1/pricing/plans');
+    });
+
+    it('should preserve pricingPage config with inline source', () => {
+      const configWithInlinePricing: any = {
+        version: '1.0',
+        annotations: {
+          document: {
+            'x-uigen-payments': {
+              providers: [
+                {
+                  provider: 'stripe',
+                  publishableKey: '${STRIPE_PUBLISHABLE_KEY}',
+                  mode: 'test',
+                },
+              ],
+              pricingPage: {
+                enabled: true,
+                source: 'inline',
+                products: [
+                  {
+                    id: 'pro',
+                    name: 'Professional',
+                    type: 'subscription',
+                    price: 2900,
+                    interval: 'month',
+                  },
+                ],
+              },
+            },
+          },
+        },
+      };
+
+      const result = reconciler.reconcile(spec, configWithInlinePricing);
+
+      const paymentsAnnotation = (result.spec.info as any)['x-uigen-payments'];
+      expect(paymentsAnnotation.pricingPage).toBeDefined();
+      expect(paymentsAnnotation.pricingPage.source).toBe('inline');
+      expect(paymentsAnnotation.pricingPage.products).toHaveLength(1);
+      expect(paymentsAnnotation.pricingPage.products[0].id).toBe('pro');
+    });
+
+    it('should preserve pricingPage config with component source', () => {
+      const configWithComponentPricing: any = {
+        version: '1.0',
+        annotations: {
+          document: {
+            'x-uigen-payments': {
+              providers: [
+                {
+                  provider: 'stripe',
+                  publishableKey: '${STRIPE_PUBLISHABLE_KEY}',
+                  mode: 'test',
+                },
+              ],
+              pricingPage: {
+                enabled: true,
+                source: 'component',
+                override: {
+                  id: 'custom-pricing',
+                  enabled: true,
+                },
+              },
+            },
+          },
+        },
+      };
+
+      const result = reconciler.reconcile(spec, configWithComponentPricing);
+
+      const paymentsAnnotation = (result.spec.info as any)['x-uigen-payments'];
+      expect(paymentsAnnotation.pricingPage).toBeDefined();
+      expect(paymentsAnnotation.pricingPage.source).toBe('component');
+      expect(paymentsAnnotation.pricingPage.override).toBeDefined();
+      expect(paymentsAnnotation.pricingPage.override.id).toBe('custom-pricing');
+    });
+  });

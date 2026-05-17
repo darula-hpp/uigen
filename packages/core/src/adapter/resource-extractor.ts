@@ -337,13 +337,8 @@ export class Resource_Extractor {
         }
       }
       
-      // Generate pricing resource if pricing page is enabled
-      if (this.currentIR.payments?.pricingPage?.enabled) {
-        const pricingResource = this.pricingResourceGenerator.generate(this.currentIR.payments);
-        if (pricingResource) {
-          resourcesWithOperations.push(pricingResource);
-        }
-      }
+      // Note: Pricing page is handled as a standalone route in the React app (App.tsx),
+      // not as a resource. This prevents it from appearing in the sidebar/dashboard.
     }
     
     return resourcesWithOperations;

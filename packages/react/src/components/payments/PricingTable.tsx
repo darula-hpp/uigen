@@ -13,9 +13,6 @@ export interface PricingTableProps {
   /** Products to display (overrides config) */
   products?: PaymentProduct[];
   
-  /** Number of columns in the grid */
-  columns?: number;
-  
   /** Callback when a plan is selected */
   onSelectPlan?: (productId: string) => void;
   
@@ -47,7 +44,6 @@ export interface PricingTableProps {
  */
 export function PricingTable({
   products: productsProp,
-  columns = 3,
   onSelectPlan,
   className = '',
   title,
@@ -73,27 +69,22 @@ export function PricingTable({
   
   if (products.length === 0) {
     return (
-      <div className="pricing-table pricing-table--empty">
-        <p>No pricing plans available</p>
+      <div className="text-center py-12">
+        <p className="text-gray-600 dark:text-gray-400">No pricing plans available</p>
       </div>
     );
   }
   
   return (
-    <div className={`pricing-table ${className}`}>
+    <div className={`w-full ${className}`}>
       {(title || subtitle) && (
-        <div className="pricing-table__header">
-          {title && <h2 className="pricing-table__title">{title}</h2>}
-          {subtitle && <p className="pricing-table__subtitle">{subtitle}</p>}
+        <div className="text-center mb-12">
+          {title && <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{title}</h2>}
+          {subtitle && <p className="text-lg text-gray-600 dark:text-gray-400">{subtitle}</p>}
         </div>
       )}
       
-      <div
-        className="pricing-table__grid"
-        style={{
-          gridTemplateColumns: `repeat(${Math.min(columns, products.length)}, 1fr)`,
-        }}
-      >
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
         {products.map((product) => (
           <PricingCard
             key={product.id}

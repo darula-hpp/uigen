@@ -14,6 +14,7 @@ class PricingPlan(BaseModel):
     id: str
     name: str
     description: str
+    type: str  # "one-time", "subscription", or "usage-based"
     price: int | str  # in cents or "custom"
     interval: str | None = None
     features: List[str]
@@ -33,6 +34,7 @@ async def get_pricing_plans():
             "id": "free",
             "name": "Free",
             "description": "Get started with basic features",
+            "type": "subscription",
             "price": 0,
             "interval": "month",
             "features": [
@@ -48,6 +50,7 @@ async def get_pricing_plans():
             "id": "pro",
             "name": "Professional",
             "description": "Full access to all features",
+            "type": "subscription",
             "price": 2900,  # $29.00
             "interval": "month",
             "features": [
@@ -64,6 +67,7 @@ async def get_pricing_plans():
             "id": "enterprise",
             "name": "Enterprise",
             "description": "Custom solutions for large teams",
+            "type": "subscription",
             "price": "custom",
             "interval": None,
             "features": [

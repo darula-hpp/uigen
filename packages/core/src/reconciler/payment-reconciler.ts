@@ -17,15 +17,34 @@ import type { OpenAPIV3 } from 'openapi-types';
 import type { Swagger2Document } from './types.js';
 
 /**
+ * Payment configuration structure
+ */
+export interface PaymentConfig {
+  providers?: PaymentProviderConfig[];
+  products?: PaymentProductConfig[];
+  defaultCurrency?: string;
+  successUrl?: string;
+  cancelUrl?: string;
+  pricingPage?: {
+    enabled: boolean;
+    source: 'inline' | 'endpoint' | 'component';
+    products?: PaymentProductConfig[];
+    endpoint?: string;
+    override?: {
+      id: string;
+      enabled: boolean;
+    };
+  };
+}
+
+/**
  * Configuration file structure for payments section
  */
 export interface PaymentConfigFile {
-  payments?: {
-    providers?: PaymentProviderConfig[];
-    products?: PaymentProductConfig[];
-    defaultCurrency?: string;
-    successUrl?: string;
-    cancelUrl?: string;
+  annotations?: {
+    document?: {
+      'x-uigen-payments'?: PaymentConfig;
+    };
   };
 }
 
@@ -102,7 +121,7 @@ export class PaymentReconciler {
     
     // Extract providers and products from both sources
     const specPayments = this.extractPaymentsFromSpec(spec);
-    const configPayments = config.payments || {};
+    const configPayments = config.annotations?.document?.['x-uigen-payments'] || {};
     
     // Validate config providers and products
     const validationErrors = this.validatePayments(configPayments);
@@ -124,6 +143,7 @@ export class PaymentReconciler {
     const mergedPayments = {
       providers: mergedProviders,
       products: mergedProducts,
+      pricingPage: configPayments.pricingPage || specPayments?.pricingPage,
       defaultCurrency: configPayments.defaultCurrency || specPayments?.defaultCurrency,
       successUrl: configPayments.successUrl || specPayments?.successUrl,
       cancelUrl: configPayments.cancelUrl || specPayments?.cancelUrl
@@ -143,16 +163,16 @@ export class PaymentReconciler {
   }
   
   /**
-   * Extract payment configuration from OpenAPI spec x-uigen-payments annotation
+   * Extract payment configuration from OpenAPI spec x-uigen-payments annotation in info object
    * 
    * @param spec - The OpenAPI/Swagger specification
    * @returns Payment configuration object
    */
   private extractPaymentsFromSpec(
     spec: OpenAPIV3.Document | Swagger2Document
-  ): Partial<PaymentConfigFile['payments']> {
+  ): Partial<PaymentConfig> {
     const info = spec.info as Record<string, unknown>;
-    const paymentsAnnotation = info['x-uigen-payments'] as PaymentConfigFile['payments'] | undefined;
+    const paymentsAnnotation = info['x-uigen-payments'] as PaymentConfig | undefined;
     
     if (!paymentsAnnotation) {
       return {};
@@ -161,6 +181,7 @@ export class PaymentReconciler {
     return {
       providers: paymentsAnnotation.providers || [],
       products: paymentsAnnotation.products || [],
+      pricingPage: paymentsAnnotation.pricingPage,
       defaultCurrency: paymentsAnnotation.defaultCurrency,
       successUrl: paymentsAnnotation.successUrl,
       cancelUrl: paymentsAnnotation.cancelUrl
@@ -173,7 +194,7 @@ export class PaymentReconciler {
    * @param payments - Payment configuration to validate
    * @returns Array of validation error messages
    */
-  private validatePayments(payments: Partial<PaymentConfigFile['payments']>): string[] {
+  private validatePayments(payments: Partial<PaymentConfig>): string[] {
     const errors: string[] = [];
     const supportedProviders = ['stripe', 'paypal', 'square'];
     const supportedCurrencies = ['usd', 'eur', 'gbp', 'cad', 'aud', 'jpy', 'chf', 'nzd', 'sgd', 'hkd'];
@@ -193,7 +214,7 @@ export class PaymentReconciler {
     }
     
     // Validate providers
-    providers.forEach((provider, index) => {
+    providers.forEach((provider: any, index: number) => {
       const prefix = `Provider ${index + 1}`;
       
       if (!provider.provider) {
@@ -204,12 +225,10 @@ export class PaymentReconciler {
         );
       }
       
-      if (!provider.apiKey && !provider.clientId) {
-        errors.push(`${prefix}: either apiKey or clientId is required`);
-      }
-      
-      if (!provider.webhookSecret) {
-        errors.push(`${prefix}: webhookSecret field is required`);
+      // Only require frontend-safe keys (publishableKey or clientId)
+      // Backend secrets (apiKey, webhookSecret) are read from environment variables on the backend
+      if (!provider.publishableKey && !provider.clientId) {
+        errors.push(`${prefix}: either publishableKey or clientId is required for frontend`);
       }
       
       if (!provider.mode) {
@@ -224,7 +243,7 @@ export class PaymentReconciler {
     });
     
     // Validate products
-    products.forEach((product, index) => {
+    products.forEach((product: any, index: number) => {
       const prefix = `Product ${index + 1}`;
       
       if (!product.id) {
@@ -329,7 +348,7 @@ export class PaymentReconciler {
   /**
    * Sync merged payment configuration to OpenAPI spec
    * 
-   * Updates or creates x-uigen-payments annotation in spec info object
+   * Updates or creates x-uigen-payments annotation in info object (like x-uigen-auth)
    * 
    * @param payments - Merged payment configuration
    * @param spec - The OpenAPI/Swagger specification
@@ -339,6 +358,16 @@ export class PaymentReconciler {
     payments: {
       providers: PaymentProviderConfig[];
       products: PaymentProductConfig[];
+      pricingPage?: {
+        enabled: boolean;
+        source: 'inline' | 'endpoint' | 'component';
+        products?: PaymentProductConfig[];
+        endpoint?: string;
+        override?: {
+          id: string;
+          enabled: boolean;
+        };
+      };
       defaultCurrency?: string;
       successUrl?: string;
       cancelUrl?: string;
@@ -347,13 +376,15 @@ export class PaymentReconciler {
   ): OpenAPIV3.Document | Swagger2Document {
     // Deep clone to avoid mutation
     const updatedSpec = JSON.parse(JSON.stringify(spec)) as OpenAPIV3.Document | Swagger2Document;
+    
+    // Get info object
     const info = updatedSpec.info as Record<string, unknown>;
     
     if (payments.providers.length === 0 && payments.products.length === 0) {
       // Remove x-uigen-payments if no providers or products
       delete info['x-uigen-payments'];
     } else {
-      // Set or update x-uigen-payments annotation
+      // Set or update x-uigen-payments annotation in info object
       info['x-uigen-payments'] = {
         providers: payments.providers.map(provider => ({
           provider: provider.provider,
@@ -381,6 +412,7 @@ export class PaymentReconciler {
             ...(product.metadata && { metadata: product.metadata }),
           }))
         }),
+        ...(payments.pricingPage && { pricingPage: payments.pricingPage }),
         ...(payments.defaultCurrency && { defaultCurrency: payments.defaultCurrency }),
         ...(payments.successUrl && { successUrl: payments.successUrl }),
         ...(payments.cancelUrl && { cancelUrl: payments.cancelUrl }),
@@ -393,7 +425,7 @@ export class PaymentReconciler {
   /**
    * Sync merged payment configuration to config.yaml
    * 
-   * Updates or creates payments section in config
+   * Updates or creates x-uigen-payments in annotations.document section
    * 
    * @param payments - Merged payment configuration
    * @param config - The config file
@@ -403,6 +435,16 @@ export class PaymentReconciler {
     payments: {
       providers: PaymentProviderConfig[];
       products: PaymentProductConfig[];
+      pricingPage?: {
+        enabled: boolean;
+        source: 'inline' | 'endpoint' | 'component';
+        products?: PaymentProductConfig[];
+        endpoint?: string;
+        override?: {
+          id: string;
+          enabled: boolean;
+        };
+      };
       defaultCurrency?: string;
       successUrl?: string;
       cancelUrl?: string;
@@ -412,55 +454,51 @@ export class PaymentReconciler {
     // Deep clone to avoid mutation
     const updatedConfig = JSON.parse(JSON.stringify(config)) as PaymentConfigFile;
     
+    // Ensure annotations.document structure exists
+    if (!updatedConfig.annotations) {
+      updatedConfig.annotations = {};
+    }
+    if (!updatedConfig.annotations.document) {
+      updatedConfig.annotations.document = {};
+    }
+    
     if (payments.providers.length === 0 && payments.products.length === 0) {
-      // Remove payments section if no providers or products
-      delete updatedConfig.payments;
+      // Remove x-uigen-payments if no providers or products
+      delete updatedConfig.annotations.document['x-uigen-payments'];
     } else {
-      // Ensure payments section exists
-      if (!updatedConfig.payments) {
-        updatedConfig.payments = {};
-      }
-      
-      // Set providers
-      updatedConfig.payments.providers = payments.providers.map(provider => ({
-        provider: provider.provider,
-        apiKey: provider.apiKey,
-        ...(provider.publishableKey && { publishableKey: provider.publishableKey }),
-        ...(provider.clientId && { clientId: provider.clientId }),
-        ...(provider.clientSecret && { clientSecret: provider.clientSecret }),
-        webhookSecret: provider.webhookSecret,
-        mode: provider.mode,
-        ...(provider.currency && { currency: provider.currency }),
-        ...(provider.enabled !== undefined && { enabled: provider.enabled }),
-      }));
-      
-      // Set products
-      if (payments.products.length > 0) {
-        updatedConfig.payments.products = payments.products.map(product => ({
-          id: product.id,
-          name: product.name,
-          ...(product.description && { description: product.description }),
-          type: product.type,
-          price: product.price,
-          ...(product.currency && { currency: product.currency }),
-          ...(product.interval && { interval: product.interval }),
-          ...(product.intervalCount && { intervalCount: product.intervalCount }),
-          ...(product.features && { features: product.features }),
-          ...(product.highlighted !== undefined && { highlighted: product.highlighted }),
-          ...(product.metadata && { metadata: product.metadata }),
-        }));
-      }
-      
-      // Set other fields
-      if (payments.defaultCurrency) {
-        updatedConfig.payments.defaultCurrency = payments.defaultCurrency;
-      }
-      if (payments.successUrl) {
-        updatedConfig.payments.successUrl = payments.successUrl;
-      }
-      if (payments.cancelUrl) {
-        updatedConfig.payments.cancelUrl = payments.cancelUrl;
-      }
+      // Set x-uigen-payments in annotations.document
+      updatedConfig.annotations.document['x-uigen-payments'] = {
+        providers: payments.providers.map(provider => ({
+          provider: provider.provider,
+          apiKey: provider.apiKey,
+          ...(provider.publishableKey && { publishableKey: provider.publishableKey }),
+          ...(provider.clientId && { clientId: provider.clientId }),
+          ...(provider.clientSecret && { clientSecret: provider.clientSecret }),
+          webhookSecret: provider.webhookSecret,
+          mode: provider.mode,
+          ...(provider.currency && { currency: provider.currency }),
+          ...(provider.enabled !== undefined && { enabled: provider.enabled }),
+        })),
+        ...(payments.products.length > 0 && {
+          products: payments.products.map(product => ({
+            id: product.id,
+            name: product.name,
+            ...(product.description && { description: product.description }),
+            type: product.type,
+            price: product.price,
+            ...(product.currency && { currency: product.currency }),
+            ...(product.interval && { interval: product.interval }),
+            ...(product.intervalCount && { intervalCount: product.intervalCount }),
+            ...(product.features && { features: product.features }),
+            ...(product.highlighted !== undefined && { highlighted: product.highlighted }),
+            ...(product.metadata && { metadata: product.metadata }),
+          }))
+        }),
+        ...(payments.pricingPage && { pricingPage: payments.pricingPage }),
+        ...(payments.defaultCurrency && { defaultCurrency: payments.defaultCurrency }),
+        ...(payments.successUrl && { successUrl: payments.successUrl }),
+        ...(payments.cancelUrl && { cancelUrl: payments.cancelUrl }),
+      };
     }
     
     return updatedConfig;

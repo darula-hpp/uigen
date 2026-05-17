@@ -65,7 +65,7 @@ const CenteredLayoutComponent = memo(function CenteredLayoutComponent({ children
       {showHeader && (
         <header role="banner" className="border-b bg-card transition-all duration-300 ease-in-out">
           <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-            <h1 className="text-xl font-bold">{config.meta.title}</h1>
+            <h1 className="text-xl font-bold">{config.appConfig?.name || config.meta.title}</h1>
             <ThemeToggle />
           </div>
         </header>
@@ -82,13 +82,13 @@ const CenteredLayoutComponent = memo(function CenteredLayoutComponent({ children
         style={containerStyles}
       >
         <style>{`
-          .centered-layout-main > div {
+          .centered-layout-main > .centered-layout-content {
             width: 100%;
             max-width: var(--max-width);
             transition: all 300ms ease-in-out;
           }
         `}</style>
-        <div>
+        <div className="centered-layout-content">
           {children}
         </div>
       </main>
