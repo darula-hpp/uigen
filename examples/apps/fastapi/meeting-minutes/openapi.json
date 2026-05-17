@@ -1472,6 +1472,128 @@
         }
       }
     },
+    "/api/v1/auth/status": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Auth Status",
+        "description": "Check authentication status (for httpOnly cookie auth).\n\nThis endpoint allows the SPA to check if the user is authenticated\nwhen using httpOnly cookies (since JavaScript can't read the cookie).\n\nReturns:\n    User info if authenticated, 401 if not",
+        "operationId": "auth_status_api_v1_auth_status_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/stripe": {
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Stripe Webhook",
+        "description": "Handle Stripe webhook events.\n\nThis endpoint receives webhook events from Stripe for payment processing.\nEvents include:\n- checkout.session.completed: Payment successful\n- customer.subscription.created: New subscription\n- customer.subscription.updated: Subscription changed\n- customer.subscription.deleted: Subscription cancelled\n- invoice.payment_succeeded: Recurring payment successful\n- invoice.payment_failed: Payment failed\n\nArgs:\n    request: FastAPI request object\n    stripe_signature: Stripe signature header for verification\n    \nReturns:\n    Success status\n    \nRaises:\n    HTTPException: If signature verification fails",
+        "operationId": "stripe_webhook_api_v1_webhooks_stripe_post",
+        "parameters": [
+          {
+            "name": "stripe-signature",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Stripe-Signature"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pricing/plans": {
+      "get": {
+        "tags": [
+          "pricing"
+        ],
+        "summary": "Get Pricing Plans",
+        "description": "Get all available pricing plans.\n\nReturns a list of pricing plans with their features and pricing.\nThis endpoint is public and does not require authentication.",
+        "operationId": "get_pricing_plans_api_v1_pricing_plans_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PricingPlan"
+                  },
+                  "type": "array",
+                  "title": "Response Get Pricing Plans Api V1 Pricing Plans Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -1836,6 +1958,66 @@
         ],
         "title": "PopulationType",
         "description": "Enumeration for template population methods."
+      },
+      "PricingPlan": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Price"
+          },
+          "interval": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval"
+          },
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Features"
+          },
+          "highlighted": {
+            "type": "boolean",
+            "title": "Highlighted",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "price",
+          "features"
+        ],
+        "title": "PricingPlan",
+        "description": "Pricing plan model"
       },
       "Template": {
         "properties": {

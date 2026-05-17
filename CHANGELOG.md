@@ -5,6 +5,106 @@ All notable changes to UIGen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [Unreleased]
+
+### Added
+
+**Core package (`@uigen-dev/core`)**
+- **Payment resource refactor** - Transformed payments from component-based to resource-based architecture
+  - `PricingResourceGenerator` - Auto-generates pricing resource from payment config (11 tests)
+  - `MonetizationConfig` interface for resource/operation-level payment gates
+  - `PricingPageConfig` interface with extensible pricing source strategy (inline, endpoint, component)
+  - `x-uigen-monetized` annotation for marking resources/operations as requiring payment
+  - Enhanced `PaymentHandler` with `extractPricingPageConfig()`, `handlePathLevel()`, `handleOperationLevel()`
+  - Updated `ResourceExtractor` to integrate monetization flags into resources and operations
+  - Security model: Only frontend-safe fields (`publishableKey`) in spec, backend secrets in `.env`
+  - 123 tests passing in Phase 1 (core infrastructure)
+  ```yaml
+  # Document-level payment configuration
+  x-uigen-payments:
+    providers:
+      - provider: stripe
+        publishableKey: ${STRIPE_PUBLISHABLE_KEY}
+        mode: test
+    pricingPage:
+      enabled: true
+      source: inline
+      products:
+        - id: pro
+          name: Professional
+          price: 2900
+          interval: month
+  
+  # Mark resources as monetized
+  paths:
+    /api/v1/meetings:
+      x-uigen-monetized: true
+  ```
+
+**React package (`@uigen-dev/react`)**
+- **Pricing infrastructure** - Complete pricing and monetization UI components
+  - `PricingSourceFactory` with strategy pattern for extensible pricing sources (14 tests)
+  - `InlinePricingSource`, `EndpointPricingSource`, `ComponentPricingSource` implementations
+  - `usePaymentStatus` hook for checking user subscription status (22 tests)
+  - `MonetizationHandler` component for intercepting 402 responses (10 tests)
+  - `UpgradePrompt` component with inline and fullpage modes (17 tests)
+  - `PricingView` component with auto-generated pricing page (12 tests)
+  - `/pricing` route auto-generated when `pricingPage.enabled: true` (6 tests)
+  - 67 tests passing in Phase 2 (React infrastructure)
+
+**Documentation**
+- Updated `apps/docs/content/payments/overview.md` with resource-based approach
+  - Explained auto-generated pricing page
+  - Documented payment gates (resource and operation level)
+  - Added security model explanation
+  - Added runtime flow diagram
+- Created `apps/docs/content/payments/payment-gates.md` comprehensive guide
+  - Resource-level and operation-level gates
+  - Custom messages and redirects
+  - Backend enforcement examples (FastAPI and Express.js)
+  - Best practices and advanced patterns
+  - Testing examples and troubleshooting
+
+**Skills**
+- Updated `SKILLS/configure-payments.md` with new patterns
+  - Document-level `x-uigen-payments` configuration
+  - `x-uigen-monetized` annotation examples
+  - Payment gates workflow explanation
+  - Security best practices (frontend-safe keys only)
+  - Backend enforcement examples
+
+**Annotations**
+- Added `x-uigen-monetized` to annotation registry
+  - Supports boolean shorthand: `x-uigen-monetized: true`
+  - Supports object form with custom message and redirect
+  - Applies to paths (resource-level) and operations (operation-level)
+  - 18 total annotations in registry
+
+### Changed
+- **Payment configuration location** - Moved from `info` object to document root
+  - Now: `x-uigen-payments` at document level (consistent with `x-uigen-auth`)
+  - Before: `info['x-uigen-payments']`
+- **Security model** - Only frontend-safe fields in spec
+  - Frontend: `publishableKey` only
+  - Backend: `apiKey`, `webhookSecret`, `clientSecret` stay in `.env`
+- **Payment enforcement** - Backend is source of truth
+  - Backend enforces limits and returns 402 Payment Required
+  - Frontend intercepts 402 and shows upgrade prompt
+  - No frontend-only checks (cannot be bypassed)
+
+### Tests
+- **190 tests passing** across payment resource refactor
+  - Phase 1 (Core): 123 tests
+  - Phase 2 (React): 67 tests
+  - Full integration coverage
+
+### Documentation
+- [Payment Overview](/payments/overview) - Resource-based approach
+- [Payment Gates Guide](/payments/payment-gates) - Comprehensive guide
+- [Configure Payments Skill](/SKILLS/configure-payments.md) - AI-assisted setup
+
+---
+
 ## [0.11.0] - 2026-05-15
 
 ### Added

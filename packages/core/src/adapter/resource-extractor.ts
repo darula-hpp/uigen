@@ -17,6 +17,8 @@ import { RelationshipDetector } from './relationship-detector.js';
 import { PaginationDetector } from './pagination-detector.js';
 import { SchemaProcessor } from './schema-processor.js';
 import { deriveRelationshipType } from './relationship-type-deriver.js';
+import { PaymentHandler } from './annotations/handlers/payment-handler.js';
+import { PricingResourceGenerator } from './pricing-resource-generator.js';
 
 /**
  * Callback type for adapting OpenAPI operations to IR operations.
@@ -69,6 +71,8 @@ export class Resource_Extractor {
   private relationshipDetector: RelationshipDetector;
   private paginationDetector: PaginationDetector;
   private schemaProcessor: SchemaProcessor;
+  private paymentHandler: PaymentHandler;
+  private pricingResourceGenerator: PricingResourceGenerator;
   private currentIR?: UIGenApp;
 
   /**
@@ -98,6 +102,8 @@ export class Resource_Extractor {
     this.relationshipDetector = relationshipDetector;
     this.paginationDetector = paginationDetector;
     this.schemaProcessor = schemaProcessor;
+    this.paymentHandler = new PaymentHandler();
+    this.pricingResourceGenerator = new PricingResourceGenerator();
   }
 
   /**
@@ -122,6 +128,8 @@ export class Resource_Extractor {
    * 4. Detects relationships between resources (config-driven or heuristic)
    * 5. Detects pagination strategies
    * 6. Ensures unique operation IDs
+   * 7. Extracts monetization config from paths and operations
+   * 8. Generates pricing resource if pricing page enabled
    * 
    * @param adaptOperation       - Callback to adapt OpenAPI operations to IR operations
    * @param configRelationships  - Optional explicit relationship declarations from config.
@@ -328,6 +336,14 @@ export class Resource_Extractor {
           this.annotationRegistry.processAnnotations(context);
         }
       }
+      
+      // Generate pricing resource if pricing page is enabled
+      if (this.currentIR.payments?.pricingPage?.enabled) {
+        const pricingResource = this.pricingResourceGenerator.generate(this.currentIR.payments);
+        if (pricingResource) {
+          resourcesWithOperations.push(pricingResource);
+        }
+      }
     }
     
     return resourcesWithOperations;
@@ -373,8 +389,9 @@ export class Resource_Extractor {
    * 3. Creates resource objects for each unique resource name
    * 4. Adapts operations using the provided callback
    * 5. Processes annotations for each operation
-   * 6. Filters out ignored operations
-   * 7. Groups operations by resource
+   * 6. Extracts monetization config from path and operation levels
+   * 7. Filters out ignored operations
+   * 8. Groups operations by resource
    * 
    * @param adaptOperation - Callback to adapt OpenAPI operations to IR operations
    * @returns Map of resource slug to Resource object
@@ -402,6 +419,13 @@ export class Resource_Extractor {
 
       const resource = resourceMap.get(resourceName)!;
 
+      // Extract path-level monetization config
+      const pathMonetization = this.paymentHandler.handlePathLevel(path, pathItem);
+      if (pathMonetization && !resource.monetization) {
+        // Only set if not already set (first path wins)
+        resource.monetization = pathMonetization;
+      }
+
       // Process each HTTP method for this path
       for (const method of ['get', 'post', 'put', 'patch', 'delete'] as const) {
         const operation = pathItem[method] as OpenAPIV3.OperationObject | undefined;
@@ -415,6 +439,12 @@ export class Resource_Extractor {
           if (!op) {
             console.log(`Ignoring operation: ${method.toUpperCase()} ${path}`);
             continue;
+          }
+          
+          // Extract operation-level monetization config
+          const operationMonetization = this.paymentHandler.handleOperationLevel(operation);
+          if (operationMonetization) {
+            op.monetization = operationMonetization;
           }
           
           // Process annotations using the registry

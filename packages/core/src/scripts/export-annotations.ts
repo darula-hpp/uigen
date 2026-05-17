@@ -26,6 +26,8 @@ import { DateTimeHandler } from '../adapter/annotations/handlers/datetime-handle
 import { AppHandler } from '../adapter/annotations/handlers/app-handler.js';
 import { AuthHandler } from '../adapter/annotations/handlers/auth-handler.js';
 import { OverrideHandler } from '../adapter/annotations/handlers/override-handler.js';
+import { PaymentHandler } from '../adapter/annotations/handlers/payment-handler.js';
+import { MonetizationHandler } from '../adapter/annotations/handlers/monetization-handler.js';
 
 /**
  * Interface for annotation metadata
@@ -64,7 +66,9 @@ const handlerClasses = [
   DateTimeHandler,
   AppHandler,
   AuthHandler,
-  OverrideHandler
+  OverrideHandler,
+  PaymentHandler,
+  MonetizationHandler
 ];
 
 /**

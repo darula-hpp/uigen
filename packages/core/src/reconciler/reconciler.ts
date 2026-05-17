@@ -21,6 +21,7 @@ import { Validator } from './validator.js';
 import { deepClone } from './utils.js';
 import { validateRelationships } from './relationship-validator.js';
 import { AuthReconciler, type OAuthProviderConfig } from './auth-reconciler.js';
+import { PaymentReconciler } from './payment-reconciler.js';
 import { HttpMethodOverrideReconciler } from './http-method-override-reconciler.js';
 import { EnvVarResolver } from '../config/env-var-resolver.js';
 
@@ -118,6 +119,7 @@ export class Reconciler {
   private merger: AnnotationMerger;
   private validator: Validator;
   private authReconciler: AuthReconciler;
+  private paymentReconciler: PaymentReconciler;
   private httpMethodOverrideReconciler: HttpMethodOverrideReconciler;
   private envVarResolver: EnvVarResolver;
 
@@ -133,6 +135,7 @@ export class Reconciler {
     this.merger = new AnnotationMerger(this.logger);
     this.validator = new Validator();
     this.authReconciler = new AuthReconciler();
+    this.paymentReconciler = new PaymentReconciler();
     this.httpMethodOverrideReconciler = new HttpMethodOverrideReconciler();
     this.envVarResolver = new EnvVarResolver({
       logger: this.logger,
@@ -233,6 +236,34 @@ export class Reconciler {
         this.logger.info('OAuth reconciliation complete', {
           reconciledProviders: authResult.reconciledProviders,
           errors: authResult.errors.length,
+        });
+      }
+
+      // Reconcile payment providers if payments config exists
+      if ((resolvedConfig as any).payments) {
+        this.logger.info('Reconciling payment providers', {
+          providerCount: (resolvedConfig as any).payments.providers?.length || 0,
+          productCount: (resolvedConfig as any).payments.products?.length || 0,
+        });
+
+        const paymentResult = this.paymentReconciler.reconcile(reconciledSpec, resolvedConfig as any);
+        reconciledSpec = paymentResult.spec;
+
+        // Add payment validation errors as warnings
+        if (paymentResult.errors.length > 0) {
+          for (const error of paymentResult.errors) {
+            this.logger.warn(`Payment configuration error: ${error}`);
+            warnings.push({
+              elementPath: 'config.payments',
+              message: error,
+            });
+          }
+        }
+
+        this.logger.info('Payment reconciliation complete', {
+          reconciledProviders: paymentResult.reconciledProviders,
+          reconciledProducts: paymentResult.reconciledProducts,
+          errors: paymentResult.errors.length,
         });
       }
 

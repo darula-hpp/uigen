@@ -551,4 +551,332 @@ describe('Resource_Extractor', () => {
       );
     });
   });
+
+  describe('monetization extraction', () => {
+    let mockIR: UIGenApp;
+
+    beforeEach(() => {
+      mockIR = {
+        meta: { title: 'Test App', version: '1.0.0' },
+        resources: [],
+        auth: { schemes: [], globalRequired: false },
+        dashboard: { enabled: false, widgets: [] },
+        servers: []
+      };
+
+      extractor.setCurrentIR(mockIR);
+    });
+
+    it('should extract path-level monetization config', () => {
+      mockSpec.paths = {
+        '/meetings': {
+          'x-uigen-monetized': true,
+          get: {
+            operationId: 'getMeetings',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object', properties: {} }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      const mockAdaptOperation = (method: string, path: string, operation: OpenAPIV3.OperationObject): Operation => ({
+        id: operation.operationId || `${method}_${path}`,
+        method: method as any,
+        path,
+        summary: operation.summary || '',
+        description: operation.description || '',
+        parameters: [],
+        responses: {},
+        viewHint: 'list'
+      });
+
+      const resources = extractor.extractResources(mockAdaptOperation);
+
+      const meetingsResource = resources.find(r => r.slug === 'meetings');
+      expect(meetingsResource).toBeDefined();
+      expect(meetingsResource!.monetization).toBeDefined();
+      expect(meetingsResource!.monetization!.monetized).toBe(true);
+    });
+
+    it('should extract path-level monetization config with message and redirectTo', () => {
+      mockSpec.paths = {
+        '/meetings': {
+          'x-uigen-monetized': {
+            monetized: true,
+            message: 'Upgrade to Pro to access meetings',
+            redirectTo: '/pricing'
+          },
+          get: {
+            operationId: 'getMeetings',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object', properties: {} }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      const mockAdaptOperation = (method: string, path: string, operation: OpenAPIV3.OperationObject): Operation => ({
+        id: operation.operationId || `${method}_${path}`,
+        method: method as any,
+        path,
+        summary: operation.summary || '',
+        description: operation.description || '',
+        parameters: [],
+        responses: {},
+        viewHint: 'list'
+      });
+
+      const resources = extractor.extractResources(mockAdaptOperation);
+
+      const meetingsResource = resources.find(r => r.slug === 'meetings');
+      expect(meetingsResource).toBeDefined();
+      expect(meetingsResource!.monetization).toBeDefined();
+      expect(meetingsResource!.monetization!.monetized).toBe(true);
+      expect(meetingsResource!.monetization!.message).toBe('Upgrade to Pro to access meetings');
+      expect(meetingsResource!.monetization!.redirectTo).toBe('/pricing');
+    });
+
+    it('should extract operation-level monetization config', () => {
+      mockSpec.paths = {
+        '/templates': {
+          get: {
+            operationId: 'getTemplates',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object', properties: {} }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          post: {
+            operationId: 'createTemplate',
+            'x-uigen-monetized': true,
+            responses: {
+              '201': {
+                description: 'Created',
+                content: {
+                  'application/json': {
+                    schema: { type: 'object', properties: {} }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      const mockAdaptOperation = (method: string, path: string, operation: OpenAPIV3.OperationObject): Operation => ({
+        id: operation.operationId || `${method}_${path}`,
+        method: method as any,
+        path,
+        summary: operation.summary || '',
+        description: operation.description || '',
+        parameters: [],
+        responses: {},
+        viewHint: method === 'POST' ? 'create' : 'list'
+      });
+
+      const resources = extractor.extractResources(mockAdaptOperation);
+
+      const templatesResource = resources.find(r => r.slug === 'templates');
+      expect(templatesResource).toBeDefined();
+      expect(templatesResource!.monetization).toBeUndefined(); // No path-level monetization
+
+      const createOp = templatesResource!.operations.find(op => op.method === 'POST');
+      expect(createOp).toBeDefined();
+      expect(createOp!.monetization).toBeDefined();
+      expect(createOp!.monetization!.monetized).toBe(true);
+
+      const listOp = templatesResource!.operations.find(op => op.method === 'GET');
+      expect(listOp).toBeDefined();
+      expect(listOp!.monetization).toBeUndefined(); // No operation-level monetization
+    });
+
+    it('should generate pricing resource when pricingPage.enabled is true', () => {
+      mockIR.payments = {
+        providers: [
+          {
+            provider: 'stripe',
+            publishableKey: 'pk_test_123',
+            mode: 'test'
+          }
+        ],
+        pricingPage: {
+          enabled: true,
+          source: 'inline',
+          products: [
+            {
+              id: 'pro',
+              name: 'Professional',
+              type: 'subscription',
+              price: 2900,
+              interval: 'month'
+            }
+          ]
+        }
+      };
+
+      mockSpec.paths = {
+        '/meetings': {
+          get: {
+            operationId: 'getMeetings',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object', properties: {} }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      const mockAdaptOperation = (method: string, path: string, operation: OpenAPIV3.OperationObject): Operation => ({
+        id: operation.operationId || `${method}_${path}`,
+        method: method as any,
+        path,
+        summary: operation.summary || '',
+        description: operation.description || '',
+        parameters: [],
+        responses: {},
+        viewHint: 'list'
+      });
+
+      const resources = extractor.extractResources(mockAdaptOperation);
+
+      const pricingResource = resources.find(r => r.slug === 'pricing');
+      expect(pricingResource).toBeDefined();
+      expect(pricingResource!.name).toBe('Pricing');
+      expect(pricingResource!.operations).toHaveLength(1);
+      expect(pricingResource!.operations[0].viewHint).toBe('pricing');
+      expect(pricingResource!.operations[0].method).toBe('GET');
+      expect(pricingResource!.operations[0].path).toBe('/pricing');
+    });
+
+    it('should not generate pricing resource when pricingPage.enabled is false', () => {
+      mockIR.payments = {
+        providers: [
+          {
+            provider: 'stripe',
+            publishableKey: 'pk_test_123',
+            mode: 'test'
+          }
+        ],
+        pricingPage: {
+          enabled: false,
+          source: 'inline'
+        }
+      };
+
+      mockSpec.paths = {
+        '/meetings': {
+          get: {
+            operationId: 'getMeetings',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object', properties: {} }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      const mockAdaptOperation = (method: string, path: string, operation: OpenAPIV3.OperationObject): Operation => ({
+        id: operation.operationId || `${method}_${path}`,
+        method: method as any,
+        path,
+        summary: operation.summary || '',
+        description: operation.description || '',
+        parameters: [],
+        responses: {},
+        viewHint: 'list'
+      });
+
+      const resources = extractor.extractResources(mockAdaptOperation);
+
+      const pricingResource = resources.find(r => r.slug === 'pricing');
+      expect(pricingResource).toBeUndefined();
+    });
+
+    it('should not generate pricing resource when payments config is not present', () => {
+      mockSpec.paths = {
+        '/meetings': {
+          get: {
+            operationId: 'getMeetings',
+            responses: {
+              '200': {
+                description: 'Success',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: { type: 'object', properties: {} }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      const mockAdaptOperation = (method: string, path: string, operation: OpenAPIV3.OperationObject): Operation => ({
+        id: operation.operationId || `${method}_${path}`,
+        method: method as any,
+        path,
+        summary: operation.summary || '',
+        description: operation.description || '',
+        parameters: [],
+        responses: {},
+        viewHint: 'list'
+      });
+
+      const resources = extractor.extractResources(mockAdaptOperation);
+
+      const pricingResource = resources.find(r => r.slug === 'pricing');
+      expect(pricingResource).toBeUndefined();
+    });
+  });
 });

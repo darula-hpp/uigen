@@ -6,7 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from contextlib import asynccontextmanager
 from app.database import engine
 from app.config import get_settings
-from app.routers import templates, meetings, documents, auth, oauth
+from app.routers import templates, meetings, documents, auth, oauth, webhooks, pricing
 from app.exceptions import InvalidTemplateError, RenderError, ConversionError, MergeError, AuthenticationError, TokenExpiredError
 
 
@@ -169,6 +169,8 @@ app.include_router(meetings.router)
 app.include_router(documents.router)
 app.include_router(auth.router)
 app.include_router(oauth.router)
+app.include_router(webhooks.router)
+app.include_router(pricing.router)
 
 
 # Root Endpoints

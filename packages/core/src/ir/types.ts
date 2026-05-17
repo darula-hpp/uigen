@@ -9,7 +9,8 @@ export type ViewHint =
   | 'search' 
   | 'wizard' 
   | 'dashboard' 
-  | 'action';
+  | 'action'
+  | 'pricing';
 
 export type FieldType = 
   | 'string' 
@@ -66,6 +67,10 @@ export interface UIGenApp {
   landingPageConfig?: LandingPageConfig;
   /** Application configuration */
   appConfig?: AppConfig;
+  /** Payment configuration */
+  payments?: PaymentConfig;
+  /** Auto-generated pricing resource (when payments configured) */
+  pricingResource?: Resource;
 }
 
 export interface ParsingError {
@@ -171,6 +176,150 @@ export interface OAuthProvider {
   sessionValidationEndpoint?: string;
 }
 
+/**
+ * Pricing source type for extensibility
+ * Phase 1: inline (products from YAML)
+ * Phase 2: endpoint (products from backend API)
+ * Phase 3: component (fully custom pricing component)
+ */
+export type PricingSourceType = 'inline' | 'endpoint' | 'component';
+
+/**
+ * Pricing page configuration
+ * 
+ * Configures the auto-generated pricing page with extensible source strategy.
+ * Set by PaymentHandler when x-uigen-payments annotation is present.
+ */
+export interface PricingPageConfig {
+  /** Whether pricing page is enabled */
+  enabled: boolean;
+  
+  /** Source of pricing data */
+  source: PricingSourceType;
+  
+  /** Products for inline source */
+  products?: PaymentProduct[];
+  
+  /** Endpoint URL for endpoint source */
+  endpoint?: string;
+  
+  /** Override config for component source */
+  override?: OverrideConfig;
+}
+
+/**
+ * Monetization flag for resources/operations
+ * 
+ * Marks a resource or operation as requiring payment/subscription.
+ * Backend enforces all payment logic and returns 402 when limits exceeded.
+ * Frontend handles 402 gracefully with upgrade prompts.
+ */
+export interface MonetizationConfig {
+  /** Whether this resource/operation is monetized */
+  monetized: boolean;
+  
+  /** Optional message to show on 402 response */
+  message?: string;
+  
+  /** Optional redirect URL on 402 response (defaults to /pricing) */
+  redirectTo?: string;
+}
+
+/**
+ * Payment provider configuration
+ * 
+ * Configures a payment provider for processing payments and subscriptions.
+ * Set by PaymentHandler when x-uigen-payments annotation is present.
+ * 
+ * SECURITY: Only frontend-safe fields are included here. Backend secrets
+ * (apiKey, webhookSecret) are read from environment variables on the server.
+ */
+export interface PaymentProvider {
+  /** Payment provider identifier (stripe, paypal, square) */
+  provider: 'stripe' | 'paypal' | 'square';
+  
+  /** Publishable key for client-side operations (frontend-safe) */
+  publishableKey: string;
+  
+  /** Operating mode (test/sandbox vs production) */
+  mode: 'test' | 'live';
+  
+  /** Default currency code (ISO 4217, e.g., usd, eur, gbp) */
+  currency?: string;
+  
+  /** Whether this provider is enabled (defaults to true) */
+  enabled?: boolean;
+}
+
+/**
+ * Payment product/plan configuration
+ * 
+ * Defines a product or subscription plan that users can purchase.
+ * Set by PaymentHandler when x-uigen-payments annotation is present.
+ */
+export interface PaymentProduct {
+  /** Unique product identifier */
+  id: string;
+  
+  /** Display name for the product */
+  name: string;
+  
+  /** Product description */
+  description?: string;
+  
+  /** Payment type */
+  type: 'one-time' | 'subscription' | 'usage-based';
+  
+  /** Price in cents (e.g., 2900 for $29.00) or 'custom' for contact sales */
+  price: number | 'custom';
+  
+  /** Currency code (overrides provider default) */
+  currency?: string;
+  
+  /** Billing interval for subscriptions */
+  interval?: 'day' | 'week' | 'month' | 'year';
+  
+  /** Interval count (e.g., 3 for "every 3 months") */
+  intervalCount?: number;
+  
+  /** List of features included in this product */
+  features?: string[];
+  
+  /** Whether to highlight this product as recommended */
+  highlighted?: boolean;
+  
+  /** Custom metadata for provider-specific configuration */
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Payment configuration
+ * 
+ * Top-level payment configuration for the application.
+ * Set by PaymentHandler when x-uigen-payments annotation is present.
+ */
+export interface PaymentConfig {
+  /** Configured payment providers */
+  providers: PaymentProvider[];
+  
+  /** Available products/plans */
+  products?: PaymentProduct[];
+  
+  /** Pricing page configuration */
+  pricingPage?: PricingPageConfig;
+  
+  /** Default currency for the application */
+  defaultCurrency?: string;
+  
+  /** Default success redirect URL after payment */
+  successUrl?: string;
+  
+  /** Default cancel redirect URL if payment is canceled */
+  cancelUrl?: string;
+}
+
+
+
 export interface DashboardConfig {
   enabled: boolean;
   widgets: DashboardWidget[];
@@ -197,6 +346,8 @@ export interface Resource {
   layoutOverride?: LayoutConfig;
   /** Override configuration for this resource */
   override?: OverrideConfig;
+  /** Monetization config for this resource */
+  monetization?: MonetizationConfig;
 }
 
 export interface Relationship {
@@ -227,6 +378,8 @@ export interface Operation {
   security?: SecurityRequirement[];
   /** Override configuration for this operation */
   override?: OverrideConfig;
+  /** Monetization config for this operation */
+  monetization?: MonetizationConfig;
 }
 
 export interface SecurityRequirement {

@@ -31,3 +31,10 @@ export type {
   OAuthProviderConfig,
   ReconcileResult,
 } from './auth-reconciler.js';
+export { PaymentReconciler } from './payment-reconciler.js';
+export type {
+  PaymentConfigFile,
+  PaymentProviderConfig,
+  PaymentProductConfig,
+  ReconcileResult as PaymentReconcileResult,
+} from './payment-reconciler.js';
