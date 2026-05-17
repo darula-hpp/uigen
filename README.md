@@ -44,6 +44,12 @@ UIGen scaffolds a complete project with configuration files (`.uigen/config.yaml
 - **Layout System** - Sidebar, centered, dashboard-grid layouts per resource
 - **Profile Editing** - Inline editing with validation and conflict handling
 
+### Monetization & Payments
+- **Payment Integration** - Stripe, PayPal, Square support with declarative configuration
+- **Auto-Generated Pricing Pages** - Define products, get `/pricing` route automatically
+- **Payment Gates** - Mark resources as monetized, backend enforces limits with 402 responses
+- **Upgrade Prompts** - Automatic interception and conversion flow
+
 ### Developer Experience
 - **Runtime Rendering** - No code generation, UI stays in sync with spec changes
 - **AI Agent Skills** - Automate configuration with your favorite coding assistant
@@ -206,7 +212,6 @@ The CLI automatically discovers, transpiles, and injects your overrides. See [pa
 
 ## Current Priorities
 - Polish
-- Stripe Integration
 - Better relationship handling and visualization
 - Additional renderers (Svelte, Vue)
 
