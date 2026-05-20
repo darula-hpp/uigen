@@ -226,7 +226,6 @@ describe('CenteredLayoutStrategy', () => {
       expect(main).toHaveStyle({ '--max-width': '500px' });
       
       // Vertical centering should be disabled
-      const main = container.querySelector('main');
       expect(main?.className).toContain('items-start');
     });
   });
@@ -322,6 +321,38 @@ describe('CenteredLayoutStrategy', () => {
       
       // Should render app title from config
       expect(screen.getByText('Test App')).toBeInTheDocument();
+    });
+
+    it('should keep the sidebar shell and TopBar when global layout is sidebar', () => {
+      const sidebarConfig: UIGenApp = {
+        ...mockConfig,
+        layoutConfig: {
+          type: 'sidebar',
+          metadata: {
+            sidebarWidth: 260,
+          },
+        },
+      };
+
+      const children = <div data-testid="blink-form">Blink form</div>;
+      const rendered = strategy.render(children, {
+        maxWidth: 480,
+        showHeader: true,
+        verticalCenter: false,
+      });
+
+      render(
+        <BrowserRouter>
+          <AppProvider config={sidebarConfig}>
+            {rendered}
+          </AppProvider>
+        </BrowserRouter>,
+      );
+
+      expect(screen.getByTestId('blink-form')).toBeInTheDocument();
+      expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /switch to/i })).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Test App' })).not.toBeInTheDocument();
     });
   });
 

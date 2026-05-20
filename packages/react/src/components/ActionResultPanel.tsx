@@ -29,7 +29,6 @@ export function ActionResultPanel({ operation, data, className }: ActionResultPa
       className={className}
       variant="action-result"
       title={`${actionTitle} result`}
-      description="Latest response returned by this action."
       fields={fields}
       data={payload}
       ariaLabel={`${actionTitle} result`}

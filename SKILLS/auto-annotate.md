@@ -41,6 +41,11 @@ annotations:
       chartType: line
       xAxis: created_at
       yAxis: count
+      query:
+        limit: 500
+      sampling:
+        strategy: auto
+        maxPoints: 120
 ```
 
 ## Annotations Excluded from Auto-Annotation
@@ -312,6 +317,39 @@ Post.category_id:
 - X-axis: First date/timestamp field, or first string/enum field
 - Y-axis: First numeric field (integer, number)
 
+**Query and sampling heuristics:**
+
+Add `query` and `sampling` when the endpoint looks like dense time-series or telemetry data:
+
+- Response item has a date/time field (`format: date-time`, or names like `recorded_at`, `timestamp`, `created_at`)
+- Response item has at least one numeric measure field
+- Endpoint path or summary suggests history, readings, metrics, analytics, telemetry, or logs
+
+Recommended defaults for dense time-series:
+
+```yaml
+query:
+  limit: 500
+sampling:
+  strategy: auto
+  maxPoints: 120
+```
+
+Rules:
+- Use `query.limit` when the list endpoint supports a limit/pageSize parameter and the dataset is likely larger than the table page size
+- Use `sampling.strategy: auto` for time-series line/area charts
+- Use `sampling.strategy: none` for small categorical datasets (bar/pie with fewer than ~50 rows expected)
+- Map existing list query params through `query.params` when the chart should respect a filter field that already exists on the operation (for example `sensor_id`)
+- Add `filters` when the list operation exposes query params that should be user-adjustable from the chart:
+  - Integer/string foreign-key style params → `type: ref` with `resource` set to the related resource slug
+  - Date/time bounded history endpoints → `type: datetime-range` with presets such as `last_24h`, `last_7d`, `last_30d`
+  - Enum query params → `type: select`
+  - Numeric thresholds → `type: number`
+
+**Nested list routes:**
+
+For routes like `/sensors/{sensor_id}/readings`, annotate the nested list response schema and include `query.limit` plus sampling. Only add `query.params` when the chart should expose a filter not already implied by the path.
+
 **Example:**
 ```yaml
 '#/paths/~1api~1v1~1analytics/get/responses/200/content/application~1json/schema':
@@ -319,15 +357,46 @@ Post.category_id:
     chartType: line
     xAxis: date
     yAxis: revenue
+    query:
+      limit: 500
+    sampling:
+      strategy: auto
+      maxPoints: 120
     options:
       title: Revenue Over Time
+
+'#/paths/~1api~1v1~1readings/get/responses/200/content/application~1json/schema':
+  x-uigen-chart:
+    chartType: line
+    xAxis: recorded_at
+    yAxis: value
+    query:
+      limit: 500
+      params:
+        sensor_id: sensor_id
+    sampling:
+      strategy: auto
+      maxPoints: 120
+    filters:
+      - param: sensor_id
+        field: sensor_id
+        type: ref
+        resource: sensors
+    options:
+      title: Sensor Telemetry
 
 '#/paths/~1api~1v1~1users/get/responses/200/content/application~1json/schema':
   x-uigen-chart:
     chartType: bar
     xAxis: role
     yAxis: count
+    sampling:
+      strategy: none
 ```
+
+**Implementation note:**
+
+When generating chart annotations, target the list response schema JSON pointer (not individual item fields). UIGen attaches the resulting `chartConfig` to the array response schema and renders the chart above the List View table.
 
 ### Rule 8: DateTime Fields (x-uigen-datetime)
 

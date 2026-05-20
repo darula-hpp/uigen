@@ -14,6 +14,48 @@ The List View is generated for `GET /resources` endpoints (collection endpoints 
 - **Row actions**: Edit and Delete buttons on each row, linked to the corresponding edit form and delete confirmation
 - **Navigation**: clicking a row opens the Detail View for that record
 - **Column generation**: columns are derived from the response schema's top-level fields
+- **Charts**: when the list response schema has `x-uigen-chart`, a chart renders above the table
+
+## Charts
+
+List View can render a chart above the table when the list response schema includes [`x-uigen-chart`](/docs/spec-annotations/x-uigen-chart) configuration.
+
+The chart uses the same list operation as the table. UIGen:
+
+1. Resolves `chartConfig` from the resource or list response schema
+2. Fetches data with chart-specific query params (such as a higher `limit`)
+3. Sorts time-series data and downsamples large datasets for rendering
+4. Shows a "Showing X of Y points" note when sampling reduces the point count
+5. Renders chart filter controls when `filters` are configured (`ref`, `datetime-range`, `select`, `number`)
+
+Chart filter changes refetch list data for both the chart and the table. Chart fetch limits are independent from table pagination. When `query.limit` is set on the chart config, it overrides the table page size for the shared list request.
+
+### Example
+
+```yaml
+paths:
+  /api/v1/readings:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reading'
+                x-uigen-chart:
+                  chartType: line
+                  xAxis: recorded_at
+                  yAxis: value
+                  query:
+                    limit: 500
+                  sampling:
+                    strategy: auto
+                    maxPoints: 120
+```
+
+See [x-uigen-chart](/docs/spec-annotations/x-uigen-chart) for the full annotation reference.
 
 ## Pagination detection
 

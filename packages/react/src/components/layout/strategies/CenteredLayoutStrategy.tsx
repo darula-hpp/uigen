@@ -3,11 +3,16 @@ import type { ReactNode } from 'react';
 import type { LayoutMetadata } from '@uigen-dev/core';
 import type { LayoutStrategy } from '@/lib/layout-registry';
 import { ThemeToggle } from '../../ThemeToggle';
+import { Link } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
+import { resolveDashboardPath } from '@/lib/navigation-paths';
+import { AppShell } from '../AppShell';
+import { cn } from '@/lib/utils';
 
 /**
- * Centered layout strategy for authentication pages
- * Implements Requirements 4.1, 4.2, 4.3, 4.4, 4.5, 15.1
+ * Centered layout strategy for authentication pages and narrow content views.
+ * When the app already uses the sidebar shell globally, this strategy keeps
+ * TopBar/sidebar chrome and only constrains the main content width.
  */
 export class CenteredLayoutStrategy implements LayoutStrategy {
   type = 'centered' as const;
@@ -19,7 +24,6 @@ export class CenteredLayoutStrategy implements LayoutStrategy {
   validate(metadata?: LayoutMetadata): boolean {
     if (!metadata) return true;
     
-    // Requirement 4.3: Validate centered-specific metadata
     if (metadata.maxWidth !== undefined) {
       if (typeof metadata.maxWidth !== 'number' || metadata.maxWidth <= 0) {
         console.warn('[CenteredLayout] Invalid maxWidth: must be a positive number');
@@ -44,47 +48,62 @@ interface CenteredLayoutComponentProps {
   metadata?: LayoutMetadata;
 }
 
-// Requirement 15.1: Memoize layout strategy component to prevent unnecessary re-renders
-const CenteredLayoutComponent = memo(function CenteredLayoutComponent({ children, metadata }: CenteredLayoutComponentProps) {
+const CenteredLayoutComponent = memo(function CenteredLayoutComponent({
+  children,
+  metadata,
+}: CenteredLayoutComponentProps) {
   const { config } = useApp();
-  
-  // Requirement 15.5: Use useMemo for expensive computations
+  const dashboardPath = resolveDashboardPath(config.landingPageConfig?.enabled === true);
+  const usesSidebarShell = config.layoutConfig?.type === 'sidebar';
+
   const maxWidth = useMemo(() => metadata?.maxWidth ?? 480, [metadata?.maxWidth]);
   const showHeader = useMemo(() => metadata?.showHeader ?? true, [metadata?.showHeader]);
   const verticalCenter = useMemo(() => metadata?.verticalCenter ?? true, [metadata?.verticalCenter]);
-  
-  // Requirement 15.4: Use CSS variables instead of inline styles to avoid layout recalculation
+  const sidebarWidth = config.layoutConfig?.metadata?.sidebarWidth ?? 256;
+
   const containerStyles = useMemo(() => ({
     '--max-width': `${maxWidth}px`,
   } as React.CSSProperties), [maxWidth]);
-  
+
+  if (usesSidebarShell) {
+    return (
+      <AppShell sidebarWidth={sidebarWidth} mainInnerClassName="">
+        <div
+          className={cn(
+            'centered-layout-content mx-auto w-full px-4 py-6',
+            verticalCenter ? 'min-h-full flex items-center justify-center' : 'pt-2',
+          )}
+          style={{ maxWidth }}
+        >
+          {children}
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Requirement 4.2, 14.1: Render optional header with app title and theme toggle using semantic HTML */}
-      {/* Requirement 9.1, 9.4, 9.5: Add transitions for smooth layout changes */}
       {showHeader && (
         <header role="banner" className="border-b bg-card transition-all duration-300 ease-in-out">
           <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-            <a 
-              href="/dashboard" 
+            <Link
+              to={dashboardPath}
               className="text-xl font-bold hover:opacity-80 transition-opacity cursor-pointer no-underline"
               style={{ color: 'inherit', textDecoration: 'none' }}
             >
               {config.appConfig?.name || config.meta.title}
-            </a>
+            </Link>
             <ThemeToggle />
           </div>
         </header>
       )}
-      
-      {/* Requirement 4.1, 4.4, 4.5, 14.1: Render centered container with semantic main element */}
-      {/* Requirement 9.1, 9.4, 9.5: Add transitions for smooth layout changes */}
-      {/* Requirement 15.4: Use CSS variables to avoid inline style recalculation */}
-      <main 
+
+      <main
         role="main"
-        className={`centered-layout-main flex-1 flex items-center justify-center p-4 transition-all duration-300 ease-in-out ${
-          verticalCenter ? '' : 'items-start pt-16'
-        }`}
+        className={cn(
+          'centered-layout-main flex-1 flex justify-center p-4 transition-all duration-300 ease-in-out',
+          verticalCenter ? 'items-center' : 'items-start pt-16',
+        )}
         style={containerStyles}
       >
         <style>{`

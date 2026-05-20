@@ -15,6 +15,7 @@ UIGen supports a set of `x-uigen-*` vendor extensions that let you customise the
 | [`x-uigen-id`](/docs/spec-annotations/x-uigen-id) | Override the stable identifier used for overrides | Available |
 | [`x-uigen-ignore`](/docs/spec-annotations/x-uigen-ignore) | Exclude specific operations or entire resources from the generated UI | Available |
 | [`x-uigen-ref`](/docs/spec-annotations/x-uigen-ref) | Declare that a field references another resource with full control over resolution and display | Available |
+| [`x-uigen-chart`](/docs/spec-annotations/x-uigen-chart) | Configure charts for list endpoints that return array data | Available |
 | [`x-uigen-file-types`](/docs/spec-annotations/x-uigen-file-metadata) | Array of allowed MIME types for file uploads | Available |
 | [`x-uigen-max-file-size`](/docs/spec-annotations/x-uigen-file-metadata) | Maximum file size in bytes for file uploads | Available |
 | [`x-uigen-login`](/docs/authentication/credential-login) | Mark an endpoint as the credential login endpoint | Available |

@@ -1,9 +1,11 @@
 import type { AnnotationHandler, AnnotationContext } from '../types.js';
-import type { ChartConfig, ChartType, SeriesConfig } from '../../../ir/types.js';
+import type { ChartConfig, ChartType, SeriesConfig, ChartFilterConfig, ChartQueryConfig, ChartSamplingConfig } from '../../../ir/types.js';
 
 /**
  * Valid chart types supported by the annotation
  */
+const VALID_SAMPLING_STRATEGIES = ['auto', 'lttb', 'bucket-mean', 'none'] as const;
+const VALID_FILTER_TYPES = ['ref', 'datetime-range', 'select', 'number'] as const;
 const VALID_CHART_TYPES: ChartType[] = [
   'line',
   'bar',
@@ -29,6 +31,9 @@ interface ChartAnnotation {
   }>;
   labels?: string;
   options?: Record<string, unknown>;
+  query?: ChartQueryConfig;
+  filters?: ChartFilterConfig[];
+  sampling?: ChartSamplingConfig;
 }
 
 /**
@@ -266,6 +271,18 @@ export class ChartHandler implements AnnotationHandler<ChartAnnotation> {
         }
       }
 
+      if (!ChartHandler.validateQuery(value.query)) {
+        return false;
+      }
+
+      if (!ChartHandler.validateFilters(value.filters)) {
+        return false;
+      }
+
+      if (!ChartHandler.validateSampling(value.sampling)) {
+        return false;
+      }
+
       return true;
     } catch (error) {
       console.warn(`x-uigen-chart: validation error - ${error}`);
@@ -351,10 +368,99 @@ export class ChartHandler implements AnnotationHandler<ChartAnnotation> {
         yAxis: value.yAxis,
         series: series as SeriesConfig[] | undefined,
         labels: value.labels,
-        options: value.options
+        options: value.options,
+        query: value.query,
+        filters: value.filters,
+        sampling: value.sampling,
       };
     } catch (error) {
       context.utils.logWarning(`x-uigen-chart at ${context.path}: apply error - ${error}`);
     }
+  }
+
+  private static validateQuery(query?: ChartQueryConfig): boolean {
+    if (query === undefined) {
+      return true;
+    }
+
+    if (typeof query !== 'object' || query === null || Array.isArray(query)) {
+      console.warn('x-uigen-chart: query must be a plain object');
+      return false;
+    }
+
+    if (query.limit !== undefined && (typeof query.limit !== 'number' || query.limit <= 0)) {
+      console.warn('x-uigen-chart: query.limit must be a positive number');
+      return false;
+    }
+
+    if (query.params !== undefined) {
+      if (typeof query.params !== 'object' || query.params === null || Array.isArray(query.params)) {
+        console.warn('x-uigen-chart: query.params must be a plain object');
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private static validateFilters(filters?: ChartFilterConfig[]): boolean {
+    if (filters === undefined) {
+      return true;
+    }
+
+    if (!Array.isArray(filters)) {
+      console.warn('x-uigen-chart: filters must be an array');
+      return false;
+    }
+
+    for (const [index, filter] of filters.entries()) {
+      if (typeof filter !== 'object' || filter === null) {
+        console.warn(`x-uigen-chart: filters[${index}] must be an object`);
+        return false;
+      }
+
+      if (typeof filter.param !== 'string' || filter.param.trim() === '') {
+        console.warn(`x-uigen-chart: filters[${index}].param must be a non-empty string`);
+        return false;
+      }
+
+      if (typeof filter.field !== 'string' || filter.field.trim() === '') {
+        console.warn(`x-uigen-chart: filters[${index}].field must be a non-empty string`);
+        return false;
+      }
+
+      if (!VALID_FILTER_TYPES.includes(filter.type)) {
+        console.warn(`x-uigen-chart: filters[${index}].type must be one of: ${VALID_FILTER_TYPES.join(', ')}`);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private static validateSampling(sampling?: ChartSamplingConfig): boolean {
+    if (sampling === undefined) {
+      return true;
+    }
+
+    if (typeof sampling !== 'object' || sampling === null || Array.isArray(sampling)) {
+      console.warn('x-uigen-chart: sampling must be a plain object');
+      return false;
+    }
+
+    if (
+      sampling.strategy !== undefined
+      && !VALID_SAMPLING_STRATEGIES.includes(sampling.strategy as typeof VALID_SAMPLING_STRATEGIES[number])
+    ) {
+      console.warn(`x-uigen-chart: sampling.strategy must be one of: ${VALID_SAMPLING_STRATEGIES.join(', ')}`);
+      return false;
+    }
+
+    if (sampling.maxPoints !== undefined && (typeof sampling.maxPoints !== 'number' || sampling.maxPoints <= 0)) {
+      console.warn('x-uigen-chart: sampling.maxPoints must be a positive number');
+      return false;
+    }
+
+    return true;
   }
 }

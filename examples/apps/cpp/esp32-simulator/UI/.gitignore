@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# UIGen
+annotations.json
+.uigen/build/
+
+# Environment Variables
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

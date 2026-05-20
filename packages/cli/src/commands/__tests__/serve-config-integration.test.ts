@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { existsSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'fs';
 import { resolve } from 'path';
-import { ConfigLoader, AnnotationHandlerRegistry, parseSpec } from '@uigen-dev/core';
+import { AnnotationHandlerRegistry, parseSpec } from '@uigen-dev/core';
+import { ConfigLoader } from '@uigen-dev/core/config';
 
 /**
  * Integration test for serve command with config file

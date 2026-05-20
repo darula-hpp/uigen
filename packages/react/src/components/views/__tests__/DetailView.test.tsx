@@ -577,8 +577,6 @@ describe('DetailView - Action buttons', () => {
       expect(mockRefetch).toHaveBeenCalled();
       expect(screen.getByRole('region', { name: 'Take Reading result' })).toBeInTheDocument();
       expect(screen.getByRole('region', { name: 'User' })).toBeInTheDocument();
-      expect(screen.getByText('Latest response returned by this action.')).toBeInTheDocument();
-      expect(screen.getByText('Current resource data loaded from the API.')).toBeInTheDocument();
       expect(screen.getByText('Reading Value')).toBeInTheDocument();
       expect(screen.getByText('36.15')).toBeInTheDocument();
     });

@@ -9,11 +9,10 @@ const fields: SchemaNode[] = [
 ];
 
 describe('ReadOnlyDataSection', () => {
-  it('renders a titled section with description', () => {
+  it('renders a titled section without description by default', () => {
     render(
       <ReadOnlyDataSection
         title="Sensor Details"
-        description="Current resource data loaded from the API."
         fields={fields}
         data={{ name: 'CPU Temperature', value: 36.1, unit: 'C' }}
       />
@@ -21,15 +20,26 @@ describe('ReadOnlyDataSection', () => {
 
     expect(screen.getByRole('region', { name: 'Sensor Details' })).toBeInTheDocument();
     expect(screen.getByText('Sensor Details')).toBeInTheDocument();
-    expect(screen.getByText('Current resource data loaded from the API.')).toBeInTheDocument();
     expect(screen.getByText('CPU Temperature')).toBeInTheDocument();
+  });
+
+  it('renders an optional description when provided', () => {
+    render(
+      <ReadOnlyDataSection
+        title="Sensor Details"
+        description="Current configuration"
+        fields={fields}
+        data={{ name: 'CPU Temperature', value: 36.1, unit: 'C' }}
+      />
+    );
+
+    expect(screen.getByText('Current configuration')).toBeInTheDocument();
   });
 
   it('uses the action-result variant styling hook', () => {
     render(
       <ReadOnlyDataSection
         title="Take Reading result"
-        description="Latest response returned by this action."
         variant="action-result"
         fields={fields}
         data={{ name: 'Reading', value: 36.1, unit: 'C' }}

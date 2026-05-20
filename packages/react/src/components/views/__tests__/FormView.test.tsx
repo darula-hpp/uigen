@@ -523,4 +523,85 @@ describe('FormView - Edit Mode', () => {
     expect(screen.getByLabelText(/Name/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Email/)).toBeInTheDocument();
   });
+
+  it('should navigate to dashboard when canceling an action-only form', async () => {
+    const user = userEvent.setup();
+    const { useApiCall, useApiMutation } = await import('@/hooks/useApiCall');
+    const { AppProvider } = await import('@/contexts/AppContext');
+
+    vi.mocked(useApiCall).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+      isError: false,
+    } as any);
+
+    vi.mocked(useApiMutation).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+    } as any);
+
+    const actionResource: Resource = {
+      name: 'Blink Built-in LED',
+      slug: 'api-v1-actions-blink',
+      schema: {
+        type: 'object',
+        key: 'BlinkRequest',
+        label: 'Blink Request',
+        required: false,
+        children: [
+          { type: 'number', key: 'times', label: 'Blink Count', required: false },
+        ],
+      },
+      operations: [
+        {
+          id: 'blink_led',
+          method: 'POST',
+          path: '/api/v1/actions/blink',
+          viewHint: 'action',
+          parameters: [],
+          requestBody: {
+            type: 'object',
+            key: 'BlinkRequest',
+            label: 'Blink Request',
+            required: false,
+            children: [
+              { type: 'number', key: 'times', label: 'Blink Count', required: false },
+            ],
+          },
+          responses: {},
+        },
+      ],
+      relationships: [],
+    };
+
+    mockNavigate.mockClear();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AppProvider config={{
+          meta: { title: 'ESP32', version: '1.0.0', description: 'Test' },
+          resources: [actionResource],
+          auth: { schemes: [], globalRequired: false },
+          dashboard: { enabled: true, widgets: [] },
+          servers: [],
+        }}>
+          <MemoryRouter initialEntries={['/api-v1-actions-blink/new?operation=blink_led']}>
+            <Routes>
+              <Route
+                path="/api-v1-actions-blink/new"
+                element={<FormView resource={actionResource} mode="create" />}
+              />
+            </Routes>
+          </MemoryRouter>
+        </AppProvider>
+      </QueryClientProvider>
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(mockNavigate).toHaveBeenCalledWith('/');
+  });
 });

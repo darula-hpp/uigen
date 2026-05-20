@@ -214,7 +214,6 @@ export function DetailView({ resource }: DetailViewProps) {
       {!isLoading && !error && data && (
         <ReadOnlyDataSection
           title={detailSectionTitle}
-          description="Current resource data loaded from the API."
           fields={fields}
           data={data as Record<string, unknown>}
         />

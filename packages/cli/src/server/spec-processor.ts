@@ -5,7 +5,8 @@
 
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { parseSpec, ConfigLoader, AnnotationHandlerRegistry, Reconciler } from '@uigen-dev/core';
+import { parseSpec, AnnotationHandlerRegistry, Reconciler } from '@uigen-dev/core';
+import { ConfigLoader } from '@uigen-dev/core/config';
 import { load as parseYaml } from 'js-yaml';
 import pc from 'picocolors';
 import type { UIGenApp } from '@uigen-dev/core';

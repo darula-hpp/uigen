@@ -1,4 +1,5 @@
-import type { ChartConfig } from '@uigen-dev/core';
+import type { ChartConfig, ChartPreparedViewModel } from '@uigen-dev/core';
+import { ChartDataPipeline, type ChartPipelineOptions } from '@uigen-dev/core';
 
 /**
  * Transform API response data for chart rendering.
@@ -10,34 +11,18 @@ import type { ChartConfig } from '@uigen-dev/core';
  */
 export function transformChartData(
   data: any[],
-  chartConfig: ChartConfig
+  chartConfig: ChartConfig,
+  options?: ChartPipelineOptions,
 ): any[] {
-  if (!data || !Array.isArray(data) || data.length === 0) {
-    return [];
-  }
+  return prepareChartViewModel(data, chartConfig, options).points;
+}
 
-  return data.map(item => {
-    const transformed: Record<string, any> = {};
-    
-    // Add x-axis value
-    transformed[chartConfig.xAxis] = item[chartConfig.xAxis];
-    
-    // Add y-axis value(s)
-    if (Array.isArray(chartConfig.yAxis)) {
-      chartConfig.yAxis.forEach(field => {
-        transformed[field] = item[field];
-      });
-    } else {
-      transformed[chartConfig.yAxis] = item[chartConfig.yAxis];
-    }
-    
-    // Add labels if specified
-    if (chartConfig.labels) {
-      transformed._label = item[chartConfig.labels];
-    }
-    
-    return transformed;
-  });
+export function prepareChartViewModel(
+  data: any[],
+  chartConfig: ChartConfig,
+  options?: ChartPipelineOptions,
+): ChartPreparedViewModel {
+  return ChartDataPipeline.prepare(data, chartConfig, options);
 }
 
 /**

@@ -38,7 +38,6 @@ describe('ActionResultPanel', () => {
 
     expect(screen.getByRole('region', { name: 'Take Reading result' })).toBeInTheDocument();
     expect(screen.getByText('Take Reading result')).toBeInTheDocument();
-    expect(screen.getByText('Latest response returned by this action.')).toBeInTheDocument();
     expect(screen.getByText('Reading Value')).toBeInTheDocument();
     expect(screen.getByText('36.15')).toBeInTheDocument();
     expect(screen.getByText('C')).toBeInTheDocument();

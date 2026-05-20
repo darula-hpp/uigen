@@ -1,10 +1,5 @@
 import type { Operation, SchemaNode } from '@uigen-dev/core';
-
-type IgnorableSchemaNode = SchemaNode & { __shouldIgnore?: boolean };
-
-function isVisibleField(node: SchemaNode): boolean {
-  return !(node as IgnorableSchemaNode).__shouldIgnore;
-}
+import { SchemaFieldFilter } from '@uigen-dev/core';
 
 function humanizeKey(key: string): string {
   return key
@@ -39,7 +34,7 @@ export function resolveActionResultFields(
   data: unknown
 ): SchemaNode[] {
   const responseSchema = resolveActionResponseSchema(operation);
-  const schemaFields = (responseSchema?.children ?? []).filter(isVisibleField);
+  const schemaFields = (responseSchema?.children ?? []).filter(SchemaFieldFilter.isVisible);
 
   if (schemaFields.length > 0) {
     return schemaFields;

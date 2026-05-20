@@ -9,6 +9,12 @@ import { reconcile, OverrideHooksHost } from '@/overrides';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMemo, useEffect } from 'react';
 import { componentRegistry } from '@/components/fields';
+import { useOptionalApp } from '@/contexts/AppContext';
+import {
+  resolveCreateFormOperation,
+  resolveDashboardPath,
+  resolveFormDismissPath,
+} from '@/lib/navigation-paths';
 
 /**
  * Maps the React Router :id param to the actual path parameter name in the operation.
@@ -216,6 +222,10 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
   const navigate = useNavigate();
   const params = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
+  const appContext = useOptionalApp();
+  const landingPageEnabled = appContext?.config.landingPageConfig?.enabled === true;
+  const dashboardPath = resolveDashboardPath(landingPageEnabled);
+  const dismissPath = resolveFormDismissPath(resource, dashboardPath);
   
   // Get operation ID from query parameter (for resources with multiple create operations)
   const operationId = searchParams.get('operation');
@@ -224,15 +234,18 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
   const viewHint = mode === 'edit' ? 'update' : mode;
 
   // Find the operation for this form
-  const formOp = resource.operations.find(op => op.viewHint === viewHint);
+  const formOp = resource.operations.find(op => op.viewHint === viewHint)
+    ?? (mode === 'create' ? resource.operations.find(op => op.viewHint === 'action') : undefined);
   
   // Reconcile to determine override mode using operation's override config
   const { mode: overrideMode, renderFn } = reconcile(formOp?.override);
   
-  // Find operation: prioritize operationId if provided, otherwise find by viewHint
-  const operation = operationId 
-    ? resource.operations.find(op => op.id === operationId)
-    : resource.operations.find(op => op.viewHint === viewHint);
+  // Find operation: prioritize operationId, then create/update hint, then action fallback
+  const operation = mode === 'create'
+    ? resolveCreateFormOperation(resource, operationId)
+    : (operationId
+      ? resource.operations.find(op => op.id === operationId)
+      : resource.operations.find(op => op.viewHint === viewHint));
 
   // For edit mode, fetch current resource data (Requirement 10.1, 10.2)
   const detailOperation = mode === 'edit' ? resource.operations.find(op => op.viewHint === 'detail') : undefined;
@@ -405,7 +418,7 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
       } else if (mode === 'edit' && params.id) {
         navigate(`/${resource.slug}/${params.id}`);
       } else {
-        navigate(`/${resource.slug}`);
+        navigate(dismissPath);
       }
     } catch (error) {
       // Error is handled by mutation.isError below (Requirement 10.7)
@@ -467,7 +480,7 @@ export function FormView({ resource, mode, initialData, onSuccess }: FormViewPro
                 ? (mode === 'edit' ? 'Updating...' : 'Creating...') 
                 : (mode === 'edit' ? 'Update' : 'Create')}
             </Button>
-            <Button type="button" variant="outline" onClick={() => navigate(`/${resource.slug}`)}>
+            <Button type="button" variant="outline" onClick={() => navigate(dismissPath)}>
               Cancel
             </Button>
           </div>

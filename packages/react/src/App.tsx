@@ -258,6 +258,11 @@ export function App({ config }: AppProps) {
                 <DashboardView config={config} />
               </ProtectedRoute>
             } />
+
+            {/* Backward-compatible alias when dashboard lives at root */}
+            {!landingPageEnabled && (
+              <Route path="/dashboard" element={<Navigate to="/" replace />} />
+            )}
             
             {/* Profile route - protected with layout */}
             <Route path="/profile" element={
@@ -371,6 +376,11 @@ export function App({ config }: AppProps) {
                 } else if (createOps.length === 1) {
                   // Single create operation - redirect to form
                   indexElement = <Navigate to={`/${resource.slug}/new`} replace />;
+                } else if (actionOps.length === 1 && !hasListOp && createOps.length === 0) {
+                  // Single action-only resource - open its form directly
+                  indexElement = (
+                    <Navigate to={`/${resource.slug}/new?operation=${actionOps[0].id}`} replace />
+                  );
                 } else if (actionOps.length > 0) {
                   // Action operations (like file upload) - show action selection
                   indexElement = <ActionSelectionView resource={resource} />;
