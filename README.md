@@ -2,9 +2,20 @@
 
 Build & Run Declarative UI Apps. OpenAPI is your foundation.
 
-![UIGen Demo](https://github.com/darula-hpp/uigen/raw/main/examples/output.gif)
-
-Includes a [**hardware example**](./examples/apps/cpp/esp32-simulator/) — ESP32 simulator with REST API, OpenAPI contract, and generated admin UI for GPIO, config, and telemetry.
+<table>
+  <tr>
+    <td width="50%">
+      <img src="examples/output.gif" alt="Meeting Minutes FastAPI demo" />
+    </td>
+    <td width="50%">
+      <img src="examples/esp32.gif" alt="ESP32 board simulator demo" />
+    </td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Meeting Minutes</strong> (FastAPI)</td>
+    <td align="center"><strong>ESP32 Hardware</strong> (<a href="./examples/apps/cpp/esp32-simulator/">simulator</a>)</td>
+  </tr>
+</table>
 
 ---
 
