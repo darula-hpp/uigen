@@ -1,5 +1,16 @@
 # @uigen-dev/react
 
+## 0.15.0
+
+### Minor Changes
+
+- Improved Charting and edge cases handling
+
+### Patch Changes
+
+- Updated dependencies
+  - @uigen-dev/core@0.15.0
+
 ## 0.14.0
 
 ### Minor Changes
