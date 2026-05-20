@@ -4,6 +4,8 @@ Build & Run Declarative UI Apps. OpenAPI is your foundation.
 
 ![UIGen Demo](https://github.com/darula-hpp/uigen/raw/main/examples/output.gif)
 
+Includes a [**hardware example**](./examples/apps/cpp/esp32-simulator/) — ESP32 simulator with REST API, OpenAPI contract, and generated admin UI for GPIO, config, and telemetry.
+
 ---
 
 ## Getting Started
@@ -58,7 +60,11 @@ UIGen scaffolds a complete project with configuration files (`.uigen/config.yaml
 
 ---
 
-## Example App
+## Examples
+
+### Meeting Minutes (FastAPI)
+
+Full-stack web app with auth, file uploads, and relationships.
 
 ```bash
 git clone https://github.com/darula-hpp/uigen
@@ -75,15 +81,33 @@ npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8000
 
 Visit `http://localhost:4400` to explore a full meeting minutes application with CRUD operations, authentication, file uploads, and relationships.
 
-### ESP32 Hardware Demo (C++)
+### ESP32 Hardware Example (C++)
+
+For embedded and IoT workflows, see [`examples/apps/cpp/esp32-simulator`](./examples/apps/cpp/esp32-simulator/). A C++ REST API simulates an ESP32-DevKitC with GPIO, sensors, telemetry, and device actions. The same **contract-first** `openapi.yaml` drives a generated admin UI — no RainMaker, no hand-built React.
+
+```text
+Visual demo (C++ serves the page)     UIGen admin UI (from openapi.yaml)
+http://localhost:8080                 http://localhost:4400
+        |                                      |
+        +-------- same REST API ----------------+
+```
 
 ```bash
 cd uigen/examples/apps/cpp/esp32-simulator
 docker compose up --build
+
+# In another terminal
+npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8080
 ```
 
-- `http://localhost:8080` - visual ESP32 board simulator with live GPIO and sensor charts
-- Pair with UIGen: `npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8080`
+| URL | What you get |
+|---|---|
+| `http://localhost:8080` | Interactive board diagram, live GPIO/sensor cards, event log |
+| `http://localhost:4400` | Generated control panel: pin config, settings forms, telemetry table + charts, blink/reset actions |
+
+The simulator serves `GET /openapi.yaml` on the wire. UIGen config in `UI/.uigen/config.yaml` adds charts (`x-uigen-chart`), sensor filters, and layout. If you only have curl output or C struct headers, use the **Generate Device OpenAPI** agent skill (`SKILLS/generate-device-openapi.md`) to draft the spec, then **Auto-Annotate** for config.
+
+See the [ESP32 example README](./examples/apps/cpp/esp32-simulator/README.md) for API endpoints, local build, and tests.
 
 ---
 
@@ -94,6 +118,7 @@ UIGen includes AI agent skills that automate configuration through intelligent a
 ### Available Skills
 
 - **Auto-Annotate** - Detects auth endpoints, file uploads, relationships, charts, and smart labels
+- **Generate Device OpenAPI** - Drafts `openapi.yaml` from curl, Postman, C structs, or route tables (embedded/IoT)
 - **Configure OAuth** - Sets up OAuth 2.0 social login (Google, GitHub, Facebook, Microsoft)
 - **Applying Styles** - Brand colors, dark mode, component styling, animations, responsive design
 - **Configure Icons** - Professional icon library integration (Lucide, Heroicons, React Icons)
@@ -223,7 +248,7 @@ The CLI automatically discovers, transpiles, and injects your overrides. See [pa
 ## Current Priorities
 - Polish
 - Better relationship handling and visualization
-- Additional renderers (Svelte, Vue)
+- Additional renderers (Svelte, Vue, React Native for device companion apps)
 
 ---
 
