@@ -524,6 +524,16 @@ describe('DetailView - Action buttons', () => {
         responses: {
           '201': {
             description: 'Created',
+            schema: {
+              type: 'object',
+              key: 'Reading',
+              label: 'Reading',
+              required: false,
+              children: [
+                { type: 'number', key: 'value', label: 'Reading Value', required: true },
+                { type: 'string', key: 'unit', label: 'Unit', required: false },
+              ],
+            },
           },
         },
       },
@@ -535,7 +545,13 @@ describe('DetailView - Action buttons', () => {
 
     const { useApiCall, useApiMutation } = await import('@/hooks/useApiCall');
 
-    mockMutateAsync.mockResolvedValue({});
+    mockMutateAsync.mockResolvedValue({
+      id: 4573,
+      sensor_id: 1,
+      value: 36.145,
+      unit: 'C',
+      recorded_at: '2026-05-20T14:38:21Z',
+    });
 
     vi.mocked(useApiCall).mockReturnValue({
       data: { id: '123', name: 'John Doe', email: 'john@example.com' },
@@ -550,7 +566,7 @@ describe('DetailView - Action buttons', () => {
     } as any);
   });
 
-  it('should refetch detail data after a successful action', async () => {
+  it('should refetch detail data and show the action response after a successful action', async () => {
     renderWithProviders(<DetailView resource={resourceWithAction} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Take Reading' }));
@@ -559,6 +575,12 @@ describe('DetailView - Action buttons', () => {
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalled();
       expect(mockRefetch).toHaveBeenCalled();
+      expect(screen.getByRole('region', { name: 'Take Reading result' })).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: 'User' })).toBeInTheDocument();
+      expect(screen.getByText('Latest response returned by this action.')).toBeInTheDocument();
+      expect(screen.getByText('Current resource data loaded from the API.')).toBeInTheDocument();
+      expect(screen.getByText('Reading Value')).toBeInTheDocument();
+      expect(screen.getByText('36.15')).toBeInTheDocument();
     });
   });
 });

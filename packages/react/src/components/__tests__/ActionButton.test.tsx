@@ -204,9 +204,10 @@ describe('ActionButton', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('should call onSuccess callback after successful execution', async () => {
+  it('should call onSuccess callback with the mutation result after successful execution', async () => {
     const mockOnSuccess = vi.fn();
-    mockMutateAsync.mockResolvedValue({});
+    const actionResult = { status: 'approved', id: '123' };
+    mockMutateAsync.mockResolvedValue(actionResult);
 
     render(
       <ActionButton operation={mockOperation} resourceId="123" onSuccess={mockOnSuccess} />,
@@ -220,7 +221,11 @@ describe('ActionButton', () => {
     fireEvent.click(executeButton);
 
     await waitFor(() => {
-      expect(mockOnSuccess).toHaveBeenCalled();
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        pathParams: { id: '123' },
+        body: undefined,
+      });
+      expect(mockOnSuccess).toHaveBeenCalledWith(actionResult);
     });
   });
 });

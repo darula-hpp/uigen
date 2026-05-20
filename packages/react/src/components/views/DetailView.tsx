@@ -1,100 +1,20 @@
 import { useApiCall, useApiMutation } from '@/hooks/useApiCall';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import type { Resource, SchemaNode, Operation } from '@uigen-dev/core';
+import type { Resource, Operation } from '@uigen-dev/core';
 import { reconcile, OverrideHooksHost } from '@/overrides';
 import { Button } from '@/components/ui/button';
 import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 import { ActionButton } from '@/components/ActionButton';
+import { ActionResultPanel } from '@/components/ActionResultPanel';
 import { LibraryAssociationManager } from '@/components/LibraryAssociationManager';
 import { useToast } from '@/components/Toast';
 import { useOptionalApp } from '@/contexts/AppContext';
+import { ReadOnlyDataSection } from '@/components/ReadOnlyDataSection';
+import { resolvePathParams } from '@/lib/resolve-path-params';
 import { useState } from 'react';
-
-/**
- * Maps the React Router :id param to the actual path parameter name in the operation.
- * e.g. /v1/Services/{Sid} → { Sid: 'MG...' }
- */
-function resolvePathParams(operation: Operation, id: string | undefined): Record<string, string> {
-  if (!id) return {};
-  const matches = operation.path.match(/\{([^}]+)\}/g);
-  if (!matches || matches.length === 0) return { id };
-  // Use the last path param (typically the resource identifier)
-  const paramName = matches[matches.length - 1].slice(1, -1);
-  return { [paramName]: id };
-}
 
 interface DetailViewProps {
   resource: Resource;
-}
-
-/**
- * Format value based on field type
- * Implements Requirement 8.3
- */
-function formatValue(value: unknown, field: SchemaNode): string {
-  if (value === null || value === undefined) return '-';
-
-  // Boolean formatting
-  if (field.type === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-
-  // Date formatting
-  if (field.type === 'date' || field.format === 'date') {
-    try {
-      const date = new Date(value as string);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch {
-      return String(value);
-    }
-  }
-
-  // Date-time formatting
-  if (field.format === 'date-time') {
-    try {
-      const date = new Date(value as string);
-      return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZoneName: 'short'
-      });
-    } catch {
-      return String(value);
-    }
-  }
-
-  // Number formatting
-  if (field.type === 'number' || field.type === 'integer') {
-    const num = Number(value);
-    if (!isNaN(num)) {
-      return num.toLocaleString('en-US');
-    }
-  }
-
-  // Enum formatting
-  if (field.type === 'enum' && field.enumValues) {
-    return String(value);
-  }
-
-  // Array formatting
-  if (field.type === 'array' && Array.isArray(value)) {
-    if (value.length === 0) return 'None';
-    return value.map(v => formatValue(v, field.items || { type: 'string', key: '', label: '', required: false })).join(', ');
-  }
-
-  // Object formatting
-  if (field.type === 'object' && typeof value === 'object') {
-    return JSON.stringify(value, null, 2);
-  }
-
-  return String(value);
 }
 
 /**
@@ -108,6 +28,10 @@ export function DetailView({ resource }: DetailViewProps) {
   const appContext = useOptionalApp();
   const config = appContext?.config;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [lastActionResult, setLastActionResult] = useState<{
+    operation: Operation;
+    data: unknown;
+  } | null>(null);
   
   // Find the detail operation
   const detailOp = resource.operations.find(op => op.viewHint === 'detail');
@@ -189,6 +113,11 @@ export function DetailView({ resource }: DetailViewProps) {
     }
   }
 
+  const detailSectionTitle =
+    detailOp.summary
+    || resource.label
+    || resource.name;
+
   // Built-in content
   const content = (
     <div className="space-y-6">
@@ -244,7 +173,8 @@ export function DetailView({ resource }: DetailViewProps) {
                 key={actionOp.id}
                 operation={actionOp}
                 resourceId={id!}
-                onSuccess={() => {
+                onSuccess={(result) => {
+                  setLastActionResult({ operation: actionOp, data: result });
                   void refetch();
                 }}
               />
@@ -252,6 +182,13 @@ export function DetailView({ resource }: DetailViewProps) {
           </div>
         )}
       </div>
+
+      {lastActionResult && (
+        <ActionResultPanel
+          operation={lastActionResult.operation}
+          data={lastActionResult.data}
+        />
+      )}
 
       {/* Error state - Requirement 8.6 */}
       {error && (
@@ -275,23 +212,12 @@ export function DetailView({ resource }: DetailViewProps) {
 
       {/* Field display - Requirements 8.2, 8.3 */}
       {!isLoading && !error && data && (
-        <div className="prose prose-neutral dark:prose-invert max-w-2xl">
-          <dl className="space-y-4">
-            {fields.map((field) => (
-              <div key={field.key} className="space-y-1">
-                <dt className="text-sm font-medium text-muted-foreground">
-                  {field.label}
-                </dt>
-                <dd className="text-base">
-                  {formatValue(data[field.key], field)}
-                </dd>
-                {field.description && (
-                  <p className="text-xs text-muted-foreground">{field.description}</p>
-                )}
-              </div>
-            ))}
-          </dl>
-        </div>
+        <ReadOnlyDataSection
+          title={detailSectionTitle}
+          description="Current resource data loaded from the API."
+          fields={fields}
+          data={data as Record<string, unknown>}
+        />
       )}
 
       {/* Related Resources - Requirements 8.4, 40.1-40.5, 10.1-10.6 */}

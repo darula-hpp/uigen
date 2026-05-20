@@ -10,7 +10,7 @@ import { resolvePathParams } from '@/lib/resolve-path-params';
 interface ActionButtonProps {
   operation: Operation;
   resourceId: string;
-  onSuccess?: () => void;
+  onSuccess?: (result: unknown) => void;
 }
 
 /**
@@ -30,22 +30,19 @@ export function ActionButton({ operation, resourceId, onSuccess }: ActionButtonP
 
   const handleConfirm = async () => {
     try {
-      // Requirement 15.5: POST to operation path on confirmation
-      await mutation.mutateAsync({
+      const result = await mutation.mutateAsync({
         pathParams: resolvePathParams(operation, resourceId),
-        body: operation.requestBody ? formData : undefined
+        body: operation.requestBody ? formData : undefined,
       });
 
-      // Requirement 15.6: Display success message and refresh detail view
       showToast('success', `${operation.summary || 'Action'} completed successfully`);
       setShowDialog(false);
       setFormData({});
-      
+
       if (onSuccess) {
-        onSuccess();
+        onSuccess(result);
       }
     } catch (err) {
-      // Requirement 15.7: Display error message on failure
       const errorMessage = err instanceof Error ? err.message : 'Action failed';
       showToast('error', errorMessage);
     }
@@ -58,7 +55,6 @@ export function ActionButton({ operation, resourceId, onSuccess }: ActionButtonP
 
   return (
     <>
-      {/* Requirement 15.1: Display operation summary as button label */}
       <Button
         variant="secondary"
         onClick={handleClick}
@@ -66,7 +62,6 @@ export function ActionButton({ operation, resourceId, onSuccess }: ActionButtonP
         {operation.summary || operation.id}
       </Button>
 
-      {/* Requirement 15.3: Show confirmation dialog on click */}
       <ConfirmationDialog
         isOpen={showDialog}
         onClose={handleCancel}
@@ -77,7 +72,6 @@ export function ActionButton({ operation, resourceId, onSuccess }: ActionButtonP
         cancelLabel="Cancel"
         isLoading={mutation.isPending}
       >
-        {/* Requirement 15.4: Render input fields when requestBody exists */}
         {operation.requestBody && (
           <div className="mt-4">
             <DynamicForm
