@@ -11,20 +11,23 @@ UIGen supports a set of `x-uigen-*` vendor extensions that let you customise the
 
 | Annotation | Purpose | Status |
 |---|---|---|
+| [`x-uigen-app`](/docs/spec-annotations/x-uigen-app) | App name, icon, and branding | Available |
 | [`x-uigen-label`](/docs/spec-annotations/x-uigen-label) | Override the display label for a field, operation, or resource | Available |
 | [`x-uigen-id`](/docs/spec-annotations/x-uigen-id) | Override the stable identifier used for overrides | Available |
 | [`x-uigen-ignore`](/docs/spec-annotations/x-uigen-ignore) | Exclude specific operations or entire resources from the generated UI | Available |
 | [`x-uigen-ref`](/docs/spec-annotations/x-uigen-ref) | Declare that a field references another resource with full control over resolution and display | Available |
 | [`x-uigen-chart`](/docs/spec-annotations/x-uigen-chart) | Configure charts for list endpoints that return array data | Available |
+| [`x-uigen-layout`](/docs/spec-annotations/x-uigen-layout) | Control page layout (sidebar, centered, dashboard grid) | Available |
+| [`x-uigen-profile`](/docs/spec-annotations/x-uigen-profile) | Mark a resource as a user profile view | Available |
+| [`x-uigen-landing-page`](/docs/spec-annotations/x-uigen-landing-page) | Generate a marketing landing page at `/` | Available |
+| [`x-uigen-datetime`](/docs/spec-annotations/x-uigen-datetime) | Format datetime fields in list and detail views | Available |
+| [`x-uigen-datetime-tz`](/docs/spec-annotations/x-uigen-datetime-tz) | Display datetimes in a specific timezone | Available |
+| [`x-uigen-auth`](/docs/spec-annotations/x-uigen-auth) | Configure OAuth2 and authentication flows | Available |
+| [`x-uigen-http-get/post/put/delete/patch`](/docs/spec-annotations/x-uigen-http-method-override) | Override HTTP method during config reconciliation | Available |
 | [`x-uigen-file-types`](/docs/spec-annotations/x-uigen-file-metadata) | Array of allowed MIME types for file uploads | Available |
 | [`x-uigen-max-file-size`](/docs/spec-annotations/x-uigen-file-metadata) | Maximum file size in bytes for file uploads | Available |
 | [`x-uigen-login`](/docs/authentication/credential-login) | Mark an endpoint as the credential login endpoint | Available |
 | [`x-uigen-token-path`](/docs/authentication/credential-login) | Dot-notation path to the token in a login response | Available |
-| [`x-uigen-http-get`](/docs/spec-annotations/x-uigen-http-method-override) | Force operation to use GET method during reconciliation | Available |
-| [`x-uigen-http-post`](/docs/spec-annotations/x-uigen-http-method-override) | Force operation to use POST method during reconciliation | Available |
-| [`x-uigen-http-put`](/docs/spec-annotations/x-uigen-http-method-override) | Force operation to use PUT method during reconciliation | Available |
-| [`x-uigen-http-delete`](/docs/spec-annotations/x-uigen-http-method-override) | Force operation to use DELETE method during reconciliation | Available |
-| [`x-uigen-http-patch`](/docs/spec-annotations/x-uigen-http-method-override) | Force operation to use PATCH method during reconciliation | Available |
 | [`x-uigen-widget`](/docs/spec-annotations/planned-annotations) | Override the field input component | Coming Soon |
 | [`x-uigen-hidden`](/docs/spec-annotations/planned-annotations) | Hide a field from the generated UI | Coming Soon |
 | [`x-uigen-order`](/docs/spec-annotations/planned-annotations) | Control field ordering in forms and tables | Coming Soon |

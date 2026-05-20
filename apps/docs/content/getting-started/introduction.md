@@ -26,6 +26,7 @@ All API calls are live (UIGen proxies requests to your real backend, so there is
 UIGen is useful for:
 
 - **API developers** who want an instant admin UI or internal tool without building a frontend
+- **Embedded and IoT developers** who expose REST endpoints from firmware and need a control panel for GPIO, sensors, and device config
 - **Teams** that need a quick way to explore and test a new API
 - **Prototypers** who want to demo an API to stakeholders without writing UI code
 
@@ -49,7 +50,16 @@ UIGen ships as three packages:
 | `@uigen-dev/core` | Framework-agnostic adapters and IR (use this to build your own renderer) |
 | `@uigen-dev/react` | The React renderer (the default UI layer) |
 
+## Example apps
+
+The repository includes reference apps for web APIs and embedded devices:
+
+- [Meeting Minutes (FastAPI)](/docs/guides/example-apps) — templates, PDF generation, auth
+- [ESP32 Board Simulator (C++)](/docs/guides/example-apps) — GPIO, sensors, telemetry charts
+- [STM32 Nucleo Simulator (C++)](/docs/guides/example-apps) — professional embedded workflow
+
 ## Next steps
 
 - [Quick Start](/docs/getting-started/quick-start): run UIGen in under a minute
 - [Installation](/docs/getting-started/installation): install the packages that fit your use case
+- [Example Apps](/docs/guides/example-apps): clone and run reference projects

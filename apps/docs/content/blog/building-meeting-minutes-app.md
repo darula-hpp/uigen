@@ -22,7 +22,7 @@ This tutorial shows you how to build a complete meeting minutes automation syste
 
 The backend is ~1500 lines of Python. The frontend is zero lines of code because UIGen generates it automatically from your OpenAPI spec.
 
-By the end of this tutorial, you will have a production-ready application with authentication, file uploads, async processing, database migrations, and a complete admin UI. The full source code is available in the [UIGen repository](https://github.com/uigen-dev/uigen/tree/main/examples/apps/fastapi/meeting-minutes).
+By the end of this tutorial, you will have a production-ready application with authentication, file uploads, async processing, database migrations, and a complete admin UI. The full source code is available in the [UIGen repository](https://github.com/darula-hpp/uigen/tree/main/examples/apps/fastapi/meeting-minutes).
 
 ---
 
@@ -146,7 +146,7 @@ Each layer has a clear responsibility:
 Clone the UIGen repository and navigate to the example app:
 
 ```bash
-git clone https://github.com/uigen-dev/uigen.git
+git clone https://github.com/darula-hpp/uigen.git
 cd uigen/examples/apps/fastapi/meeting-minutes
 ```
 
@@ -953,7 +953,7 @@ This approach has several advantages:
 **Type safety**: Validation rules flow from spec to forms
 **Customization**: Use config files or annotations without forking
 
-The full source code is available in the [UIGen repository](https://github.com/uigen-dev/uigen/tree/main/examples/apps/fastapi/meeting-minutes). Clone it, run it, and adapt it to your needs.
+The full source code is available in the [UIGen repository](https://github.com/darula-hpp/uigen/tree/main/examples/apps/fastapi/meeting-minutes). Clone it, run it, and adapt it to your needs.
 
 If you want to build your own API with auto-generated UI:
 
@@ -1001,7 +1001,7 @@ The meeting minutes app demonstrates what is possible when you combine a well-de
 
 ```bash
 # Try it now
-git clone https://github.com/uigen-dev/uigen.git
+git clone https://github.com/darula-hpp/uigen.git
 cd uigen/examples/apps/fastapi/meeting-minutes
 source venv/bin/activate
 uvicorn app.main:app --reload

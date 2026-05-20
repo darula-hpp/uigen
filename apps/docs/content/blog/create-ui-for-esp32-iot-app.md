@@ -14,7 +14,7 @@ The usual path is painful. You wire up a React dashboard by hand, duplicate vali
 
 There is a better approach. Define your device API as **OpenAPI**, implement the firmware to match that contract, and let UIGen generate the admin UI automatically. No RainMaker. No hand-built React.
 
-This tutorial walks through the [ESP32 Board Simulator](https://github.com/uigen-dev/uigen/tree/main/examples/apps/cpp/esp32-simulator) in the UIGen repo. It is a C++ REST server that simulates an ESP32-DevKitC with GPIO, DHT22 sensors, telemetry history, and device actions. The same `openapi.yaml` drives both the simulator and a generated control panel.
+This tutorial walks through the [ESP32 Board Simulator](https://github.com/darula-hpp/uigen/tree/main/examples/apps/cpp/esp32-simulator) in the UIGen repo. It is a C++ REST server that simulates an ESP32-DevKitC with GPIO, DHT22 sensors, telemetry history, and device actions. The same `openapi.yaml` drives both the simulator and a generated control panel.
 
 By the end, you will know how to:
 
@@ -52,7 +52,7 @@ Both talk to the same REST API. The visual demo uses `GET /api/v1/state` for eff
 Clone the repo and start the C++ simulator with Docker:
 
 ```bash
-git clone https://github.com/uigen-dev/uigen.git
+git clone https://github.com/darula-hpp/uigen.git
 cd uigen/examples/apps/cpp/esp32-simulator
 docker compose up --build
 ```
@@ -332,7 +332,7 @@ The visual demo page (`web/`) is optional. Many embedded projects only need the 
 
 ## API Reference
 
-The simulator exposes these endpoints (full details in the [example README](https://github.com/uigen-dev/uigen/tree/main/examples/apps/cpp/esp32-simulator)):
+The simulator exposes these endpoints (full details in the [example README](https://github.com/darula-hpp/uigen/tree/main/examples/apps/cpp/esp32-simulator)):
 
 | Endpoint | Description |
 |---|---|
@@ -404,7 +404,7 @@ The ESP32 simulator shows the full loop: contract-first spec, C++ implementation
 Try it now:
 
 ```bash
-git clone https://github.com/uigen-dev/uigen.git
+git clone https://github.com/darula-hpp/uigen.git
 cd uigen/examples/apps/cpp/esp32-simulator
 docker compose up --build
 
@@ -419,7 +419,7 @@ Visit `http://localhost:8080` for the board demo and `http://localhost:4400` for
 
 ## Further Reading
 
-- [ESP32 Simulator README](https://github.com/uigen-dev/uigen/tree/main/examples/apps/cpp/esp32-simulator) - Full API docs, local build, and tests
+- [ESP32 Simulator README](https://github.com/darula-hpp/uigen/tree/main/examples/apps/cpp/esp32-simulator) - Full API docs, local build, and tests
 - [x-uigen-chart Reference](/docs/spec-annotations/x-uigen-chart) - Line, bar, and area charts from list endpoints
 - [x-uigen-ref Reference](/docs/spec-annotations/x-uigen-ref) - Foreign key dropdowns between resources
 - [How to Style UIGen Applications](/blog/styling-uigen-apps-with-ai) - Theme customization with AI or manual CSS

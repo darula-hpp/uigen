@@ -175,10 +175,22 @@ npx @uigen-dev/cli serve openapi.yaml --proxy-base http://localhost:3001
 npx @uigen-dev/cli serve openapi.yaml --verbose
 ```
 
+## Hardware and IoT projects
+
+For embedded examples (ESP32, STM32), run the device simulator from the example root, then start UIGen from the `UI/` subdirectory so `.uigen/config.yaml` is picked up:
+
+```bash
+cd examples/apps/cpp/esp32-simulator/UI
+npx @uigen-dev/cli serve openapi.yaml --proxy-base http://localhost:8080
+```
+
+See [Example Apps](/docs/guides/example-apps) for full setup instructions.
+
 ## Next steps
 
 - [CLI Reference: init](/docs/cli-reference/init): all init command options
 - [CLI Reference: serve](/docs/cli-reference/serve): all serve command flags
 - [CLI Reference: config](/docs/cli-reference/config): visualize AI-generated configuration
+- [Example Apps](/docs/guides/example-apps): Meeting Minutes, ESP32, and STM32 simulators
 - [Authentication](/docs/authentication/overview): how UIGen handles auth
 - [Annotations](/docs/spec-annotations/overview): customize the generated UI

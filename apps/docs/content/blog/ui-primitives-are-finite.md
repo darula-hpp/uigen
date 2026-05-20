@@ -933,7 +933,7 @@ echo "annotations:
 The code is open source. Read it, learn from it, contribute to it:
 
 ```bash
-git clone https://github.com/uigen-dev/uigen.git
+git clone https://github.com/darula-hpp/uigen.git
 cd uigen/packages/react/src
 # Read the React renderer code
 ```
