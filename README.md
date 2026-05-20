@@ -107,7 +107,8 @@ http://localhost:8080                 http://localhost:4400
 cd uigen/examples/apps/cpp/esp32-simulator
 docker compose up --build
 
-# In another terminal
+# In another terminal — run UIGen from UI/ so .uigen/config.yaml is picked up
+cd uigen/examples/apps/cpp/esp32-simulator/UI
 npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8080
 ```
 
@@ -119,6 +120,26 @@ npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8080
 The simulator serves `GET /openapi.yaml` on the wire. UIGen config in `UI/.uigen/config.yaml` adds charts (`x-uigen-chart`), sensor filters, and layout. If you only have curl output or C struct headers, use the **Generate Device OpenAPI** agent skill (`SKILLS/generate-device-openapi.md`) to draft the spec, then **Auto-Annotate** for config.
 
 See the [ESP32 example README](./examples/apps/cpp/esp32-simulator/README.md) for API endpoints, local build, and tests.
+
+### STM32 Nucleo Hardware Example (C++)
+
+For professional embedded workflows, see [`examples/apps/cpp/stm32-nucleo-simulator`](./examples/apps/cpp/stm32-nucleo-simulator/). A C++ REST API simulates a NUCLEO-F411RE with Arduino header pins, I2C sensors, 4-20mA analog input, and ST-Link status. Same contract-first OpenAPI pattern as the ESP32 example.
+
+```bash
+cd uigen/examples/apps/cpp/stm32-nucleo-simulator
+docker compose up --build
+
+# In another terminal — run UIGen from UI/ so .uigen/config.yaml is picked up
+cd uigen/examples/apps/cpp/stm32-nucleo-simulator/UI
+npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8081 --port 4401
+```
+
+| URL | What you get |
+|---|---|
+| `http://localhost:8081` | Nucleo board diagram, LD2 blink, live sensor cards, event log |
+| `http://localhost:4401` | Generated control panel: pin CRUD, config forms, telemetry charts, blink/reset actions |
+
+See the [STM32 Nucleo example README](./examples/apps/cpp/stm32-nucleo-simulator/README.md) for API endpoints, local build, and tests.
 
 ---
 

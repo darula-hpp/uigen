@@ -1,0 +1,1264 @@
+# Skill: Auto-Annotate OpenAPI Specs
+
+## Overview
+This skill guides AI agents through automatically analyzing OpenAPI specifications and intelligently applying annotations to the `.uigen/config.yaml` file. The goal is to **eliminate the need for users to manually configure annotations** in the config GUI by having AI agents detect patterns and apply appropriate annotations automatically.
+
+## Critical Understanding
+
+### What This Skill Does
+Analyzes an OpenAPI spec and automatically adds annotations to `.uigen/config.yaml` based on intelligent pattern detection:
+- Detects login/auth endpoints → `x-uigen-login`
+- Detects password reset endpoints → `x-uigen-password-reset`
+- Detects sign-up/registration endpoints → `x-uigen-signup`
+- Detects internal/debug endpoints → `x-uigen-ignore`
+- Detects file upload fields → `x-uigen-file-types`, `x-uigen-max-file-size`
+- Detects foreign key relationships → `x-uigen-ref`
+- Detects array fields suitable for charts → `x-uigen-chart`
+- Applies custom labels → `x-uigen-label`
+- Detects active server → `x-uigen-active-server`
+- Detects layout requirements → `x-uigen-layout`
+
+### The Config Structure
+
+```yaml
+version: '1.0'
+enabled: {}
+defaults: {}
+annotations:
+  # Operation annotations (METHOD:path)
+  POST:/api/v1/auth/login:
+    x-uigen-login: true
+    x-uigen-label: User Login
+  
+  # Field annotations (schema path)
+  Body_upload_file_api_v1_files_post.file:
+    x-uigen-file-types: ['image/jpeg', 'image/png']
+    x-uigen-max-file-size: 5242880
+  
+  # Schema annotations (JSON pointer)
+  '#/paths/~1api~1v1~1users/get/responses/200/content/application~1json/schema':
+    x-uigen-chart:
+      chartType: line
+      xAxis: created_at
+      yAxis: count
+```
+
+## Annotations Excluded from Auto-Annotation
+
+**IMPORTANT**: The following annotations are handled by dedicated skills and should **NOT** be auto-detected or added by this skill:
+
+### x-uigen-auth (OAuth Configuration)
+- **Handled by**: `SKILLS/configure-oauth.md`
+- **Reason**: OAuth configuration requires interactive user input for provider selection, client IDs, redirect URIs, and scopes. It cannot be reliably auto-detected.
+- **User action**: Run the OAuth configuration skill separately when OAuth is needed.
+
+### x-uigen-landing-page (Landing Page Content)
+- **Handled by**: `SKILLS/generate-landing-page-content.md`
+- **Reason**: Landing page content requires creative content generation, marketing copy, and user-specific branding decisions. It cannot be auto-detected from API specs.
+- **User action**: Run the landing page generation skill separately when a landing page is needed.
+
+### x-uigen-override (Custom View Overrides)
+- **Handled by**: `SKILLS/create-overrides.md`
+- **Reason**: Overrides require custom React components written by developers. They cannot be auto-generated from API specs and require manual implementation of component logic, state management, and UI design.
+- **User action**: Run the create overrides skill separately when custom views are needed.
+
+**Rule**: If you encounter these annotations in existing config.yaml, preserve them but do not attempt to generate or modify them.
+
+## Available Annotations Reference
+
+Load the annotations metadata from `annotations.json`:
+
+```json
+{
+  "x-uigen-login": { "targetType": "operation", "type": "boolean" },
+  "x-uigen-password-reset": { "targetType": "operation", "type": "boolean" },
+  "x-uigen-signup": { "targetType": "operation", "type": "boolean" },
+  "x-uigen-ignore": { "targetType": ["field", "operation", "resource"], "type": "boolean" },
+  "x-uigen-label": { "targetType": ["field", "operation", "resource"], "type": "string" },
+  "x-uigen-file-types": { "targetType": "field", "type": "array", "applicableWhen": { "type": "file" } },
+  "x-uigen-max-file-size": { "targetType": "field", "type": "number", "applicableWhen": { "type": "file" } },
+  "x-uigen-ref": { "targetType": "field", "type": "object" },
+  "x-uigen-chart": { "targetType": "field", "type": "object", "applicableWhen": { "type": "array" } },
+  "x-uigen-datetime": { "targetType": "field", "type": "string | object", "applicableWhen": { "type": "string" } },
+  "x-uigen-active-server": { "targetType": "server", "type": "boolean" },
+  "x-uigen-layout": { "targetType": ["document", "operation"], "type": "object" },
+  "x-uigen-app": { "targetType": "document", "type": "object" },
+  "x-uigen-profile": { "targetType": "operation", "type": "boolean" }
+}
+```
+
+**Note**: `x-uigen-auth`, `x-uigen-landing-page`, and `x-uigen-override` are intentionally excluded from this list as they require dedicated skills.
+
+## AI Agent Workflow
+
+### Step 1: Locate the OpenAPI Spec
+
+**Priority order:**
+1. If user provides a path, use it
+2. If not provided, search current directory for common spec files:
+   - `openapi.yaml` / `openapi.yml`
+   - `openapi.json`
+   - `swagger.yaml` / `swagger.yml`
+   - `swagger.json`
+   - `api.yaml` / `api.yml`
+3. If found, inform user: "Found OpenAPI spec at `{path}`, using it for annotation."
+4. If not found, ask user: "Please provide the path to your OpenAPI spec file."
+
+### Step 2: Load and Parse the Spec
+
+```bash
+# Read the OpenAPI spec
+cat openapi.yaml
+```
+
+Parse the spec to understand:
+- All endpoints (paths + methods)
+- Request/response schemas
+- Parameters and request bodies
+- Servers configuration
+
+### Step 3: Detect Patterns and Generate Annotations
+
+Run through all detection rules (see Detection Rules section below).
+
+**IMPORTANT**: Do not attempt to detect or generate the following annotations:
+- `x-uigen-auth` - Use the OAuth configuration skill instead
+- `x-uigen-landing-page` - Use the landing page generation skill instead
+- `x-uigen-override` - Use the create overrides skill instead
+
+If the user mentions OAuth, landing pages, or custom overrides, inform them about the dedicated skills available.
+
+### Step 4: Load Existing Config
+
+Check if `.uigen/config.yaml` exists:
+- If exists: Load it and preserve existing annotations
+- If not exists: Create new config with default structure
+
+```yaml
+version: '1.0'
+enabled: {}
+defaults: {}
+annotations: {}
+```
+
+### Step 5: Merge Annotations
+
+**CRITICAL: Preserve existing annotations**
+- Never overwrite existing annotations
+- Only add new annotations that don't conflict
+- If a path/field already has an annotation, skip it
+
+### Step 6: Write Updated Config
+
+Write the updated config back to `.uigen/config.yaml` with proper YAML formatting.
+
+### Step 7: Report Results
+
+Provide a summary:
+```
+✓ Auto-annotated OpenAPI spec: openapi.yaml
+✓ Added 12 annotations to .uigen/config.yaml
+
+Summary:
+  - 2 login endpoints detected
+  - 1 password reset endpoint detected
+  - 1 sign-up endpoint detected
+  - 3 internal endpoints marked to ignore
+  - 4 file upload fields configured
+  - 1 chart visualization added
+
+Run 'uigen serve openapi.yaml' to see the results.
+```
+
+## Detection Rules
+
+### Rule 1: Login Endpoints (x-uigen-login)
+
+**Pattern detection:**
+- Method: POST
+- Path contains: `/login`, `/signin`, `/auth`, `/authenticate`, `/session`
+- Request body has fields: `username`/`email` + `password`
+- Response includes: `token`, `access_token`, `jwt`, `session_id`
+
+**Example:**
+```yaml
+POST:/api/v1/auth/login:
+  x-uigen-login: true
+  x-uigen-label: User Login
+```
+
+### Rule 2: Password Reset Endpoints (x-uigen-password-reset)
+
+**Pattern detection:**
+- Method: POST
+- Path contains: `/password-reset`, `/reset-password`, `/forgot-password`, `/password/reset`
+- Request body has fields: `email` or `username`
+
+**Example:**
+```yaml
+POST:/api/v1/auth/password-reset:
+  x-uigen-password-reset: true
+  x-uigen-label: Reset Password
+```
+
+### Rule 3: Sign-Up Endpoints (x-uigen-signup)
+
+**Pattern detection:**
+- Method: POST
+- Path contains: `/signup`, `/sign-up`, `/register`, `/registration`
+- Request body has fields: `email`/`username` + `password`
+- Often includes: `name`, `confirm_password`
+
+**Example:**
+```yaml
+POST:/api/v1/auth/sign-up:
+  x-uigen-signup: true
+  x-uigen-label: Create Account
+```
+
+### Rule 4: Ignore Internal Endpoints (x-uigen-ignore)
+
+**Pattern detection:**
+- Path contains: `/health`, `/healthz`, `/ping`, `/metrics`, `/debug`, `/internal`, `/_`
+- Tags include: `internal`, `debug`, `monitoring`, `admin-only`
+- Description contains: "internal use only", "debug", "monitoring"
+
+**Example:**
+```yaml
+GET:/health:
+  x-uigen-ignore: true
+
+GET:/metrics:
+  x-uigen-ignore: true
+```
+
+### Rule 5: File Upload Fields (x-uigen-file-types, x-uigen-max-file-size)
+
+**Pattern detection:**
+- Schema type: `string`
+- Format: `binary` or `base64`
+- Content type: `multipart/form-data`
+- Field name contains: `file`, `upload`, `attachment`, `document`, `image`, `photo`, `avatar`
+
+**File type detection:**
+- Field name contains `image`/`photo`/`avatar` → `['image/jpeg', 'image/png', 'image/webp']`
+- Field name contains `document`/`pdf` → `['application/pdf']`
+- Field name contains `video` → `['video/mp4', 'video/webm']`
+- Field name contains `audio` → `['audio/mpeg', 'audio/wav']`
+- Generic `file`/`upload` → `['*/*']` (all types)
+
+**File size detection:**
+- Default: 10MB (10485760 bytes)
+- If description mentions size limit, use that
+- For images: 5MB (5242880 bytes)
+- For videos: 100MB (104857600 bytes)
+- For documents: 10MB (10485760 bytes)
+
+**Example:**
+```yaml
+Body_upload_file_api_v1_files_post.file:
+  x-uigen-file-types: ['image/jpeg', 'image/png', 'image/webp']
+  x-uigen-max-file-size: 5242880
+
+Body_upload_document_api_v1_documents_post.document:
+  x-uigen-file-types: ['application/pdf', 'application/msword']
+  x-uigen-max-file-size: 10485760
+```
+
+### Rule 6: Foreign Key References (x-uigen-ref)
+
+**Pattern detection:**
+- Field name ends with: `_id`, `Id`, `ID`
+- Field type: `string`, `integer`, or `number`
+- Field name pattern: `{resource}_id` (e.g., `user_id`, `role_id`, `category_id`)
+
+**Auto-detect target resource:**
+- Extract resource name from field (e.g., `user_id` → `User`)
+- Check if resource exists in spec paths (e.g., `/users`)
+- Determine value field: usually `id`
+- Determine label field: usually `name`, `title`, or first string field
+
+**Example:**
+```yaml
+User.role_id:
+  x-uigen-ref:
+    resource: Role
+    valueField: id
+    labelField: name
+
+Post.category_id:
+  x-uigen-ref:
+    resource: Category
+    valueField: id
+    labelField: name
+```
+
+### Rule 7: Chart Visualizations (x-uigen-chart)
+
+**Pattern detection:**
+- Schema type: `array`
+- Array items are objects (not primitives)
+- Response from GET endpoint (list/collection)
+- Items have numeric fields suitable for y-axis
+- Items have date/time or categorical fields suitable for x-axis
+
+**Chart type selection:**
+- Time-series data (has date/timestamp field) → `line` or `area`
+- Categorical data with counts → `bar`
+- Percentage/proportion data → `pie` or `donut`
+- Multiple numeric series → `line` (multi-series)
+
+**Axis detection:**
+- X-axis: First date/timestamp field, or first string/enum field
+- Y-axis: First numeric field (integer, number)
+
+**Example:**
+```yaml
+'#/paths/~1api~1v1~1analytics/get/responses/200/content/application~1json/schema':
+  x-uigen-chart:
+    chartType: line
+    xAxis: date
+    yAxis: revenue
+    options:
+      title: Revenue Over Time
+
+'#/paths/~1api~1v1~1users/get/responses/200/content/application~1json/schema':
+  x-uigen-chart:
+    chartType: bar
+    xAxis: role
+    yAxis: count
+```
+
+### Rule 8: DateTime Fields (x-uigen-datetime)
+
+**Pattern detection:**
+- Schema type: `string`
+- Field name contains: `date`, `time`, `timestamp`, `created_at`, `updated_at`, `scheduled`, `expires`, `deadline`
+- Format: `date`, `date-time`, or `time`
+- Description contains: `date`, `time`, `timestamp`, `datetime`
+
+**Format detection:**
+- Field name contains `date` only → `YYYY-MM-DD`
+- Field name contains `time` only → `HH:mm:ss`
+- Field name contains `datetime`, `timestamp`, `created_at`, `updated_at` → `YYYY-MM-DD HH:mm:ss`
+- Format is `date` → `YYYY-MM-DD`
+- Format is `date-time` → `YYYY-MM-DD HH:mm:ss`
+- Format is `time` → `HH:mm:ss`
+
+**Timezone detection:**
+- If field name contains `utc` or description mentions UTC → no timezone (UTC assumed)
+- If description mentions specific timezone → use that timezone
+- Otherwise → no timezone specified (local time)
+
+**Example:**
+```yaml
+User.created_at:
+  x-uigen-datetime:
+    format: YYYY-MM-DD HH:mm:ss
+
+Meeting.scheduled_date:
+  x-uigen-datetime: YYYY-MM-DD
+
+Event.start_time:
+  x-uigen-datetime:
+    format: HH:mm:ss
+
+Appointment.scheduled_at:
+  x-uigen-datetime:
+    format: YYYY-MM-DD HH:mm:ss
+    timezone: America/New_York
+```
+
+### Rule 9: Custom Labels (x-uigen-label)
+
+**Pattern detection:**
+- Apply human-readable labels to operations, fields, and resources
+- Convert snake_case/camelCase to Title Case
+- Use operation summary if available
+
+**Label Behavior:**
+- **Single-operation resources**: Operation label applies to BOTH operation AND resource
+  - Example: `GET:/api/v1/auth/me` with label "My Profile" → resource shows "My Profile"
+- **Multi-operation resources**: Operation labels apply ONLY to operations, NOT the resource
+  - Example: `DELETE:/api/v1/templates/{id}` with label "Delete Template" → resource still shows "Templates"
+- **Explicit resource labels**: Use base path without HTTP method prefix
+  - Example: `/api/v1/templates` with label "Document Templates" → resource shows "Document Templates"
+
+**Examples:**
+```yaml
+# Operation labels
+POST:/api/v1/users:
+  x-uigen-label: Create User
+
+GET:/api/v1/users/{id}:
+  x-uigen-label: View User Details
+
+# Single-operation resource (label applies to both operation and resource)
+GET:/api/v1/auth/me:
+  x-uigen-label: My Profile
+
+# Field labels
+User.first_name:
+  x-uigen-label: First Name
+
+User.email_address:
+  x-uigen-label: Email Address
+
+# Explicit resource label (for multi-operation resources)
+/api/v1/templates:
+  x-uigen-label: Document Templates
+```
+
+### Rule 10: Active Server (x-uigen-active-server)
+
+**Pattern detection:**
+- If spec has multiple servers, mark the first production server as active
+- Look for server with description containing: `production`, `prod`, `live`
+- If only one server, mark it as active
+
+**Example:**
+```yaml
+# This is applied at the server level in the spec, not in config.yaml
+# But can be suggested as a manual edit if needed
+```
+
+### Rule 11: Layout Configuration (x-uigen-layout)
+
+**Pattern detection:**
+
+**Document-level (global layout):**
+- Default: Apply `sidebar` layout for multi-resource applications
+- Apply `centered` layout for single-resource auth-only applications
+- Apply `dashboard-grid` layout if spec has analytics/dashboard endpoints
+
+**Operation-level (per-resource layout overrides):**
+- Auth endpoints (login, signup, password-reset) → `centered` layout with `verticalCenter: true`, `maxWidth: 400`
+- Profile/settings endpoints → `centered` layout with `maxWidth: 600`
+- Dashboard/analytics endpoints → `dashboard-grid` layout with responsive columns
+- Admin/management endpoints → `sidebar` layout (default)
+
+**Layout type selection:**
+- **Sidebar**: Multi-resource CRUD applications (default)
+  - Metadata: `sidebarWidth: 256`, `sidebarCollapsible: true`
+- **Centered**: Auth pages, profile pages, single-form pages
+  - Metadata: `maxWidth: 400-600`, `verticalCenter: true`, `showHeader: false`
+- **Dashboard Grid**: Analytics, metrics, dashboard pages
+  - Metadata: `columns: {mobile: 1, tablet: 2, desktop: 3}`, `gap: 24`
+
+**Examples:**
+```yaml
+# Document-level: Global sidebar layout for the app
+document:
+  x-uigen-layout:
+    type: sidebar
+    metadata:
+      sidebarWidth: 256
+      sidebarCollapsible: true
+      sidebarDefaultCollapsed: false
+
+# Operation-level: Centered layout for login
+POST:/api/v1/auth/login:
+  x-uigen-login: true
+  x-uigen-label: User Login
+  x-uigen-layout:
+    type: centered
+    metadata:
+      maxWidth: 400
+      showHeader: false
+      verticalCenter: true
+
+# Operation-level: Centered layout for profile
+GET:/api/v1/auth/me:
+  x-uigen-profile: true
+  x-uigen-label: My Profile
+  x-uigen-layout:
+    type: centered
+    metadata:
+      maxWidth: 600
+      showHeader: true
+      verticalCenter: false
+
+# Operation-level: Dashboard grid for analytics
+GET:/api/v1/analytics/dashboard:
+  x-uigen-label: Analytics Dashboard
+  x-uigen-layout:
+    type: dashboard-grid
+    metadata:
+      columns:
+        mobile: 1
+        tablet: 2
+        desktop: 4
+      gap: 32
+```
+
+## Path Naming Conventions
+
+### Operation Paths
+Format: `METHOD:/path/to/endpoint`
+
+Examples:
+- `POST:/api/v1/auth/login`
+- `GET:/api/v1/users`
+- `PUT:/api/v1/users/{id}`
+- `DELETE:/api/v1/posts/{id}`
+
+### Field Paths (Request Body)
+Format: `Body_{operation_id}.{field_name}`
+
+Examples:
+- `Body_create_user_api_v1_users_post.email`
+- `Body_upload_file_api_v1_files_post.file`
+- `Body_update_post_api_v1_posts__id__put.title`
+
+### Schema Paths (JSON Pointer)
+Format: `#/paths/{encoded_path}/{method}/responses/{code}/content/{media_type}/schema`
+
+Path encoding:
+- `/` → `~1`
+- `~` → `~0`
+
+Examples:
+- `#/paths/~1api~1v1~1users/get/responses/200/content/application~1json/schema`
+- `#/paths/~1api~1v1~1posts~1{id}/get/responses/200/content/application~1json/schema`
+
+### Component Schema Paths
+Format: `{SchemaName}.{field_name}`
+
+Examples:
+- `User.email`
+- `Post.author_id`
+- `Meeting.recording`
+
+## Implementation Example
+
+```typescript
+// Pseudo-code for the detection logic
+
+interface Annotation {
+  path: string;
+  annotations: Record<string, any>;
+}
+
+function autoAnnotate(specPath: string): Annotation[] {
+  const spec = parseOpenAPISpec(specPath);
+  const annotations: Annotation[] = [];
+  
+  // Detect login endpoints
+  for (const [path, pathItem] of Object.entries(spec.paths)) {
+    for (const [method, operation] of Object.entries(pathItem)) {
+      if (isLoginEndpoint(path, method, operation)) {
+        annotations.push({
+          path: `${method.toUpperCase()}:${path}`,
+          annotations: {
+            'x-uigen-login': true,
+            'x-uigen-label': 'User Login'
+          }
+        });
+      }
+      
+      if (isPasswordResetEndpoint(path, method, operation)) {
+        annotations.push({
+          path: `${method.toUpperCase()}:${path}`,
+          annotations: {
+            'x-uigen-password-reset': true,
+            'x-uigen-label': 'Reset Password'
+          }
+        });
+      }
+      
+      if (isSignUpEndpoint(path, method, operation)) {
+        annotations.push({
+          path: `${method.toUpperCase()}:${path}`,
+          annotations: {
+            'x-uigen-signup': true,
+            'x-uigen-label': 'Create Account'
+          }
+        });
+      }
+      
+      if (isInternalEndpoint(path, method, operation)) {
+        annotations.push({
+          path: `${method.toUpperCase()}:${path}`,
+          annotations: {
+            'x-uigen-ignore': true
+          }
+        });
+      }
+    }
+  }
+  
+  // Detect file upload fields
+  for (const [path, pathItem] of Object.entries(spec.paths)) {
+    for (const [method, operation] of Object.entries(pathItem)) {
+      const fileFields = detectFileFields(operation);
+      for (const field of fileFields) {
+        annotations.push({
+          path: field.path,
+          annotations: {
+            'x-uigen-file-types': field.fileTypes,
+            'x-uigen-max-file-size': field.maxSize
+          }
+        });
+      }
+    }
+  }
+  
+  // Detect foreign key references
+  for (const [schemaName, schema] of Object.entries(spec.components?.schemas || {})) {
+    const refs = detectForeignKeys(schemaName, schema, spec);
+    for (const ref of refs) {
+      annotations.push({
+        path: `${schemaName}.${ref.fieldName}`,
+        annotations: {
+          'x-uigen-ref': {
+            resource: ref.resource,
+            valueField: ref.valueField,
+            labelField: ref.labelField
+          }
+        }
+      });
+    }
+  }
+  
+  // Detect chart opportunities
+  for (const [path, pathItem] of Object.entries(spec.paths)) {
+    const chartConfigs = detectChartOpportunities(path, pathItem);
+    for (const config of chartConfigs) {
+      annotations.push({
+        path: config.path,
+        annotations: {
+          'x-uigen-chart': config.chartConfig
+        }
+      });
+    }
+  }
+  
+  // Detect datetime fields
+  for (const [schemaName, schema] of Object.entries(spec.components?.schemas || {})) {
+    const dateTimeFields = detectDateTimeFields(schemaName, schema);
+    for (const field of dateTimeFields) {
+      const annotation: any = {
+        format: field.format
+      };
+      
+      if (field.timezone) {
+        annotation.timezone = field.timezone;
+      }
+      
+      annotations.push({
+        path: `${schemaName}.${field.fieldName}`,
+        annotations: {
+          'x-uigen-datetime': annotation
+        }
+      });
+    }
+  }
+  
+  // Detect layout configuration
+  const layoutConfig = detectLayoutConfiguration(spec);
+  
+  // Add document-level layout
+  if (layoutConfig.document) {
+    annotations.push({
+      path: 'document',
+      annotations: {
+        'x-uigen-layout': layoutConfig.document
+      }
+    });
+  }
+  
+  // Add operation-level layouts
+  for (const [operationKey, layout] of layoutConfig.operations.entries()) {
+    // Find existing annotation for this operation or create new one
+    const existing = annotations.find(a => a.path === operationKey);
+    if (existing) {
+      existing.annotations['x-uigen-layout'] = layout;
+    } else {
+      annotations.push({
+        path: operationKey,
+        annotations: {
+          'x-uigen-layout': layout
+        }
+      });
+    }
+  }
+  
+  return annotations;
+}
+```
+
+## Pattern Detection Helpers
+
+### isLoginEndpoint
+```typescript
+function isLoginEndpoint(path: string, method: string, operation: any): boolean {
+  if (method.toLowerCase() !== 'post') return false;
+  
+  const pathLower = path.toLowerCase();
+  const hasLoginPath = /\/(login|signin|auth|authenticate|session)/.test(pathLower);
+  
+  const requestBody = operation.requestBody?.content?.['application/json']?.schema;
+  const hasAuthFields = requestBody?.properties?.username || 
+                        requestBody?.properties?.email ||
+                        requestBody?.properties?.password;
+  
+  return hasLoginPath && hasAuthFields;
+}
+```
+
+### isPasswordResetEndpoint
+```typescript
+function isPasswordResetEndpoint(path: string, method: string, operation: any): boolean {
+  if (method.toLowerCase() !== 'post') return false;
+  
+  const pathLower = path.toLowerCase();
+  return /\/(password-reset|reset-password|forgot-password|password\/reset)/.test(pathLower);
+}
+```
+
+### isSignUpEndpoint
+```typescript
+function isSignUpEndpoint(path: string, method: string, operation: any): boolean {
+  if (method.toLowerCase() !== 'post') return false;
+  
+  const pathLower = path.toLowerCase();
+  return /\/(signup|sign-up|register|registration)/.test(pathLower);
+}
+```
+
+### isInternalEndpoint
+```typescript
+function isInternalEndpoint(path: string, method: string, operation: any): boolean {
+  const pathLower = path.toLowerCase();
+  const internalPaths = /\/(health|healthz|ping|metrics|debug|internal|_)/.test(pathLower);
+  
+  const internalTags = operation.tags?.some((tag: string) => 
+    /internal|debug|monitoring|admin-only/i.test(tag)
+  );
+  
+  const internalDescription = /internal use only|debug|monitoring/i.test(
+    operation.description || ''
+  );
+  
+  return internalPaths || internalTags || internalDescription;
+}
+```
+
+### detectFileFields
+```typescript
+function detectFileFields(operation: any): Array<{path: string, fileTypes: string[], maxSize: number}> {
+  const fields: Array<{path: string, fileTypes: string[], maxSize: number}> = [];
+  
+  const requestBody = operation.requestBody?.content?.['multipart/form-data']?.schema;
+  if (!requestBody?.properties) return fields;
+  
+  for (const [fieldName, fieldSchema] of Object.entries(requestBody.properties)) {
+    const schema = fieldSchema as any;
+    if (schema.type === 'string' && (schema.format === 'binary' || schema.format === 'base64')) {
+      const fileTypes = guessFileTypes(fieldName);
+      const maxSize = guessMaxFileSize(fieldName);
+      
+      fields.push({
+        path: `Body_${operation.operationId}.${fieldName}`,
+        fileTypes,
+        maxSize
+      });
+    }
+  }
+  
+  return fields;
+}
+
+function guessFileTypes(fieldName: string): string[] {
+  const nameLower = fieldName.toLowerCase();
+  
+  if (/image|photo|avatar|picture/.test(nameLower)) {
+    return ['image/jpeg', 'image/png', 'image/webp'];
+  }
+  if (/document|pdf/.test(nameLower)) {
+    return ['application/pdf'];
+  }
+  if (/video/.test(nameLower)) {
+    return ['video/mp4', 'video/webm'];
+  }
+  if (/audio/.test(nameLower)) {
+    return ['audio/mpeg', 'audio/wav'];
+  }
+  
+  return ['*/*'];
+}
+
+function guessMaxFileSize(fieldName: string): number {
+  const nameLower = fieldName.toLowerCase();
+  
+  if (/image|photo|avatar/.test(nameLower)) {
+    return 5242880; // 5MB
+  }
+  if (/video/.test(nameLower)) {
+    return 104857600; // 100MB
+  }
+  
+  return 10485760; // 10MB default
+}
+```
+
+### detectForeignKeys
+```typescript
+function detectForeignKeys(schemaName: string, schema: any, spec: any): Array<{
+  fieldName: string;
+  resource: string;
+  valueField: string;
+  labelField: string;
+}> {
+  const refs: Array<any> = [];
+  
+  for (const [fieldName, fieldSchema] of Object.entries(schema.properties || {})) {
+    const field = fieldSchema as any;
+    
+    // Check if field name ends with _id, Id, or ID
+    if (/_id$|Id$|ID$/.test(fieldName)) {
+      // Extract resource name
+      const resourceName = fieldName.replace(/_id$|Id$|ID$/, '');
+      const capitalizedResource = resourceName.charAt(0).toUpperCase() + resourceName.slice(1);
+      
+      // Check if resource exists in spec
+      const resourceExists = Object.keys(spec.components?.schemas || {}).some(
+        name => name.toLowerCase() === resourceName.toLowerCase()
+      );
+      
+      if (resourceExists) {
+        // Find label field (usually 'name' or 'title')
+        const targetSchema = spec.components.schemas[capitalizedResource];
+        const labelField = findLabelField(targetSchema);
+        
+        refs.push({
+          fieldName,
+          resource: capitalizedResource,
+          valueField: 'id',
+          labelField
+        });
+      }
+    }
+  }
+  
+  return refs;
+}
+
+function findLabelField(schema: any): string {
+  const properties = schema?.properties || {};
+  
+  // Priority order for label fields
+  const labelCandidates = ['name', 'title', 'label', 'displayName', 'display_name'];
+  
+  for (const candidate of labelCandidates) {
+    if (properties[candidate]) {
+      return candidate;
+    }
+  }
+  
+  // Fallback: first string field
+  for (const [fieldName, fieldSchema] of Object.entries(properties)) {
+    if ((fieldSchema as any).type === 'string') {
+      return fieldName;
+    }
+  }
+  
+  return 'name'; // Ultimate fallback
+}
+```
+
+### detectDateTimeFields
+```typescript
+function detectDateTimeFields(schemaName: string, schema: any): Array<{
+  fieldName: string;
+  format: string;
+  timezone?: string;
+}> {
+  const dateTimeFields: Array<any> = [];
+  
+  for (const [fieldName, fieldSchema] of Object.entries(schema.properties || {})) {
+    const field = fieldSchema as any;
+    
+    // Only apply to string fields
+    if (field.type !== 'string') {
+      continue;
+    }
+    
+    // Check field name patterns
+    const fieldNameLower = fieldName.toLowerCase();
+    const isDateTimeField = /date|time|timestamp|created_at|updated_at|scheduled|expires|deadline/.test(fieldNameLower);
+    
+    // Check format
+    const hasDateTimeFormat = field.format === 'date' || field.format === 'date-time' || field.format === 'time';
+    
+    // Check description
+    const hasDateTimeDescription = field.description && /date|time|timestamp|datetime/i.test(field.description);
+    
+    if (isDateTimeField || hasDateTimeFormat || hasDateTimeDescription) {
+      // Detect format pattern
+      let format: string;
+      
+      if (field.format === 'date') {
+        format = 'YYYY-MM-DD';
+      } else if (field.format === 'time') {
+        format = 'HH:mm:ss';
+      } else if (field.format === 'date-time') {
+        format = 'YYYY-MM-DD HH:mm:ss';
+      } else if (/time/.test(fieldNameLower) && !/date/.test(fieldNameLower)) {
+        format = 'HH:mm:ss';
+      } else if (/date/.test(fieldNameLower) && !/time/.test(fieldNameLower)) {
+        format = 'YYYY-MM-DD';
+      } else {
+        format = 'YYYY-MM-DD HH:mm:ss';
+      }
+      
+      // Detect timezone
+      let timezone: string | undefined;
+      
+      if (field.description) {
+        const descLower = field.description.toLowerCase();
+        
+        // Check for specific timezone mentions
+        const timezoneMatch = field.description.match(/timezone:\s*([A-Za-z_\/]+)/i);
+        if (timezoneMatch) {
+          timezone = timezoneMatch[1];
+        }
+        
+        // Don't set timezone if UTC is mentioned (UTC is default)
+        if (/\butc\b/i.test(descLower)) {
+          timezone = undefined;
+        }
+      }
+      
+      dateTimeFields.push({
+        fieldName,
+        format,
+        ...(timezone && { timezone })
+      });
+    }
+  }
+  
+  return dateTimeFields;
+}
+```
+
+### detectLayoutConfiguration
+```typescript
+function detectLayoutConfiguration(spec: any): {
+  document?: any;
+  operations: Map<string, any>;
+} {
+  const layouts = {
+    document: undefined as any,
+    operations: new Map<string, any>()
+  };
+  
+  // Detect document-level layout
+  const resourceCount = Object.keys(spec.paths || {}).length;
+  const hasAuthEndpoints = Object.entries(spec.paths || {}).some(([path, pathItem]: [string, any]) =>
+    Object.values(pathItem).some((op: any) => 
+      isLoginEndpoint(path, 'post', op) || 
+      isSignUpEndpoint(path, 'post', op) ||
+      isPasswordResetEndpoint(path, 'post', op)
+    )
+  );
+  
+  // Default to sidebar for multi-resource apps
+  if (resourceCount > 3) {
+    layouts.document = {
+      type: 'sidebar',
+      metadata: {
+        sidebarWidth: 256,
+        sidebarCollapsible: true,
+        sidebarDefaultCollapsed: false
+      }
+    };
+  }
+  
+  // Detect operation-level layouts
+  for (const [path, pathItem] of Object.entries(spec.paths || {})) {
+    for (const [method, operation] of Object.entries(pathItem as any)) {
+      const operationKey = `${method.toUpperCase()}:${path}`;
+      
+      // Auth endpoints get centered layout
+      if (isLoginEndpoint(path, method, operation) ||
+          isSignUpEndpoint(path, method, operation) ||
+          isPasswordResetEndpoint(path, method, operation)) {
+        layouts.operations.set(operationKey, {
+          type: 'centered',
+          metadata: {
+            maxWidth: 400,
+            showHeader: false,
+            verticalCenter: true
+          }
+        });
+      }
+      
+      // Profile endpoints get centered layout
+      if (isProfileEndpoint(path, method, operation)) {
+        layouts.operations.set(operationKey, {
+          type: 'centered',
+          metadata: {
+            maxWidth: 600,
+            showHeader: true,
+            verticalCenter: false
+          }
+        });
+      }
+      
+      // Dashboard/analytics endpoints get grid layout
+      if (isDashboardEndpoint(path, method, operation)) {
+        layouts.operations.set(operationKey, {
+          type: 'dashboard-grid',
+          metadata: {
+            columns: {
+              mobile: 1,
+              tablet: 2,
+              desktop: 3
+            },
+            gap: 24
+          }
+        });
+      }
+    }
+  }
+  
+  return layouts;
+}
+
+function isProfileEndpoint(path: string, method: string, operation: any): boolean {
+  const pathLower = path.toLowerCase();
+  return method.toLowerCase() === 'get' && 
+         (/\/me$|\/profile$|\/account$/.test(pathLower) ||
+          operation.tags?.includes('profile') ||
+          operation.tags?.includes('account'));
+}
+
+function isDashboardEndpoint(path: string, method: string, operation: any): boolean {
+  const pathLower = path.toLowerCase();
+  return /\/(dashboard|analytics|metrics|stats)/.test(pathLower) ||
+         operation.tags?.some((tag: string) => 
+           /dashboard|analytics|metrics|stats/i.test(tag)
+         );
+}
+```
+
+## Best Practices
+
+### 1. Always Preserve Existing Annotations
+```typescript
+function mergeAnnotations(existing: any, detected: Annotation[]): any {
+  const merged = { ...existing };
+  
+  for (const annotation of detected) {
+    // Only add if path doesn't already exist
+    if (!merged[annotation.path]) {
+      merged[annotation.path] = annotation.annotations;
+    }
+  }
+  
+  return merged;
+}
+```
+
+### 2. Validate Before Writing
+```typescript
+function validateAnnotations(annotations: any): boolean {
+  // Ensure all annotation values match their expected types
+  // Ensure required fields are present
+  // Ensure paths are properly formatted
+  return true;
+}
+```
+
+### 3. Format YAML Properly
+```typescript
+import yaml from 'js-yaml';
+
+function writeConfig(config: any, path: string): void {
+  const yamlContent = yaml.dump(config, {
+    indent: 2,
+    lineWidth: -1,
+    noRefs: true
+  });
+  
+  fs.writeFileSync(path, yamlContent, 'utf-8');
+}
+```
+
+### 4. Provide Detailed Feedback
+```typescript
+function reportResults(annotations: Annotation[]): void {
+  console.log(`✓ Auto-annotated OpenAPI spec`);
+  console.log(`✓ Added ${annotations.length} annotations to .uigen/config.yaml\n`);
+  
+  const summary = {
+    login: 0,
+    passwordReset: 0,
+    signUp: 0,
+    ignore: 0,
+    fileUpload: 0,
+    ref: 0,
+    chart: 0,
+    datetime: 0,
+    layout: 0
+  };
+  
+  for (const annotation of annotations) {
+    if (annotation.annotations['x-uigen-login']) summary.login++;
+    if (annotation.annotations['x-uigen-password-reset']) summary.passwordReset++;
+    if (annotation.annotations['x-uigen-signup']) summary.signUp++;
+    if (annotation.annotations['x-uigen-ignore']) summary.ignore++;
+    if (annotation.annotations['x-uigen-file-types']) summary.fileUpload++;
+    if (annotation.annotations['x-uigen-ref']) summary.ref++;
+    if (annotation.annotations['x-uigen-chart']) summary.chart++;
+    if (annotation.annotations['x-uigen-datetime']) summary.datetime++;
+    if (annotation.annotations['x-uigen-layout']) summary.layout++;
+  }
+  
+  console.log('Summary:');
+  if (summary.login > 0) console.log(`  - ${summary.login} login endpoint(s) detected`);
+  if (summary.passwordReset > 0) console.log(`  - ${summary.passwordReset} password reset endpoint(s) detected`);
+  if (summary.signUp > 0) console.log(`  - ${summary.signUp} sign-up endpoint(s) detected`);
+  if (summary.ignore > 0) console.log(`  - ${summary.ignore} internal endpoint(s) marked to ignore`);
+  if (summary.fileUpload > 0) console.log(`  - ${summary.fileUpload} file upload field(s) configured`);
+  if (summary.ref > 0) console.log(`  - ${summary.ref} foreign key reference(s) detected`);
+  if (summary.chart > 0) console.log(`  - ${summary.chart} chart visualization(s) added`);
+  if (summary.datetime > 0) console.log(`  - ${summary.datetime} datetime field(s) configured`);
+  if (summary.layout > 0) console.log(`  - ${summary.layout} layout configuration(s) applied`);
+  
+  console.log(`\nRun 'uigen serve openapi.yaml' to see the results.`);
+}
+```
+
+## Testing Your Auto-Annotations
+
+### 1. Run the auto-annotate process
+```bash
+# AI agent runs the detection and writes to config.yaml
+```
+
+### 2. Verify the config file
+```bash
+cat .uigen/config.yaml
+```
+
+### 3. Test with the serve command
+```bash
+uigen serve openapi.yaml
+```
+
+### 4. Check the generated UI
+- Verify login form appears correctly
+- Check file upload fields have proper restrictions
+- Verify internal endpoints are hidden
+- Check foreign key fields show as dropdowns
+- Verify charts render correctly
+
+## Common Pitfalls to Avoid
+
+### 1. Don't Overwrite Existing Annotations
+```typescript
+// Bad
+config.annotations = detectedAnnotations;
+
+// Good
+config.annotations = {
+  ...config.annotations,
+  ...detectedAnnotations
+};
+```
+
+### 2. Don't Guess Aggressively
+```typescript
+// Bad: Marking every POST as login
+if (method === 'POST') {
+  annotations['x-uigen-login'] = true;
+}
+
+// Good: Use multiple signals
+if (method === 'POST' && 
+    path.includes('login') && 
+    hasAuthFields(requestBody)) {
+  annotations['x-uigen-login'] = true;
+}
+```
+
+### 3. Don't Ignore Edge Cases
+```typescript
+// Handle missing operationId
+const operationId = operation.operationId || 
+                    `${method}_${path.replace(/\//g, '_')}`;
+
+// Handle missing schemas
+const schema = operation.requestBody?.content?.['application/json']?.schema;
+if (!schema) return;
+```
+
+### 4. Don't Forget YAML Escaping
+```typescript
+// Paths with special characters need proper encoding
+const encodedPath = path.replace(/~/g, '~0').replace(/\//g, '~1');
+```
+
+## Complete Workflow Example
+
+```bash
+# User invokes the skill
+"Auto-annotate my OpenAPI spec"
+
+# AI agent responds
+"Found OpenAPI spec at examples/apps/fastapi/meeting-minutes/openapi.yaml, using it for annotation."
+
+# AI agent analyzes the spec
+# ... detection logic runs ...
+
+# AI agent writes to config
+# ... merges with existing config ...
+
+# AI agent reports
+✓ Auto-annotated OpenAPI spec: openapi.yaml
+✓ Added 12 annotations to .uigen/config.yaml
+
+Summary:
+  - 1 login endpoint detected
+  - 1 password reset endpoint detected
+  - 1 sign-up endpoint detected
+  - 1 internal endpoint marked to ignore
+  - 2 file upload fields configured
+  - 2 foreign key references detected
+  - 2 datetime fields configured
+  - 2 layout configurations applied
+
+Run 'uigen serve openapi.yaml' to see the results.
+```
+
+## Conclusion
+
+As an AI agent, your role is to:
+
+1. **Locate the OpenAPI spec** (ask if not provided, auto-detect if possible)
+2. **Parse and analyze** the spec for patterns
+3. **Detect and generate** appropriate annotations
+4. **Preserve existing** annotations in config.yaml
+5. **Merge and write** the updated config
+6. **Report results** with a clear summary
+
+The annotations you generate will be used by UIGen to customize the generated application, eliminating the need for manual configuration in the config GUI.
+
+**Annotations Handled by Other Skills:**
+- For OAuth configuration → Use `SKILLS/configure-oauth.md`
+- For landing page content → Use `SKILLS/generate-landing-page-content.md`
+- For custom view overrides → Use `SKILLS/create-overrides.md`
+
+**Key Files:**
+- Read spec from: `openapi.yaml` (or user-provided path)
+- Write annotations to: `.uigen/config.yaml`
+- Reference metadata: `annotations.json`
+
+**Testing:**
+```bash
+uigen serve openapi.yaml
+```
+
+By following this skill, AI agents can intelligently annotate OpenAPI specs and provide users with a fully configured UIGen application without any manual work.
