@@ -1,5 +1,16 @@
 # @uigen-dev/react
 
+## 0.14.0
+
+### Minor Changes
+
+- Support loading specs from http(s) urls'
+
+### Patch Changes
+
+- Updated dependencies
+  - @uigen-dev/core@0.14.0
+
 ## 0.13.0
 
 ### Minor Changes

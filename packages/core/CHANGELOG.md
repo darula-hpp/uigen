@@ -1,5 +1,11 @@
 # @uigen-dev/core
 
+## 0.14.0
+
+### Minor Changes
+
+- Support loading specs from http(s) urls'
+
 ## 0.13.0
 
 ### Minor Changes
