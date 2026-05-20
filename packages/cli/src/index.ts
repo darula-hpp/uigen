@@ -33,6 +33,7 @@ Examples:
   $ uigen serve petstore.yaml
   $ uigen serve petstore.yaml --port 3000
   $ uigen serve petstore.yaml --proxy-base https://api.example.com
+  $ uigen serve http://localhost:8080/openapi.yaml --proxy-base http://localhost:8080
   $ uigen serve petstore.yaml --verbose
   $ uigen config petstore.yaml
   $ uigen config petstore.yaml --port 4401
@@ -79,7 +80,7 @@ After initialization, use 'uigen serve' to start the development server.
 program
   .command('serve')
   .description('Start a development server with the generated UI')
-  .argument('<spec>', 'Path to OpenAPI spec file (YAML or JSON)')
+  .argument('<spec>', 'Path or URL to OpenAPI spec (YAML or JSON)')
   .option('-p, --port <port>', 'Port to run the server on', '4400')
   .option('--proxy-base <url>', 'Base URL for API proxy')
   .option('--renderer <renderer>', 'UI renderer to use (react, vue, svelte)', 'react')
@@ -89,6 +90,7 @@ Examples:
   $ uigen serve petstore.yaml
   $ uigen serve petstore.yaml --port 3000
   $ uigen serve petstore.yaml --proxy-base https://api.example.com
+  $ uigen serve http://localhost:8080/openapi.yaml --proxy-base http://localhost:8080
   $ uigen serve petstore.yaml --renderer react
   $ uigen serve petstore.yaml --verbose
 `)

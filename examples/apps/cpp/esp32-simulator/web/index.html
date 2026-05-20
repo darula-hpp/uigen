@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ESP32 DevKit Simulator</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">ESP</div>
+          <div>
+            <p class="eyebrow">UIGen Hardware Demo</p>
+            <h1>ESP32-DevKitC Simulator</h1>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="blink-btn" class="btn btn-primary">Blink LED</button>
+          <button id="reset-btn" class="btn btn-secondary">Reset Board</button>
+          <a class="btn btn-ghost" href="/openapi.yaml" target="_blank" rel="noreferrer">OpenAPI</a>
+        </div>
+      </header>
+
+      <section class="status-strip">
+        <article class="status-card">
+          <span class="label">Chip</span>
+          <strong id="chip-name">--</strong>
+        </article>
+        <article class="status-card">
+          <span class="label">Uptime</span>
+          <strong id="uptime">--</strong>
+        </article>
+        <article class="status-card">
+          <span class="label">Free Heap</span>
+          <strong id="heap">--</strong>
+        </article>
+        <article class="status-card">
+          <span class="label">WiFi</span>
+          <strong id="wifi">--</strong>
+        </article>
+        <article class="status-card">
+          <span class="label">Telemetry</span>
+          <strong id="telemetry-rate">--</strong>
+        </article>
+      </section>
+
+      <main class="layout">
+        <section class="panel board-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Board Visualizer</h2>
+              <p>Click output pins to toggle. Watch GPIO2 LED react in real time.</p>
+            </div>
+            <div class="legend">
+              <span><i class="dot output"></i> Output</span>
+              <span><i class="dot input"></i> Input</span>
+              <span><i class="dot analog"></i> Analog</span>
+              <span><i class="dot high"></i> HIGH</span>
+            </div>
+          </div>
+
+          <div class="board-stage">
+            <div id="pin-rail-left" class="pin-rail left"></div>
+
+            <div class="board-body">
+              <div class="board-shell">
+                <div class="board-antenna"></div>
+                <div class="board-chip">
+                  <span>ESP32</span>
+                  <small>D0WDQ6</small>
+                </div>
+                <div id="board-led" class="board-led" aria-label="Built-in LED"></div>
+                <div class="board-usb">USB-C</div>
+                <div class="board-label">DevKitC</div>
+              </div>
+            </div>
+
+            <div id="pin-rail-right" class="pin-rail right"></div>
+          </div>
+        </section>
+
+        <aside class="side-column">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Live Sensors</h2>
+              <p>Simulated DHT22, ADC, and internal temperature.</p>
+            </div>
+            <div id="sensor-cards" class="sensor-grid"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Event Log</h2>
+              <p>Pin toggles, telemetry, alerts, and actions.</p>
+            </div>
+            <ul id="event-log" class="event-log"></ul>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <template id="pin-template">
+      <button class="pin-node" type="button">
+        <span class="pin-id"></span>
+        <span class="pin-meta"></span>
+      </button>
+    </template>
+
+    <script src="/assets/app.js"></script>
+  </body>
+</html>

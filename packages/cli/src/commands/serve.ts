@@ -8,6 +8,7 @@ import {
   DevServerStrategy,
   StaticServerStrategy,
   SUPPORTED_RENDERERS,
+  inferProxyBaseFromSpec,
   type ServeOptions,
   type Renderer,
 } from '../server/index.js';
@@ -46,7 +47,11 @@ export async function serve(specPath: string, options: ServeOptions) {
     });
     
     // Determine proxy target
-    const proxyTarget = options.proxyBase || ir.servers[0]?.url || 'http://localhost:3000';
+    const proxyTarget =
+      options.proxyBase
+      ?? inferProxyBaseFromSpec(specPath)
+      ?? ir.servers[0]?.url
+      ?? 'http://localhost:3000';
     console.log(pc.gray(`API proxy target: ${proxyTarget}\n`));
     
     // Validate renderer

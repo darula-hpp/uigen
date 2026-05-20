@@ -3,6 +3,12 @@
  */
 
 export { SpecProcessor } from './spec-processor.js';
+export {
+  isRemoteSpec,
+  resolveSpecSource,
+  inferProxyBaseFromSpec,
+} from './spec-source.js';
+export type { SpecSource, SpecSourceKind } from './spec-source.js';
 export { AssetLoader } from './asset-loader.js';
 export { ProxyManager } from './proxy-manager.js';
 export { DevServerStrategy } from './dev-server-strategy.js';

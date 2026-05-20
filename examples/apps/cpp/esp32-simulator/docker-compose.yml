@@ -1,0 +1,6 @@
+services:
+  simulator:
+    build: .
+    ports:
+      - "${API_PORT:-8080}:8080"
+    restart: unless-stopped

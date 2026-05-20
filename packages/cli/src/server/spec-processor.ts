@@ -3,12 +3,13 @@
  * Handles loading, parsing, and reconciling OpenAPI specs
  */
 
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { resolve } from 'path';
 import { parseSpec, ConfigLoader, AnnotationHandlerRegistry, Reconciler } from '@uigen-dev/core';
 import { load as parseYaml } from 'js-yaml';
 import pc from 'picocolors';
 import type { UIGenApp } from '@uigen-dev/core';
+import { resolveSpecSource } from './spec-source.js';
 
 export interface SpecProcessorOptions {
   specPath: string;
@@ -23,11 +24,9 @@ export interface SpecProcessorResult {
 export class SpecProcessor {
   async process(options: SpecProcessorOptions): Promise<SpecProcessorResult> {
     const { specPath, verbose } = options;
-    
-    // Resolve spec path
-    const resolvedSpecPath = resolve(process.cwd(), specPath);
-    const specDir = dirname(resolvedSpecPath);
-    
+    const specSource = resolveSpecSource(specPath);
+    const specDir = specSource.specDir;
+
     // Load environment variables
     await this.loadEnvironment(specDir, verbose);
     
@@ -35,8 +34,12 @@ export class SpecProcessor {
     const config = await this.loadConfig(specDir, verbose);
     
     // Parse spec
-    console.log(pc.gray(`Reading spec: ${specPath}`));
-    const specContent = readFileSync(resolvedSpecPath, 'utf-8');
+    if (specSource.kind === 'url') {
+      console.log(pc.gray(`Reading spec from URL: ${specSource.display}`));
+    } else {
+      console.log(pc.gray(`Reading spec: ${specSource.display}`));
+    }
+    const specContent = await specSource.loadContent();
     
     let rawSpec: any;
     try {
