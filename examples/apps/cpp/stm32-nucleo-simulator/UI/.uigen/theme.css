@@ -1,0 +1,255 @@
+/* STM32 Nucleo Control Panel - industrial embedded theme aligned with the board simulator demo */
+
+:root {
+  --background: #f0f7f4;
+  --foreground: #0a1814;
+  --card: #ffffff;
+  --card-foreground: #0a1814;
+  --primary: #047857;
+  --primary-foreground: #ffffff;
+  --secondary: #dbeafe;
+  --secondary-foreground: #1e3a8a;
+  --muted: #e4efe9;
+  --muted-foreground: #4b6358;
+  --accent: #d1fae5;
+  --accent-foreground: #064e3b;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: rgba(50, 213, 131, 0.22);
+  --input: rgba(50, 213, 131, 0.28);
+  --ring: #059669;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: #061510;
+  --foreground: #e8f5ef;
+  --card: rgba(10, 32, 24, 0.94);
+  --card-foreground: #e8f5ef;
+  --primary: #32d583;
+  --primary-foreground: #052e16;
+  --secondary: rgba(59, 130, 246, 0.16);
+  --secondary-foreground: #bfdbfe;
+  --muted: rgba(8, 24, 18, 0.92);
+  --muted-foreground: #8fb5a3;
+  --accent: rgba(50, 213, 131, 0.14);
+  --accent-foreground: #d1fae5;
+  --destructive: #f87171;
+  --destructive-foreground: #450a0a;
+  --border: rgba(50, 213, 131, 0.18);
+  --input: rgba(50, 213, 131, 0.22);
+  --ring: #3b82f6;
+}
+
+body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at top left, rgba(50, 213, 131, 0.1), transparent 28%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 24%),
+    linear-gradient(180deg, #030806 0%, #061510 100%);
+}
+
+header {
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.bg-card,
+.border.rounded-lg {
+  border-radius: 1rem;
+  box-shadow: 0 18px 48px rgba(10, 24, 20, 0.08);
+  animation: fadeIn 0.28s ease-out;
+}
+
+.dark .bg-card,
+.dark .border.rounded-lg {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+button {
+  border-radius: 0.75rem;
+  font-weight: 600;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button.bg-primary {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+.dark button.bg-primary {
+  background: linear-gradient(135deg, #32d583, #059669);
+  color: #052e16;
+}
+
+button.bg-destructive {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+input,
+select,
+textarea {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background-color: rgba(255, 255, 255, 0.82);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+}
+
+label {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+thead {
+  background: linear-gradient(180deg, var(--muted), rgba(255, 255, 255, 0.02));
+}
+
+thead th {
+  padding: 0.875rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+tbody tr:hover {
+  background-color: var(--accent);
+}
+
+tbody td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+aside[role="navigation"] {
+  border-right: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--card), rgba(255, 255, 255, 0.02));
+}
+
+aside[role="navigation"] nav a {
+  border-radius: 0.75rem;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  font-weight: 500;
+}
+
+aside[role="navigation"] nav a:hover {
+  background-color: var(--accent);
+  transform: translateX(2px);
+}
+
+aside[role="navigation"] nav a[aria-current="page"] {
+  background: linear-gradient(135deg, rgba(50, 213, 131, 0.18), rgba(59, 130, 246, 0.12));
+  color: var(--accent-foreground);
+  font-weight: 700;
+}
+
+dl {
+  display: grid;
+  gap: 0.75rem;
+}
+
+dl dt {
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+dl dd {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.max-w-2xl dl dd,
+.max-w-3xl dl dd {
+  font-variant-numeric: tabular-nums;
+}
+
+[role="alert"] {
+  border-left: 4px solid var(--destructive);
+  border-radius: 0.75rem;
+}
+
+.recharts-wrapper,
+.recharts-responsive-container {
+  border-radius: 0.875rem;
+}
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--border);
+}
+
+.recharts-text {
+  fill: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  table {
+    font-size: 0.875rem;
+  }
+
+  thead th,
+  tbody td {
+    padding: 0.75rem 0.625rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  main {
+    padding: 1.5rem 2rem;
+  }
+}

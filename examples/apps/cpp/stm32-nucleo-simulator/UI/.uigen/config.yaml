@@ -1,0 +1,242 @@
+version: '1.0'
+enabled: {}
+defaults: {}
+annotations:
+  document:
+    x-uigen-app:
+      name: STM32 Nucleo Control Panel
+      icon: /.uigen/assets/logo.svg
+    x-uigen-layout:
+      type: sidebar
+      metadata:
+        sidebarWidth: 256
+        sidebarCollapsible: true
+        sidebarDefaultCollapsed: false
+
+  GET:/health:
+    x-uigen-ignore: true
+  GET:/openapi.yaml:
+    x-uigen-ignore: true
+  GET:/api/v1/state:
+    x-uigen-ignore: true
+
+  /api/v1/board:
+    x-uigen-label: Board Status
+  GET:/api/v1/board:
+    x-uigen-profile: true
+    x-uigen-label: Live Board Status
+    x-uigen-layout:
+      type: centered
+      metadata:
+        maxWidth: 760
+        showHeader: true
+        verticalCenter: false
+
+  /api/v1/config:
+    x-uigen-label: Device Settings
+  GET:/api/v1/config:
+    x-uigen-label: View Settings
+  PUT:/api/v1/config:
+    x-uigen-label: Update Device Settings
+
+  /api/v1/pins:
+    x-uigen-label: GPIO Pins
+  GET:/api/v1/pins:
+    x-uigen-label: All Pins
+  GET:/api/v1/pins/{pin_id}:
+    x-uigen-label: Pin Details
+  PUT:/api/v1/pins/{pin_id}:
+    x-uigen-label: Configure Pin
+
+  /api/v1/sensors:
+    x-uigen-label: Sensors
+  GET:/api/v1/sensors:
+    x-uigen-label: Connected Sensors
+  GET:/api/v1/sensors/{sensor_id}:
+    x-uigen-label: Sensor Details
+
+  /api/v1/readings:
+    x-uigen-label: Telemetry
+  GET:/api/v1/readings:
+    x-uigen-label: Telemetry History
+    x-uigen-layout:
+      type: dashboard-grid
+      metadata:
+        columns:
+          mobile: 1
+          tablet: 1
+          desktop: 1
+        gap: 24
+  GET:/api/v1/sensors/{sensor_id}/readings:
+    x-uigen-label: Sensor Readings
+    x-uigen-layout:
+      type: dashboard-grid
+      metadata:
+        columns:
+          mobile: 1
+          tablet: 1
+          desktop: 1
+        gap: 24
+  POST:/api/v1/sensors/{sensor_id}/readings:
+    x-uigen-label: Capture Reading Now
+
+  POST:/api/v1/actions/blink:
+    x-uigen-label: Blink LD2 User LED
+    x-uigen-layout:
+      type: centered
+      metadata:
+        maxWidth: 480
+        showHeader: true
+        verticalCenter: false
+  POST:/api/v1/actions/reset:
+    x-uigen-label: Reset Device State
+    x-uigen-layout:
+      type: centered
+      metadata:
+        maxWidth: 480
+        showHeader: true
+        verticalCenter: false
+
+  Pin.side:
+    x-uigen-ignore: true
+  Pin.row:
+    x-uigen-ignore: true
+  '#/components/schemas/Pin/properties/side':
+    x-uigen-ignore: true
+  '#/components/schemas/Pin/properties/row':
+    x-uigen-ignore: true
+
+  Board.model:
+    x-uigen-label: Board Model
+  Board.chip:
+    x-uigen-label: MCU
+  Board.firmware_version:
+    x-uigen-label: Firmware Version
+  Board.cpu_mhz:
+    x-uigen-label: CPU Speed (MHz)
+  Board.free_ram_bytes:
+    x-uigen-label: Free RAM (bytes)
+  Board.uptime_seconds:
+    x-uigen-label: Uptime (seconds)
+  Board.stlink_connected:
+    x-uigen-label: ST-Link Connected
+  Board.stlink_serial:
+    x-uigen-label: ST-Link Serial
+  Board.reset_cause:
+    x-uigen-label: Last Reset Cause
+
+  BoardConfig.hostname:
+    x-uigen-label: Device Hostname
+  BoardConfig.telemetry_interval_ms:
+    x-uigen-label: Telemetry Interval (ms)
+  BoardConfig.temperature_alert_celsius:
+    x-uigen-label: Die Temperature Alert (°C)
+  BoardConfig.auto_blink_on_alert:
+    x-uigen-label: Blink LD2 on Temperature Alert
+  BoardConfig.adc_resolution_bits:
+    x-uigen-label: ADC Resolution (bits)
+
+  Pin.id:
+    x-uigen-label: Pin ID
+  Pin.name:
+    x-uigen-label: Pin Name
+  Pin.supports_adc:
+    x-uigen-label: ADC Capable
+  Pin.adc_voltage:
+    x-uigen-label: ADC Voltage (V)
+  Pin.mode:
+    x-uigen-label: Pin Mode
+  Pin.state:
+    x-uigen-label: Digital State
+
+  Sensor.id:
+    x-uigen-label: Sensor ID
+  Sensor.name:
+    x-uigen-label: Sensor Name
+  Sensor.pin_id:
+    x-uigen-ref:
+      resource: Pins
+      valueField: id
+      labelField: name
+  Sensor.type:
+    x-uigen-label: Sensor Type
+  Sensor.unit:
+    x-uigen-label: Unit
+  Sensor.min_value:
+    x-uigen-label: Minimum Value
+  Sensor.max_value:
+    x-uigen-label: Maximum Value
+
+  Reading.id:
+    x-uigen-label: Reading ID
+  Reading.sensor_id:
+    x-uigen-ref:
+      resource: Sensors
+      valueField: id
+      labelField: name
+  Reading.value:
+    x-uigen-label: Measured Value
+  Reading.unit:
+    x-uigen-label: Unit
+  Reading.recorded_at:
+    x-uigen-label: Recorded At
+    x-uigen-datetime:
+      format: YYYY-MM-DD HH:mm:ss
+
+  SimulationEvent.recorded_at:
+    x-uigen-label: Event Time
+    x-uigen-datetime:
+      format: YYYY-MM-DD HH:mm:ss
+
+  BlinkRequest.times:
+    x-uigen-label: Blink Count
+  BlinkRequest.interval_ms:
+    x-uigen-label: Interval (ms)
+
+  ActionResult.status:
+    x-uigen-label: Result Status
+  ActionResult.pin_id:
+    x-uigen-ref:
+      resource: Pins
+      valueField: id
+      labelField: name
+
+  '#/paths/~1api~1v1~1readings/get/responses/200/content/application~1json/schema':
+    x-uigen-chart:
+      chartType: line
+      xAxis: recorded_at
+      yAxis: value
+      query:
+        limit: 500
+        params:
+          sensor_id: sensor_id
+      sampling:
+        strategy: auto
+        maxPoints: 120
+      filters:
+        - param: sensor_id
+          field: sensor_id
+          type: ref
+          resource: sensors
+      options:
+        title: Live Sensor Telemetry
+        xAxis:
+          label: Time
+        yAxis:
+          label: Value
+  '#/paths/~1api~1v1~1sensors~1{sensor_id}~1readings/get/responses/200/content/application~1json/schema':
+    x-uigen-chart:
+      chartType: area
+      xAxis: recorded_at
+      yAxis: value
+      query:
+        limit: 500
+      sampling:
+        strategy: auto
+        maxPoints: 120
+      options:
+        title: Sensor History
+        xAxis:
+          label: Time
+        yAxis:
+          label: Value
