@@ -1,5 +1,31 @@
 # @uigen-dev/cli
 
+## 0.15.0
+
+### Minor Changes
+
+- Improved Charting and edge cases handling
+
+### Patch Changes
+
+- Updated dependencies
+  - @uigen-dev/config-gui@0.15.0
+  - @uigen-dev/react@0.15.0
+  - @uigen-dev/core@0.15.0
+
+## 0.14.0
+
+### Minor Changes
+
+- Support loading specs from http(s) urls'
+
+### Patch Changes
+
+- Updated dependencies
+  - @uigen-dev/config-gui@0.14.0
+  - @uigen-dev/react@0.14.0
+  - @uigen-dev/core@0.14.0
+
 ## 0.13.0
 
 ### Minor Changes

@@ -505,3 +505,80 @@ describe('DetailView - Delete Functionality', () => {
     expect(screen.getByText('Processing...')).toBeInTheDocument();
   });
 });
+
+describe('DetailView - Action buttons', () => {
+  const mockRefetch = vi.fn();
+  const mockMutateAsync = vi.fn();
+
+  const resourceWithAction: Resource = {
+    ...mockResource,
+    operations: [
+      ...mockResource.operations,
+      {
+        id: 'createReading',
+        method: 'POST',
+        path: '/api/v1/sensors/{sensor_id}/readings',
+        summary: 'Take Reading',
+        viewHint: 'action',
+        parameters: [],
+        responses: {
+          '201': {
+            description: 'Created',
+            schema: {
+              type: 'object',
+              key: 'Reading',
+              label: 'Reading',
+              required: false,
+              children: [
+                { type: 'number', key: 'value', label: 'Reading Value', required: true },
+                { type: 'string', key: 'unit', label: 'Unit', required: false },
+              ],
+            },
+          },
+        },
+      },
+    ],
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+
+    const { useApiCall, useApiMutation } = await import('@/hooks/useApiCall');
+
+    mockMutateAsync.mockResolvedValue({
+      id: 4573,
+      sensor_id: 1,
+      value: 36.145,
+      unit: 'C',
+      recorded_at: '2026-05-20T14:38:21Z',
+    });
+
+    vi.mocked(useApiCall).mockReturnValue({
+      data: { id: '123', name: 'John Doe', email: 'john@example.com' },
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    } as any);
+
+    vi.mocked(useApiMutation).mockReturnValue({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+    } as any);
+  });
+
+  it('should refetch detail data and show the action response after a successful action', async () => {
+    renderWithProviders(<DetailView resource={resourceWithAction} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Take Reading' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Execute' }));
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalled();
+      expect(mockRefetch).toHaveBeenCalled();
+      expect(screen.getByRole('region', { name: 'Take Reading result' })).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: 'User' })).toBeInTheDocument();
+      expect(screen.getByText('Reading Value')).toBeInTheDocument();
+      expect(screen.getByText('36.15')).toBeInTheDocument();
+    });
+  });
+});

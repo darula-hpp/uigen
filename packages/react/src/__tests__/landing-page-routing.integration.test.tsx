@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LandingPageView } from '../components/views/LandingPageView';
 import { DashboardView } from '../components/views/DashboardView';
@@ -67,7 +67,7 @@ describe('Landing Page Routing Integration', () => {
       render(<TestApp config={config} />);
 
       // Dashboard should be at root - check for dashboard heading
-      expect(screen.getByText('Dashboard')).toBeInTheDocument();
+      expect(screen.getByTestId('dashboard-view')).toBeInTheDocument();
     });
 
     it('should show dashboard at "/" when landing page is explicitly disabled', () => {
@@ -79,7 +79,7 @@ describe('Landing Page Routing Integration', () => {
       render(<TestApp config={config} />);
 
       // Dashboard should be at root
-      expect(screen.getByText('Dashboard')).toBeInTheDocument();
+      expect(screen.getByTestId('dashboard-view')).toBeInTheDocument();
     });
   });
 
@@ -111,7 +111,7 @@ describe('Landing Page Routing Integration', () => {
       render(<TestApp config={config} initialPath="/dashboard" />);
 
       // Dashboard should be at /dashboard
-      expect(screen.getByText('Dashboard')).toBeInTheDocument();
+      expect(screen.getByTestId('dashboard-view')).toBeInTheDocument();
       expect(screen.queryByTestId('landing-page')).not.toBeInTheDocument();
     });
   });
@@ -135,7 +135,7 @@ describe('Landing Page Routing Integration', () => {
 
       // Test dashboard route
       render(<TestApp config={config} initialPath="/dashboard" />);
-      expect(screen.getByText('Dashboard')).toBeInTheDocument();
+      expect(screen.getByTestId('dashboard-view')).toBeInTheDocument();
     });
 
     it('should only register "/" route when landing page is disabled', () => {
@@ -146,7 +146,42 @@ describe('Landing Page Routing Integration', () => {
 
       // Root route should show dashboard
       render(<TestApp config={config} initialPath="/" />);
-      expect(screen.getByText('Dashboard')).toBeInTheDocument();
+      expect(screen.getByTestId('dashboard-view')).toBeInTheDocument();
+    });
+
+    it('should redirect /dashboard to / when landing page is disabled', () => {
+      const config = createConfig({
+        enabled: false,
+        sections: {},
+      });
+
+      function RedirectTestApp() {
+        const landingPageEnabled = config.landingPageConfig?.enabled === true;
+        const dashboardPath = landingPageEnabled ? '/dashboard' : '/';
+
+        return (
+          <MemoryRouter initialEntries={['/dashboard']}>
+            <Routes>
+              <Route path={dashboardPath} element={<DashboardView config={config} />} />
+              {!landingPageEnabled && (
+                <Route path="/dashboard" element={<Navigate to="/" replace />} />
+              )}
+            </Routes>
+          </MemoryRouter>
+        );
+      }
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <AppProvider config={config}>
+            <ToastProvider>
+              <RedirectTestApp />
+            </ToastProvider>
+          </AppProvider>
+        </QueryClientProvider>,
+      );
+
+      expect(screen.getByTestId('dashboard-view')).toBeInTheDocument();
     });
   });
 

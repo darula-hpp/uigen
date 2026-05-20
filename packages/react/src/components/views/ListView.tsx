@@ -2,8 +2,11 @@ import { useApiCall } from '@/hooks/useApiCall';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import type { Resource, Operation } from '@uigen-dev/core';
+import { ListFieldResolver, ListResponseExtractor } from '@uigen-dev/core';
 import { reconcile, OverrideHooksHost } from '@/overrides';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useChartFilters } from '@/hooks/useChartViewModel';
+import { ChartPanel } from '@/components/charts/ChartPanel';
 import {
   useReactTable,
   getCoreRowModel,
@@ -14,9 +17,9 @@ import {
   type SortingState,
   type PaginationState,
 } from '@tanstack/react-table';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
-import { ChartVisualization } from '@/components/ChartVisualization';
+import { ReadOnlyDataSection } from '@/components/ReadOnlyDataSection';
 
 interface ListViewProps {
   resource: Resource;
@@ -58,9 +61,24 @@ export function ListView({ resource, operation }: ListViewProps) {
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
 
+  const chartConfig = useMemo(() => {
+    return ListFieldResolver.resolveChartConfig(resource, listOp);
+  }, [resource, listOp]);
+
+  const chartItemSchema = useMemo(() => {
+    return ListFieldResolver.resolveItemSchema(listOp);
+  }, [listOp]);
+
+  const chartFilters = useChartFilters({
+    chartConfig,
+    listOp,
+  });
+
+  const chartQueryParams = chartFilters.queryParams;
+
   // Build query params based on pagination strategy
   const queryParams = useMemo(() => {
-    const params: Record<string, string> = {};
+    const params: Record<string, string> = { ...chartQueryParams };
 
     if (resource.pagination) {
       const { style, params: paginationParams } = resource.pagination;
@@ -69,7 +87,9 @@ export function ListView({ resource, operation }: ListViewProps) {
         // Offset pagination: limit + offset
         const limitParam = paginationParams.limit || 'limit';
         const offsetParam = paginationParams.offset || 'offset';
-        params[limitParam] = String(pagination.pageSize);
+        if (!chartConfig?.query?.limit) {
+          params[limitParam] = String(pagination.pageSize);
+        }
         params[offsetParam] = String(pagination.pageIndex * pagination.pageSize);
       } else if (style === 'cursor') {
         // Cursor pagination: cursor
@@ -87,7 +107,7 @@ export function ListView({ resource, operation }: ListViewProps) {
     }
 
     return params;
-  }, [resource.pagination, pagination, cursorHistory]);
+  }, [resource.pagination, pagination, cursorHistory, chartQueryParams, chartConfig?.query?.limit]);
 
   const { data, isLoading, error } = useApiCall({
     operation: listOp!,
@@ -103,46 +123,42 @@ export function ListView({ resource, operation }: ListViewProps) {
   // Filtering state - Requirements 36.1-36.6
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
 
+  const listResponseSchema = listOp?.responses?.['200']?.schema;
+  const isSingletonList = ListFieldResolver.isSingletonResponse(listOp);
+
   // Extract items from response
   const items = useMemo(() => {
     if (!data) return [];
 
-    // Direct array response
-    if (Array.isArray(data)) {
-      let arr = data;
-      if (Object.keys(columnFilters).some(k => columnFilters[k])) {
-        arr = arr.filter((item: any) => Object.entries(columnFilters).every(([key, val]) => !val || String(item[key] || '').toLowerCase().includes(val.toLowerCase())));
-      }
-      return arr;
-    }
-
-    // Extract next cursor for cursor pagination
-    if (resource.pagination?.style === 'cursor' && data) {
-      const cursor = data.nextCursor || data.next || data.cursor || null;
-      setNextCursor(cursor);
-    }
-
-    // Try common wrapper keys first, then scan all values for the first array
-    let itemsArray: any[] =
-      data.items ||
-      data.data ||
-      data.results ||
-      data.records ||
-      // Scan all top-level values for the first array (handles Twilio-style { services: [...] })
-      Object.values(data as Record<string, unknown>).find(v => Array.isArray(v)) as any[] ||
-      [];
+    let extracted = ListResponseExtractor.extract(data, { listResponseSchema });
 
     if (Object.keys(columnFilters).some(k => columnFilters[k])) {
-      itemsArray = itemsArray.filter((item: any) => Object.entries(columnFilters).every(([key, val]) => !val || String(item[key] || '').toLowerCase().includes(val.toLowerCase())));
+      extracted = extracted.filter((item: any) =>
+        Object.entries(columnFilters).every(([key, val]) =>
+          !val || String(item[key] || '').toLowerCase().includes(val.toLowerCase())
+        )
+      );
     }
 
-    return itemsArray;
-  }, [data, resource.pagination, columnFilters]);
+    return extracted;
+  }, [data, listResponseSchema, columnFilters]);
 
-  // Get schema columns (limit to first 6 for display)
+  // Extract next cursor for cursor pagination
+  useEffect(() => {
+    if (resource.pagination?.style === 'cursor' && data && typeof data === 'object' && !Array.isArray(data)) {
+      const envelope = data as Record<string, unknown>;
+      const cursor = envelope.nextCursor || envelope.next || envelope.cursor || null;
+      setNextCursor(typeof cursor === 'string' ? cursor : null);
+    }
+  }, [data, resource.pagination?.style]);
+
   const schemaColumns = useMemo(() => {
-    return (resource.schema.children || []).slice(0, 6);
-  }, [resource.schema.children]);
+    return ListFieldResolver.resolveColumns(resource, listOp);
+  }, [resource, listOp]);
+
+  const displayFields = useMemo(() => {
+    return ListFieldResolver.resolveFields(resource, listOp);
+  }, [resource, listOp]);
 
   // Check for available operations
   const hasDetailOp = resource.operations.some(op => op.viewHint === 'detail');
@@ -305,10 +321,16 @@ export function ListView({ resource, operation }: ListViewProps) {
       </div>
 
       {/* Chart Visualization - Display when chartConfig exists on schema */}
-      {resource.schema.chartConfig && items.length > 0 && (
-        <ChartVisualization 
-          data={items} 
-          chartConfig={resource.schema.chartConfig}
+      {chartConfig && (items.length > 0 || chartFilters.hasFilters) && (
+        <ChartPanel
+          chartConfig={chartConfig}
+          listOp={listOp}
+          itemSchema={chartItemSchema}
+          data={items}
+          filterState={chartFilters.filterState}
+          onFilterChange={chartFilters.setFilterValue}
+          onResetFilters={chartFilters.resetFilters}
+          isLoading={isLoading}
           className="mb-6"
         />
       )}
@@ -333,6 +355,46 @@ export function ListView({ resource, operation }: ListViewProps) {
         </div>
       )}
 
+      {isSingletonList ? (
+        <>
+          {isLoading && (
+            <div className="space-y-4 max-w-2xl">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <div key={`singleton-skeleton-${idx}`} className="space-y-2">
+                  <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                  <div className="h-6 w-full bg-muted animate-pulse rounded" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!isLoading && !error && items.length > 0 && (
+            <ReadOnlyDataSection
+              title={resource.label || resource.name}
+              fields={displayFields}
+              data={items[0] as Record<string, unknown>}
+            />
+          )}
+
+          {!isLoading && !error && items.length === 0 && (
+            <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-12 text-center">
+              <Inbox className="mb-4 h-12 w-12 text-muted-foreground" />
+              <h3 className="mb-2 text-lg font-semibold">No records found</h3>
+              <p className="text-sm text-muted-foreground">
+                {hasCreateOp
+                  ? `Get started by creating your first ${resource.name.toLowerCase()}`
+                  : `There are no ${resource.name.toLowerCase()} to display`}
+              </p>
+              {hasCreateOp && (
+                <Button className="mt-4" onClick={() => navigate(`/${resource.slug}/new`)}>
+                  Create First {resource.name}
+                </Button>
+              )}
+            </div>
+          )}
+        </>
+      ) : (
+      <>
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -549,6 +611,8 @@ export function ListView({ resource, operation }: ListViewProps) {
             </div>
           </div>
         )
+      )}
+      </>
       )}
     </div>
   );

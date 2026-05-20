@@ -295,11 +295,12 @@ describe('App.tsx Layout Integration Tests', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
-        
+        expect(screen.getByRole('main')).toBeInTheDocument();
+
         const sidebar = document.querySelector('aside');
         expect(sidebar).toBeTruthy();
         expect(sidebar).toHaveClass('bg-card', 'border-r');
+        expect(document.querySelector('.app-shell-sidebar-panel')).toBeTruthy();
       });
     });
 
@@ -340,8 +341,8 @@ describe('App.tsx Layout Integration Tests', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
-        
+        expect(screen.getByRole('main')).toBeInTheDocument();
+
         const sidebar = document.querySelector('aside');
         expect(sidebar).toBeTruthy();
       });
@@ -378,8 +379,8 @@ describe('App.tsx Layout Integration Tests', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
-        
+        expect(screen.getByRole('main')).toBeInTheDocument();
+
         const sidebar = document.querySelector('aside');
         expect(sidebar).toBeTruthy();
       });
@@ -931,11 +932,11 @@ describe('App.tsx Layout Integration Tests', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
-        
+        expect(screen.getByRole('main')).toBeInTheDocument();
+
         const sidebar = document.querySelector('aside');
         expect(sidebar).toBeTruthy();
-        
+
         expect(consoleErrorSpy).toHaveBeenCalled();
       });
 

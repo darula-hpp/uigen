@@ -18,7 +18,7 @@ export function LandingPageView({ config }: LandingPageViewProps) {
 
   // Requirement 17.1: Redirect to /dashboard if landing page disabled
   if (!landingConfig?.enabled) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const sections = landingConfig.sections;

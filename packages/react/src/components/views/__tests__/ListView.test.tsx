@@ -198,6 +198,72 @@ describe('ListView', () => {
     expect(screen.queryByRole('button', { name: /Create First/i })).not.toBeInTheDocument();
   });
 
+  it('should render singleton object list responses as a read-only settings panel', async () => {
+    const { useApiCall } = await import('@/hooks/useApiCall');
+    const configResource: Resource = {
+      name: 'Config',
+      slug: 'config',
+      label: 'View Settings',
+      operations: [
+        {
+          id: 'get_config',
+          method: 'GET',
+          path: '/api/v1/config',
+          viewHint: 'list',
+          responses: {
+            '200': {
+              schema: {
+                type: 'object',
+                key: 'BoardConfig',
+                label: 'Board Config',
+                required: false,
+                children: [
+                  { type: 'string', key: 'hostname', label: 'Hostname', required: true },
+                  { type: 'number', key: 'telemetry_interval_ms', label: 'Telemetry Interval (ms)', required: true },
+                  { type: 'number', key: 'temperature_alert_celsius', label: 'Temperature Alert (°C)', required: true },
+                ],
+              },
+            },
+          },
+        },
+      ],
+      schema: {
+        type: 'object',
+        key: 'BoardConfig',
+        label: 'Board Config',
+        required: false,
+        children: [],
+      },
+      relationships: [],
+    };
+
+    vi.mocked(useApiCall).mockReturnValue({
+      data: {
+        hostname: 'esp32-simulator',
+        telemetry_interval_ms: 2000,
+        temperature_alert_celsius: 35,
+      },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+      isError: false,
+      isSuccess: true,
+    } as any);
+
+    render(
+      <BrowserRouter>
+        <ListView resource={configResource} />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByRole('region', { name: 'View Settings' })).toBeInTheDocument();
+    expect(screen.getByText('esp32-simulator')).toBeInTheDocument();
+    expect(screen.getByText('2,000')).toBeInTheDocument();
+    expect(screen.getByText('35')).toBeInTheDocument();
+    expect(screen.queryByText('No records found')).not.toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
   it('should render sortable column headers with sort indicators', async () => {
     const { useApiCall } = await import('@/hooks/useApiCall');
     const mockData = [

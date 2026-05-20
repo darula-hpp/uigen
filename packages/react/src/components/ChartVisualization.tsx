@@ -1,4 +1,4 @@
-import type { ChartConfig } from '@uigen-dev/core';
+import type { ChartConfig, ChartPreparedViewModel, SchemaNode } from '@uigen-dev/core';
 import {
   LineChart,
   Line,
@@ -23,12 +23,15 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
-import { transformChartData, getSeriesConfig } from '@/lib/chart-utils';
+import { prepareChartViewModel, getSeriesConfig } from '@/lib/chart-utils';
 
 interface ChartVisualizationProps {
-  data: any[];
+  data?: any[];
+  prepared?: ChartPreparedViewModel;
   chartConfig: ChartConfig;
+  itemSchema?: SchemaNode;
   className?: string;
+  chartKey?: string;
 }
 
 /**
@@ -39,9 +42,17 @@ interface ChartVisualizationProps {
  * @param chartConfig - Chart configuration from IR (x-uigen-chart annotation)
  * @param className - Optional CSS class name
  */
-export function ChartVisualization({ data, chartConfig, className = '' }: ChartVisualizationProps) {
-  // Transform data for Recharts
-  const chartData = transformChartData(data, chartConfig);
+export function ChartVisualization({
+  data,
+  prepared,
+  chartConfig,
+  itemSchema,
+  className = '',
+  chartKey,
+}: ChartVisualizationProps) {
+  const resolvedPrepared: ChartPreparedViewModel = prepared
+    ?? prepareChartViewModel(data ?? [], chartConfig, { itemSchema });
+  const chartData = resolvedPrepared.points;
   const seriesConfig = getSeriesConfig(chartConfig);
   
   // Get chart options
@@ -63,7 +74,7 @@ export function ChartVisualization({ data, chartConfig, className = '' }: ChartV
       case 'line':
         return (
           <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={chartData}>
+            <LineChart key={chartKey} data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={chartConfig.xAxis} />
               <YAxis />
@@ -214,6 +225,11 @@ export function ChartVisualization({ data, chartConfig, className = '' }: ChartV
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           {title}
         </h3>
+      )}
+      {resolvedPrepared.meta.sampled && (
+        <p className="text-sm text-muted-foreground mb-4">
+          Showing {resolvedPrepared.meta.renderedPoints} of {resolvedPrepared.meta.totalPoints} points
+        </p>
       )}
       {renderChart()}
     </div>

@@ -41,6 +41,11 @@ const renderWithContext = (children: React.ReactNode) => {
   );
 };
 
+const getDashboardGridStyles = (container: HTMLElement) => {
+  const styleTags = Array.from(container.querySelectorAll('style'));
+  return styleTags.find((tag) => tag.textContent?.includes('.dashboard-grid-container'))?.textContent ?? '';
+};
+
 describe('DashboardGridLayoutStrategy', () => {
   let strategy: DashboardGridLayoutStrategy;
 
@@ -166,10 +171,9 @@ describe('DashboardGridLayoutStrategy', () => {
       const { container } = renderWithContext(rendered);
       
       // Style tag should be present with media queries
-      const styleTag = container.querySelector('style');
-      expect(styleTag).toBeInTheDocument();
-      expect(styleTag?.textContent).toContain('@media (min-width: 768px)');
-      expect(styleTag?.textContent).toContain('@media (min-width: 1024px)');
+      const gridStyles = getDashboardGridStyles(container);
+      expect(gridStyles).toContain('@media (min-width: 768px)');
+      expect(gridStyles).toContain('@media (min-width: 1024px)');
     });
   });
 
@@ -188,12 +192,15 @@ describe('DashboardGridLayoutStrategy', () => {
       const { container } = renderWithContext(rendered);
       
       const grid = container.querySelector('.dashboard-grid-container');
-      expect(grid).toHaveStyle({ '--grid-columns-mobile': '1' });
-      
-      // Check responsive CSS
-      const styleTag = container.querySelector('style');
-      expect(styleTag?.textContent).toContain('repeat(3, 1fr)'); // tablet
-      expect(styleTag?.textContent).toContain('repeat(4, 1fr)'); // desktop
+      expect(grid).toHaveStyle({
+        '--grid-columns-mobile': '1',
+        '--grid-columns-tablet': '3',
+        '--grid-columns-desktop': '4',
+      });
+
+      const gridStyles = getDashboardGridStyles(container);
+      expect(gridStyles).toContain('var(--grid-columns-tablet)');
+      expect(gridStyles).toContain('var(--grid-columns-desktop)');
     });
 
     it('should render with custom gap metadata', () => {
@@ -367,12 +374,12 @@ describe('DashboardGridLayoutStrategy', () => {
       
       const { container } = renderWithContext(rendered);
       
-      // Sidebar should be present with mobile overlay support
+      const panel = container.querySelector('.app-shell-sidebar-panel');
       const sidebar = container.querySelector('aside');
+      expect(panel).toBeInTheDocument();
       expect(sidebar).toBeInTheDocument();
-      // Sidebar should have mobile-specific classes
-      expect(sidebar?.className).toContain('fixed');
-      expect(sidebar?.className).toContain('md:static');
+      expect(sidebar?.className).not.toContain('fixed');
+      expect(panel?.className).toContain('is-mobile-closed');
     });
   });
 
@@ -383,9 +390,7 @@ describe('DashboardGridLayoutStrategy', () => {
       
       renderWithContext(rendered);
       
-      // Should render app title from config (appears in both Sidebar and TopBar)
-      const appTitles = screen.getAllByText('Test App');
-      expect(appTitles.length).toBeGreaterThan(0);
+      expect(screen.getByRole('link', { name: 'Users' })).toBeInTheDocument();
     });
 
     it('should pass config to child components', () => {
@@ -436,14 +441,13 @@ describe('DashboardGridLayoutStrategy', () => {
       const { container } = renderWithContext(rendered);
       
       // Check that responsive CSS is generated
-      const styleTag = container.querySelector('style');
-      // CSS should use CSS variables for responsive columns
-      expect(styleTag?.textContent).toContain('var(--grid-columns-tablet)'); // tablet
-      expect(styleTag?.textContent).toContain('var(--grid-columns-desktop)'); // desktop
+      const gridStyles = getDashboardGridStyles(container);
+      expect(gridStyles).toContain('var(--grid-columns-tablet)'); // tablet
+      expect(gridStyles).toContain('var(--grid-columns-desktop)'); // desktop
       
       // Mobile columns should be set via CSS variable
       const grid = container.querySelector('.dashboard-grid-container');
-      expect(grid).toHaveStyle({ '--grid-columns-mobile': 1 });
+      expect(grid).toHaveStyle({ '--grid-columns-mobile': '1' });
     });
 
     it('should use grid display', () => {

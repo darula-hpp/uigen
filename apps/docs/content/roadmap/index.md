@@ -37,6 +37,7 @@ UIGen is developed in phases. Here's what's been shipped and what's coming next.
 - [x] Sidebar layout + TopBar + Breadcrumbs + responsive shell
 - [x] React Router with full URL navigation and browser history
 - [x] Config reconciliation system (runtime annotation merging from `.uigen/config.yaml`)
+- [x] Built-in list charts via `x-uigen-chart` (Recharts, query limits, client-side sampling, filter controls)
 
 ## Phase 3: Extension & distribution 🔜 In progress
 
@@ -58,7 +59,7 @@ UIGen is developed in phases. Here's what's been shipped and what's coming next.
 - [ ] `@uigen-dev/vue`: Vue 3 renderer
 - [ ] Plugin API: register custom adapters, field types, and view strategies as npm packages
 - [ ] `uigen ui:config`: visual configuration dashboard
-- [ ] `@uigen-dev/plugin-charts`: chart widgets from numeric data
+- [ ] `@uigen-dev/plugin-charts`: additional chart widgets and custom renderers beyond built-in list charts
 - [ ] `@uigen-dev/plugin-mapbox`: map renderer for geo coordinate fields
 - [ ] GraphQL adapter
 - [ ] OpenAPI 3.1 full support

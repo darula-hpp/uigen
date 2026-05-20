@@ -17,6 +17,21 @@ export { AnnotationHandlerRegistry } from './annotations/index.js';
 export type { AnnotationHandler } from './annotations/index.js';
 export { deriveRelationshipType } from './relationship-type-deriver.js';
 export { PricingResourceGenerator } from './pricing-resource-generator.js';
+export { ListResponseExtractor } from './list-response-extractor.js';
+export type { ExtractListItemsOptions } from './list-response-extractor.js';
+export { ListFieldResolver } from './list-field-resolver.js';
+export { SchemaFieldFilter } from './schema-field-filter.js';
+export type { IgnorableSchemaNode } from './schema-field-filter.js';
+export { ChartDataPipeline } from './chart-data-pipeline.js';
+export type { ChartPipelineOptions } from './chart-data-pipeline.js';
+export { ChartQueryResolver } from './chart-query-resolver.js';
+export { ChartFilterStateResolver } from './chart-filter-state.js';
+export { ChartDateTimePresets } from './chart-datetime-presets.js';
+export type { ChartDateTimeRange } from './chart-datetime-presets.js';
+export { ChartDateTimeRangeResolver } from './chart-datetime-range-resolver.js';
+export { ChartSampler } from './chart-sampler.js';
+export type { ChartSamplerOptions } from './chart-sampler.js';
+export { ChartAxisTypeDetector } from './chart-axis-type-detector.js';
 
 export async function parseSpec(content: string): Promise<UIGenApp> {
   let doc: unknown;

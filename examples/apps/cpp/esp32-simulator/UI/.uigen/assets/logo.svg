@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="ESP32 Control Panel">
+  <defs>
+    <linearGradient id="board" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#112033"/>
+      <stop offset="100%" stop-color="#0d1b2d"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="url(#board)"/>
+  <rect x="10" y="10" width="80" height="80" rx="18" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+  <rect x="28" y="28" width="44" height="44" rx="8" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <rect x="34" y="34" width="32" height="32" rx="4" fill="#0f172a"/>
+  <text x="50" y="58" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="800" fill="#e7eef8" text-anchor="middle">ESP32</text>
+  <circle cx="22" cy="24" r="5" fill="#f59e0b"/>
+  <rect x="68" y="18" width="18" height="6" rx="3" fill="url(#accent)" opacity="0.9"/>
+  <rect x="18" y="72" width="64" height="10" rx="5" fill="rgba(255,255,255,0.06)"/>
+  <rect x="24" y="75" width="18" height="4" rx="2" fill="url(#accent)" opacity="0.85"/>
+</svg>

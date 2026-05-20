@@ -490,6 +490,54 @@ export interface SeriesConfig {
   type?: ChartType;
 }
 
+export type ChartSamplingStrategyName = 'auto' | 'lttb' | 'bucket-mean' | 'none';
+
+export type ChartAxisType = 'time' | 'category' | 'number';
+
+export interface ChartSamplingConfig {
+  /** Sampling strategy. Defaults to auto. */
+  strategy?: ChartSamplingStrategyName;
+  /** Maximum points to render. Defaults to 120 when omitted. */
+  maxPoints?: number;
+}
+
+export interface ChartQueryConfig {
+  /** Override list fetch limit for chart data */
+  limit?: number;
+  /** Map filter state keys to OpenAPI query parameter names */
+  params?: Record<string, string>;
+}
+
+export type ChartFilterType = 'ref' | 'datetime-range' | 'select' | 'number';
+
+export interface ChartFilterConfig {
+  /** OpenAPI query parameter name */
+  param: string;
+  /** Row field used by the filter control */
+  field: string;
+  type: ChartFilterType;
+  /** Preset range keys for datetime-range filters */
+  presets?: string[];
+  /** Default preset or value */
+  default?: string;
+  /** Related resource slug for ref filters */
+  resource?: string;
+}
+
+export interface ChartPreparedMeta {
+  totalPoints: number;
+  renderedPoints: number;
+  sampled: boolean;
+  xAxisType: ChartAxisType;
+  sortApplied: boolean;
+  samplingStrategy: ChartSamplingStrategyName;
+}
+
+export interface ChartPreparedViewModel {
+  points: Record<string, unknown>[];
+  meta: ChartPreparedMeta;
+}
+
 /**
  * Chart display and behavior options
  */
@@ -552,6 +600,15 @@ export interface ChartConfig {
   
   /** Chart display and behavior options (optional) */
   options?: ChartOptions;
+
+  /** Chart-specific API query overrides (optional) */
+  query?: ChartQueryConfig;
+
+  /** Configurable chart filters bound to query params (optional) */
+  filters?: ChartFilterConfig[];
+
+  /** Display sampling configuration (optional) */
+  sampling?: ChartSamplingConfig;
 }
 
 /**

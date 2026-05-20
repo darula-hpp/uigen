@@ -5,6 +5,63 @@ All notable changes to UIGen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [0.15.0] - 2026-05-20
+
+### Added
+
+**Core package (`@uigen-dev/core`)**
+- **Chart data pipeline** - Data-aware chart preparation for `x-uigen-chart` list responses
+  - `ChartDataPipeline` - Maps rows, detects axis types, sorts time series, and samples for rendering
+  - `ChartQueryResolver` - Resolves chart-specific list query params (`query.limit`, filter state, `query.params`)
+  - `ChartAxisTypeDetector` - Detects time, category, and number axes from schema metadata and sample values
+  - `ChartSampler` - LTTB, bucket-mean, auto, and none sampling strategies
+  - `ChartFilterStateResolver`, `ChartDateTimePresets`, and `ChartDateTimeRangeResolver` for chart filter query binding
+  - Extended `ChartConfig` IR with `query`, `filters`, and `sampling`
+  - `ChartHandler` validation/apply support for the new chart config fields
+  - `ListFieldResolver.resolveItemSchema()` for chart axis detection from list item schemas
+- **List adapter utilities** - Generalized list response handling in core
+  - `ListResponseExtractor`, `ListFieldResolver`, and `SchemaFieldFilter`
+- **`@uigen-dev/core/config` export** - Node-only `ConfigLoader` moved out of the browser bundle entrypoint
+
+**React package (`@uigen-dev/react`)**
+- **Chart panel in List View** - Built-in charts above paginated tables when `chartConfig` is present
+  - `ChartPanel`, `ChartVisualization`, and `useChartFilters` / `useChartViewModel`
+  - Server-side chart filters: `ref`, `datetime-range`, `select`, and `number`
+  - React-only client-side **X-axis range** control for time-series charts (1m through 7d, applied before sampling)
+  - Dynamic preset list based on loaded data span, with point-ratio fallback when timestamps are identical
+  - Chart fetch limits stay independent from table pagination
+  - "Showing X of Y points" notes for sampling and selected x-axis ranges
+- **Navigation helpers** - `resolveDashboardPath`, `resolveFormDismissPath`, and `resolveCreateFormOperation`
+  - Action-only resources redirect home instead of looping back to selection
+  - `/dashboard` alias redirects to `/` when the landing page is disabled
+
+**Documentation**
+- Added [`x-uigen-chart`](/apps/docs/content/spec-annotations/x-uigen-chart.md) annotation reference
+- Updated List View, spec annotation overview, intermediate representation, and roadmap docs for built-in charts
+- Rebuilt docs search index for the new chart page
+
+**Skills**
+- Updated `SKILLS/auto-annotate.md` Rule 7 with chart `query`, `sampling`, and `filters` heuristics
+
+**Examples**
+- ESP32 simulator config: telemetry chart with sensor filter, query limit, and sampling
+
+### Changed
+- **Package exports** - Removed `@uigen-dev/core/lib` shim; browser entrypoint exports config types only
+- **Centered layout** - Auth and action pages keep centered width constraints while composing inside `AppShell` so the theme toggle stays aligned
+- **Read-only sections** - Removed hardcoded placeholder descriptions from detail and singleton list views
+
+### Fixed
+- **Chart query limit binding** - `ChartQueryResolver` no longer treats the first integer query param as the limit param
+- **X-axis range effectiveness** - Time window now filters raw fetched rows before downsampling instead of after LTTB sampling
+- **List field resolver tests** - Restored `resolveColumns` coverage and added `resolveItemSchema` tests
+
+### Tests
+- Core chart pipeline, filter resolver, list adapter, and chart handler coverage
+- React chart utils, chart panel, axis window, and `useChartViewModel` coverage
+
+---
+
 ## [0.13.0] - 2026-05-18
 
 ### Added

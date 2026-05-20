@@ -75,6 +75,16 @@ npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8000
 
 Visit `http://localhost:4400` to explore a full meeting minutes application with CRUD operations, authentication, file uploads, and relationships.
 
+### ESP32 Hardware Demo (C++)
+
+```bash
+cd uigen/examples/apps/cpp/esp32-simulator
+docker compose up --build
+```
+
+- `http://localhost:8080` - visual ESP32 board simulator with live GPIO and sensor charts
+- Pair with UIGen: `npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8080`
+
 ---
 
 ## AI Agent Skills

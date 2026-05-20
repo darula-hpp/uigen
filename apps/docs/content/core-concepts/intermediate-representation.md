@@ -124,6 +124,47 @@ interface SchemaNode {
   writeOnly?: boolean;
   nullable?: boolean;
   deprecated?: boolean;
+  chartConfig?: ChartConfig;   // set by x-uigen-chart on array response schemas
+}
+```
+
+## `ChartConfig`
+
+Chart configuration stored on array response schemas when `x-uigen-chart` is present. Consumed by List View and the chart data pipeline in `@uigen-dev/core`.
+
+```typescript
+interface ChartConfig {
+  chartType: 'line' | 'bar' | 'pie' | 'scatter' | 'area' | 'radar' | 'donut';
+  xAxis: string;
+  yAxis: string | string[];
+  series?: SeriesConfig[];
+  labels?: string;
+  options?: ChartOptions;
+  query?: {
+    limit?: number;
+    params?: Record<string, string>;
+  };
+  sampling?: {
+    strategy?: 'auto' | 'lttb' | 'bucket-mean' | 'none';
+    maxPoints?: number;
+  };
+  filters?: ChartFilterConfig[];  // rendered as chart filter controls in List View
+}
+```
+
+The adapter pipeline prepares chart data before rendering:
+
+```typescript
+interface ChartPreparedViewModel {
+  points: Record<string, unknown>[];
+  meta: {
+    totalPoints: number;
+    renderedPoints: number;
+    sampled: boolean;
+    xAxisType: 'time' | 'category' | 'number';
+    sortApplied: boolean;
+    samplingStrategy: 'auto' | 'lttb' | 'bucket-mean' | 'none';
+  };
 }
 ```
 

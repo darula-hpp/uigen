@@ -8,6 +8,9 @@ dist
 coverage
 *.tsbuildinfo
 
+# Separate repo: https://github.com/darula-hpp/fastbackend
+fastbackend/
+
 # UIGen build artifacts
 .uigen/build
 

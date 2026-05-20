@@ -1,0 +1,177 @@
+/* ESP32 Control Panel - hardware lab theme aligned with the board simulator demo */
+
+:root {
+  --background: #eef4fb;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --primary: #059669;
+  --primary-foreground: #ffffff;
+  --secondary: #e0f2fe;
+  --secondary-foreground: #0c4a6e;
+  --muted: #e8eef6;
+  --muted-foreground: #64748b;
+  --accent: #dbeafe;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(120, 164, 214, 0.28);
+  --input: rgba(120, 164, 214, 0.35);
+  --ring: #059669;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: #07111f;
+  --foreground: #e7eef8;
+  --card: rgba(10, 22, 38, 0.92);
+  --card-foreground: #e7eef8;
+  --primary: #22c55e;
+  --primary-foreground: #052e16;
+  --secondary: rgba(56, 189, 248, 0.14);
+  --secondary-foreground: #bae6fd;
+  --muted: rgba(15, 27, 45, 0.88);
+  --muted-foreground: #8aa0ba;
+  --accent: rgba(34, 197, 94, 0.14);
+  --accent-foreground: #dcfce7;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(120, 164, 214, 0.18);
+  --input: rgba(120, 164, 214, 0.24);
+  --ring: #38bdf8;
+}
+
+body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 28%),
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 24%),
+    linear-gradient(180deg, #04070f 0%, #07111f 100%);
+}
+
+header {
+  backdrop-filter: blur(12px);
+}
+
+.bg-card,
+.border.rounded-lg {
+  border-radius: 1rem;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+}
+
+.dark .bg-card,
+.dark .border.rounded-lg {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+button {
+  border-radius: 0.75rem;
+  font-weight: 600;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button.bg-primary {
+  background: linear-gradient(135deg, #16a34a, #059669);
+}
+
+.dark button.bg-primary {
+  background: linear-gradient(135deg, #22c55e, #059669);
+  color: #052e16;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+input,
+select,
+textarea {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background-color: rgba(255, 255, 255, 0.72);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16);
+}
+
+label {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+thead {
+  background-color: var(--muted);
+}
+
+thead th {
+  padding: 0.875rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+tbody tr:hover {
+  background-color: var(--accent);
+}
+
+tbody td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+aside[role="navigation"] nav a {
+  border-radius: 0.75rem;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+aside[role="navigation"] nav a:hover {
+  background-color: var(--accent);
+}
+
+dl dt {
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+dl dd {
+  font-weight: 600;
+}
+
+[role="alert"] {
+  border-left: 4px solid var(--destructive);
+}
