@@ -17,6 +17,7 @@ import {
 import { useMemo, useState } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
 import { ChartVisualization } from '@/components/ChartVisualization';
+import { resolveListChartConfig, resolveListColumns } from '@/lib/list-columns';
 
 interface ListViewProps {
   resource: Resource;
@@ -139,10 +140,13 @@ export function ListView({ resource, operation }: ListViewProps) {
     return itemsArray;
   }, [data, resource.pagination, columnFilters]);
 
-  // Get schema columns (limit to first 6 for display)
   const schemaColumns = useMemo(() => {
-    return (resource.schema.children || []).slice(0, 6);
-  }, [resource.schema.children]);
+    return resolveListColumns(resource, listOp);
+  }, [resource, listOp]);
+
+  const chartConfig = useMemo(() => {
+    return resolveListChartConfig(resource, listOp);
+  }, [resource, listOp]);
 
   // Check for available operations
   const hasDetailOp = resource.operations.some(op => op.viewHint === 'detail');
@@ -305,10 +309,10 @@ export function ListView({ resource, operation }: ListViewProps) {
       </div>
 
       {/* Chart Visualization - Display when chartConfig exists on schema */}
-      {resource.schema.chartConfig && items.length > 0 && (
+      {chartConfig && items.length > 0 && (
         <ChartVisualization 
           data={items} 
-          chartConfig={resource.schema.chartConfig}
+          chartConfig={chartConfig}
           className="mb-6"
         />
       )}

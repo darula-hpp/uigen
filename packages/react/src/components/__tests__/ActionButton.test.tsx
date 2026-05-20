@@ -106,6 +106,31 @@ describe('ActionButton', () => {
     expect(screen.getByRole('textbox')).toBeInTheDocument();
   });
 
+  it('should resolve custom path parameter names on confirmation', async () => {
+    mockMutateAsync.mockResolvedValue({});
+
+    const sensorReadingOperation: Operation = {
+      ...mockOperation,
+      id: 'create_sensor_reading',
+      path: '/api/v1/sensors/{sensor_id}/readings',
+      summary: 'Take Reading',
+    };
+
+    render(<ActionButton operation={sensorReadingOperation} resourceId="2" />, {
+      wrapper: createWrapper(),
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Take Reading' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Execute' }));
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        pathParams: { sensor_id: '2' },
+        body: undefined,
+      });
+    });
+  });
+
   it('should execute action on confirmation - Requirement 15.5', async () => {
     mockMutateAsync.mockResolvedValue({});
 

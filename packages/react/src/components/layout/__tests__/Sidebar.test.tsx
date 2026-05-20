@@ -41,10 +41,10 @@ const mockConfig: UIGenApp = {
 };
 
 describe('Sidebar', () => {
-  const renderSidebar = (isOpen = true, onClose = vi.fn()) => {
+  const renderSidebar = (onClose = vi.fn()) => {
     return render(
       <BrowserRouter>
-        <Sidebar config={mockConfig} isOpen={isOpen} onClose={onClose} />
+        <Sidebar config={mockConfig} onClose={onClose} />
       </BrowserRouter>
     );
   };
@@ -71,9 +71,19 @@ describe('Sidebar', () => {
       expect(screen.getByText('Comments')).toBeInTheDocument();
     });
 
-    it('should display app title in header', () => {
-      renderSidebar();
-      expect(screen.getByText('Test API')).toBeInTheDocument();
+    it('should render app icon area in header when configured', () => {
+      const configWithIcon: UIGenApp = {
+        ...mockConfig,
+        appConfig: { name: 'Test API', icon: '/logo.svg' },
+      };
+
+      render(
+        <BrowserRouter>
+          <Sidebar config={configWithIcon} onClose={vi.fn()} />
+        </BrowserRouter>
+      );
+
+      expect(screen.getByRole('img', { name: 'Test API' })).toBeInTheDocument();
     });
   });
 
@@ -83,7 +93,7 @@ describe('Sidebar', () => {
       render(
         <BrowserRouter initialEntries={['/users']}>
           <Routes>
-            <Route path="*" element={<Sidebar config={mockConfig} isOpen={true} onClose={vi.fn()} />} />
+            <Route path="*" element={<Sidebar config={mockConfig} onClose={vi.fn()} />} />
           </Routes>
         </BrowserRouter>
       );
@@ -104,7 +114,7 @@ describe('Sidebar', () => {
       render(
         <BrowserRouter initialEntries={['/users']}>
           <Routes>
-            <Route path="*" element={<Sidebar config={mockConfig} isOpen={true} onClose={vi.fn()} />} />
+            <Route path="*" element={<Sidebar config={mockConfig} onClose={vi.fn()} />} />
           </Routes>
         </BrowserRouter>
       );
@@ -116,63 +126,37 @@ describe('Sidebar', () => {
     });
   });
 
-  describe('Requirement 60.4: Support collapsible sidebar on desktop', () => {
-    it('should be visible when isOpen is true', () => {
-      const { container } = renderSidebar(true);
+  describe('Requirement 60.4: Sidebar fills its layout column', () => {
+    it('should fill the sidebar column without viewport-fixed positioning', () => {
+      const { container } = renderSidebar();
       const sidebar = container.querySelector('aside');
-      expect(sidebar).not.toHaveClass('-translate-x-full');
-    });
-
-    it('should be hidden when isOpen is false', () => {
-      const { container } = renderSidebar(false);
-      const sidebar = container.querySelector('aside');
-      expect(sidebar).toHaveClass('-translate-x-full');
+      expect(sidebar).toBeInTheDocument();
+      expect(sidebar?.className).toContain('w-full');
+      expect(sidebar?.className).not.toContain('fixed');
+      expect(sidebar?.className).not.toContain('-translate-x-full');
     });
   });
 
-  describe('Requirement 60.5: Render as drawer on mobile', () => {
-    it('should render overlay when open on mobile', () => {
-      const { container } = renderSidebar(true);
-      const overlay = container.querySelector('.fixed.inset-0.bg-black\\/50');
-      expect(overlay).toBeInTheDocument();
-    });
-
-    it('should not render overlay when closed', () => {
-      const { container } = renderSidebar(false);
-      const overlay = container.querySelector('.fixed.inset-0.bg-black\\/50');
-      expect(overlay).not.toBeInTheDocument();
-    });
-
-    it('should call onClose when overlay is clicked', () => {
-      const onClose = vi.fn();
-      const { container } = renderSidebar(true, onClose);
-      
-      const overlay = container.querySelector('.fixed.inset-0.bg-black\\/50');
-      if (overlay) {
-        fireEvent.click(overlay);
-        expect(onClose).toHaveBeenCalled();
-      }
-    });
-
-    it('should render close button on mobile', () => {
-      renderSidebar(true);
-      const closeButton = screen.getByRole('button', { name: /✕/i });
+  describe('Requirement 60.5: Mobile close controls', () => {
+    it('should render close button for mobile drawer hosts', () => {
+      renderSidebar();
+      const closeButton = screen.getByRole('button', { name: 'Close navigation menu' });
       expect(closeButton).toBeInTheDocument();
     });
 
     it('should call onClose when close button is clicked', () => {
       const onClose = vi.fn();
-      renderSidebar(true, onClose);
-      
-      const closeButton = screen.getByRole('button', { name: /✕/i });
+      renderSidebar(onClose);
+
+      const closeButton = screen.getByRole('button', { name: 'Close navigation menu' });
       fireEvent.click(closeButton);
       expect(onClose).toHaveBeenCalled();
     });
 
     it('should call onClose when navigation link is clicked', () => {
       const onClose = vi.fn();
-      renderSidebar(true, onClose);
-      
+      renderSidebar(onClose);
+
       const usersLink = screen.getByRole('link', { name: /Users/i });
       fireEvent.click(usersLink);
       expect(onClose).toHaveBeenCalled();
@@ -212,7 +196,7 @@ describe('Sidebar', () => {
 
       const { container } = render(
         <BrowserRouter>
-          <Sidebar config={configWithProfile} isOpen={true} onClose={vi.fn()} />
+          <Sidebar config={configWithProfile} onClose={vi.fn()} />
         </BrowserRouter>
       );
 
@@ -249,7 +233,7 @@ describe('Sidebar', () => {
 
       const { container } = render(
         <BrowserRouter>
-          <Sidebar config={configWithProfile} isOpen={true} onClose={vi.fn()} />
+          <Sidebar config={configWithProfile} onClose={vi.fn()} />
         </BrowserRouter>
       );
 
@@ -276,7 +260,7 @@ describe('Sidebar', () => {
 
       const { container } = render(
         <BrowserRouter>
-          <Sidebar config={configWithProfile} isOpen={true} onClose={vi.fn()} />
+          <Sidebar config={configWithProfile} onClose={vi.fn()} />
         </BrowserRouter>
       );
 
@@ -304,17 +288,11 @@ describe('Sidebar', () => {
 
       render(
         <BrowserRouter initialEntries={['/profile']}>
-          <Sidebar config={configWithProfile} isOpen={true} onClose={vi.fn()} />
+          <Sidebar config={configWithProfile} onClose={vi.fn()} />
         </BrowserRouter>
       );
 
-      const { container } = render(
-        <BrowserRouter initialEntries={['/profile']}>
-          <Sidebar config={configWithProfile} isOpen={true} onClose={vi.fn()} />
-        </BrowserRouter>
-      );
-
-      const profileContainer = container.querySelector('.border-t');
+      const profileContainer = document.querySelector('.border-t');
       const profileLink = profileContainer?.querySelector('a[href="/profile"]');
       // The link should have transition-colors class (styling is applied)
       expect(profileLink?.className).toContain('transition-colors');
@@ -339,7 +317,7 @@ describe('Sidebar', () => {
 
       const { container } = render(
         <BrowserRouter>
-          <Sidebar config={configWithProfile} isOpen={true} onClose={onClose} />
+          <Sidebar config={configWithProfile} onClose={onClose} />
         </BrowserRouter>
       );
 
@@ -369,7 +347,7 @@ describe('Sidebar', () => {
 
       const { container } = render(
         <BrowserRouter>
-          <Sidebar config={configWithProfile} isOpen={true} onClose={vi.fn()} />
+          <Sidebar config={configWithProfile} onClose={vi.fn()} />
         </BrowserRouter>
       );
 

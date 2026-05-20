@@ -505,3 +505,60 @@ describe('DetailView - Delete Functionality', () => {
     expect(screen.getByText('Processing...')).toBeInTheDocument();
   });
 });
+
+describe('DetailView - Action buttons', () => {
+  const mockRefetch = vi.fn();
+  const mockMutateAsync = vi.fn();
+
+  const resourceWithAction: Resource = {
+    ...mockResource,
+    operations: [
+      ...mockResource.operations,
+      {
+        id: 'createReading',
+        method: 'POST',
+        path: '/api/v1/sensors/{sensor_id}/readings',
+        summary: 'Take Reading',
+        viewHint: 'action',
+        parameters: [],
+        responses: {
+          '201': {
+            description: 'Created',
+          },
+        },
+      },
+    ],
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+
+    const { useApiCall, useApiMutation } = await import('@/hooks/useApiCall');
+
+    mockMutateAsync.mockResolvedValue({});
+
+    vi.mocked(useApiCall).mockReturnValue({
+      data: { id: '123', name: 'John Doe', email: 'john@example.com' },
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    } as any);
+
+    vi.mocked(useApiMutation).mockReturnValue({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+    } as any);
+  });
+
+  it('should refetch detail data after a successful action', async () => {
+    renderWithProviders(<DetailView resource={resourceWithAction} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Take Reading' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Execute' }));
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalled();
+      expect(mockRefetch).toHaveBeenCalled();
+    });
+  });
+});

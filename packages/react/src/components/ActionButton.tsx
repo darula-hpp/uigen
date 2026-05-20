@@ -5,6 +5,7 @@ import { useApiMutation } from '@/hooks/useApiCall';
 import { useToast } from '@/components/Toast';
 import type { Operation } from '@uigen-dev/core';
 import { DynamicForm } from '@/components/DynamicForm';
+import { resolvePathParams } from '@/lib/resolve-path-params';
 
 interface ActionButtonProps {
   operation: Operation;
@@ -31,7 +32,7 @@ export function ActionButton({ operation, resourceId, onSuccess }: ActionButtonP
     try {
       // Requirement 15.5: POST to operation path on confirmation
       await mutation.mutateAsync({
-        pathParams: { id: resourceId },
+        pathParams: resolvePathParams(operation, resourceId),
         body: operation.requestBody ? formData : undefined
       });
 

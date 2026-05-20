@@ -115,7 +115,7 @@ export function DetailView({ resource }: DetailViewProps) {
   // Reconcile to determine override mode using operation's override config
   const { mode, renderFn } = reconcile(detailOp?.override);
   
-  const { data, isLoading, error } = useApiCall({
+  const { data, isLoading, error, refetch } = useApiCall({
     operation: detailOp!,
     pathParams: detailOp ? resolvePathParams(detailOp, id) : {},
     enabled: !!detailOp,
@@ -245,8 +245,7 @@ export function DetailView({ resource }: DetailViewProps) {
                 operation={actionOp}
                 resourceId={id!}
                 onSuccess={() => {
-                  // Refresh detail view after action completes
-                  window.location.reload();
+                  void refetch();
                 }}
               />
             ))}
