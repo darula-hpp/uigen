@@ -650,7 +650,7 @@ The renderer is open source. Read the code:
 
 ```bash
 # Clone the UIGen repository
-git clone https://github.com/uigen-dev/uigen.git
+git clone https://github.com/darula-hpp/uigen.git
 
 # Read the renderer code
 cd uigen/packages/react/src/views

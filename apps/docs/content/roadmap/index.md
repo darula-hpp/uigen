@@ -41,17 +41,18 @@ UIGen is developed in phases. Here's what's been shipped and what's coming next.
 
 ## Phase 3: Extension & distribution 🔜 In progress
 
-- [ ] `x-uigen-*` vendor extension support (widget, label, hidden, order, view)
-- [ ] `uigen.config.json`: theme/behaviour/resource overrides
+- [x] `x-uigen-*` vendor extension support (label, ignore, ref, chart, layout, profile, landing page, auth, datetime)
+- [x] `.uigen/config.yaml`: theme/behaviour/resource overrides
+- [x] `uigen build`: package config, spec, and overrides for deployment
+- [x] Publish core packages to npm (`@uigen-dev/core`, `@uigen-dev/react`, `@uigen-dev/cli`)
 - [ ] `uigen validate`: spec linting with actionable errors and line numbers
-- [ ] `uigen generate`: static production build output
+- [ ] `uigen generate`: static production HTML build output
 - [ ] OAuth2 PKCE authentication flow
 - [ ] Spec hot-reloading (file watcher → WebSocket push to UI)
 - [ ] Loading skeletons with shimmer animation
 - [ ] Virtual scrolling for large datasets (TanStack Virtual)
 - [ ] Request / response interceptors (config-driven middleware)
 - [ ] Response transformation (JSONPath + JS functions)
-- [ ] Publish all packages to npm (`@uigen-dev/core`, `@uigen-dev/react`, `@uigen-dev/cli`)
 
 ## Phase 4: Renderer ecosystem
 

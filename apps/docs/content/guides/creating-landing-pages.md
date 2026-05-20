@@ -623,21 +623,22 @@ sections:
 
 ## Next Steps
 
-- [Customize your theme](../blog/customizing-your-theme.md)
-- [Add authentication](../authentication/overview.md)
-- [Configure layouts](../spec-annotations/x-uigen-layout.md)
-- [Deploy to production](../guides/deployment.md)
+- [Customize your theme](/blog/styling-uigen-apps-with-ai)
+- [Add authentication](/docs/authentication/overview)
+- [Configure layouts](/docs/spec-annotations/x-uigen-layout)
+- [Package for deployment](/docs/cli-reference/build)
 
 ## Examples
 
-Check out these example landing pages:
+Check out these example projects with landing page support:
 
-- [Meeting Minutes App](https://github.com/uigen-dev/uigen/tree/main/examples/apps/fastapi/meeting-minutes)
-- [E-commerce Platform](https://github.com/uigen-dev/uigen/tree/main/examples/ecommerce)
-- [Project Management Tool](https://github.com/uigen-dev/uigen/tree/main/examples/project-management)
+- [Meeting Minutes App](https://github.com/darula-hpp/uigen/tree/main/examples/apps/fastapi/meeting-minutes)
+- [ESP32 Board Simulator](https://github.com/darula-hpp/uigen/tree/main/examples/apps/cpp/esp32-simulator)
+- [STM32 Nucleo Simulator](https://github.com/darula-hpp/uigen/tree/main/examples/apps/cpp/stm32-nucleo-simulator)
+
+See [Example Apps](/docs/guides/example-apps) for setup instructions.
 
 ## Get Help
 
-- [Discord Community](https://discord.gg/uigen)
-- [GitHub Discussions](https://github.com/uigen-dev/uigen/discussions)
-- [Documentation](https://docs.uigen.dev)
+- [GitHub Discussions](https://github.com/darula-hpp/uigen/discussions)
+- [Documentation](https://uigen.dev/docs)
