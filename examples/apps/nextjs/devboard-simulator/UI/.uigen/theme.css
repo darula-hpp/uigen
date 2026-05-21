@@ -1,0 +1,75 @@
+/* UIGen DevBoard Control Panel - hardware lab theme */
+
+:root {
+  --background: #eef4fb;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --primary: #0891b2;
+  --primary-foreground: #ffffff;
+  --secondary: #e0f2fe;
+  --secondary-foreground: #0c4a6e;
+  --muted: #e8eef6;
+  --muted-foreground: #64748b;
+  --accent: #dbeafe;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(120, 164, 214, 0.28);
+  --input: rgba(120, 164, 214, 0.35);
+  --ring: #0891b2;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: #07111f;
+  --foreground: #e7eef8;
+  --card: rgba(10, 22, 38, 0.92);
+  --card-foreground: #e7eef8;
+  --primary: #22d3ee;
+  --primary-foreground: #042f2e;
+  --secondary: rgba(56, 189, 248, 0.14);
+  --secondary-foreground: #bae6fd;
+  --muted: rgba(15, 27, 45, 0.88);
+  --muted-foreground: #8aa0ba;
+  --accent: rgba(34, 197, 94, 0.14);
+  --accent-foreground: #dcfce7;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(120, 164, 214, 0.18);
+  --input: rgba(120, 164, 214, 0.24);
+  --ring: #22d3ee;
+}
+
+body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.sidebar-nav-item.active {
+  border-left: 3px solid var(--primary);
+}
+
+.chart-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.profile-card {
+  border: 1px solid var(--border);
+}
+
+.form-section {
+  border: 1px solid var(--border);
+}
+
+.list-table th {
+  background: var(--muted);
+}
+
+.action-button-primary {
+  background: linear-gradient(135deg, #0891b2, #22c55e);
+}
+
+.action-button-primary:hover {
+  filter: brightness(1.08);
+}

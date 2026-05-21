@@ -1,0 +1,26 @@
+{
+  "name": "uigen-devboard-simulator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Generic UIGen DevBoard simulator: board at /, control panel in UI/",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "panel": "cd UI && npm run dev",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0"
+  }
+}

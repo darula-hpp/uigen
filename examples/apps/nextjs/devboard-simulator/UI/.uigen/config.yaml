@@ -1,0 +1,198 @@
+version: '1.0'
+enabled: {}
+defaults: {}
+annotations:
+  document:
+    x-uigen-app:
+      name: UIGen DevBoard Control Panel
+      icon: /.uigen/assets/logo.svg
+    x-uigen-layout:
+      type: sidebar
+      metadata:
+        sidebarWidth: 260
+        sidebarCollapsible: true
+        sidebarDefaultCollapsed: false
+
+  GET:/health:
+    x-uigen-ignore: true
+  GET:/openapi.yaml:
+    x-uigen-ignore: true
+  GET:/api/v1/state:
+    x-uigen-ignore: true
+
+  GET:/api/v1/board:
+    x-uigen-profile: true
+    x-uigen-label: Board Status
+    x-uigen-layout:
+      type: centered
+      metadata:
+        maxWidth: 720
+        showHeader: true
+        verticalCenter: false
+
+  GET:/api/v1/config:
+    x-uigen-label: View Settings
+  PUT:/api/v1/config:
+    x-uigen-label: Update Settings
+
+  GET:/api/v1/pins:
+    x-uigen-label: All Pins
+  GET:/api/v1/pins/{pin_id}:
+    x-uigen-label: Pin Details
+  PUT:/api/v1/pins/{pin_id}:
+    x-uigen-label: Configure Pin
+
+  GET:/api/v1/sensors:
+    x-uigen-label: Connected Sensors
+  GET:/api/v1/sensors/{sensor_id}:
+    x-uigen-label: Sensor Details
+
+  GET:/api/v1/readings:
+    x-uigen-label: Telemetry History
+    x-uigen-layout:
+      type: dashboard-grid
+      metadata:
+        columns:
+          mobile: 1
+          tablet: 1
+          desktop: 1
+        gap: 24
+  GET:/api/v1/sensors/{sensor_id}/readings:
+    x-uigen-label: Sensor Readings
+    x-uigen-layout:
+      type: dashboard-grid
+      metadata:
+        columns:
+          mobile: 1
+          tablet: 1
+          desktop: 1
+        gap: 24
+  POST:/api/v1/sensors/{sensor_id}/readings:
+    x-uigen-label: Take Reading
+
+  POST:/api/v1/actions/blink:
+    x-uigen-label: Blink Status LED
+    x-uigen-layout:
+      type: centered
+      metadata:
+        maxWidth: 480
+        showHeader: true
+        verticalCenter: false
+
+  POST:/api/v1/actions/reset:
+    x-uigen-label: Reset Simulator
+    x-uigen-layout:
+      type: centered
+      metadata:
+        maxWidth: 480
+        showHeader: true
+        verticalCenter: false
+
+  Pin.side:
+    x-uigen-ignore: true
+  Pin.row:
+    x-uigen-ignore: true
+  '#/components/schemas/Pin/properties/side':
+    x-uigen-ignore: true
+  '#/components/schemas/Pin/properties/row':
+    x-uigen-ignore: true
+
+  Board.mac_address:
+    x-uigen-label: MAC Address
+  Board.firmware_version:
+    x-uigen-label: Firmware Version
+  Board.cpu_mhz:
+    x-uigen-label: CPU Speed (MHz)
+  Board.free_memory_bytes:
+    x-uigen-label: Free Memory (bytes)
+  Board.uptime_seconds:
+    x-uigen-label: Uptime (seconds)
+  Board.network_connected:
+    x-uigen-label: Network Connected
+  Board.network_ssid:
+    x-uigen-label: Network Name
+  Board.network_rssi:
+    x-uigen-label: Signal Strength (dBm)
+
+  BoardConfig.hostname:
+    x-uigen-label: Hostname
+  BoardConfig.telemetry_interval_ms:
+    x-uigen-label: Telemetry Interval (ms)
+  BoardConfig.temperature_alert_celsius:
+    x-uigen-label: Temperature Alert (°C)
+  BoardConfig.auto_blink_on_alert:
+    x-uigen-label: Auto Blink on Alert
+  BoardConfig.adc_resolution_bits:
+    x-uigen-label: ADC Resolution (bits)
+
+  Pin.supports_adc:
+    x-uigen-label: ADC Capable
+  Pin.adc_voltage:
+    x-uigen-label: ADC Voltage (V)
+  Pin.mode:
+    x-uigen-label: Pin Mode
+  Pin.state:
+    x-uigen-label: Digital State
+
+  Sensor.pin_id:
+    x-uigen-ref:
+      resource: Pins
+      valueField: id
+      labelField: name
+  Sensor.type:
+    x-uigen-label: Sensor Type
+  Sensor.min_value:
+    x-uigen-label: Minimum Value
+  Sensor.max_value:
+    x-uigen-label: Maximum Value
+
+  Reading.sensor_id:
+    x-uigen-ref:
+      resource: Sensors
+      valueField: id
+      labelField: name
+  Reading.value:
+    x-uigen-label: Reading Value
+
+  BlinkRequest.times:
+    x-uigen-label: Blink Count
+  BlinkRequest.interval_ms:
+    x-uigen-label: Interval (ms)
+
+  ActionResult.pin_id:
+    x-uigen-ref:
+      resource: Pins
+      valueField: id
+      labelField: name
+
+  '#/paths/~1api~1v1~1readings/get/responses/200/content/application~1json/schema':
+    x-uigen-chart:
+      chartType: line
+      xAxis: recorded_at
+      yAxis: value
+      query:
+        limit: 500
+        params:
+          sensor_id: sensor_id
+      sampling:
+        strategy: auto
+        maxPoints: 120
+      filters:
+        - param: sensor_id
+          field: sensor_id
+          type: ref
+          resource: sensors
+      options:
+        title: Sensor Telemetry
+  '#/paths/~1api~1v1~1sensors~1{sensor_id}~1readings/get/responses/200/content/application~1json/schema':
+    x-uigen-chart:
+      chartType: line
+      xAxis: recorded_at
+      yAxis: value
+      query:
+        limit: 500
+      sampling:
+        strategy: auto
+        maxPoints: 120
+      options:
+        title: Sensor History
