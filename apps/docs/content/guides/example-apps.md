@@ -100,6 +100,34 @@ esp32-simulator/
 
 Always `cd` into `UI/` before running `uigen serve`. The simulator itself runs from the example root (`docker compose up`).
 
+---
+
+## UIGen DevBoard (Next.js)
+
+A generic board simulator with the **board visualizer as the homepage** and a **separate UIGen control panel app** in `UI/`. Deploy both to Vercel as two projects.
+
+**Board app:** [`examples/apps/nextjs/devboard-simulator`](https://github.com/darula-hpp/uigen/tree/main/examples/apps/nextjs/devboard-simulator)
+
+**Panel app:** [`examples/apps/nextjs/devboard-simulator/UI`](https://github.com/darula-hpp/uigen/tree/main/examples/apps/nextjs/devboard-simulator/UI)
+
+```bash
+# Terminal 1 — board
+cd examples/apps/nextjs/devboard-simulator
+npm install && npm run dev
+
+# Terminal 2 — panel
+cd examples/apps/nextjs/devboard-simulator/UI
+npm install && npm run dev
+```
+
+| URL | What you get |
+|---|---|
+| `http://localhost:3000` | Quad-zone DevBoard visualizer (homepage) |
+| `http://localhost:4400` | Generated control panel |
+| `http://localhost:3000/openapi.yaml` | Live OpenAPI spec |
+
+**Vercel:** create two projects. Set `BOARD_URL` on the panel project and `NEXT_PUBLIC_PANEL_URL` on the board project to each other's URLs.
+
 ## Other specs
 
 For quick testing without a backend:

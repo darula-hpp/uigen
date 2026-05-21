@@ -1,0 +1,2009 @@
+{
+  "meta": {
+    "title": "UIGen DevBoard Simulator",
+    "version": "1.0.0",
+    "description": "Generic UIGen DevBoard REST API for GPIO control, sensor telemetry, and board configuration.\nDesigned as a hardware-friendly example for UIGen: the server serves this spec at `/openapi.yaml`.\n"
+  },
+  "resources": [
+    {
+      "name": "Board",
+      "slug": "board",
+      "operations": [
+        {
+          "id": "get_board",
+          "method": "GET",
+          "path": "/api/v1/board",
+          "summary": "Board Status",
+          "description": "Returns chip model, firmware, uptime, network status, and memory usage for the simulated DevBoard.",
+          "parameters": [],
+          "responses": {
+            "200": {
+              "description": "Board status",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "string",
+                    "key": "model",
+                    "label": "Model",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "string",
+                    "key": "chip",
+                    "label": "Chip",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "string",
+                    "key": "mac_address",
+                    "label": "MAC Address",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "string",
+                    "key": "firmware_version",
+                    "label": "Firmware Version",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "cpu_mhz",
+                    "label": "CPU Speed (MHz)",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "free_memory_bytes",
+                    "label": "Free Memory (bytes)",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "uptime_seconds",
+                    "label": "Uptime (seconds)",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "boolean",
+                    "key": "network_connected",
+                    "label": "Network Connected",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "string",
+                    "key": "network_ssid",
+                    "label": "Network Name",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "network_rssi",
+                    "label": "Signal Strength (dBm)",
+                    "required": false,
+                    "validations": []
+                  }
+                ],
+                "validations": []
+              }
+            }
+          },
+          "viewHint": "list"
+        }
+      ],
+      "schema": {
+        "type": "object",
+        "key": "response",
+        "label": "Response",
+        "required": false,
+        "children": [
+          {
+            "type": "string",
+            "key": "model",
+            "label": "Model",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "string",
+            "key": "chip",
+            "label": "Chip",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "string",
+            "key": "mac_address",
+            "label": "MAC Address",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "string",
+            "key": "firmware_version",
+            "label": "Firmware Version",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "integer",
+            "key": "cpu_mhz",
+            "label": "CPU Speed (MHz)",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "integer",
+            "key": "free_memory_bytes",
+            "label": "Free Memory (bytes)",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "integer",
+            "key": "uptime_seconds",
+            "label": "Uptime (seconds)",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "boolean",
+            "key": "network_connected",
+            "label": "Network Connected",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "string",
+            "key": "network_ssid",
+            "label": "Network Name",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "integer",
+            "key": "network_rssi",
+            "label": "Signal Strength (dBm)",
+            "required": false,
+            "validations": []
+          }
+        ],
+        "validations": []
+      },
+      "relationships": [],
+      "__profileAnnotation": true,
+      "layoutOverride": {
+        "type": "centered",
+        "metadata": {
+          "maxWidth": 720,
+          "showHeader": true,
+          "verticalCenter": false
+        }
+      },
+      "schemaName": "Board",
+      "label": "Board Status"
+    },
+    {
+      "name": "Config",
+      "slug": "config",
+      "operations": [
+        {
+          "id": "get_config",
+          "method": "GET",
+          "path": "/api/v1/config",
+          "summary": "View Settings",
+          "parameters": [],
+          "responses": {
+            "200": {
+              "description": "Current configuration",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "string",
+                    "key": "hostname",
+                    "label": "Hostname",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "telemetry_interval_ms",
+                    "label": "Telemetry Interval (ms)",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "number",
+                    "key": "temperature_alert_celsius",
+                    "label": "Temperature Alert (°C)",
+                    "required": false,
+                    "validations": [],
+                    "format": "float"
+                  },
+                  {
+                    "type": "boolean",
+                    "key": "auto_blink_on_alert",
+                    "label": "Auto Blink on Alert",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "adc_resolution_bits",
+                    "label": "ADC Resolution (bits)",
+                    "required": false,
+                    "validations": []
+                  }
+                ],
+                "validations": []
+              }
+            }
+          },
+          "viewHint": "list"
+        },
+        {
+          "id": "update_config",
+          "method": "PUT",
+          "path": "/api/v1/config",
+          "summary": "Update Settings",
+          "parameters": [],
+          "requestBody": {
+            "type": "object",
+            "key": "body",
+            "label": "Body",
+            "required": false,
+            "children": [
+              {
+                "type": "string",
+                "key": "hostname",
+                "label": "Hostname",
+                "required": false,
+                "validations": []
+              },
+              {
+                "type": "integer",
+                "key": "telemetry_interval_ms",
+                "label": "Telemetry Interval Ms",
+                "required": false,
+                "validations": [
+                  {
+                    "type": "minimum",
+                    "value": 250,
+                    "message": "Must be at least 250"
+                  }
+                ]
+              },
+              {
+                "type": "number",
+                "key": "temperature_alert_celsius",
+                "label": "Temperature Alert Celsius",
+                "required": false,
+                "validations": [],
+                "format": "float"
+              },
+              {
+                "type": "boolean",
+                "key": "auto_blink_on_alert",
+                "label": "Auto Blink On Alert",
+                "required": false,
+                "validations": []
+              },
+              {
+                "type": "enum",
+                "key": "adc_resolution_bits",
+                "label": "Adc Resolution Bits",
+                "required": false,
+                "enumValues": [
+                  9,
+                  10,
+                  11,
+                  12
+                ],
+                "validations": []
+              }
+            ],
+            "validations": []
+          },
+          "requestBodySchemaName": "BoardConfigUpdate",
+          "requestContentType": "application/json",
+          "responses": {
+            "200": {
+              "description": "Updated configuration",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "string",
+                    "key": "hostname",
+                    "label": "Hostname",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "telemetry_interval_ms",
+                    "label": "Telemetry Interval (ms)",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "number",
+                    "key": "temperature_alert_celsius",
+                    "label": "Temperature Alert (°C)",
+                    "required": false,
+                    "validations": [],
+                    "format": "float"
+                  },
+                  {
+                    "type": "boolean",
+                    "key": "auto_blink_on_alert",
+                    "label": "Auto Blink on Alert",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "adc_resolution_bits",
+                    "label": "ADC Resolution (bits)",
+                    "required": false,
+                    "validations": []
+                  }
+                ],
+                "validations": []
+              }
+            },
+            "400": {
+              "description": "Invalid configuration",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "string",
+                    "key": "error",
+                    "label": "Error",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "status",
+                    "label": "Status",
+                    "required": false,
+                    "validations": []
+                  }
+                ],
+                "validations": []
+              }
+            }
+          },
+          "viewHint": "action"
+        }
+      ],
+      "schema": {
+        "type": "object",
+        "key": "response",
+        "label": "Response",
+        "required": false,
+        "children": [
+          {
+            "type": "string",
+            "key": "hostname",
+            "label": "Hostname",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "integer",
+            "key": "telemetry_interval_ms",
+            "label": "Telemetry Interval (ms)",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "number",
+            "key": "temperature_alert_celsius",
+            "label": "Temperature Alert (°C)",
+            "required": false,
+            "validations": [],
+            "format": "float"
+          },
+          {
+            "type": "boolean",
+            "key": "auto_blink_on_alert",
+            "label": "Auto Blink on Alert",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "integer",
+            "key": "adc_resolution_bits",
+            "label": "ADC Resolution (bits)",
+            "required": false,
+            "validations": []
+          }
+        ],
+        "validations": []
+      },
+      "relationships": [],
+      "schemaName": "BoardConfig"
+    },
+    {
+      "name": "Pins",
+      "slug": "pins",
+      "operations": [
+        {
+          "id": "list_pins",
+          "method": "GET",
+          "path": "/api/v1/pins",
+          "summary": "All Pins",
+          "parameters": [],
+          "responses": {
+            "200": {
+              "description": "All GPIO pins",
+              "schema": {
+                "type": "array",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "items": {
+                  "type": "object",
+                  "key": "item",
+                  "label": "Item",
+                  "required": false,
+                  "children": [
+                    {
+                      "type": "integer",
+                      "key": "id",
+                      "label": "Id",
+                      "required": false,
+                      "validations": []
+                    },
+                    {
+                      "type": "string",
+                      "key": "name",
+                      "label": "Name",
+                      "required": false,
+                      "validations": []
+                    },
+                    {
+                      "type": "enum",
+                      "key": "mode",
+                      "label": "Pin Mode",
+                      "required": false,
+                      "enumValues": [
+                        "input",
+                        "output",
+                        "input_pullup",
+                        "input_pulldown",
+                        "analog"
+                      ],
+                      "validations": []
+                    },
+                    {
+                      "type": "enum",
+                      "key": "state",
+                      "label": "Digital State",
+                      "required": false,
+                      "enumValues": [
+                        "low",
+                        "high"
+                      ],
+                      "validations": []
+                    },
+                    {
+                      "type": "boolean",
+                      "key": "supports_adc",
+                      "label": "ADC Capable",
+                      "required": false,
+                      "validations": []
+                    },
+                    {
+                      "type": "number",
+                      "key": "adc_voltage",
+                      "label": "ADC Voltage (V)",
+                      "required": false,
+                      "validations": [],
+                      "format": "float"
+                    },
+                    {
+                      "type": "enum",
+                      "key": "side",
+                      "label": "Side",
+                      "required": false,
+                      "enumValues": [
+                        "left",
+                        "right",
+                        "top",
+                        "bottom"
+                      ],
+                      "validations": [],
+                      "__shouldIgnore": true
+                    },
+                    {
+                      "type": "integer",
+                      "key": "row",
+                      "label": "Row",
+                      "required": false,
+                      "validations": [],
+                      "__shouldIgnore": true
+                    }
+                  ],
+                  "validations": []
+                },
+                "validations": []
+              }
+            }
+          },
+          "viewHint": "list"
+        },
+        {
+          "id": "get_pin",
+          "method": "GET",
+          "path": "/api/v1/pins/{pin_id}",
+          "summary": "Pin Details",
+          "parameters": [
+            {
+              "name": "pin_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "key": "pin_id",
+                "label": "Pin Id",
+                "required": false,
+                "validations": []
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Pin details",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "integer",
+                    "key": "id",
+                    "label": "Id",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "string",
+                    "key": "name",
+                    "label": "Name",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "enum",
+                    "key": "mode",
+                    "label": "Pin Mode",
+                    "required": false,
+                    "enumValues": [
+                      "input",
+                      "output",
+                      "input_pullup",
+                      "input_pulldown",
+                      "analog"
+                    ],
+                    "validations": []
+                  },
+                  {
+                    "type": "enum",
+                    "key": "state",
+                    "label": "Digital State",
+                    "required": false,
+                    "enumValues": [
+                      "low",
+                      "high"
+                    ],
+                    "validations": []
+                  },
+                  {
+                    "type": "boolean",
+                    "key": "supports_adc",
+                    "label": "ADC Capable",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "number",
+                    "key": "adc_voltage",
+                    "label": "ADC Voltage (V)",
+                    "required": false,
+                    "validations": [],
+                    "format": "float"
+                  },
+                  {
+                    "type": "enum",
+                    "key": "side",
+                    "label": "Side",
+                    "required": false,
+                    "enumValues": [
+                      "left",
+                      "right",
+                      "top",
+                      "bottom"
+                    ],
+                    "validations": [],
+                    "__shouldIgnore": true
+                  },
+                  {
+                    "type": "integer",
+                    "key": "row",
+                    "label": "Row",
+                    "required": false,
+                    "validations": [],
+                    "__shouldIgnore": true
+                  }
+                ],
+                "validations": []
+              }
+            },
+            "404": {
+              "description": "Pin not found",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "string",
+                    "key": "error",
+                    "label": "Error",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "status",
+                    "label": "Status",
+                    "required": false,
+                    "validations": []
+                  }
+                ],
+                "validations": []
+              }
+            }
+          },
+          "viewHint": "detail"
+        },
+        {
+          "id": "update_pin",
+          "method": "PUT",
+          "path": "/api/v1/pins/{pin_id}",
+          "summary": "Configure Pin",
+          "description": "Set pin mode and optional digital output state.",
+          "parameters": [
+            {
+              "name": "pin_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "key": "pin_id",
+                "label": "Pin Id",
+                "required": false,
+                "validations": []
+              }
+            }
+          ],
+          "requestBody": {
+            "type": "object",
+            "key": "body",
+            "label": "Body",
+            "required": false,
+            "children": [
+              {
+                "type": "enum",
+                "key": "mode",
+                "label": "Mode",
+                "required": true,
+                "enumValues": [
+                  "input",
+                  "output",
+                  "input_pullup",
+                  "input_pulldown",
+                  "analog"
+                ],
+                "validations": []
+              },
+              {
+                "type": "enum",
+                "key": "state",
+                "label": "State",
+                "required": false,
+                "enumValues": [
+                  "low",
+                  "high"
+                ],
+                "validations": []
+              }
+            ],
+            "validations": []
+          },
+          "requestBodySchemaName": "PinUpdate",
+          "requestContentType": "application/json",
+          "responses": {
+            "200": {
+              "description": "Updated pin",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "integer",
+                    "key": "id",
+                    "label": "Id",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "string",
+                    "key": "name",
+                    "label": "Name",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "enum",
+                    "key": "mode",
+                    "label": "Pin Mode",
+                    "required": false,
+                    "enumValues": [
+                      "input",
+                      "output",
+                      "input_pullup",
+                      "input_pulldown",
+                      "analog"
+                    ],
+                    "validations": []
+                  },
+                  {
+                    "type": "enum",
+                    "key": "state",
+                    "label": "Digital State",
+                    "required": false,
+                    "enumValues": [
+                      "low",
+                      "high"
+                    ],
+                    "validations": []
+                  },
+                  {
+                    "type": "boolean",
+                    "key": "supports_adc",
+                    "label": "ADC Capable",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "number",
+                    "key": "adc_voltage",
+                    "label": "ADC Voltage (V)",
+                    "required": false,
+                    "validations": [],
+                    "format": "float"
+                  },
+                  {
+                    "type": "enum",
+                    "key": "side",
+                    "label": "Side",
+                    "required": false,
+                    "enumValues": [
+                      "left",
+                      "right",
+                      "top",
+                      "bottom"
+                    ],
+                    "validations": [],
+                    "__shouldIgnore": true
+                  },
+                  {
+                    "type": "integer",
+                    "key": "row",
+                    "label": "Row",
+                    "required": false,
+                    "validations": [],
+                    "__shouldIgnore": true
+                  }
+                ],
+                "validations": []
+              }
+            },
+            "400": {
+              "description": "Invalid pin update",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "string",
+                    "key": "error",
+                    "label": "Error",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "status",
+                    "label": "Status",
+                    "required": false,
+                    "validations": []
+                  }
+                ],
+                "validations": []
+              }
+            },
+            "404": {
+              "description": "Pin not found",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "string",
+                    "key": "error",
+                    "label": "Error",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "status",
+                    "label": "Status",
+                    "required": false,
+                    "validations": []
+                  }
+                ],
+                "validations": []
+              }
+            }
+          },
+          "viewHint": "update"
+        }
+      ],
+      "schema": {
+        "type": "object",
+        "key": "item",
+        "label": "Item",
+        "required": false,
+        "children": [
+          {
+            "type": "integer",
+            "key": "id",
+            "label": "Id",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "string",
+            "key": "name",
+            "label": "Name",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "enum",
+            "key": "mode",
+            "label": "Pin Mode",
+            "required": false,
+            "enumValues": [
+              "input",
+              "output",
+              "input_pullup",
+              "input_pulldown",
+              "analog"
+            ],
+            "validations": []
+          },
+          {
+            "type": "enum",
+            "key": "state",
+            "label": "Digital State",
+            "required": false,
+            "enumValues": [
+              "low",
+              "high"
+            ],
+            "validations": []
+          },
+          {
+            "type": "boolean",
+            "key": "supports_adc",
+            "label": "ADC Capable",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "number",
+            "key": "adc_voltage",
+            "label": "ADC Voltage (V)",
+            "required": false,
+            "validations": [],
+            "format": "float"
+          },
+          {
+            "type": "enum",
+            "key": "side",
+            "label": "Side",
+            "required": false,
+            "enumValues": [
+              "left",
+              "right",
+              "top",
+              "bottom"
+            ],
+            "validations": [],
+            "__shouldIgnore": true
+          },
+          {
+            "type": "integer",
+            "key": "row",
+            "label": "Row",
+            "required": false,
+            "validations": [],
+            "__shouldIgnore": true
+          }
+        ],
+        "validations": []
+      },
+      "relationships": [],
+      "schemaName": "Pin"
+    },
+    {
+      "name": "Sensors",
+      "slug": "sensors",
+      "operations": [
+        {
+          "id": "list_sensors",
+          "method": "GET",
+          "path": "/api/v1/sensors",
+          "summary": "Connected Sensors",
+          "parameters": [],
+          "responses": {
+            "200": {
+              "description": "Connected sensors",
+              "schema": {
+                "type": "array",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "items": {
+                  "type": "object",
+                  "key": "item",
+                  "label": "Item",
+                  "required": false,
+                  "children": [
+                    {
+                      "type": "integer",
+                      "key": "id",
+                      "label": "Id",
+                      "required": false,
+                      "validations": []
+                    },
+                    {
+                      "type": "string",
+                      "key": "name",
+                      "label": "Name",
+                      "required": false,
+                      "validations": []
+                    },
+                    {
+                      "type": "enum",
+                      "key": "type",
+                      "label": "Sensor Type",
+                      "required": false,
+                      "enumValues": [
+                        "temperature",
+                        "humidity",
+                        "voltage",
+                        "internal_temperature"
+                      ],
+                      "validations": []
+                    },
+                    {
+                      "type": "string",
+                      "key": "unit",
+                      "label": "Unit",
+                      "required": false,
+                      "validations": []
+                    },
+                    {
+                      "type": "integer",
+                      "key": "pin_id",
+                      "label": "Pin Id",
+                      "required": false,
+                      "validations": [],
+                      "refConfig": {
+                        "resource": "Pins",
+                        "valueField": "id",
+                        "labelField": "name",
+                        "filter": {}
+                      }
+                    },
+                    {
+                      "type": "number",
+                      "key": "min_value",
+                      "label": "Minimum Value",
+                      "required": false,
+                      "validations": [],
+                      "format": "float"
+                    },
+                    {
+                      "type": "number",
+                      "key": "max_value",
+                      "label": "Maximum Value",
+                      "required": false,
+                      "validations": [],
+                      "format": "float"
+                    }
+                  ],
+                  "validations": []
+                },
+                "validations": []
+              }
+            }
+          },
+          "viewHint": "list"
+        },
+        {
+          "id": "get_sensor",
+          "method": "GET",
+          "path": "/api/v1/sensors/{sensor_id}",
+          "summary": "Sensor Details",
+          "parameters": [
+            {
+              "name": "sensor_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "key": "sensor_id",
+                "label": "Sensor Id",
+                "required": false,
+                "validations": []
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Sensor details",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "integer",
+                    "key": "id",
+                    "label": "Id",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "string",
+                    "key": "name",
+                    "label": "Name",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "enum",
+                    "key": "type",
+                    "label": "Sensor Type",
+                    "required": false,
+                    "enumValues": [
+                      "temperature",
+                      "humidity",
+                      "voltage",
+                      "internal_temperature"
+                    ],
+                    "validations": []
+                  },
+                  {
+                    "type": "string",
+                    "key": "unit",
+                    "label": "Unit",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "pin_id",
+                    "label": "Pin Id",
+                    "required": false,
+                    "validations": [],
+                    "refConfig": {
+                      "resource": "Pins",
+                      "valueField": "id",
+                      "labelField": "name",
+                      "filter": {}
+                    }
+                  },
+                  {
+                    "type": "number",
+                    "key": "min_value",
+                    "label": "Minimum Value",
+                    "required": false,
+                    "validations": [],
+                    "format": "float"
+                  },
+                  {
+                    "type": "number",
+                    "key": "max_value",
+                    "label": "Maximum Value",
+                    "required": false,
+                    "validations": [],
+                    "format": "float"
+                  }
+                ],
+                "validations": []
+              }
+            },
+            "404": {
+              "description": "Sensor not found",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "string",
+                    "key": "error",
+                    "label": "Error",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "status",
+                    "label": "Status",
+                    "required": false,
+                    "validations": []
+                  }
+                ],
+                "validations": []
+              }
+            }
+          },
+          "viewHint": "detail"
+        },
+        {
+          "id": "list_sensor_readings",
+          "method": "GET",
+          "path": "/api/v1/sensors/{sensor_id}/readings",
+          "summary": "Sensor Readings",
+          "parameters": [
+            {
+              "name": "sensor_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "key": "sensor_id",
+                "label": "Sensor Id",
+                "required": false,
+                "validations": []
+              }
+            },
+            {
+              "name": "limit",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "integer",
+                "key": "limit",
+                "label": "Limit",
+                "required": false,
+                "default": 100,
+                "validations": [
+                  {
+                    "type": "minimum",
+                    "value": 1,
+                    "message": "Must be at least 1"
+                  },
+                  {
+                    "type": "maximum",
+                    "value": 500,
+                    "message": "Must be at most 500"
+                  }
+                ]
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Telemetry readings",
+              "schema": {
+                "type": "array",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "items": {
+                  "type": "object",
+                  "key": "item",
+                  "label": "Item",
+                  "required": false,
+                  "children": [
+                    {
+                      "type": "integer",
+                      "key": "id",
+                      "label": "Id",
+                      "required": false,
+                      "validations": []
+                    },
+                    {
+                      "type": "integer",
+                      "key": "sensor_id",
+                      "label": "Sensor Id",
+                      "required": false,
+                      "validations": [],
+                      "refConfig": {
+                        "resource": "Sensors",
+                        "valueField": "id",
+                        "labelField": "name",
+                        "filter": {}
+                      }
+                    },
+                    {
+                      "type": "number",
+                      "key": "value",
+                      "label": "Reading Value",
+                      "required": false,
+                      "validations": [],
+                      "format": "float"
+                    },
+                    {
+                      "type": "string",
+                      "key": "unit",
+                      "label": "Unit",
+                      "required": false,
+                      "validations": []
+                    },
+                    {
+                      "type": "date",
+                      "key": "recorded_at",
+                      "label": "Recorded At",
+                      "required": false,
+                      "validations": [],
+                      "format": "date-time"
+                    }
+                  ],
+                  "validations": []
+                },
+                "validations": [],
+                "chartConfig": {
+                  "chartType": "line",
+                  "xAxis": "recorded_at",
+                  "yAxis": "value",
+                  "options": {
+                    "title": "Sensor History"
+                  },
+                  "query": {
+                    "limit": 500
+                  },
+                  "sampling": {
+                    "strategy": "auto",
+                    "maxPoints": 120
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Sensor not found",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "string",
+                    "key": "error",
+                    "label": "Error",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "status",
+                    "label": "Status",
+                    "required": false,
+                    "validations": []
+                  }
+                ],
+                "validations": []
+              }
+            }
+          },
+          "viewHint": "detail"
+        },
+        {
+          "id": "create_sensor_reading",
+          "method": "POST",
+          "path": "/api/v1/sensors/{sensor_id}/readings",
+          "summary": "Take Reading",
+          "parameters": [
+            {
+              "name": "sensor_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "key": "sensor_id",
+                "label": "Sensor Id",
+                "required": false,
+                "validations": []
+              }
+            }
+          ],
+          "responses": {
+            "201": {
+              "description": "New reading captured",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "integer",
+                    "key": "id",
+                    "label": "Id",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "sensor_id",
+                    "label": "Sensor Id",
+                    "required": false,
+                    "validations": [],
+                    "refConfig": {
+                      "resource": "Sensors",
+                      "valueField": "id",
+                      "labelField": "name",
+                      "filter": {}
+                    }
+                  },
+                  {
+                    "type": "number",
+                    "key": "value",
+                    "label": "Reading Value",
+                    "required": false,
+                    "validations": [],
+                    "format": "float"
+                  },
+                  {
+                    "type": "string",
+                    "key": "unit",
+                    "label": "Unit",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "date",
+                    "key": "recorded_at",
+                    "label": "Recorded At",
+                    "required": false,
+                    "validations": [],
+                    "format": "date-time"
+                  }
+                ],
+                "validations": []
+              }
+            },
+            "404": {
+              "description": "Sensor not found",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "string",
+                    "key": "error",
+                    "label": "Error",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "status",
+                    "label": "Status",
+                    "required": false,
+                    "validations": []
+                  }
+                ],
+                "validations": []
+              }
+            }
+          },
+          "viewHint": "action"
+        }
+      ],
+      "schema": {
+        "type": "object",
+        "key": "item",
+        "label": "Item",
+        "required": false,
+        "children": [
+          {
+            "type": "integer",
+            "key": "id",
+            "label": "Id",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "string",
+            "key": "name",
+            "label": "Name",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "enum",
+            "key": "type",
+            "label": "Sensor Type",
+            "required": false,
+            "enumValues": [
+              "temperature",
+              "humidity",
+              "voltage",
+              "internal_temperature"
+            ],
+            "validations": []
+          },
+          {
+            "type": "string",
+            "key": "unit",
+            "label": "Unit",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "integer",
+            "key": "pin_id",
+            "label": "Pin Id",
+            "required": false,
+            "validations": [],
+            "refConfig": {
+              "resource": "Pins",
+              "valueField": "id",
+              "labelField": "name",
+              "filter": {}
+            }
+          },
+          {
+            "type": "number",
+            "key": "min_value",
+            "label": "Minimum Value",
+            "required": false,
+            "validations": [],
+            "format": "float"
+          },
+          {
+            "type": "number",
+            "key": "max_value",
+            "label": "Maximum Value",
+            "required": false,
+            "validations": [],
+            "format": "float"
+          }
+        ],
+        "validations": []
+      },
+      "relationships": [],
+      "layoutOverride": {
+        "type": "dashboard-grid",
+        "metadata": {
+          "columns": {
+            "mobile": 1,
+            "tablet": 1,
+            "desktop": 1
+          },
+          "gap": 24
+        }
+      },
+      "schemaName": "Sensor"
+    },
+    {
+      "name": "Readings",
+      "slug": "readings",
+      "operations": [
+        {
+          "id": "list_readings",
+          "method": "GET",
+          "path": "/api/v1/readings",
+          "summary": "Telemetry History",
+          "parameters": [
+            {
+              "name": "sensor_id",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "integer",
+                "key": "sensor_id",
+                "label": "Sensor Id",
+                "required": false,
+                "validations": []
+              }
+            },
+            {
+              "name": "limit",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "integer",
+                "key": "limit",
+                "label": "Limit",
+                "required": false,
+                "default": 100,
+                "validations": [
+                  {
+                    "type": "minimum",
+                    "value": 1,
+                    "message": "Must be at least 1"
+                  },
+                  {
+                    "type": "maximum",
+                    "value": 500,
+                    "message": "Must be at most 500"
+                  }
+                ]
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Telemetry readings",
+              "schema": {
+                "type": "array",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "items": {
+                  "type": "object",
+                  "key": "item",
+                  "label": "Item",
+                  "required": false,
+                  "children": [
+                    {
+                      "type": "integer",
+                      "key": "id",
+                      "label": "Id",
+                      "required": false,
+                      "validations": []
+                    },
+                    {
+                      "type": "integer",
+                      "key": "sensor_id",
+                      "label": "Sensor Id",
+                      "required": false,
+                      "validations": [],
+                      "refConfig": {
+                        "resource": "Sensors",
+                        "valueField": "id",
+                        "labelField": "name",
+                        "filter": {}
+                      }
+                    },
+                    {
+                      "type": "number",
+                      "key": "value",
+                      "label": "Reading Value",
+                      "required": false,
+                      "validations": [],
+                      "format": "float"
+                    },
+                    {
+                      "type": "string",
+                      "key": "unit",
+                      "label": "Unit",
+                      "required": false,
+                      "validations": []
+                    },
+                    {
+                      "type": "date",
+                      "key": "recorded_at",
+                      "label": "Recorded At",
+                      "required": false,
+                      "validations": [],
+                      "format": "date-time"
+                    }
+                  ],
+                  "validations": []
+                },
+                "validations": [],
+                "chartConfig": {
+                  "chartType": "line",
+                  "xAxis": "recorded_at",
+                  "yAxis": "value",
+                  "options": {
+                    "title": "Sensor Telemetry"
+                  },
+                  "query": {
+                    "limit": 500,
+                    "params": {
+                      "sensor_id": "sensor_id"
+                    }
+                  },
+                  "filters": [
+                    {
+                      "param": "sensor_id",
+                      "field": "sensor_id",
+                      "type": "ref",
+                      "resource": "sensors"
+                    }
+                  ],
+                  "sampling": {
+                    "strategy": "auto",
+                    "maxPoints": 120
+                  }
+                }
+              }
+            }
+          },
+          "viewHint": "search"
+        }
+      ],
+      "schema": {
+        "type": "object",
+        "key": "readings",
+        "label": "Readings",
+        "required": false,
+        "children": []
+      },
+      "relationships": [],
+      "layoutOverride": {
+        "type": "dashboard-grid",
+        "metadata": {
+          "columns": {
+            "mobile": 1,
+            "tablet": 1,
+            "desktop": 1
+          },
+          "gap": 24
+        }
+      },
+      "schemaName": "Reading",
+      "label": "Telemetry History"
+    },
+    {
+      "name": "Blink",
+      "slug": "blink",
+      "operations": [
+        {
+          "id": "blink_led",
+          "method": "POST",
+          "path": "/api/v1/actions/blink",
+          "summary": "Blink Status LED",
+          "description": "Blinks the status LED on pin D0.",
+          "parameters": [],
+          "requestBody": {
+            "type": "object",
+            "key": "body",
+            "label": "Body",
+            "required": false,
+            "children": [
+              {
+                "type": "integer",
+                "key": "times",
+                "label": "Blink Count",
+                "required": false,
+                "default": 3,
+                "validations": [
+                  {
+                    "type": "minimum",
+                    "value": 1,
+                    "message": "Must be at least 1"
+                  },
+                  {
+                    "type": "maximum",
+                    "value": 20,
+                    "message": "Must be at most 20"
+                  }
+                ]
+              },
+              {
+                "type": "integer",
+                "key": "interval_ms",
+                "label": "Interval (ms)",
+                "required": false,
+                "default": 200,
+                "validations": [
+                  {
+                    "type": "minimum",
+                    "value": 50,
+                    "message": "Must be at least 50"
+                  },
+                  {
+                    "type": "maximum",
+                    "value": 2000,
+                    "message": "Must be at most 2000"
+                  }
+                ]
+              }
+            ],
+            "validations": []
+          },
+          "requestBodySchemaName": "BlinkRequest",
+          "requestContentType": "application/json",
+          "responses": {
+            "202": {
+              "description": "Blink started",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "string",
+                    "key": "status",
+                    "label": "Status",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "pin_id",
+                    "label": "Pin Id",
+                    "required": false,
+                    "validations": [],
+                    "refConfig": {
+                      "resource": "Pins",
+                      "valueField": "id",
+                      "labelField": "name",
+                      "filter": {}
+                    }
+                  }
+                ],
+                "validations": []
+              }
+            },
+            "409": {
+              "description": "Blink already in progress",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "string",
+                    "key": "error",
+                    "label": "Error",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "status",
+                    "label": "Status",
+                    "required": false,
+                    "validations": []
+                  }
+                ],
+                "validations": []
+              }
+            }
+          },
+          "viewHint": "create"
+        }
+      ],
+      "schema": {
+        "type": "object",
+        "key": "body",
+        "label": "Body",
+        "required": false,
+        "children": [
+          {
+            "type": "integer",
+            "key": "times",
+            "label": "Blink Count",
+            "required": false,
+            "default": 3,
+            "validations": [
+              {
+                "type": "minimum",
+                "value": 1,
+                "message": "Must be at least 1"
+              },
+              {
+                "type": "maximum",
+                "value": 20,
+                "message": "Must be at most 20"
+              }
+            ]
+          },
+          {
+            "type": "integer",
+            "key": "interval_ms",
+            "label": "Interval (ms)",
+            "required": false,
+            "default": 200,
+            "validations": [
+              {
+                "type": "minimum",
+                "value": 50,
+                "message": "Must be at least 50"
+              },
+              {
+                "type": "maximum",
+                "value": 2000,
+                "message": "Must be at most 2000"
+              }
+            ]
+          }
+        ],
+        "validations": []
+      },
+      "relationships": [],
+      "layoutOverride": {
+        "type": "centered",
+        "metadata": {
+          "maxWidth": 480,
+          "showHeader": true,
+          "verticalCenter": false
+        }
+      },
+      "label": "Blink Status LED"
+    },
+    {
+      "name": "Reset",
+      "slug": "reset",
+      "operations": [
+        {
+          "id": "reset_simulator",
+          "method": "POST",
+          "path": "/api/v1/actions/reset",
+          "summary": "Reset Simulator",
+          "description": "Clears telemetry history and restores default pin and sensor state.",
+          "parameters": [],
+          "responses": {
+            "200": {
+              "description": "Reset completed",
+              "schema": {
+                "type": "object",
+                "key": "response",
+                "label": "Response",
+                "required": false,
+                "children": [
+                  {
+                    "type": "string",
+                    "key": "status",
+                    "label": "Status",
+                    "required": false,
+                    "validations": []
+                  },
+                  {
+                    "type": "integer",
+                    "key": "pin_id",
+                    "label": "Pin Id",
+                    "required": false,
+                    "validations": [],
+                    "refConfig": {
+                      "resource": "Pins",
+                      "valueField": "id",
+                      "labelField": "name",
+                      "filter": {}
+                    }
+                  }
+                ],
+                "validations": []
+              }
+            }
+          },
+          "viewHint": "create"
+        }
+      ],
+      "schema": {
+        "type": "object",
+        "key": "response",
+        "label": "Response",
+        "required": false,
+        "children": [
+          {
+            "type": "string",
+            "key": "status",
+            "label": "Status",
+            "required": false,
+            "validations": []
+          },
+          {
+            "type": "integer",
+            "key": "pin_id",
+            "label": "Pin Id",
+            "required": false,
+            "validations": [],
+            "refConfig": {
+              "resource": "Pins",
+              "valueField": "id",
+              "labelField": "name",
+              "filter": {}
+            }
+          }
+        ],
+        "validations": []
+      },
+      "relationships": [],
+      "layoutOverride": {
+        "type": "centered",
+        "metadata": {
+          "maxWidth": 480,
+          "showHeader": true,
+          "verticalCenter": false
+        }
+      },
+      "schemaName": "ActionResult",
+      "label": "Reset Simulator"
+    }
+  ],
+  "auth": {
+    "schemes": [],
+    "globalRequired": false,
+    "loginEndpoints": [],
+    "refreshEndpoints": []
+  },
+  "dashboard": {
+    "enabled": true,
+    "widgets": []
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Next.js simulator"
+    }
+  ],
+  "layoutConfig": {
+    "type": "sidebar",
+    "metadata": {
+      "sidebarWidth": 260,
+      "sidebarCollapsible": true,
+      "sidebarDefaultCollapsed": false
+    }
+  },
+  "appConfig": {
+    "name": "UIGen DevBoard Control Panel",
+    "icon": "/assets/uigen-hardware-logo.svg"
+  }
+}

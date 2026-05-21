@@ -1,0 +1,28 @@
+# ROS 2 / colcon build outputs (capture host env vars; never commit)
+build/
+install/
+log/
+ros_ws/build/
+ros_ws/install/
+ros_ws/log/
+**/colcon_command_prefix_build.sh.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

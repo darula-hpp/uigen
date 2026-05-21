@@ -1,0 +1,566 @@
+openapi: 3.1.0
+info:
+  title: UIGen DevBoard Simulator
+  description: |
+    Generic UIGen DevBoard REST API for GPIO control, sensor telemetry, and board configuration.
+    Designed as a hardware-friendly example for UIGen: the server serves this spec at `/openapi.yaml`.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local Next.js simulator
+tags:
+  - name: board
+    description: Board status and health
+  - name: pins
+    description: GPIO pin control
+  - name: sensors
+    description: Connected sensors
+  - name: readings
+    description: Sensor telemetry
+  - name: config
+    description: Simulator configuration
+  - name: actions
+    description: Device actions
+paths:
+  /health:
+    get:
+      tags: [board]
+      summary: Health check
+      operationId: health_check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+  /openapi.yaml:
+    get:
+      tags: [board]
+      summary: Get OpenAPI specification
+      operationId: get_openapi_spec
+      responses:
+        '200':
+          description: OpenAPI YAML document
+          content:
+            application/yaml:
+              schema:
+                type: string
+  /api/v1/board:
+    get:
+      tags: [board]
+      summary: Get board status
+      description: Returns chip model, firmware, uptime, network status, and memory usage for the simulated DevBoard.
+      operationId: get_board
+      responses:
+        '200':
+          description: Board status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Board'
+  /api/v1/state:
+    get:
+      tags: [board]
+      summary: Get full simulator snapshot
+      description: Returns board status, pins, sensors, recent telemetry, and event log for the visual demo page.
+      operationId: get_board_state
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 30
+            minimum: 5
+            maximum: 100
+      responses:
+        '200':
+          description: Full simulator snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoardSnapshot'
+  /api/v1/config:
+    get:
+      tags: [config]
+      summary: Get board configuration
+      operationId: get_config
+      responses:
+        '200':
+          description: Current configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoardConfig'
+    put:
+      tags: [config]
+      summary: Update board configuration
+      operationId: update_config
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoardConfigUpdate'
+      responses:
+        '200':
+          description: Updated configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoardConfig'
+        '400':
+          description: Invalid configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/pins:
+    get:
+      tags: [pins]
+      summary: List GPIO pins
+      operationId: list_pins
+      responses:
+        '200':
+          description: All GPIO pins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pin'
+  /api/v1/pins/{pin_id}:
+    get:
+      tags: [pins]
+      summary: Get GPIO pin
+      operationId: get_pin
+      parameters:
+        - name: pin_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pin details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pin'
+        '404':
+          description: Pin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags: [pins]
+      summary: Update GPIO pin
+      description: Set pin mode and optional digital output state.
+      operationId: update_pin
+      parameters:
+        - name: pin_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinUpdate'
+      responses:
+        '200':
+          description: Updated pin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pin'
+        '400':
+          description: Invalid pin update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Pin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/sensors:
+    get:
+      tags: [sensors]
+      summary: List sensors
+      operationId: list_sensors
+      responses:
+        '200':
+          description: Connected sensors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sensor'
+  /api/v1/sensors/{sensor_id}:
+    get:
+      tags: [sensors]
+      summary: Get sensor
+      operationId: get_sensor
+      parameters:
+        - name: sensor_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sensor details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sensor'
+        '404':
+          description: Sensor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/sensors/{sensor_id}/readings:
+    get:
+      tags: [readings]
+      summary: List sensor readings
+      operationId: list_sensor_readings
+      parameters:
+        - name: sensor_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 500
+      responses:
+        '200':
+          description: Telemetry readings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reading'
+        '404':
+          description: Sensor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags: [readings]
+      summary: Take sensor reading
+      operationId: create_sensor_reading
+      parameters:
+        - name: sensor_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: New reading captured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reading'
+        '404':
+          description: Sensor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/readings:
+    get:
+      tags: [readings]
+      summary: List all readings
+      operationId: list_readings
+      parameters:
+        - name: sensor_id
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 500
+      responses:
+        '200':
+          description: Telemetry readings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reading'
+  /api/v1/actions/blink:
+    post:
+      tags: [actions]
+      summary: Blink built-in LED
+      description: Blinks the status LED on pin D0.
+      operationId: blink_led
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlinkRequest'
+      responses:
+        '202':
+          description: Blink started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResult'
+        '409':
+          description: Blink already in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/actions/reset:
+    post:
+      tags: [actions]
+      summary: Reset simulator
+      description: Clears telemetry history and restores default pin and sensor state.
+      operationId: reset_simulator
+      responses:
+        '200':
+          description: Reset completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResult'
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        status:
+          type: integer
+    Board:
+      type: object
+      properties:
+        model:
+          type: string
+          example: UIGen DevBoard v1
+        chip:
+          type: string
+          example: UG-CORE-M4
+        mac_address:
+          type: string
+          example: 02:UG:EN:00:01:00
+        firmware_version:
+          type: string
+          example: 1.0.0-sim
+        cpu_mhz:
+          type: integer
+          example: 120
+        free_memory_bytes:
+          type: integer
+          example: 287744
+        uptime_seconds:
+          type: integer
+          example: 3600
+        network_connected:
+          type: boolean
+        network_ssid:
+          type: string
+          example: Lab-Network
+        network_rssi:
+          type: integer
+          example: -58
+    BoardConfig:
+      type: object
+      properties:
+        hostname:
+          type: string
+          example: devboard-simulator
+        telemetry_interval_ms:
+          type: integer
+          example: 2000
+        temperature_alert_celsius:
+          type: number
+          format: float
+          example: 35.0
+        auto_blink_on_alert:
+          type: boolean
+        adc_resolution_bits:
+          type: integer
+          example: 12
+    BoardConfigUpdate:
+      type: object
+      properties:
+        hostname:
+          type: string
+        telemetry_interval_ms:
+          type: integer
+          minimum: 250
+        temperature_alert_celsius:
+          type: number
+          format: float
+        auto_blink_on_alert:
+          type: boolean
+        adc_resolution_bits:
+          type: integer
+          enum: [9, 10, 11, 12]
+    Pin:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        mode:
+          type: string
+          enum: [input, output, input_pullup, input_pulldown, analog]
+        state:
+          type: string
+          enum: [low, high]
+        supports_adc:
+          type: boolean
+        adc_voltage:
+          type: number
+          format: float
+        side:
+          type: string
+          enum: [left, right, top, bottom]
+        row:
+          type: integer
+    PinUpdate:
+      type: object
+      required: [mode]
+      properties:
+        mode:
+          type: string
+          enum: [input, output, input_pullup, input_pulldown, analog]
+        state:
+          type: string
+          enum: [low, high]
+    Sensor:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [temperature, humidity, voltage, internal_temperature]
+        unit:
+          type: string
+        pin_id:
+          type: integer
+        min_value:
+          type: number
+          format: float
+        max_value:
+          type: number
+          format: float
+    Reading:
+      type: object
+      properties:
+        id:
+          type: integer
+        sensor_id:
+          type: integer
+        value:
+          type: number
+          format: float
+        unit:
+          type: string
+        recorded_at:
+          type: string
+          format: date-time
+    BlinkRequest:
+      type: object
+      properties:
+        times:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 3
+        interval_ms:
+          type: integer
+          minimum: 50
+          maximum: 2000
+          default: 200
+    ActionResult:
+      type: object
+      properties:
+        status:
+          type: string
+        pin_id:
+          type: integer
+    SimulationEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        message:
+          type: string
+        recorded_at:
+          type: string
+          format: date-time
+    SensorSnapshot:
+      type: object
+      properties:
+        sensor:
+          $ref: '#/components/schemas/Sensor'
+        latest_reading:
+          $ref: '#/components/schemas/Reading'
+        recent_readings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reading'
+    BoardSnapshot:
+      type: object
+      properties:
+        board:
+          $ref: '#/components/schemas/Board'
+        config:
+          $ref: '#/components/schemas/BoardConfig'
+        pins:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pin'
+        sensors:
+          type: array
+          items:
+            $ref: '#/components/schemas/SensorSnapshot'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/SimulationEvent'
+        blinking:
+          type: boolean
