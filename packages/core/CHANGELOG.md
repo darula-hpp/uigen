@@ -1,5 +1,11 @@
 # @uigen-dev/core
 
+## 0.16.0
+
+### Minor Changes
+
+- Added the electron Target
+
 ## 0.15.0
 
 ### Minor Changes

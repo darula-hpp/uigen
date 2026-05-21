@@ -1,5 +1,16 @@
 # @uigen-dev/config-gui
 
+## 0.16.0
+
+### Minor Changes
+
+- Added the electron Target
+
+### Patch Changes
+
+- Updated dependencies
+  - @uigen-dev/core@0.16.0
+
 ## 0.15.0
 
 ### Minor Changes
