@@ -2004,6 +2004,6 @@
   },
   "appConfig": {
     "name": "UIGen DevBoard Control Panel",
-    "icon": "/assets/uigen-hardware-logo.svg"
+    "icon": "/.uigen/assets/logo.svg"
   }
 }
