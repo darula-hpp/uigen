@@ -5,6 +5,32 @@ All notable changes to UIGen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
+## [Unreleased]
+
+### Added
+
+**CLI package (`@uigen-dev/cli`)**
+- **Electron target** - Serve the generated UI in a desktop window with `--target electron`
+  - New `--target <target>` flag on `uigen serve` (`web`, `electron`; default: `web`)
+  - Spawns `@uigen-dev/target-electron` after the normal serve pipeline (spec processing, CSS/overrides injection, `/api` proxy)
+  - React renderer only for Phase 1; `--renderer vue` / `--renderer svelte` are rejected for Electron
+
+**Electron target (`@uigen-dev/target-electron`)**
+- New workspace package at `targets/electron` - thin Electron shell that opens a `BrowserWindow` to the CLI server URL
+- Optional install for npm users: `pnpm add -D @uigen-dev/target-electron`
+
+**Monorepo**
+- Added `targets/*` to the pnpm workspace for distribution shells (Electron first; future targets like Tauri can follow)
+- Added `pnpm test:electron` script for local desktop testing (mirrors `test:serve`)
+
+**Documentation**
+- Updated [`uigen serve`](/apps/docs/content/cli-reference/serve.md) CLI reference with `--target electron` usage
+
+### Tests
+- CLI `electron-launcher` unit tests for target resolution, spawn args, and missing-package errors
+
+---
+
 ## [0.15.0] - 2026-05-20
 
 ### Added

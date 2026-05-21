@@ -20,7 +20,7 @@ export class DevServerStrategy implements ServerStrategy {
   private proxyManager = new ProxyManager();
   private assetLoader = new AssetLoader();
   
-  async start(context: ServerContext, options: ServeOptions): Promise<void> {
+  async start(context: ServerContext, options: ServeOptions): Promise<number> {
     const { specDir, ir, proxyTarget, cssContent, overrideScript, verbose } = context;
     const rendererRoot = this.resolveRendererRoot(options.renderer || 'react');
     
@@ -112,6 +112,8 @@ export class DevServerStrategy implements ServerStrategy {
     
     console.log(pc.green(`\n✓ Server running at ${pc.bold(`http://localhost:${port}`)}\n`));
     console.log(pc.gray('Press Ctrl+C to stop\n'));
+
+    return port;
   }
   
   private setupOverrideWatcher(specDir: string, viteServer: any, verbose: boolean): void {
