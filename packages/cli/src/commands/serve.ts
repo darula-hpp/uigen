@@ -11,7 +11,9 @@ import {
   inferProxyBaseFromSpec,
   type ServeOptions,
   type Renderer,
+  type Target,
 } from '../server/index.js';
+import { launchElectron, resolveTarget } from '../targets/electron-launcher.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -62,12 +64,25 @@ export async function serve(specPath: string, options: ServeOptions) {
     if (options.renderer && renderer !== options.renderer) {
       console.log(pc.yellow(`⚠ Unknown renderer "${options.renderer}", falling back to react\n`));
     }
+
+    const target: Target = resolveTarget(options.target);
+    if (options.target && target !== options.target) {
+      console.log(pc.yellow(`⚠ Unknown target "${options.target}", falling back to web\n`));
+    }
+
+    if (target === 'electron' && renderer !== 'react') {
+      console.error(pc.red('✗ Electron target currently supports only the react renderer\n'));
+      process.exit(1);
+    }
     
     // Determine server mode
     const rendererRoot = resolveRendererRoot(renderer);
     const isInstalled = rendererRoot.includes('node_modules');
     
     console.log(pc.gray(`Renderer: ${renderer} (${rendererRoot})`));
+    if (target !== 'web') {
+      console.log(pc.gray(`Target: ${target}`));
+    }
     if (options.verbose) {
       console.log(pc.gray(`Mode: ${isInstalled ? 'static' : 'dev'}\n`));
     }
@@ -96,7 +111,11 @@ export async function serve(specPath: string, options: ServeOptions) {
       ? new StaticServerStrategy()
       : new DevServerStrategy();
     
-    await strategy.start(context, options);
+    const port = await strategy.start(context, options);
+
+    if (target === 'electron') {
+      await launchElectron(port);
+    }
     
   } catch (error) {
     console.error(pc.red('✗ Error:'), error instanceof Error ? error.message : error);

@@ -23,6 +23,7 @@ npx @uigen-dev/cli serve <spec> [options]
 | `--port` | `number` | `4400` | Port to listen on |
 | `--proxy-base` | `string` | From spec `servers[0].url` | Override the API proxy target URL |
 | `--renderer` | `string` | `react` | Renderer to use (`react`; `vue` and `svelte` are planned) |
+| `--target` | `string` | `web` | Serve target (`web`, `electron`) |
 | `--verbose` | `boolean` | `false` | Log detailed proxy request/response information |
 
 ## Examples
@@ -57,6 +58,26 @@ uigen serve ./openapi.yaml --proxy-base http://localhost:3001
 
 ```bash
 uigen serve ./openapi.yaml --verbose
+```
+
+### Electron desktop target
+
+Open the generated UI in an Electron window instead of the browser:
+
+```bash
+uigen serve ./openapi.yaml --target electron
+uigen serve ./openapi.yaml --target electron --proxy-base http://localhost:8000
+```
+
+Requirements:
+
+- React renderer (`--renderer react`, default)
+- `@uigen-dev/target-electron` installed (`pnpm add -D @uigen-dev/target-electron`)
+
+In the monorepo, build the target package first:
+
+```bash
+pnpm --filter @uigen-dev/target-electron build
 ```
 
 With `--verbose`, the CLI logs each proxied request and response:

@@ -1,0 +1,35 @@
+{
+  "name": "@uigen-dev/target-electron",
+  "version": "0.1.0",
+  "description": "Electron desktop shell for UIGen React SPA",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/darula-hpp/uigen.git",
+    "directory": "targets/electron"
+  },
+  "homepage": "https://github.com/darula-hpp/uigen#readme",
+  "bugs": {
+    "url": "https://github.com/darula-hpp/uigen/issues"
+  },
+  "type": "commonjs",
+  "main": "dist/main.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "electron": "^35.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

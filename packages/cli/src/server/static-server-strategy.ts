@@ -17,7 +17,7 @@ const __dirname = dirname(__filename);
 export class StaticServerStrategy implements ServerStrategy {
   private proxyManager = new ProxyManager();
   
-  async start(context: ServerContext, options: ServeOptions): Promise<void> {
+  async start(context: ServerContext, options: ServeOptions): Promise<number> {
     const { specDir, ir, proxyTarget, cssContent, overrideScript, verbose } = context;
     const rendererRoot = this.resolveRendererRoot(options.renderer || 'react');
     const distDir = resolve(rendererRoot, 'dist');
@@ -63,10 +63,15 @@ export class StaticServerStrategy implements ServerStrategy {
       this.handleStaticRequest(req, res, url, distDir, ir, cssContent, overrideScript, MIME);
     });
 
-    httpServer.listen(port, () => {
-      console.log(pc.green(`\n✓ Server running at ${pc.bold(`http://localhost:${port}`)}\n`));
-      console.log(pc.gray('Press Ctrl+C to stop\n'));
+    await new Promise<void>((resolveListen) => {
+      httpServer.listen(port, () => {
+        console.log(pc.green(`\n✓ Server running at ${pc.bold(`http://localhost:${port}`)}\n`));
+        console.log(pc.gray('Press Ctrl+C to stop\n'));
+        resolveListen();
+      });
     });
+
+    return port;
   }
   
   private handleProxyRequest(

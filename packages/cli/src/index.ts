@@ -84,6 +84,7 @@ program
   .option('-p, --port <port>', 'Port to run the server on', '4400')
   .option('--proxy-base <url>', 'Base URL for API proxy')
   .option('--renderer <renderer>', 'UI renderer to use (react, vue, svelte)', 'react')
+  .option('--target <target>', 'Serve target to use (web, electron)', 'web')
   .option('--verbose', 'Log detailed request and response information')
   .addHelpText('after', `
 Examples:
@@ -92,6 +93,7 @@ Examples:
   $ uigen serve petstore.yaml --proxy-base https://api.example.com
   $ uigen serve http://localhost:8080/openapi.yaml --proxy-base http://localhost:8080
   $ uigen serve petstore.yaml --renderer react
+  $ uigen serve petstore.yaml --target electron
   $ uigen serve petstore.yaml --verbose
 `)
   .action(async (spec, options) => {
@@ -100,6 +102,7 @@ Examples:
       proxyBase: options.proxyBase,
       verbose: options.verbose,
       renderer: options.renderer,
+      target: options.target,
     });
   });
 
