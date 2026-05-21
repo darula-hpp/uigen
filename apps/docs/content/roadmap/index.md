@@ -45,6 +45,8 @@ UIGen is developed in phases. Here's what's been shipped and what's coming next.
 - [x] `.uigen/config.yaml`: theme/behaviour/resource overrides
 - [x] `uigen build`: package config, spec, and overrides for deployment
 - [x] Publish core packages to npm (`@uigen-dev/core`, `@uigen-dev/react`, `@uigen-dev/cli`)
+- [x] Electron desktop target (`uigen serve --target electron`, `@uigen-dev/target-electron`)
+- [ ] Standalone Electron packaging (`.dmg` / `.exe` via `electron-builder`)
 - [ ] `uigen validate`: spec linting with actionable errors and line numbers
 - [ ] `uigen generate`: static production HTML build output
 - [ ] OAuth2 PKCE authentication flow
