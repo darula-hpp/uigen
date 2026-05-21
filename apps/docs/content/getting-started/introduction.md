@@ -50,6 +50,8 @@ UIGen ships as three packages:
 | `@uigen-dev/core` | Framework-agnostic adapters and IR (use this to build your own renderer) |
 | `@uigen-dev/react` | The React renderer (the default UI layer) |
 
+Optional distribution targets (for example `@uigen-dev/target-electron` for desktop) wrap an existing renderer. See [Electron Target](/docs/cli-reference/electron-target).
+
 ## Example apps
 
 The repository includes reference apps for web APIs and embedded devices:

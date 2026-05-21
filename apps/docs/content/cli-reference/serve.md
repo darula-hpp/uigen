@@ -69,15 +69,12 @@ uigen serve ./openapi.yaml --target electron
 uigen serve ./openapi.yaml --target electron --proxy-base http://localhost:8000
 ```
 
-Requirements:
+See [Electron Target](/docs/cli-reference/electron-target) for installation, monorepo setup, and Phase 1 limitations.
 
-- React renderer (`--renderer react`, default)
-- `@uigen-dev/target-electron` installed (`pnpm add -D @uigen-dev/target-electron`)
-
-In the monorepo, build the target package first:
+### Verbose proxy logging
 
 ```bash
-pnpm --filter @uigen-dev/target-electron build
+uigen serve ./openapi.yaml --verbose
 ```
 
 With `--verbose`, the CLI logs each proxied request and response:
@@ -101,6 +98,15 @@ Used when running from the monorepo (no pre-built renderer in `node_modules`). S
 Used when installed via npm or npx. Serves the pre-built `dist/` directory with a plain Node.js HTTP server. Vite is not required at runtime.
 
 Both modes expose the same URL and behaviour.
+
+## Serve targets
+
+| Target | Description |
+|---|---|
+| `web` (default) | Open the UI in your browser at `http://localhost:<port>` |
+| `electron` | Open the UI in a desktop window via `@uigen-dev/target-electron` |
+
+See [Electron Target](/docs/cli-reference/electron-target) for setup and requirements.
 
 ## Renderer support
 

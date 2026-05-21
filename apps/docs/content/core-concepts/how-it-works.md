@@ -94,3 +94,14 @@ The CLI operates in two modes depending on how it was installed:
 | **Static mode** | Installed via npm/npx | Serves the pre-built `dist/` with a plain Node.js HTTP server |
 
 Both modes expose the same URL and behaviour. The difference is internal.
+
+## Serve targets
+
+The CLI can host the React SPA for the browser or a desktop shell:
+
+| Target | Flag | Description |
+|---|---|---|
+| **Web** | `--target web` (default) | Open `http://localhost:<port>` in your browser |
+| **Electron** | `--target electron` | Open a desktop window via `@uigen-dev/target-electron` |
+
+Renderers and targets are separate concepts. `--renderer` selects the UI framework (`react` today). `--target` selects how that UI is hosted. See [Electron Target](/docs/cli-reference/electron-target).

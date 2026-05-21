@@ -51,6 +51,19 @@ uigen serve ./openapi.yaml --renderer my-renderer
 
 The CLI looks for `@uigen-dev/my-renderer` in `node_modules`. Your renderer package must export a `dist/index.html` that the CLI can serve.
 
+## Distribution targets
+
+Renderers produce the UI. **Targets** are optional shells that host a renderer in a specific runtime:
+
+| Target | Package | Status |
+|---|---|---|
+| `web` | Built into the CLI | Default browser serve |
+| `electron` | `@uigen-dev/target-electron` | Phase 1: desktop window via `uigen serve --target electron` |
+
+Target packages live under `targets/` in the monorepo (not under `packages/` with renderers). Future targets may include Tauri or static export packaging.
+
+See [Electron Target](/docs/cli-reference/electron-target) for setup.
+
 ## Planned renderer packages
 
 - **`@uigen-dev/svelte`**: Svelte renderer (planned, Phase 4)

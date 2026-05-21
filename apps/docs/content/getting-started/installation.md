@@ -33,9 +33,19 @@ npx @uigen-dev/cli config ./openapi.yaml
 ### CLI commands
 
 - `init` - Initialize a new UIGen project with scaffolded structure
-- `serve` - Start a development server with the generated UI
+- `serve` - Start a development server with the generated UI (`--target web` or `--target electron`)
 - `config` - Open a visual GUI for managing annotations
 - `build` - Package config, theme, spec, and overrides for deployment
+
+## `@uigen-dev/target-electron`
+
+Optional desktop shell for `uigen serve --target electron`.
+
+```bash
+npm install -D @uigen-dev/target-electron
+```
+
+**Use this when** you want to run the generated React UI in a desktop window. See [Electron Target](/docs/cli-reference/electron-target).
 
 ## `@uigen-dev/core`
 
@@ -75,6 +85,7 @@ npm install @uigen-dev/react @uigen-dev/core
 - [Example Apps](/docs/guides/example-apps): Meeting Minutes, ESP32, and STM32 reference projects
 - [CLI Reference: init](/docs/cli-reference/init): initialize new projects
 - [CLI Reference: serve](/docs/cli-reference/serve): all available flags for `uigen serve`
+- [CLI Reference: Electron Target](/docs/cli-reference/electron-target): desktop window setup
 - [CLI Reference: config](/docs/cli-reference/config): visual configuration GUI
 - [CLI Reference: build](/docs/cli-reference/build): package a project for deployment
 - [Override System](/docs/override-system/overview): customise the generated UI

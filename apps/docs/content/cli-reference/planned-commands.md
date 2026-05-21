@@ -66,6 +66,8 @@ Both commands are part of Phase 3 of the UIGen roadmap. See the [Roadmap](/docs/
 | Command | Description |
 |---|---|
 | [`uigen init`](/docs/cli-reference/init) | Scaffold a new project |
-| [`uigen serve`](/docs/cli-reference/serve) | Start the generated UI |
+| [`uigen serve`](/docs/cli-reference/serve) | Start the generated UI (web or Electron target) |
 | [`uigen config`](/docs/cli-reference/config) | Visual annotation GUI |
 | [`uigen build`](/docs/cli-reference/build) | Package project for deployment |
+
+Electron desktop hosting is available today via [`--target electron`](/docs/cli-reference/electron-target). Standalone `.dmg` / `.exe` packaging is planned for a later phase.

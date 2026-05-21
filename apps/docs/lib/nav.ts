@@ -121,6 +121,7 @@ export const nav: NavSection[] = [
     pages: [
       { title: 'init', slug: 'init' },
       { title: 'serve', slug: 'serve' },
+      { title: 'Electron Target', slug: 'electron-target' },
       { title: 'config', slug: 'config' },
       { title: 'build', slug: 'build' },
       { title: 'Planned Commands', slug: 'planned-commands' },

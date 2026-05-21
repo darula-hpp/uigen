@@ -74,6 +74,16 @@ npx @uigen-dev/cli serve openapi.yaml
 
 The server will start at [http://localhost:4400](http://localhost:4400).
 
+### Optional: Desktop window
+
+To open the same UI in an Electron window instead of the browser:
+
+```bash
+npx @uigen-dev/cli serve openapi.yaml --target electron
+```
+
+Install `@uigen-dev/target-electron` first if you are not in the UIGen monorepo. See [Electron Target](/docs/cli-reference/electron-target).
+
 ## Step 3: Open the browser
 
 Navigate to [http://localhost:4400](http://localhost:4400). UIGen serves a complete React SPA with:
@@ -190,6 +200,7 @@ See [Example Apps](/docs/guides/example-apps) for full setup instructions.
 
 - [CLI Reference: init](/docs/cli-reference/init): all init command options
 - [CLI Reference: serve](/docs/cli-reference/serve): all serve command flags
+- [CLI Reference: Electron Target](/docs/cli-reference/electron-target): desktop window setup
 - [CLI Reference: config](/docs/cli-reference/config): visualize AI-generated configuration
 - [Example Apps](/docs/guides/example-apps): Meeting Minutes, ESP32, and STM32 simulators
 - [Authentication](/docs/authentication/overview): how UIGen handles auth
