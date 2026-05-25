@@ -41,9 +41,20 @@ Set `NEXT_PUBLIC_PANEL_URL=http://localhost:4400` in the board app `.env.local` 
 
 ### 1. Board app
 
-- **Root directory:** `examples/apps/nextjs/devboard-simulator`
-- **Framework:** Next.js
-- **Env:** `NEXT_PUBLIC_PANEL_URL` = your panel Vercel URL (after step 2)
+In the Vercel dashboard (**Add New Project → Import repo → Configure**):
+
+| Setting | Value |
+|---|---|
+| **Root Directory** | `examples/apps/nextjs/devboard-simulator` |
+| **Framework Preset** | Next.js |
+| **Build Command** | `npm run build` |
+| **Install Command** | `npm install` |
+
+> **Important:** The root must include the `examples/` prefix. If you use `apps/nextjs/devboard-simulator` (without `examples/`), the build will fail with `Cannot find module 'next/dist/compiled/next-server/server.runtime.prod.js'`.
+
+Set env var after step 2:
+
+- `NEXT_PUBLIC_PANEL_URL` = your panel Vercel URL
 
 ```bash
 cd examples/apps/nextjs/devboard-simulator
@@ -54,10 +65,19 @@ vercel deploy
 
 ### 2. Control panel app
 
-- **Root directory:** `examples/apps/nextjs/devboard-simulator/UI`
-- **Build command:** `npm run build`
-- **Output directory:** `out`
-- **Env:** `BOARD_URL` = your board Vercel URL (e.g. `https://devboard-board.vercel.app`)
+Create a **second** Vercel project from the same repo:
+
+| Setting | Value |
+|---|---|
+| **Root Directory** | `examples/apps/nextjs/devboard-simulator/UI` |
+| **Framework Preset** | Other |
+| **Build Command** | `npm run build` |
+| **Output Directory** | `out` |
+| **Install Command** | `npm install` |
+
+Env var:
+
+- `BOARD_URL` = your board Vercel URL (e.g. `https://devboard-board.vercel.app`, no trailing slash)
 
 ```bash
 cd examples/apps/nextjs/devboard-simulator/UI

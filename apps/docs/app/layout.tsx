@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "UIGen — A runtime frontend for any OpenAPI described API",
+  title: "UIGen - A runtime frontend for any OpenAPI described API",
   description:
     "UIGen generates a fully functional frontend from any OpenAPI or Swagger spec at runtime. Optional code, optional config. Tables, forms, auth, and pagination — no boilerplate.",
   keywords: [
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     "UIGen",
   ],
   openGraph: {
-    title: "UIGen — A runtime frontend for any OpenAPI described API",
+    title: "UIGen - A runtime frontend for any OpenAPI described API",
     description:
       "Point it at an OpenAPI spec. Get a fully functional frontend. Optional code, optional config.",
     type: "website",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "UIGen — A runtime frontend for any OpenAPI described API",
+    title: "UIGen - A runtime frontend for any OpenAPI described API",
     description:
       "Point it at an OpenAPI spec. Get a fully functional frontend. Optional code, optional config.",
   },
