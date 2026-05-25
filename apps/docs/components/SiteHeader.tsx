@@ -20,8 +20,9 @@ export function SiteHeader({ variant }: SiteHeaderProps) {
         <div className="flex items-center gap-2 shrink-0">
           <a
             href="/"
-            className="text-lg font-semibold tracking-tight hover:text-[var(--primary)] transition-colors"
+            className="flex items-center gap-2 text-lg font-semibold tracking-tight hover:text-[var(--primary)] transition-colors"
           >
+            <img src="/logo.svg" alt="" width={24} height={24} className="shrink-0" />
             UIGen
           </a>
           <VersionBadge />
