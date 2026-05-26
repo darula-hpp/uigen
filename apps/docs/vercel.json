@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "uigen-docs.vercel.app"
+        }
+      ],
+      "destination": "https://getuigen.dev/:path*",
+      "permanent": true
+    }
+  ]
+}

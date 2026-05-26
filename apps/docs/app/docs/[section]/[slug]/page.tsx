@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { nav } from '../../../../lib/nav';
 import { parseMarkdownFile } from '../../../../lib/markdown';
 import { TableOfContents } from '../../../../components/docs/TableOfContents';
+import { absoluteUrl } from '../../../../lib/site';
 
 interface PageParams {
   section: string;
@@ -32,6 +33,9 @@ export async function generateMetadata({
     return {
       title: title ? `${title} — UIGen Docs` : 'UIGen Docs',
       description: description ?? undefined,
+      alternates: {
+        canonical: absoluteUrl(`/docs/${section}/${slug}`),
+      },
     };
   } catch {
     return { title: 'UIGen Docs' };

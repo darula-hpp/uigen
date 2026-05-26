@@ -95,8 +95,8 @@ import type {
 
 ## Learn More
 
-- [Override System Documentation](https://uigen.dev/docs/overrides)
-- [API Reference](https://uigen.dev/docs/api/overrides)
+- [Override System Documentation](https://getuigen.dev/docs/overrides)
+- [API Reference](https://getuigen.dev/docs/api/overrides)
 - [Examples](https://github.com/uigen-dev/uigen/tree/main/examples)
 
 ## Need Help?

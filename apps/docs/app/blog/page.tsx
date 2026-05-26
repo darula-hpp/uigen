@@ -3,6 +3,7 @@ import { getAllBlogPosts } from '../../lib/blog';
 import { BlogPostCard } from '../../components/blog/BlogPostCard';
 import { GitHubCTA } from '../../components/blog/GitHubCTA';
 import { SiteHeader } from '../../components/SiteHeader';
+import { absoluteUrl } from '../../lib/site';
 
 export const metadata: Metadata = {
   title: 'Blog | UIGen',
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
     title: 'Blog | UIGen',
     description: 'Technical articles about UIGen architecture, features, and best practices.',
     type: 'website',
-    url: 'https://uigen-docs.vercel.app/blog',
+    url: absoluteUrl('/blog'),
   },
   twitter: {
     card: 'summary_large_image',
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
     description: 'Technical articles about UIGen architecture, features, and best practices.',
   },
   alternates: {
-    canonical: 'https://uigen-docs.vercel.app/blog',
+    canonical: absoluteUrl('/blog'),
   },
 };
 

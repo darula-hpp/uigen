@@ -7,7 +7,7 @@ export function getThemeTemplate(): string {
  * The base styles are in base-styles.css (do not modify that file).
  * Your custom styles here will override the base styles.
  * 
- * Learn more: https://uigen.dev/docs/styling
+ * Learn more: https://getuigen.dev/docs/styling
  */
 
 /* Example: Custom brand colors

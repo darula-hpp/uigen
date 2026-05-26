@@ -704,7 +704,7 @@ Add a single annotation, run `uigen serve`, and you get a complete landing page 
 
 No React code. No separate landing page tool. Just configuration.
 
-The full documentation is available at [uigen.dev/docs/spec-annotations/x-uigen-landing-page](https://uigen.dev/docs/spec-annotations/x-uigen-landing-page).
+The full documentation is available at [getuigen.dev/docs/spec-annotations/x-uigen-landing-page](https://getuigen.dev/docs/spec-annotations/x-uigen-landing-page).
 
 ---
 

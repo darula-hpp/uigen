@@ -641,4 +641,4 @@ See [Example Apps](/docs/guides/example-apps) for setup instructions.
 ## Get Help
 
 - [GitHub Discussions](https://github.com/darula-hpp/uigen/discussions)
-- [Documentation](https://uigen.dev/docs)
+- [Documentation](https://getuigen.dev/docs)
