@@ -7,7 +7,7 @@
 export default async function handler(req, res) {
   const boardUrl = process.env.BOARD_URL?.replace(/\/$/, '');
   if (!boardUrl) {
-    res.status(500).json({ error: 'BOARD_URL is not configured' });
+    res.status(500).json({ error: 'BOARD_URL is not configured.' });
     return;
   }
 
