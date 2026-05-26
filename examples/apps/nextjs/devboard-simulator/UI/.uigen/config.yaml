@@ -40,18 +40,36 @@ annotations:
 
   GET:/api/v1/pins:
     x-uigen-label: All Pins
+    x-uigen-websocket:
+      path: /ws/v1/pins
+      mode: replace
   GET:/api/v1/pins/{pin_id}:
     x-uigen-label: Pin Details
+    x-uigen-websocket:
+      path: /ws/v1/pins/{pin_id}
+      mode: replace
   PUT:/api/v1/pins/{pin_id}:
     x-uigen-label: Configure Pin
 
   GET:/api/v1/sensors:
     x-uigen-label: Connected Sensors
+    x-uigen-websocket:
+      path: /ws/v1/sensors
+      mode: replace
   GET:/api/v1/sensors/{sensor_id}:
     x-uigen-label: Sensor Details
+    x-uigen-websocket:
+      path: /ws/v1/sensors/{sensor_id}
+      mode: replace
 
   GET:/api/v1/readings:
     x-uigen-label: Telemetry History
+    x-uigen-websocket:
+      path: /ws/v1/readings
+      mode: replace
+      subscribe:
+        action: subscribe
+        channel: readings
     x-uigen-layout:
       type: dashboard-grid
       metadata:
@@ -62,6 +80,9 @@ annotations:
         gap: 24
   GET:/api/v1/sensors/{sensor_id}/readings:
     x-uigen-label: Sensor Readings
+    x-uigen-websocket:
+      path: /ws/v1/sensors/{sensor_id}/readings
+      mode: replace
     x-uigen-layout:
       type: dashboard-grid
       metadata:

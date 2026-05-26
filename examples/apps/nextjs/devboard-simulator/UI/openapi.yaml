@@ -52,9 +52,6 @@ paths:
       summary: Get board status
       description: Returns chip model, firmware, uptime, network status, and memory usage for the simulated DevBoard.
       operationId: get_board
-      x-uigen-websocket:
-        path: /ws/v1/board
-        mode: replace
       responses:
         '200':
           description: Board status

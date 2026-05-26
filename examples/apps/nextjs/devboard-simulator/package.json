@@ -4,20 +4,23 @@
   "private": true,
   "description": "Generic UIGen DevBoard simulator: board at /, control panel in UI/",
   "scripts": {
-    "dev": "next dev --port 3000",
+    "dev": "tsx server.ts",
     "panel": "cd UI && npm run dev",
     "build": "next build",
-    "start": "next start --port 3000",
+    "start": "NODE_ENV=production tsx server.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "next": "^15.2.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.6.0",
