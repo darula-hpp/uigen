@@ -8,8 +8,10 @@ export default async function handler(request) {
   }
 
   const incoming = new URL(request.url);
-  const path = incoming.pathname.replace(/^\/api\/?/, '');
-  const target = new URL(`/api/${path}${incoming.search}`, boardUrl.replace(/\/$/, ''));
+  // UIGen fetch uses `/api${operation.path}` (e.g. /api/api/v1/sensors). Match CLI proxy:
+  // strip a single /api prefix, then forward the remainder onto BOARD_URL.
+  const upstreamPath = incoming.pathname.replace(/^\/api/, '') || '/';
+  const target = new URL(`${upstreamPath}${incoming.search}`, boardUrl.replace(/\/$/, ''));
 
   const headers = new Headers(request.headers);
   headers.delete('host');
