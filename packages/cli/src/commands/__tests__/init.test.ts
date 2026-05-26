@@ -440,7 +440,7 @@ describe('Init Command', () => {
       await init('my-app', { yes: true });
       
       expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining('https://uigen.dev/docs/getting-started')
+        expect.stringContaining('https://getuigen.dev/docs/getting-started')
       );
     });
   });

@@ -10,7 +10,7 @@ export function getExampleOverrideTemplate(): string {
  * 3. Implement your custom component or render function
  * 4. Run \`uigen serve\` to see your changes
  * 
- * Learn more: https://uigen.dev/docs/overrides
+ * Learn more: https://getuigen.dev/docs/overrides
  */
 
 import type { OverrideDefinition, OverrideComponentProps } from '@uigen-dev/react';

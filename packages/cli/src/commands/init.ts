@@ -113,5 +113,5 @@ function displaySuccessMessage(config: any, projectPath: string) {
     console.log(pc.gray('   uigen serve openapi.yaml\n'));
   }
   
-  console.log(pc.gray('📚 Learn more: https://uigen.dev/docs/getting-started\n'));
+  console.log(pc.gray('📚 Learn more: https://getuigen.dev/docs/getting-started\n'));
 }

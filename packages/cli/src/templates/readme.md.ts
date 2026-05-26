@@ -73,10 +73,10 @@ The skill will detect login endpoints, file uploads, foreign key references, and
 
 ## Next Steps
 
-- [Read the documentation](https://uigen.dev/docs)
-- [Learn about annotations](https://uigen.dev/docs/annotations)
-- [Customize your theme](https://uigen.dev/docs/styling)
-- [Deploy your app](https://uigen.dev/docs/deployment)
+- [Read the documentation](https://getuigen.dev/docs)
+- [Learn about annotations](https://getuigen.dev/docs/annotations)
+- [Customize your theme](https://getuigen.dev/docs/styling)
+- [Deploy your app](https://getuigen.dev/docs/deployment)
 
 ## Commands
 
@@ -86,6 +86,6 @@ The skill will detect login endpoints, file uploads, foreign key references, and
 
 ---
 
-Generated with ❤️ by [UIGen](https://uigen.dev)
+Generated with ❤️ by [UIGen](https://getuigen.dev)
 `;
 }

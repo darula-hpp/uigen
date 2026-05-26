@@ -313,12 +313,12 @@ src/overrides/test.tsx
 
 ## Learn More
 
-- [UIGen Documentation](https://uigen.dev/docs)
+- [UIGen Documentation](https://getuigen.dev/docs)
 - [Override System Design](/.kiro/specs/cli-injected-override-system/design.md)
-- [API Reference](https://uigen.dev/docs/api/overrides)
+- [API Reference](https://getuigen.dev/docs/api/overrides)
 
 ## Support
 
 - GitHub Issues: https://github.com/uigen-dev/uigen/issues
 - Discord: https://discord.gg/uigen
-- Email: support@uigen.dev
+- Email: support@getuigen.dev

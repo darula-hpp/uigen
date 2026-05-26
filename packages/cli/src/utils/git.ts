@@ -40,7 +40,7 @@ export async function initGitRepo(projectPath: string, verbose?: boolean): Promi
     } catch {
       // Set default user config for this repo only
       await execAsync('git config user.name "UIGen Init"', { cwd: projectPath });
-      await execAsync('git config user.email "init@uigen.dev"', { cwd: projectPath });
+      await execAsync('git config user.email "init@getuigen.dev"', { cwd: projectPath });
     }
 
     // Create initial commit

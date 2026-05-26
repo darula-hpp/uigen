@@ -121,7 +121,7 @@ describe('Template Functions', () => {
     it('should contain next steps with links', () => {
       const template = getReadmeTemplate('test-project');
       expect(template).toContain('Next Steps');
-      expect(template).toContain('https://uigen.dev/docs');
+      expect(template).toContain('https://getuigen.dev/docs');
     });
 
     it('should not contain em dashes', () => {

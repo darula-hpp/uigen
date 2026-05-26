@@ -913,7 +913,7 @@ GET:/api/v1/users:
 
 - [Auto-Annotate Skill](/SKILLS/auto-annotate.md)
 - [Configure OAuth Skill](/SKILLS/configure-oauth.md)
-- [UIGen Documentation](https://uigen.dev/docs)
+- [UIGen Documentation](https://getuigen.dev/docs)
 
 ## Conclusion
 
