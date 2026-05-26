@@ -5,7 +5,37 @@ All notable changes to UIGen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
-## [Unreleased]
+
+---
+
+## [0.17.0] - 2026-05-26
+
+### Added
+
+**Documentation**
+- **Custom docs domain** - Docs site canonical URL is now [getuigen.dev](https://getuigen.dev)
+  - Centralized `SITE_URL` in `apps/docs/lib/site.ts`
+  - Generated `/sitemap.xml` and `/robots.txt` for SEO
+  - Per-page canonical URLs for docs and blog posts
+  - Permanent redirect from `uigen-docs.vercel.app` via `apps/docs/vercel.json`
+- **Site icon** - Added SVG favicon and header logo for the docs site
+- **Devboard simulator example** - Next.js hardware demo with live board UI, OpenAPI contract, and Vercel deployment
+  - Documented in [`example-apps`](/apps/docs/content/guides/example-apps.md)
+
+**Examples**
+- Next.js devboard simulator under `examples/apps/nextjs/devboard-simulator`
+
+### Changed
+- **Documentation URLs** - Replaced `uigen-docs.vercel.app` and `uigen.dev` links across docs, README, CLI templates, skills, and example overrides with `getuigen.dev`
+- **Contact emails** - Updated scaffolded and example contact addresses to `@getuigen.dev` (`init@`, `support@`, `dev@`)
+- **Electron target docs** - Expanded CLI reference and getting-started docs for `--target electron`
+
+### Fixed
+- **Vercel deploy** - Removed `outputFileTracingRoot` from devboard simulator Next.js config that broke Vercel builds
+
+---
+
+## [0.16.0] - 2026-05-21
 
 ### Added
 
@@ -24,7 +54,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added `pnpm test:electron` script for local desktop testing (mirrors `test:serve`)
 
 **Documentation**
-- Updated [`uigen serve`](/apps/docs/content/cli-reference/serve.md) CLI reference with `--target electron` usage
+- Added [`electron-target`](/apps/docs/content/cli-reference/electron-target.md) CLI reference
+- Updated [`uigen serve`](/apps/docs/content/cli-reference/serve.md), getting started, how-it-works, and roadmap docs for Electron
+- ESP32 hardware demo walkthrough and README updates for embedded/OpenAPI teams
+- OpenAPI starter spec for hardware teams
+
+**Examples**
+- ESP32 and STM32 simulator README and docs polish; demo GIF in root README
 
 ### Tests
 - CLI `electron-launcher` unit tests for target resolution, spawn args, and missing-package errors
