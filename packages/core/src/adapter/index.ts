@@ -33,6 +33,8 @@ export { ChartSampler } from './chart-sampler.js';
 export type { ChartSamplerOptions } from './chart-sampler.js';
 export { ChartAxisTypeDetector } from './chart-axis-type-detector.js';
 export { WebSocketMessageMerger } from './websocket-message-merger.js';
+export { NestedChildOperationResolver } from './nested-child-operation-resolver.js';
+export { DetailStreamHighlight } from './detail-stream-highlight.js';
 
 export async function parseSpec(content: string): Promise<UIGenApp> {
   let doc: unknown;

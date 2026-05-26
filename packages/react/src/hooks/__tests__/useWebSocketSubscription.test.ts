@@ -2,20 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement, type ReactNode } from 'react';
-import {
-  useWebSocketSubscription,
-  resolveWebSocketServerUrl
-} from '../useWebSocketSubscription';
+import { useWebSocketSubscription, buildWebSocketUrl } from '../useWebSocketSubscription';
 import type { Operation } from '@uigen-dev/core';
 
 vi.mock('@/lib/server', () => ({
   getSelectedServer: vi.fn(() => null)
 }));
 
-vi.mock('@/contexts/AppContext', () => ({
-  useOptionalApp: vi.fn(() => ({
-    config: { servers: [{ url: 'http://127.0.0.1:8080' }] }
-  }))
+vi.mock('@/lib/auth', () => ({
+  getAuthHeaders: vi.fn(() => ({ 'x-uigen-auth': 'panel-token' }))
 }));
 
 class MockWebSocket {
@@ -54,6 +49,10 @@ describe('useWebSocketSubscription', () => {
   beforeEach(() => {
     MockWebSocket.instances = [];
     global.WebSocket = MockWebSocket as unknown as typeof WebSocket;
+    Object.defineProperty(window, 'location', {
+      value: { origin: 'http://localhost:4400' },
+      configurable: true
+    });
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     queryClient.setQueryData([operation.id, {}, {}], { uptime: 1 });
   });
@@ -66,17 +65,23 @@ describe('useWebSocketSubscription', () => {
     return createElement(QueryClientProvider, { client: queryClient }, children);
   }
 
-  it('resolves websocket server from spec when none is selected in session', () => {
-    expect(
-      resolveWebSocketServerUrl(null, [{ url: 'http://127.0.0.1:8080' }])
-    ).toBe('http://127.0.0.1:8080');
-    expect(resolveWebSocketServerUrl('http://custom', [{ url: 'http://127.0.0.1:8080' }])).toBe(
-      'http://custom'
+  it('buildWebSocketUrl uses same-origin /api proxy by default', () => {
+    expect(buildWebSocketUrl('/ws/v1/board', {}, 'http://localhost:4400')).toBe(
+      'ws://localhost:4400/api/ws/v1/board'
     );
-    expect(resolveWebSocketServerUrl(null, [])).toBeNull();
   });
 
-  it('connects to the OpenAPI server host when spec defines servers', async () => {
+  it('buildWebSocketUrl appends auth and server override query params', () => {
+    expect(
+      buildWebSocketUrl('/ws/v1/board', {}, 'http://localhost:4400', {
+        'x-uigen-auth': 'panel-token'
+      }, 'http://127.0.0.1:9000')
+    ).toBe(
+      'ws://localhost:4400/api/ws/v1/board?x-uigen-auth=panel-token&x-uigen-server=http%3A%2F%2F127.0.0.1%3A9000'
+    );
+  });
+
+  it('connects through the /api proxy on the panel origin', async () => {
     renderHook(
       () =>
         useWebSocketSubscription({
@@ -91,7 +96,9 @@ describe('useWebSocketSubscription', () => {
       expect(MockWebSocket.instances).toHaveLength(1);
     });
 
-    expect(MockWebSocket.instances[0].url).toBe('ws://127.0.0.1:8080/ws/v1/board');
+    expect(MockWebSocket.instances[0].url).toBe(
+      'ws://localhost:4400/api/ws/v1/board?x-uigen-auth=panel-token'
+    );
   });
 
   it('sends subscribe payload on open and merges replace messages into cache', async () => {
@@ -223,7 +230,9 @@ describe('useWebSocketSubscription', () => {
       expect(MockWebSocket.instances).toHaveLength(1);
     });
 
-    expect(MockWebSocket.instances[0].url).toBe('ws://127.0.0.1:8080/ws/v1/pins/2');
+    expect(MockWebSocket.instances[0].url).toBe(
+      'ws://localhost:4400/api/ws/v1/pins/2?x-uigen-auth=panel-token'
+    );
   });
 
   it('does not connect when path parameters are unresolved', () => {

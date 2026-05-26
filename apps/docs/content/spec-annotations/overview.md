@@ -18,6 +18,7 @@ UIGen supports a set of `x-uigen-*` vendor extensions that let you customise the
 | [`x-uigen-ref`](/docs/spec-annotations/x-uigen-ref) | Declare that a field references another resource with full control over resolution and display | Available |
 | [`x-uigen-chart`](/docs/spec-annotations/x-uigen-chart) | Configure charts for list endpoints that return array data | Available |
 | [`x-uigen-websocket`](/docs/spec-annotations/x-uigen-websocket) | Attach a WebSocket stream to a REST operation for live updates | Available |
+| [`x-uigen-detail-stream`](/docs/spec-annotations/x-uigen-detail-stream) | Pin nested list stream panel on detail view | Available |
 | [`x-uigen-layout`](/docs/spec-annotations/x-uigen-layout) | Control page layout (sidebar, centered, dashboard grid) | Available |
 | [`x-uigen-profile`](/docs/spec-annotations/x-uigen-profile) | Mark a resource as a user profile view | Available |
 | [`x-uigen-landing-page`](/docs/spec-annotations/x-uigen-landing-page) | Generate a marketing landing page at `/` | Available |

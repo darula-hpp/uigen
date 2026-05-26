@@ -23,29 +23,33 @@ export class RelationshipDetector {
     // Escape special regex characters in the slug
     const escapedSlug = this.escapeRegex(resource.slug);
     
-    // Pattern: /resourceSlug/{id}/relatedSlug
-    const pattern = new RegExp(`^/${escapedSlug}/\\{[^}]+\\}/([^/]+)$`);
+    // Pattern: .../resourceSlug/{id}/relatedSlug (allows /api/v1/ prefixes)
+    const pattern = new RegExp(`/${escapedSlug}/\\{[^}]+\\}/([^/]+)$`);
     
     for (const op of resource.operations) {
       const match = op.path.match(pattern);
-      if (match) {
-        const targetSlug = match[1];
-        
-        // Verify the target resource exists
-        if (allResources.has(targetSlug)) {
-          // Avoid duplicates
-          const exists = relationships.some(
-            r => r.target === targetSlug && r.type === 'hasMany'
-          );
-          
-          if (!exists) {
-            relationships.push({
-              target: targetSlug,
-              type: 'hasMany',
-              path: op.path
-            });
-          }
-        }
+      if (!match) {
+        continue;
+      }
+
+      const targetSlug = match[1];
+      const targetResource = this.resolveTargetResource(targetSlug, allResources);
+
+      if (!targetResource) {
+        continue;
+      }
+
+      const exists = relationships.some(
+        (relationship) =>
+          relationship.target === targetResource.slug && relationship.type === 'hasMany'
+      );
+
+      if (!exists) {
+        relationships.push({
+          target: targetResource.slug,
+          type: 'hasMany',
+          path: op.path
+        });
       }
     }
     
@@ -307,6 +311,24 @@ export class RelationshipDetector {
    * @param slug2 - Second slug to compare
    * @returns True if slugs match after normalization
    */
+  private resolveTargetResource(
+    targetSlug: string,
+    allResources: Map<string, Resource>
+  ): Resource | undefined {
+    const direct = allResources.get(targetSlug);
+    if (direct) {
+      return direct;
+    }
+
+    for (const resource of allResources.values()) {
+      if (this.slugsMatch(targetSlug, resource.slug)) {
+        return resource;
+      }
+    }
+
+    return undefined;
+  }
+
   slugsMatch(slug1: string, slug2: string): boolean {
     return this.normalizeSlug(slug1) === this.normalizeSlug(slug2);
   }

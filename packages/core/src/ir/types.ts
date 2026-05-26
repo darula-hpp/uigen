@@ -374,6 +374,14 @@ export type WebSocketMergeMode = 'replace' | 'append';
  * WebSocket streaming configuration for a REST operation.
  * Set by WebSocketHandler when x-uigen-websocket is present.
  */
+/**
+ * Detail page embedded stream panel (x-uigen-detail-stream on a detail GET).
+ */
+export interface DetailStreamConfig {
+  /** operationId of the nested list GET to embed */
+  operationId: string;
+}
+
 export interface WebSocketConfig {
   /** WebSocket path on the API host (must start with /) */
   path: string;
@@ -405,6 +413,8 @@ export interface Operation {
   monetization?: MonetizationConfig;
   /** Live update configuration (x-uigen-websocket) */
   websocketConfig?: WebSocketConfig;
+  /** Embedded child stream on detail view (x-uigen-detail-stream) */
+  detailStreamConfig?: DetailStreamConfig;
 }
 
 export interface SecurityRequirement {

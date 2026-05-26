@@ -112,8 +112,25 @@ See [Electron Target](/docs/cli-reference/electron-target) for setup and require
 
 Currently only `react` is available. `vue` and `svelte` renderers are planned for a future release. Passing an unknown renderer value falls back to `react` with a warning.
 
+## API and WebSocket proxy
+
+REST and WebSocket traffic both go through the panel origin under `/api`:
+
+- REST: `http://localhost:<port>/api/v1/...`
+- WebSocket: `ws://localhost:<port>/api/ws/v1/...`
+
+The proxy strips one `/api` prefix and forwards to `--proxy-base` (or the URL from the environment switcher).
+
+### Environment switcher
+
+When the UI selects a different server, REST sends `x-uigen-server` on `/api` requests. WebSockets pass the same value as a query parameter; the proxy routes both to that host and strips UIGen-specific parameters before the request reaches your API.
+
+### Authentication
+
+Bearer and API key credentials are sent as `x-uigen-*` headers on REST. WebSockets use the same names as query parameters; the proxy injects them as headers on the upstream connection.
+
 ## Notes
 
 - The spec file is read once at startup. Changes to the spec require restarting the server.
-- The proxy forwards all requests to `/api/*` to the target server.
-- Authentication headers are injected by the proxy transparently (your API never sees UIGen-specific headers).
+- The proxy forwards HTTP and WebSocket upgrades on `/api/*` to the resolved target server.
+- UIGen-specific headers and query params are removed before your API sees the request.

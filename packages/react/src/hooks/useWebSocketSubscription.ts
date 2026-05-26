@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Operation } from '@uigen-dev/core';
 import { WebSocketMessageMerger } from '@uigen-dev/core';
-import { useOptionalApp } from '@/contexts/AppContext';
+import { getAuthHeaders } from '@/lib/auth';
 import { getSelectedServer } from '@/lib/server';
 
 export interface UseWebSocketSubscriptionOptions {
@@ -44,31 +44,26 @@ export function isWebSocketPathResolved(
   return !/\{[^}]+\}/.test(resolved);
 }
 
-/**
- * REST uses the dev-server /api proxy; WebSockets use the OpenAPI server URL when known,
- * because Vite's WS proxy is unreliable for device backends.
- */
-export function resolveWebSocketServerUrl(
-  selectedServer: string | null,
-  specServers: Array<{ url: string }> | undefined
-): string | null {
+function appendProxyQueryParams(
+  url: URL,
+  authHeaders: Record<string, string>,
+  selectedServer: string | null
+): void {
+  for (const [key, value] of Object.entries(authHeaders)) {
+    url.searchParams.set(key, value);
+  }
+
   if (selectedServer) {
-    return selectedServer;
+    url.searchParams.set('x-uigen-server', selectedServer);
   }
-
-  const firstSpecServer = specServers?.[0]?.url;
-  if (firstSpecServer) {
-    return firstSpecServer;
-  }
-
-  return null;
 }
 
-function buildWebSocketUrl(
+export function buildWebSocketUrl(
   wsPath: string,
   pathParams: Record<string, string>,
-  serverUrl: string | null,
-  pageOrigin: string
+  pageOrigin: string,
+  authHeaders: Record<string, string> = {},
+  selectedServer: string | null = null
 ): string {
   const resolvedPath = resolveWebSocketPath(wsPath, pathParams);
   const hasUnresolvedParams = /\{[^}]+\}/.test(resolvedPath);
@@ -77,14 +72,10 @@ function buildWebSocketUrl(
     return '';
   }
 
-  if (serverUrl) {
-    const base = new URL(serverUrl);
-    const scheme = base.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${scheme}//${base.host}${resolvedPath}`;
-  }
-
   const wsOrigin = pageOrigin.replace(/^http/i, 'ws');
-  return `${wsOrigin}/api${resolvedPath}`;
+  const url = new URL(`${wsOrigin}/api${resolvedPath}`);
+  appendProxyQueryParams(url, authHeaders, selectedServer);
+  return url.toString();
 }
 
 function closeSocket(socket: WebSocket): void {
@@ -153,7 +144,6 @@ export function useWebSocketSubscription({
   enabled = true
 }: UseWebSocketSubscriptionOptions): void {
   const queryClient = useQueryClient();
-  const appContext = useOptionalApp();
   const queryKeyRef = useRef(queryKey);
 
   const websocketConfig = operation?.websocketConfig;
@@ -162,10 +152,8 @@ export function useWebSocketSubscription({
   const isEnabled = enabled && !!operation && !!websocketConfig && pathResolved;
 
   const selectedServer = getSelectedServer();
-  const webSocketServerUrl = resolveWebSocketServerUrl(
-    selectedServer,
-    appContext?.config?.servers
-  );
+  const authHeaders = getAuthHeaders();
+  const authSignature = JSON.stringify(authHeaders);
 
   const subscribeFilterSignature = websocketConfig?.subscribe
     ? JSON.stringify(streamFilterParams(queryParams))
@@ -180,7 +168,8 @@ export function useWebSocketSubscription({
         JSON.stringify(websocketConfig?.subscribe),
         JSON.stringify(pathParams),
         subscribeFilterSignature,
-        webSocketServerUrl
+        selectedServer,
+        authSignature
       ].join('|')
     : '';
 
@@ -196,7 +185,13 @@ export function useWebSocketSubscription({
     let active = true;
     const pageOrigin =
       typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4400';
-    const url = buildWebSocketUrl(websocketConfig.path, pathParams, webSocketServerUrl, pageOrigin);
+    const url = buildWebSocketUrl(
+      websocketConfig.path,
+      pathParams,
+      pageOrigin,
+      authHeaders,
+      selectedServer
+    );
 
     if (!url) {
       return;

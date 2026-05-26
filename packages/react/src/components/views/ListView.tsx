@@ -1,3 +1,4 @@
+import { NestedChildOperationResolver } from '@uigen-dev/core';
 import { useApiCall } from '@/hooks/useApiCall';
 import { useWebSocketSubscription } from '@/hooks/useWebSocketSubscription';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -5,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import type { Resource, Operation } from '@uigen-dev/core';
 import { ListFieldResolver, ListResponseExtractor } from '@uigen-dev/core';
 import { reconcile, OverrideHooksHost } from '@/overrides';
+import { useOptionalApp } from '@/contexts/AppContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useChartFilters } from '@/hooks/useChartViewModel';
 import { ChartPanel } from '@/components/charts/ChartPanel';
@@ -30,6 +32,7 @@ interface ListViewProps {
 export function ListView({ resource, operation }: ListViewProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const appContext = useOptionalApp();
   const parentId = searchParams.get('parentId');
 
   const listOp = useMemo(() => {
@@ -107,11 +110,13 @@ export function ListView({ resource, operation }: ListViewProps) {
     const params: Record<string, string> = { ...chartQueryParams };
 
     if (parentId && listOp && !listOp.path.includes('{')) {
-      const sensorIdParam = listOp.parameters?.find(
-        (param) => param.in === 'query' && param.name === 'sensor_id'
+      const parentQueryParam = NestedChildOperationResolver.inferParentQueryParamName(
+        listOp,
+        resource,
+        appContext?.config?.resources ?? []
       );
-      if (sensorIdParam && !params.sensor_id) {
-        params.sensor_id = parentId;
+      if (parentQueryParam && !params[parentQueryParam]) {
+        params[parentQueryParam] = parentId;
       }
     }
 
@@ -153,12 +158,14 @@ export function ListView({ resource, operation }: ListViewProps) {
     enabled: listFetchEnabled,
   });
 
+  const listWsEnabled = listFetchEnabled && !!listOp?.websocketConfig;
+
   useWebSocketSubscription({
     operation: listOp,
     queryKey: listOp ? [listOp.id, pathParams, queryParams] : ['disabled'],
     pathParams,
     queryParams,
-    enabled: listFetchEnabled && !!listOp?.websocketConfig,
+    enabled: listWsEnabled,
   });
 
   // Sorting state
