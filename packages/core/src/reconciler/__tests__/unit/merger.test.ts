@@ -420,4 +420,43 @@ describe('AnnotationMerger', () => {
       expect(operation['x-uigen-login']).toBe(true);
     });
   });
+
+  describe('x-uigen-websocket', () => {
+    it('should apply x-uigen-websocket to GET operations via METHOD:/path', () => {
+      const spec: OpenAPIV3.Document = {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/api/v1/board': {
+            get: {
+              operationId: 'get_board',
+              responses: { '200': { description: 'OK' } }
+            }
+          }
+        }
+      };
+
+      const config = {
+        version: '1.0',
+        enabled: {},
+        defaults: {},
+        annotations: {
+          'GET:/api/v1/board': {
+            'x-uigen-websocket': {
+              path: '/ws/v1/board',
+              mode: 'replace'
+            }
+          }
+        }
+      };
+
+      const result = merger.merge(spec, config, resolver);
+      const operation = result.modifiedSpec.paths['/api/v1/board'].get as Record<string, unknown>;
+
+      expect(operation['x-uigen-websocket']).toEqual({
+        path: '/ws/v1/board',
+        mode: 'replace'
+      });
+    });
+  });
 });

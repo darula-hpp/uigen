@@ -56,6 +56,7 @@ export interface AnnotationConfig {
   'x-uigen-label'?: string;
   'x-uigen-login'?: boolean;
   'x-uigen-chart'?: Record<string, unknown>;
+  'x-uigen-websocket'?: Record<string, unknown>;
   'x-uigen-ref'?: Record<string, unknown>;
   'x-uigen-app'?: {
     name?: string;

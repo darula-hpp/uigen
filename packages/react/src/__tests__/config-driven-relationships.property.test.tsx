@@ -159,7 +159,7 @@ describe('DetailView - relationship rendering', () => {
     expect(screen.getByText('Related Resources')).toBeInTheDocument();
     const link = screen.getByRole('link', { name: /orders.*has many/i });
     expect(link).toBeInTheDocument();
-    expect(link.getAttribute('href')).toBe('/orders');
+    expect(link.getAttribute('href')).toBe('/orders?parentId=1');
   });
 
   it('renders belongsTo relationship with correct link', () => {

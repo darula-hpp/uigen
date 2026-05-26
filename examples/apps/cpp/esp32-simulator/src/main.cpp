@@ -1,4 +1,5 @@
 #include "api_routes.hpp"
+#include "ws_routes.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -61,9 +62,10 @@ int main(int argc, char* argv[]) {
 
   esp32::register_static_routes(server, web_root);
   esp32::register_api_routes(server, simulator, openapi_path);
+  esp32::register_ws_routes(server, simulator);
 
   server.new_task_queue = [] {
-    return new httplib::ThreadPool(8);
+    return new httplib::ThreadPool(8, 32);
   };
 
   std::thread telemetry_thread([&simulator]() {
@@ -78,6 +80,7 @@ int main(int argc, char* argv[]) {
   std::cout << "ESP32 simulator listening on http://" << url_host << ":" << port << std::endl;
   std::cout << "Visual demo: http://" << url_host << ":" << port << "/" << std::endl;
   std::cout << "OpenAPI spec: http://" << url_host << ":" << port << "/openapi.yaml" << std::endl;
+  std::cout << "WebSocket streams: ws://" << url_host << ":" << port << "/ws/v1/{board,state,pins,sensors,readings,...}" << std::endl;
 
   server.listen(host, port);
 

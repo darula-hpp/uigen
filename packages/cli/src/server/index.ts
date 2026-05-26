@@ -11,6 +11,8 @@ export {
 export type { SpecSource, SpecSourceKind } from './spec-source.js';
 export { AssetLoader } from './asset-loader.js';
 export { ProxyManager } from './proxy-manager.js';
+export { stripApiPrefix, buildProxyTargetUrl, isApiProxyPath, resolveProxyBase } from './api-path.js';
+export { ApiProxy } from './api-proxy.js';
 export { DevServerStrategy } from './dev-server-strategy.js';
 export { StaticServerStrategy } from './static-server-strategy.js';
 export type { ServeOptions, ServerContext, ServerStrategy, Renderer, Target } from './types.js';

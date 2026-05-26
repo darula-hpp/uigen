@@ -365,6 +365,34 @@ export interface PaginationHint {
   params: Record<string, string>;
 }
 
+/**
+ * How incoming WebSocket messages merge into cached REST data.
+ */
+export type WebSocketMergeMode = 'replace' | 'append';
+
+/**
+ * WebSocket streaming configuration for a REST operation.
+ * Set by WebSocketHandler when x-uigen-websocket is present.
+ */
+/**
+ * Detail page embedded stream panel (x-uigen-detail-stream on a detail GET).
+ */
+export interface DetailStreamConfig {
+  /** operationId of the nested list GET to embed */
+  operationId: string;
+}
+
+export interface WebSocketConfig {
+  /** WebSocket path on the API host (must start with /) */
+  path: string;
+  /** replace: message is the full payload; append: message adds to appendField */
+  mode: WebSocketMergeMode;
+  /** Dot path to the array field when mode is append */
+  appendField?: string;
+  /** Opaque JSON sent once after the socket opens (backend-specific) */
+  subscribe?: Record<string, unknown>;
+}
+
 export interface Operation {
   id: string;
   method: HttpMethod;
@@ -383,6 +411,10 @@ export interface Operation {
   override?: OverrideConfig;
   /** Monetization config for this operation */
   monetization?: MonetizationConfig;
+  /** Live update configuration (x-uigen-websocket) */
+  websocketConfig?: WebSocketConfig;
+  /** Embedded child stream on detail view (x-uigen-detail-stream) */
+  detailStreamConfig?: DetailStreamConfig;
 }
 
 export interface SecurityRequirement {

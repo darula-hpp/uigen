@@ -13,10 +13,11 @@ FetchContent_Declare(
   GIT_TAG v3.11.3
 )
 
+# WebSocket server API (464867a) ships after the v0.25.0 tag.
 FetchContent_Declare(
   httplib
   GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
-  GIT_TAG v0.18.3
+  GIT_TAG 464867a9cedef2b6185e25e3e912d3f796fe58fd
 )
 
 FetchContent_MakeAvailable(json httplib)

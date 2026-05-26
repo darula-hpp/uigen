@@ -15,6 +15,7 @@ This example is **standalone** (not part of the pnpm workspace). Install with np
 Board app (:3000)                       Panel app (:4400 or Render)
   /  board visualizer                     generated admin UI
   /api/v1/*  REST API        <----------  uigen serve /api proxy
+  /ws/v1/*   WebSocket       <----------  proxied as /api/ws/v1/*
 ```
 
 ## Quick start (local)
@@ -87,6 +88,22 @@ Then set `NEXT_PUBLIC_PANEL_URL` on the board Vercel project to your Render URL 
 | `GET /api/v1/readings` | Telemetry history |
 | `POST /api/v1/actions/blink` | Blink status LED on D0 |
 | `POST /api/v1/actions/reset` | Reset simulator state |
+
+### WebSocket streams (local dev / `npm start`)
+
+`npm run dev` and `npm start` use `server.ts`, which serves Next.js and WebSocket upgrades on `/ws/v1/*` (same payloads as the matching GET endpoints, streamed every 500ms).
+
+| WebSocket | REST equivalent |
+|---|---|
+| `/ws/v1/board` | `GET /api/v1/board` |
+| `/ws/v1/pins` | `GET /api/v1/pins` |
+| `/ws/v1/pins/{id}` | `GET /api/v1/pins/{id}` |
+| `/ws/v1/sensors` | `GET /api/v1/sensors` |
+| `/ws/v1/sensors/{id}` | `GET /api/v1/sensors/{id}` |
+| `/ws/v1/readings` | `GET /api/v1/readings` (optional `subscribe` JSON with `sensor_id`) |
+| `/ws/v1/sensors/{id}/readings` | `GET /api/v1/sensors/{id}/readings` |
+
+The control panel enables live updates via `x-uigen-websocket` in `UI/.uigen/config.yaml`. Vercel serverless deploy does not host WebSockets; use local or a long-running Node host for streams.
 
 ## Project layout
 

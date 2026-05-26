@@ -65,4 +65,42 @@ describe('resolveActionResultFields', () => {
 
     expect(fields.map((field) => field.key)).toEqual(['status', 'job_id']);
   });
+
+  it('uses array item schema fields for list responses', () => {
+    const listOperation: Operation = {
+      id: 'list_sensor_readings',
+      method: 'GET',
+      path: '/api/v1/sensors/{sensor_id}/readings',
+      parameters: [],
+      responses: {
+        '200': {
+          description: 'OK',
+          schema: {
+            type: 'array',
+            key: 'readings',
+            label: 'Readings',
+            required: false,
+            items: {
+              type: 'object',
+              key: 'Reading',
+              label: 'Reading',
+              required: false,
+              children: [
+                { type: 'number', key: 'value', label: 'Reading Value', required: true },
+                { type: 'string', key: 'unit', label: 'Unit', required: false }
+              ]
+            }
+          }
+        }
+      },
+      viewHint: 'list'
+    };
+
+    const fields = resolveActionResultFields(listOperation, {
+      value: 36.1,
+      unit: 'C'
+    });
+
+    expect(fields.map((field) => field.key)).toEqual(['value', 'unit']);
+  });
 });

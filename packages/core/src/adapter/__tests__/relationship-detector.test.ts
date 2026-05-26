@@ -15,6 +15,61 @@ describe('RelationshipDetector', () => {
     /**
      * **Validates: Requirements 5.1, 5.3, 5.4**
      */
+    it('should detect hasMany relationship from prefixed API paths', () => {
+      const usersResource: Resource = {
+        name: 'Users',
+        slug: 'users',
+        operations: [
+          {
+            id: 'get_user_comments',
+            method: 'GET',
+            path: '/api/v1/users/{id}/comments',
+            summary: 'Get user comments',
+            parameters: [],
+            responses: {},
+            viewHint: 'list'
+          }
+        ],
+        schema: {
+          type: 'object',
+          key: 'users',
+          label: 'Users',
+          required: false
+        },
+        relationships: [],
+        pagination: undefined
+      };
+
+      const commentsResource: Resource = {
+        name: 'Comments',
+        slug: 'comments',
+        operations: [],
+        schema: {
+          type: 'object',
+          key: 'comments',
+          label: 'Comments',
+          required: false
+        },
+        relationships: [],
+        pagination: undefined
+      };
+
+      const allResources = new Map<string, Resource>([
+        ['users', usersResource],
+        ['comments', commentsResource]
+      ]);
+
+      const detector = new RelationshipDetector();
+      const relationships = detector.detectFromPaths(usersResource, allResources);
+
+      expect(relationships).toHaveLength(1);
+      expect(relationships[0]).toEqual({
+        target: 'comments',
+        type: 'hasMany',
+        path: '/api/v1/users/{id}/comments'
+      });
+    });
+
     it('should detect hasMany relationship from /users/{id}/comments pattern', () => {
       const usersResource: Resource = {
         name: 'Users',

@@ -12,6 +12,7 @@ import pc from 'picocolors';
 import type { ServerStrategy, ServerContext, ServeOptions, MIME } from './types.js';
 import { ProxyManager } from './proxy-manager.js';
 import { AssetLoader } from './asset-loader.js';
+import { buildProxyTargetUrl, resolveProxyBase } from './api-path.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -24,23 +25,52 @@ export class DevServerStrategy implements ServerStrategy {
     const { specDir, ir, proxyTarget, cssContent, overrideScript, verbose } = context;
     const rendererRoot = this.resolveRendererRoot(options.renderer || 'react');
     
-    const proxyConfig: ProxyOptions = {
+    const proxyConfig: ProxyOptions & {
+      router?: (req: IncomingMessage) => string;
+    } = {
       target: proxyTarget,
       changeOrigin: true,
+      ws: true,
       rewrite: (path) => path.replace(/^\/api/, ''),
+      router: (req: IncomingMessage) => resolveProxyBase(proxyTarget, req, req.url ?? '/'),
       configure: (proxy) => {
-        proxy.on('proxyReq', (proxyReq, req: IncomingMessage) => {
-          const startTime = Date.now();
+        const applyProxyAuth = (
+          proxyReq: { setHeader: (k: string, v: string) => void; removeHeader: (k: string) => void; path?: string },
+          req: IncomingMessage,
+          targetBase: string
+        ) => {
+          const requestUrl = req.url ?? '/';
+          const targetUrl = buildProxyTargetUrl(requestUrl, targetBase);
           const headers: Record<string, string | string[]> = {};
-          this.proxyManager.injectAuthHeaders(headers, req, new URL(proxyReq.path || '', proxyTarget), verbose);
-          for (const [k, v] of Object.entries(headers)) proxyReq.setHeader(k, v);
+          this.proxyManager.injectAuthHeaders(headers, req, targetUrl, verbose);
+          const incomingUrl = new URL(requestUrl, 'http://localhost');
+          this.proxyManager.injectAuthFromQuery(headers, incomingUrl, targetUrl, verbose);
+          for (const [k, v] of Object.entries(headers)) {
+            if (typeof v === 'string') {
+              proxyReq.setHeader(k, v);
+            }
+          }
           for (const h of ['x-uigen-auth','x-uigen-api-key','x-uigen-api-key-name','x-uigen-api-key-in','x-uigen-basic-auth','x-uigen-server']) {
             proxyReq.removeHeader(h);
           }
+        };
+
+        proxy.on('proxyReq', (proxyReq, req: IncomingMessage) => {
+          const startTime = Date.now();
+          const requestUrl = req.url ?? '/';
+          const targetBase = resolveProxyBase(proxyTarget, req, requestUrl);
+          applyProxyAuth(proxyReq, req, targetBase);
           console.log(pc.blue(`→ ${req.method} ${req.url}`));
           (req as any).__startTime = startTime;
         });
-        
+
+        proxy.on('proxyReqWs', (proxyReq, req: IncomingMessage) => {
+          const requestUrl = req.url ?? '/';
+          const targetBase = resolveProxyBase(proxyTarget, req, requestUrl);
+          applyProxyAuth(proxyReq, req, targetBase);
+          console.log(pc.blue(`→ WS ${req.url}`));
+        });
+
         proxy.on('proxyRes', (proxyRes, req: IncomingMessage) => {
           const duration = Date.now() - ((req as any).__startTime || Date.now());
           const status = proxyRes.statusCode || 0;

@@ -6,12 +6,13 @@ interface ActionResultPanelProps {
   operation: Operation;
   data: unknown;
   className?: string;
+  title?: string;
 }
 
 /**
  * Displays structured fields from a successful non-CRUD action response.
  */
-export function ActionResultPanel({ operation, data, className }: ActionResultPanelProps) {
+export function ActionResultPanel({ operation, data, className, title }: ActionResultPanelProps) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     return null;
   }
@@ -22,16 +23,16 @@ export function ActionResultPanel({ operation, data, className }: ActionResultPa
   }
 
   const payload = data as Record<string, unknown>;
-  const actionTitle = operation.summary || operation.id;
+  const actionTitle = title ?? `${operation.summary || operation.id} result`;
 
   return (
     <ReadOnlyDataSection
       className={className}
       variant="action-result"
-      title={`${actionTitle} result`}
+      title={actionTitle}
       fields={fields}
       data={payload}
-      ariaLabel={`${actionTitle} result`}
+      ariaLabel={actionTitle}
     />
   );
 }

@@ -25,6 +25,18 @@ export function resolveActionResponseSchema(operation: Operation): SchemaNode | 
   );
 }
 
+function resolveListItemSchema(schema: SchemaNode | undefined): SchemaNode | undefined {
+  if (!schema) {
+    return undefined;
+  }
+
+  if (schema.type === 'array' && schema.items) {
+    return schema.items;
+  }
+
+  return schema;
+}
+
 /**
  * Resolve display fields for an action response using the operation schema,
  * falling back to keys present in the response payload.
@@ -33,7 +45,7 @@ export function resolveActionResultFields(
   operation: Operation,
   data: unknown
 ): SchemaNode[] {
-  const responseSchema = resolveActionResponseSchema(operation);
+  const responseSchema = resolveListItemSchema(resolveActionResponseSchema(operation));
   const schemaFields = (responseSchema?.children ?? []).filter(SchemaFieldFilter.isVisible);
 
   if (schemaFields.length > 0) {

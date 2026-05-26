@@ -28,6 +28,8 @@ import { AuthHandler } from '../adapter/annotations/handlers/auth-handler.js';
 import { OverrideHandler } from '../adapter/annotations/handlers/override-handler.js';
 import { PaymentHandler } from '../adapter/annotations/handlers/payment-handler.js';
 import { MonetizationHandler } from '../adapter/annotations/handlers/monetization-handler.js';
+import { WebSocketHandler } from '../adapter/annotations/handlers/websocket-handler.js';
+import { DetailStreamHandler } from '../adapter/annotations/handlers/detail-stream-handler.js';
 
 /**
  * Interface for annotation metadata
@@ -68,7 +70,9 @@ const handlerClasses = [
   AuthHandler,
   OverrideHandler,
   PaymentHandler,
-  MonetizationHandler
+  MonetizationHandler,
+  WebSocketHandler,
+  DetailStreamHandler
 ];
 
 /**

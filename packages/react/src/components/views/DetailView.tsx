@@ -1,4 +1,5 @@
 import { useApiCall, useApiMutation } from '@/hooks/useApiCall';
+import { useWebSocketSubscription } from '@/hooks/useWebSocketSubscription';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import type { Resource, Operation } from '@uigen-dev/core';
 import { reconcile, OverrideHooksHost } from '@/overrides';
@@ -11,7 +12,10 @@ import { useToast } from '@/components/Toast';
 import { useOptionalApp } from '@/contexts/AppContext';
 import { ReadOnlyDataSection } from '@/components/ReadOnlyDataSection';
 import { resolvePathParams } from '@/lib/resolve-path-params';
-import { useState } from 'react';
+import { resolveAppResources } from '@/lib/resolve-app-resources';
+import { DetailChildStreamPanel } from '@/components/DetailChildStreamPanel';
+import { NestedChildOperationResolver } from '@uigen-dev/core';
+import { useMemo, useState } from 'react';
 
 interface DetailViewProps {
   resource: Resource;
@@ -39,10 +43,47 @@ export function DetailView({ resource }: DetailViewProps) {
   // Reconcile to determine override mode using operation's override config
   const { mode, renderFn } = reconcile(detailOp?.override);
   
+  const detailPathParams = useMemo(
+    () => (detailOp ? resolvePathParams(detailOp, id) : {}),
+    [detailOp, id]
+  );
+  const appResources = useMemo(
+    () => resolveAppResources(config, resource),
+    [config, resource]
+  );
+  const embeddedNestedListOp = useMemo(
+    () => NestedChildOperationResolver.findNestedListOperation(detailOp, appResources, resource),
+    [detailOp, appResources, resource]
+  );
+
+  const visibleRelationships = useMemo(() => {
+    return resource.relationships
+      .filter((rel) => rel.type !== 'manyToMany')
+      .filter(
+        (rel) =>
+          !NestedChildOperationResolver.shouldHideEmbeddedHasMany(
+            rel,
+            detailOp,
+            embeddedNestedListOp
+          )
+      );
+  }, [resource.relationships, detailOp, embeddedNestedListOp]);
+
   const { data, isLoading, error, refetch } = useApiCall({
     operation: detailOp!,
-    pathParams: detailOp ? resolvePathParams(detailOp, id) : {},
+    pathParams: detailPathParams,
     enabled: !!detailOp,
+  });
+
+  const detailWsEnabled =
+    !!detailOp?.websocketConfig && !!id && Object.keys(detailPathParams).length > 0;
+
+  useWebSocketSubscription({
+    operation: detailOp,
+    queryKey: detailOp ? [detailOp.id, detailPathParams, {}] : ['disabled'],
+    pathParams: detailPathParams,
+    queryParams: {},
+    enabled: detailWsEnabled,
   });
 
   // Find available operations for action buttons - Requirement 8.5
@@ -190,6 +231,15 @@ export function DetailView({ resource }: DetailViewProps) {
         />
       )}
 
+      {detailOp && (
+        <DetailChildStreamPanel
+          detailOperation={detailOp}
+          detailPathParams={detailPathParams}
+          resources={appResources}
+          currentResource={resource}
+        />
+      )}
+
       {/* Error state - Requirement 8.6 */}
       {error && (
         <div className="p-4 border border-destructive bg-destructive/10 text-destructive rounded-md">
@@ -220,16 +270,16 @@ export function DetailView({ resource }: DetailViewProps) {
       )}
 
       {/* Related Resources - Requirements 8.4, 40.1-40.5, 10.1-10.6 */}
-      {!isLoading && !error && data && resource.relationships.filter(rel => rel.type !== 'manyToMany').length > 0 && (
+      {!isLoading && !error && data && visibleRelationships.length > 0 && (
         <div className="mt-8 space-y-4">
           <h3 className="text-lg font-semibold">Related Resources</h3>
           <div className="space-y-2">
-            {resource.relationships
-              .filter(rel => rel.type !== 'manyToMany')
-              .map((relationship) => {
+            {visibleRelationships.map((relationship) => {
                 const linkTo =
                   relationship.type === 'hasMany'
-                    ? `/${relationship.target}`
+                    ? id
+                      ? `/${relationship.target}?parentId=${encodeURIComponent(id)}`
+                      : `/${relationship.target}`
                     : `/${relationship.target}/${data[relationship.target + 'Id'] || ''}`;
 
                 const label =

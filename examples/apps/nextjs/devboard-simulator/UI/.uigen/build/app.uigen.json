@@ -100,7 +100,11 @@
               }
             }
           },
-          "viewHint": "list"
+          "viewHint": "list",
+          "websocketConfig": {
+            "path": "/ws/v1/board",
+            "mode": "replace"
+          }
         }
       ],
       "schema": {
@@ -556,7 +560,11 @@
               }
             }
           },
-          "viewHint": "list"
+          "viewHint": "list",
+          "websocketConfig": {
+            "path": "/ws/v1/pins",
+            "mode": "replace"
+          }
         },
         {
           "id": "get_pin",
@@ -693,7 +701,11 @@
               }
             }
           },
-          "viewHint": "detail"
+          "viewHint": "detail",
+          "websocketConfig": {
+            "path": "/ws/v1/pins/{pin_id}",
+            "mode": "replace"
+          }
         },
         {
           "id": "update_pin",
@@ -1078,7 +1090,11 @@
               }
             }
           },
-          "viewHint": "list"
+          "viewHint": "list",
+          "websocketConfig": {
+            "path": "/ws/v1/sensors",
+            "mode": "replace"
+          }
         },
         {
           "id": "get_sensor",
@@ -1202,7 +1218,11 @@
               }
             }
           },
-          "viewHint": "detail"
+          "viewHint": "detail",
+          "websocketConfig": {
+            "path": "/ws/v1/sensors/{sensor_id}",
+            "mode": "replace"
+          }
         },
         {
           "id": "list_sensor_readings",
@@ -1352,7 +1372,11 @@
               }
             }
           },
-          "viewHint": "detail"
+          "viewHint": "detail",
+          "websocketConfig": {
+            "path": "/ws/v1/sensors/{sensor_id}/readings",
+            "mode": "replace"
+          }
         },
         {
           "id": "create_sensor_reading",
@@ -1531,7 +1555,13 @@
         ],
         "validations": []
       },
-      "relationships": [],
+      "relationships": [
+        {
+          "target": "readings",
+          "type": "hasMany",
+          "path": "/api/v1/sensors/{sensor_id}/readings"
+        }
+      ],
       "layoutOverride": {
         "type": "dashboard-grid",
         "metadata": {
@@ -1682,7 +1712,15 @@
               }
             }
           },
-          "viewHint": "search"
+          "viewHint": "search",
+          "websocketConfig": {
+            "path": "/ws/v1/readings",
+            "mode": "replace",
+            "subscribe": {
+              "action": "subscribe",
+              "channel": "readings"
+            }
+          }
         }
       ],
       "schema": {

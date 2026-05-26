@@ -1,4 +1,5 @@
 import { useApiCall } from '@/hooks/useApiCall';
+import { useWebSocketSubscription } from '@/hooks/useWebSocketSubscription';
 import { useParams } from 'react-router-dom';
 import type { UIGenApp, Resource, Operation, SchemaNode } from '@uigen-dev/core';
 import { findProfileResource } from '@/lib/profile-resources';
@@ -293,10 +294,22 @@ export function ProfileView({ config, resourceSlug }: ProfileViewProps) {
   
   // Fetch profile data using the detail operation
   // Requirement 4.6: Fetch profile data using resource's GET operation
+  const profilePathParams = resolvePathParams(detailOp, id);
+
   const { data, isLoading, error, refetch } = useApiCall({
     operation: detailOp,
-    pathParams: resolvePathParams(detailOp, id),
+    pathParams: profilePathParams,
     enabled: !!detailOp,
+  });
+
+  useWebSocketSubscription({
+    operation: detailOp,
+    queryKey: detailOp ? [detailOp.id, profilePathParams, {}] : ['disabled'],
+    pathParams: profilePathParams,
+    queryParams: {},
+    enabled:
+      !!detailOp?.websocketConfig &&
+      (!detailOp.path.includes('{') || Object.keys(profilePathParams).length > 0),
   });
 
   // Initialize profile update mutation

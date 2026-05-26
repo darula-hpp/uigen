@@ -44,12 +44,16 @@
     "dotenv": "^17.4.2",
     "esbuild": "^0.24.2",
     "fast-glob": "^3.3.3",
+    "http-proxy": "^1.18.1",
     "js-yaml": "^4.1.0",
     "picocolors": "^1.1.1",
     "vite": "^6.0.0"
   },
   "devDependencies": {
+    "@types/http-proxy": "^1.17.15",
     "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.13",
+    "ws": "^8.18.0",
     "fast-check": "^4.6.0",
     "vitest": "^2.0.0"
   },

@@ -5,24 +5,25 @@
 import { readFileSync, existsSync, createReadStream } from 'fs';
 import { resolve, extname, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { createServer as createHttpServer, request as httpRequest, type IncomingMessage, type ServerResponse } from 'http';
-import { request as httpsRequest } from 'https';
+import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'http';
 import pc from 'picocolors';
 import type { ServerStrategy, ServerContext, ServeOptions, MIME } from './types.js';
 import { ProxyManager } from './proxy-manager.js';
+import { ApiProxy } from './api-proxy.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export class StaticServerStrategy implements ServerStrategy {
   private proxyManager = new ProxyManager();
-  
+
   async start(context: ServerContext, options: ServeOptions): Promise<number> {
     const { specDir, ir, proxyTarget, cssContent, overrideScript, verbose } = context;
     const rendererRoot = this.resolveRendererRoot(options.renderer || 'react');
     const distDir = resolve(rendererRoot, 'dist');
     const port = options.port || 4400;
-    
+    const apiProxy = new ApiProxy(proxyTarget, this.proxyManager, verbose);
+
     const MIME: Record<string, string> = {
       '.html': 'text/html',
       '.js': 'application/javascript',
@@ -46,22 +47,24 @@ export class StaticServerStrategy implements ServerStrategy {
           res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
           createReadStream(assetPath).pipe(res);
           return;
-        } else {
-          res.writeHead(404);
-          res.end('Asset not found');
-          return;
         }
+
+        res.writeHead(404);
+        res.end('Asset not found');
+        return;
       }
 
-      // Proxy API requests
+      // Proxy API requests (HTTP and WebSocket upgrades)
       if (url.startsWith('/api')) {
-        this.handleProxyRequest(req, res, url, proxyTarget, verbose);
+        apiProxy.handleHttp(req, res);
         return;
       }
 
       // Serve static files or SPA routes
       this.handleStaticRequest(req, res, url, distDir, ir, cssContent, overrideScript, MIME);
     });
+
+    apiProxy.attachUpgradeHandler(httpServer);
 
     await new Promise<void>((resolveListen) => {
       httpServer.listen(port, () => {
@@ -73,46 +76,7 @@ export class StaticServerStrategy implements ServerStrategy {
 
     return port;
   }
-  
-  private handleProxyRequest(
-    req: IncomingMessage,
-    res: ServerResponse,
-    url: string,
-    proxyTarget: string,
-    verbose: boolean
-  ): void {
-    const targetUrl = new URL(url.replace(/^\/api/, ''), proxyTarget);
-    const forwardHeaders: Record<string, string | string[]> = {};
-    
-    for (const [k, v] of Object.entries(req.headers)) {
-      if (v !== undefined) forwardHeaders[k] = v as string | string[];
-    }
-    
-    forwardHeaders['host'] = targetUrl.host;
-    this.proxyManager.injectAuthHeaders(forwardHeaders, req, targetUrl, verbose);
 
-    const startTime = Date.now();
-    console.log(pc.blue(`→ ${req.method || 'GET'} ${url}`));
-
-    const requester = targetUrl.protocol === 'https:' ? httpsRequest : httpRequest;
-    const proxyReq = requester(targetUrl, { method: req.method, headers: forwardHeaders }, (proxyRes) => {
-      const duration = Date.now() - startTime;
-      const status = proxyRes.statusCode || 0;
-      const color = status >= 500 ? pc.red : status >= 400 ? pc.yellow : pc.green;
-      console.log(color(`← ${req.method || 'GET'} ${url} ${status} (${duration}ms)`));
-      res.writeHead(status, proxyRes.headers);
-      proxyRes.pipe(res);
-    });
-    
-    proxyReq.on('error', (err) => {
-      console.error(pc.red(`✗ Proxy error: ${err.message}`));
-      res.writeHead(502);
-      res.end('Bad Gateway');
-    });
-    
-    req.pipe(proxyReq);
-  }
-  
   private handleStaticRequest(
     req: IncomingMessage,
     res: ServerResponse,
@@ -135,15 +99,15 @@ export class StaticServerStrategy implements ServerStrategy {
 
     if (filePath.endsWith('index.html')) {
       let html = readFileSync(filePath, 'utf-8');
-      
+
       html = html.replace('</head>', `<script>window.__UIGEN_CONFIG__ = ${JSON.stringify(ir)};</script></head>`);
-      
+
       if (cssContent) {
         html = html.replace('</head>', `<script>window.__UIGEN_CSS__ = ${JSON.stringify(cssContent)};</script></head>`);
       }
-      
+
       html = html.replace('</head>', `${overrideScript}</head>`);
-      
+
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(html);
     } else {
@@ -151,7 +115,7 @@ export class StaticServerStrategy implements ServerStrategy {
       createReadStream(filePath).pipe(res);
     }
   }
-  
+
   private resolveRendererRoot(renderer: string): string {
     const pkgName = `@uigen-dev/${renderer}`;
     const candidates = [
@@ -160,11 +124,11 @@ export class StaticServerStrategy implements ServerStrategy {
       resolve(__dirname, '../../../../node_modules', pkgName),
       resolve(__dirname, '../node_modules', pkgName),
     ];
-    
+
     for (const candidate of candidates) {
       if (existsSync(resolve(candidate, 'package.json'))) return candidate;
     }
-    
+
     return resolve(__dirname, '../../../' + renderer);
   }
 }
