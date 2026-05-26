@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { AnnotationHandlerRegistry } from '../../registry.js';
-import { ActiveServerHandler, PasswordResetHandler, SignUpHandler, FileTypesHandler, MaxFileSizeHandler } from '../index.js';
+import {
+  ActiveServerHandler,
+  PasswordResetHandler,
+  SignUpHandler,
+  FileTypesHandler,
+  MaxFileSizeHandler,
+  WebSocketHandler
+} from '../index.js';
 import { OpenAPI3Adapter } from '../../../openapi3.js';
 import type { OpenAPIV3 } from 'openapi-types';
 
@@ -58,6 +65,16 @@ describe('Handler Registration Tests', () => {
       expect(maxFileSizeHandler).toBeDefined();
       expect(maxFileSizeHandler).toBeInstanceOf(MaxFileSizeHandler);
       expect(maxFileSizeHandler.name).toBe('x-uigen-max-file-size');
+    });
+
+    it('should register WebSocketHandler', () => {
+      const registry = AnnotationHandlerRegistry.getInstance();
+      const handlers = (registry as any).handlers;
+
+      const websocketHandler = handlers.get('x-uigen-websocket');
+      expect(websocketHandler).toBeDefined();
+      expect(websocketHandler).toBeInstanceOf(WebSocketHandler);
+      expect(websocketHandler.name).toBe('x-uigen-websocket');
     });
 
     it('should have all handlers implement the AnnotationHandler interface', () => {

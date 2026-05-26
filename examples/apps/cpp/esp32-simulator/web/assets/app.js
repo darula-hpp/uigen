@@ -190,6 +190,25 @@ async function refresh() {
   }
 }
 
+function connectStateSocket() {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const socket = new WebSocket(`${protocol}//${window.location.host}/ws/v1/state`);
+
+  socket.onmessage = (event) => {
+    try {
+      render(JSON.parse(event.data));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  socket.onclose = () => {
+    window.setTimeout(connectStateSocket, 1000);
+  };
+
+  return socket;
+}
+
 async function togglePin(pin) {
   const nextState = pin.state === "high" ? "low" : "high";
   await fetch(`/api/v1/pins/${pin.id}`, {
@@ -224,4 +243,4 @@ elements.blinkBtn.addEventListener("click", blinkLed);
 elements.resetBtn.addEventListener("click", resetBoard);
 
 refresh();
-setInterval(refresh, state.pollMs);
+connectStateSocket();

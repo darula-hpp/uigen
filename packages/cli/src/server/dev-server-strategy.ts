@@ -27,6 +27,7 @@ export class DevServerStrategy implements ServerStrategy {
     const proxyConfig: ProxyOptions = {
       target: proxyTarget,
       changeOrigin: true,
+      ws: true,
       rewrite: (path) => path.replace(/^\/api/, ''),
       configure: (proxy) => {
         proxy.on('proxyReq', (proxyReq, req: IncomingMessage) => {

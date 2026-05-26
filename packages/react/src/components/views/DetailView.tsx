@@ -1,4 +1,5 @@
 import { useApiCall, useApiMutation } from '@/hooks/useApiCall';
+import { useWebSocketSubscription } from '@/hooks/useWebSocketSubscription';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import type { Resource, Operation } from '@uigen-dev/core';
 import { reconcile, OverrideHooksHost } from '@/overrides';
@@ -39,10 +40,23 @@ export function DetailView({ resource }: DetailViewProps) {
   // Reconcile to determine override mode using operation's override config
   const { mode, renderFn } = reconcile(detailOp?.override);
   
+  const detailPathParams = detailOp ? resolvePathParams(detailOp, id) : {};
+
   const { data, isLoading, error, refetch } = useApiCall({
     operation: detailOp!,
-    pathParams: detailOp ? resolvePathParams(detailOp, id) : {},
+    pathParams: detailPathParams,
     enabled: !!detailOp,
+  });
+
+  const detailWsEnabled =
+    !!detailOp?.websocketConfig && !!id && Object.keys(detailPathParams).length > 0;
+
+  useWebSocketSubscription({
+    operation: detailOp,
+    queryKey: detailOp ? [detailOp.id, detailPathParams, {}] : ['disabled'],
+    pathParams: detailPathParams,
+    queryParams: {},
+    enabled: detailWsEnabled,
   });
 
   // Find available operations for action buttons - Requirement 8.5

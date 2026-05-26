@@ -32,6 +32,7 @@ export { ChartDateTimeRangeResolver } from './chart-datetime-range-resolver.js';
 export { ChartSampler } from './chart-sampler.js';
 export type { ChartSamplerOptions } from './chart-sampler.js';
 export { ChartAxisTypeDetector } from './chart-axis-type-detector.js';
+export { WebSocketMessageMerger } from './websocket-message-merger.js';
 
 export async function parseSpec(content: string): Promise<UIGenApp> {
   let doc: unknown;

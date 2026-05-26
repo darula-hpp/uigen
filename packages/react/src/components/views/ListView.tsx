@@ -1,4 +1,5 @@
 import { useApiCall } from '@/hooks/useApiCall';
+import { useWebSocketSubscription } from '@/hooks/useWebSocketSubscription';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import type { Resource, Operation } from '@uigen-dev/core';
@@ -31,10 +32,35 @@ export function ListView({ resource, operation }: ListViewProps) {
   const [searchParams] = useSearchParams();
   const parentId = searchParams.get('parentId');
 
-  // Try to find list operation, fallback to search operation (which can also list items)
-  const listOp = operation ||
-    resource.operations.find(op => op.viewHint === 'list') ||
-    resource.operations.find(op => op.viewHint === 'search');
+  const listOp = useMemo(() => {
+    if (operation) {
+      return operation;
+    }
+
+    const isListOrSearch = (op: Operation) =>
+      op.viewHint === 'list' || op.viewHint === 'search';
+    const hasPathTemplate = (op: Operation) => op.path.includes('{');
+    const withoutPathTemplate = (op: Operation) => !hasPathTemplate(op);
+
+    // Sub-resource index (?parentId=): use the nested GET that owns the path param.
+    if (parentId) {
+      return (
+        resource.operations.find(op => isListOrSearch(op) && hasPathTemplate(op)) ||
+        resource.operations.find(op => op.viewHint === 'list' && withoutPathTemplate(op)) ||
+        resource.operations.find(op => op.viewHint === 'list') ||
+        resource.operations.find(op => isListOrSearch(op) && withoutPathTemplate(op)) ||
+        resource.operations.find(op => isListOrSearch(op))
+      );
+    }
+
+    // Top-level index: prefer ops that do not require path params.
+    return (
+      resource.operations.find(op => op.viewHint === 'list' && withoutPathTemplate(op)) ||
+      resource.operations.find(op => op.viewHint === 'list') ||
+      resource.operations.find(op => op.viewHint === 'search' && withoutPathTemplate(op)) ||
+      resource.operations.find(op => op.viewHint === 'search')
+    );
+  }, [operation, resource.operations, parentId]);
 
   // Reconcile to determine override mode using operation's override config
   const { mode, renderFn } = reconcile(listOp?.override);
@@ -80,6 +106,15 @@ export function ListView({ resource, operation }: ListViewProps) {
   const queryParams = useMemo(() => {
     const params: Record<string, string> = { ...chartQueryParams };
 
+    if (parentId && listOp && !listOp.path.includes('{')) {
+      const sensorIdParam = listOp.parameters?.find(
+        (param) => param.in === 'query' && param.name === 'sensor_id'
+      );
+      if (sensorIdParam && !params.sensor_id) {
+        params.sensor_id = parentId;
+      }
+    }
+
     if (resource.pagination) {
       const { style, params: paginationParams } = resource.pagination;
 
@@ -109,12 +144,21 @@ export function ListView({ resource, operation }: ListViewProps) {
     return params;
   }, [resource.pagination, pagination, cursorHistory, chartQueryParams, chartConfig?.query?.limit]);
 
+  const listFetchEnabled = !!listOp && (!listOp.path.includes('{') || !!parentId);
+
   const { data, isLoading, error } = useApiCall({
     operation: listOp!,
     queryParams,
     pathParams,
-    // Disabled when no list operation exists, or when path params are needed but not yet available
-    enabled: !!listOp && (!listOp.path.includes('{') || !!parentId),
+    enabled: listFetchEnabled,
+  });
+
+  useWebSocketSubscription({
+    operation: listOp,
+    queryKey: listOp ? [listOp.id, pathParams, queryParams] : ['disabled'],
+    pathParams,
+    queryParams,
+    enabled: listFetchEnabled && !!listOp?.websocketConfig,
   });
 
   // Sorting state

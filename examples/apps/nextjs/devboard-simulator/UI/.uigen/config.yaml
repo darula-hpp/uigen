@@ -23,6 +23,9 @@ annotations:
   GET:/api/v1/board:
     x-uigen-profile: true
     x-uigen-label: Board Status
+    x-uigen-websocket:
+      path: /ws/v1/board
+      mode: replace
     x-uigen-layout:
       type: centered
       metadata:

@@ -19,6 +19,7 @@ import { AuthHandler } from './auth-handler.js';
 import { PaymentHandler } from './payment-handler.js';
 import { MonetizationHandler } from './monetization-handler.js';
 import { OverrideHandler } from './override-handler.js';
+import { WebSocketHandler } from './websocket-handler.js';
 
 /**
  * Initialize and register all annotation handlers.
@@ -60,6 +61,7 @@ function registerHandlers(): void {
   // Register resource-level handlers
   registry.register(new ProfileHandler());
   registry.register(new OverrideHandler());
+  registry.register(new WebSocketHandler());
   
   // Register document/operation-level handlers
   registry.register(new LayoutHandler());
@@ -91,6 +93,7 @@ export { DateTimeHandler } from './datetime-handler.js';
 export { DateTimeTimezoneHandler } from './datetime-timezone-handler.js';
 export { ProfileHandler } from './profile-handler.js';
 export { OverrideHandler } from './override-handler.js';
+export { WebSocketHandler } from './websocket-handler.js';
 export { LayoutHandler } from './layout-handler.js';
 export { LandingPageHandler } from './landing-page-handler.js';
 export { AppHandler } from './app-handler.js';
