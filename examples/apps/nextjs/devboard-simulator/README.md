@@ -72,14 +72,12 @@ Create a **second** Vercel project from the same repo:
 | **Root Directory** | `examples/apps/nextjs/devboard-simulator/UI` |
 | **Framework Preset** | Other |
 | **Build Command** | `npm run build` |
-| **Output Directory** | `out` |
+| **Output Directory** | leave empty (routing is defined in `UI/vercel.json`) |
 | **Install Command** | `npm install` |
 
-Env var (required **before build** — Vercel injects it at build time):
+Env var (runtime — no rebuild needed when you change it):
 
 - `BOARD_URL` = your board Vercel URL (e.g. `https://devboard-board.vercel.app`, no trailing slash)
-
-The build writes a Vercel rewrite that proxies `/api/*` to the board. UIGen requests look like `/api/api/v1/config`; that is forwarded to `{BOARD_URL}/api/v1/config`.
 
 ```bash
 cd examples/apps/nextjs/devboard-simulator/UI
@@ -88,7 +86,9 @@ npm run build
 vercel deploy
 ```
 
-If API calls return Vercel `NOT_FOUND`, `BOARD_URL` was missing during the build. Set it in the Vercel dashboard and **redeploy** so the build regenerates `vercel.json`.
+The panel ships static files from `out/` plus a serverless `/api/*` proxy (`api/[...path].js`) that reads `BOARD_URL` at request time. UIGen requests look like `/api/api/v1/config`; the proxy forwards to `{BOARD_URL}/api/v1/config`.
+
+If API calls return Vercel `NOT_FOUND`, redeploy with the latest code — the proxy function must be included in the deployment.
 
 Then set `NEXT_PUBLIC_PANEL_URL` on the board project to the panel URL and redeploy the board app so the header link points to the live panel.
 
@@ -117,6 +117,7 @@ devboard-simulator/
 ├── app/                  # Board visualizer at /
 ├── public/assets/        # UIGen hardware logo
 └── UI/                   # Separate control panel app (own package.json, vercel.json)
+    ├── api/[...path].js      # Runtime proxy to BOARD_URL
     └── scripts/build-vercel.mjs
 ```
 

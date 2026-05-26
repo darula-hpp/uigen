@@ -81,45 +81,6 @@ async function main() {
   cpSync(join(uiRoot, '.uigen/assets/logo.svg'), join(outDir, '.uigen/assets/logo.svg'));
 
   console.log('Built static control panel to out/');
-  writeVercelConfig();
-}
-
-function writeVercelConfig() {
-  const boardUrl = process.env.BOARD_URL?.replace(/\/$/, '');
-  const rewrites = [];
-
-  if (boardUrl) {
-    // UIGen fetch uses `/api${operation.path}` (e.g. /api/api/v1/config).
-    // Capture everything after the first /api/ and forward to the board app.
-    rewrites.push({
-      source: '/api/(.*)',
-      destination: `${boardUrl}/$1`,
-    });
-    console.log(`[build-vercel] API proxy rewrite -> ${boardUrl}/$1`);
-  } else {
-    console.warn(
-      '[build-vercel] BOARD_URL is not set. Deployed panel will not proxy /api/* requests. ' +
-        'Add BOARD_URL in Vercel project settings, then redeploy.'
-    );
-  }
-
-  rewrites.push({
-    source: '/((?!api/).*)',
-    destination: '/index.html',
-  });
-
-  writeFileSync(
-    join(uiRoot, 'vercel.json'),
-    `${JSON.stringify(
-      {
-        buildCommand: 'npm run build',
-        outputDirectory: 'out',
-        rewrites,
-      },
-      null,
-      2
-    )}\n`
-  );
 }
 
 main().catch((error) => {
