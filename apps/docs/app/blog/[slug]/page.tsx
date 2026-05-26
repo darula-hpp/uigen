@@ -7,8 +7,7 @@ import { BlogPostTOC } from '../../../components/blog/BlogPostTOC';
 import { GitHubCTA } from '../../../components/blog/GitHubCTA';
 import { SocialShare } from '../../../components/blog/SocialShare';
 import { SiteHeader } from '../../../components/SiteHeader';
-
-const BASE_URL = 'https://uigen-docs.vercel.app';
+import { absoluteUrl } from '../../../lib/site';
 
 interface PageParams {
   slug: string;
@@ -38,7 +37,7 @@ export async function generateMetadata({
       modifiedTime: post.updated_date,
       authors: [post.author],
       tags: post.tags,
-      url: `${BASE_URL}/blog/${post.slug}`,
+      url: absoluteUrl(`/blog/${post.slug}`),
       images: post.featured_image
         ? [{ url: post.featured_image, width: 1200, height: 630, alt: post.title }]
         : undefined,
@@ -50,7 +49,7 @@ export async function generateMetadata({
       images: post.featured_image ? [post.featured_image] : undefined,
     },
     alternates: {
-      canonical: `${BASE_URL}/blog/${post.slug}`,
+      canonical: absoluteUrl(`/blog/${post.slug}`),
     },
   };
 }

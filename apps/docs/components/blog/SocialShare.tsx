@@ -2,17 +2,17 @@
 
 import { useState } from 'react';
 import type { BlogPost } from '../../lib/blog';
+import { absoluteUrl } from '../../lib/site';
 
 interface SocialShareProps {
   post: BlogPost;
 }
 
-const BASE_URL = 'https://uigen-docs.vercel.app';
 const GITHUB_REPO = 'https://github.com/darula-hpp/uigen';
 
 export function SocialShare({ post }: SocialShareProps) {
   const [copied, setCopied] = useState(false);
-  const url = `${BASE_URL}/blog/${post.slug}`;
+  const url = absoluteUrl(`/blog/${post.slug}`);
   const text = post.title;
 
   const twitterHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;

@@ -168,7 +168,7 @@ npx @uigen-dev/cli@latest init my-app --spec openapi.yaml
 npx @uigen-dev/cli@latest serve openapi.yaml
 ```
 
-**Environment Variables**: Keep sensitive values secure by using `${ENV_VAR_NAME}` syntax in your config file. UIGen automatically loads `.env` files from your spec directory. See the [Environment Variables Guide](https://uigen-docs.vercel.app/docs/guides/environment-variables) for details.
+**Environment Variables**: Keep sensitive values secure by using `${ENV_VAR_NAME}` syntax in your config file. UIGen automatically loads `.env` files from your spec directory. See the [Environment Variables Guide](https://getuigen.dev/docs/guides/environment-variables) for details.
 
 ---
 
@@ -272,7 +272,7 @@ The CLI automatically discovers, transpiles, and injects your overrides. See [pa
 
 ## Read More
 
-- **[Full Documentation](https://uigen-docs.vercel.app)** - Complete guides, API reference, and examples
+- **[Full Documentation](https://getuigen.dev)** - Complete guides, API reference, and examples
 - **[Architecture](./ARCHITECTURE.md)** - Deep dive into the IR, adapters, and rendering pipeline
 
 ---

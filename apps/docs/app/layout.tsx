@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import { PostHogPageView } from "./posthog-pageview";
 import { Suspense } from "react";
+import { absoluteUrl } from "../lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,6 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(absoluteUrl()),
   title: "UIGen - A runtime frontend for any OpenAPI described API",
   description:
     "UIGen generates a fully functional frontend from any OpenAPI or Swagger spec at runtime. Optional code, optional config. Tables, forms, auth, and pagination — no boilerplate.",
@@ -34,7 +36,7 @@ export const metadata: Metadata = {
     description:
       "Point it at an OpenAPI spec. Get a fully functional frontend. Optional code, optional config.",
     type: "website",
-    url: "https://uigen-docs.vercel.app",
+    url: absoluteUrl(),
   },
   twitter: {
     card: "summary_large_image",
@@ -43,7 +45,7 @@ export const metadata: Metadata = {
       "Point it at an OpenAPI spec. Get a fully functional frontend. Optional code, optional config.",
   },
   alternates: {
-    canonical: "https://uigen-docs.vercel.app",
+    canonical: absoluteUrl(),
   },
 };
 

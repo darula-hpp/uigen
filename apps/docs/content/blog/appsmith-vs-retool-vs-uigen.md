@@ -544,7 +544,7 @@ uigen config openapi.yaml
 
 All changes are saved to `.uigen/config.yaml` and `.uigen/theme.css`, plain text files you can version control with Git.
 
-The full documentation is available at [uigen-docs.vercel.app](https://uigen-docs.vercel.app). The source code is on [GitHub](https://github.com/darula-hpp/uigen) under the MIT license.
+The full documentation is available at [getuigen.dev](https://getuigen.dev). The source code is on [GitHub](https://github.com/darula-hpp/uigen) under the MIT license.
 
 If you're building applications and already have a backend API, UIGen might be the fastest path to a production-ready frontend. No component wiring. No code generation. Just runtime rendering that stays in sync with your API automatically. Configure with AI skills in seconds, visualize in the config GUI if needed, and deploy.
 
