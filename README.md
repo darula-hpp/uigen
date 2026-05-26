@@ -1,6 +1,6 @@
 # UIGen
 
-Build & Run Declarative UI Apps. OpenAPI is your foundation.
+Build & Run Declarative UI Apps. OpenAPI is your foundation. No codegen
 
 <table>
   <tr>
@@ -13,7 +13,7 @@ Build & Run Declarative UI Apps. OpenAPI is your foundation.
   </tr>
   <tr>
     <td align="center"><strong>Meeting Minutes</strong> (FastAPI)</td>
-    <td align="center"><strong>ESP32 Hardware</strong> (<a href="./examples/apps/cpp/esp32-simulator/">simulator</a>)</td>
+    <td align="center"><strong>Hardware demo</strong> (<a href="./examples/apps/cpp/">examples</a>)</td>
   </tr>
 </table>
 
@@ -33,6 +33,17 @@ npx @uigen-dev/cli@latest serve openapi.yaml
 Visit `http://localhost:4400` to see your app.
 
 UIGen scaffolds a complete project with configuration files (`.uigen/config.yaml`, `.uigen/theme.css`), AI agent skills (`.agents/skills/`), and an example spec if needed. The serve command renders a complete UI from your OpenAPI spec at runtime. When your API changes, the UI updates automatically with no regeneration or code maintenance required.
+
+### Desktop (Electron)
+
+Open the generated UI in a native window instead of the browser:
+
+```bash
+npx @uigen-dev/cli@latest serve openapi.yaml --target electron
+npx @uigen-dev/cli@latest serve openapi.yaml --target electron --proxy-base http://localhost:8000
+```
+
+Install the target package when using npm outside the monorepo: `npm install -D @uigen-dev/target-electron`. React renderer only. See the [Electron target docs](https://getuigen.dev/docs/cli-reference/electron-target).
 
 ---
 
@@ -68,6 +79,7 @@ UIGen scaffolds a complete project with configuration files (`.uigen/config.yaml
 - **AI Agent Skills** - Automate configuration with your favorite coding assistant
 - **Override System** - Replace any view with custom React components (file-based or programmatic)
 - **Build Command** - Package for production deployment with `uigen build`
+- **Electron Target** - Serve the same UI in a desktop window with `--target electron`
 
 ---
 
@@ -81,65 +93,27 @@ Full-stack web app with auth, file uploads, and relationships.
 git clone https://github.com/darula-hpp/uigen
 cd uigen/examples/apps/fastapi/meeting-minutes
 
-# Setup backend (FastAPI + PostgreSQL)
 docker compose up -d
 docker compose exec app alembic upgrade head
 
-# Initialize and start
 npx @uigen-dev/cli@latest init --spec openapi.yaml
 npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8000
 ```
 
-Visit `http://localhost:4400` to explore a full meeting minutes application with CRUD operations, authentication, file uploads, and relationships.
+Visit `http://localhost:4400` for CRUD, auth, file uploads, and relationships.
 
-### ESP32 Hardware Example (C++)
+### Hardware & embedded
 
-For embedded and IoT workflows, see [`examples/apps/cpp/esp32-simulator`](./examples/apps/cpp/esp32-simulator/). A C++ REST API simulates an ESP32-DevKitC with GPIO, sensors, telemetry, and device actions. The same **contract-first** `openapi.yaml` drives a generated admin UI — no RainMaker, no hand-built React.
+Contract-first demos where a backend exposes REST APIs and UIGen generates the admin UI from the same `openapi.yaml`:
 
-```text
-Visual demo (C++ serves the page)     UIGen admin UI (from openapi.yaml)
-http://localhost:8080                 http://localhost:4400
-        |                                      |
-        +-------- same REST API ----------------+
-```
-
-```bash
-cd uigen/examples/apps/cpp/esp32-simulator
-docker compose up --build
-
-# In another terminal — run UIGen from UI/ so .uigen/config.yaml is picked up
-cd uigen/examples/apps/cpp/esp32-simulator/UI
-npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8080
-```
-
-| URL | What you get |
+| Location | What it shows |
 |---|---|
-| `http://localhost:8080` | Interactive board diagram, live GPIO/sensor cards, event log |
-| `http://localhost:4400` | Generated control panel: pin config, settings forms, telemetry table + charts, blink/reset actions |
+| [`examples/apps/cpp/`](./examples/apps/cpp/) | C++ ESP32 and STM32 board simulators |
+| [`examples/apps/nextjs/devboard-simulator/`](./examples/apps/nextjs/devboard-simulator/) | Next.js variant, Vercel-deployable |
 
-The simulator serves `GET /openapi.yaml` on the wire. UIGen config in `UI/.uigen/config.yaml` adds charts (`x-uigen-chart`), sensor filters, and layout. If you only have curl output or C struct headers, use the **Generate Device OpenAPI** agent skill (`SKILLS/generate-device-openapi.md`) to draft the spec, then **Auto-Annotate** for config.
+Each app includes its own README with setup, ports, and tests. Use the **Generate Device OpenAPI** skill ([`SKILLS/generate-device-openapi.md`](./SKILLS/generate-device-openapi.md)) to draft specs from curl, Postman, or C headers, then **Auto-Annotate** for config.
 
-See the [ESP32 example README](./examples/apps/cpp/esp32-simulator/README.md) for API endpoints, local build, and tests.
-
-### STM32 Nucleo Hardware Example (C++)
-
-For professional embedded workflows, see [`examples/apps/cpp/stm32-nucleo-simulator`](./examples/apps/cpp/stm32-nucleo-simulator/). A C++ REST API simulates a NUCLEO-F411RE with Arduino header pins, I2C sensors, 4-20mA analog input, and ST-Link status. Same contract-first OpenAPI pattern as the ESP32 example.
-
-```bash
-cd uigen/examples/apps/cpp/stm32-nucleo-simulator
-docker compose up --build
-
-# In another terminal — run UIGen from UI/ so .uigen/config.yaml is picked up
-cd uigen/examples/apps/cpp/stm32-nucleo-simulator/UI
-npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8081 --port 4401
-```
-
-| URL | What you get |
-|---|---|
-| `http://localhost:8081` | Nucleo board diagram, LD2 blink, live sensor cards, event log |
-| `http://localhost:4401` | Generated control panel: pin CRUD, config forms, telemetry charts, blink/reset actions |
-
-See the [STM32 Nucleo example README](./examples/apps/cpp/stm32-nucleo-simulator/README.md) for API endpoints, local build, and tests.
+More examples: [`examples/apps/`](./examples/apps/) and the [example apps guide](https://getuigen.dev/docs/guides/example-apps).
 
 ---
 
@@ -147,24 +121,15 @@ See the [STM32 Nucleo example README](./examples/apps/cpp/stm32-nucleo-simulator
 
 UIGen includes AI agent skills that automate configuration through intelligent analysis of your OpenAPI spec. Skills work with any AI coding assistant (Cursor, Windsurf, Cline, GitHub Copilot).
 
-### Available Skills
-
 - **Auto-Annotate** - Detects auth endpoints, file uploads, relationships, charts, and smart labels
 - **Generate Device OpenAPI** - Drafts `openapi.yaml` from curl, Postman, C structs, or route tables (embedded/IoT)
 - **Configure OAuth** - Sets up OAuth 2.0 social login (Google, GitHub, Facebook, Microsoft)
 - **Applying Styles** - Brand colors, dark mode, component styling, animations, responsive design
 - **Configure Icons** - Professional icon library integration (Lucide, Heroicons, React Icons)
 
-### Usage
-
-Reference skills with your AI assistant:
-
 ```bash
 npx @uigen-dev/cli@latest init my-app --spec openapi.yaml
 # Ask AI: "Use the auto-annotate skill to configure my spec"
-# Ask AI: "Use the configure-oauth skill to add Google login"
-# Ask AI: "Use the configure-icons skill to add professional icons"
-# Ask AI: "Use the applying-styles skill to create a professional theme"
 npx @uigen-dev/cli@latest serve openapi.yaml
 ```
 
@@ -205,26 +170,8 @@ The React renderer interprets this IR at runtime and creates table views, forms,
 
 ## Override System
 
-Customize any view while keeping the rest auto-generated. UIGen provides escape hatches at three levels:
+Customize any view while keeping the rest auto-generated. Three modes: **component** (full control), **render** (UIGen fetches data, you control UI), and **useHooks** (side effects only).
 
-**Component Mode** - Full control over data fetching and rendering:
-```typescript
-// src/overrides/custom-profile.tsx
-import type { OverrideDefinition } from '@uigen-dev/react';
-
-function CustomProfile() {
-  return <div>My Custom Profile View</div>;
-}
-
-const override: OverrideDefinition = {
-  targetId: 'me',
-  component: CustomProfile,
-};
-
-export default override;
-```
-
-**Render Mode** - UIGen fetches data, you control the UI:
 ```typescript
 // src/overrides/users-list.tsx
 import type { OverrideDefinition, ListRenderProps } from '@uigen-dev/react';
@@ -240,33 +187,7 @@ const override: OverrideDefinition = {
 export default override;
 ```
 
-**UseHooks Mode** - Side effects only (analytics, tracking):
-```typescript
-// src/overrides/analytics.tsx
-import { useEffect } from 'react';
-import type { OverrideDefinition } from '@uigen-dev/react';
-
-const override: OverrideDefinition = {
-  targetId: 'users.list',
-  useHooks: ({ resource }) => {
-    useEffect(() => {
-      analytics.track('page_view', { resource: resource.name });
-    }, [resource]);
-  },
-};
-
-export default override;
-```
-
-Add `x-uigen-override` annotation to `.uigen/config.yaml`:
-```yaml
-annotations:
-  GET:/api/v1/auth/me:
-    x-uigen-override:
-      id: me
-```
-
-The CLI automatically discovers, transpiles, and injects your overrides. See [packages/react/src/overrides/README.md](./packages/react/src/overrides/README.md) for complete documentation.
+Wire it up in `.uigen/config.yaml` with `x-uigen-override`. The CLI discovers, transpiles, and injects overrides automatically. See [packages/react/src/overrides/README.md](./packages/react/src/overrides/README.md) and the [override docs](https://getuigen.dev/docs/override-system/overview).
 
 ---
 
@@ -279,6 +200,7 @@ The CLI automatically discovers, transpiles, and injects your overrides. See [pa
 
 ## Current Priorities
 - Polish
+- Declarative Websockets support
 - Better relationship handling and visualization
 - Additional renderers (Svelte, Vue, React Native for device companion apps)
 
@@ -286,4 +208,4 @@ The CLI automatically discovers, transpiles, and injects your overrides. See [pa
 
 ## License
 
-MIT
+[MIT](./LICENSE)
