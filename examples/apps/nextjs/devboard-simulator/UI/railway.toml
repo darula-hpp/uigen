@@ -1,0 +1,17 @@
+# Railway config for the UIGen DevBoard control panel.
+# Docs: https://docs.railway.com/guides/monorepo
+#
+# In the Railway dashboard, set Root Directory to:
+#   examples/apps/nextjs/devboard-simulator/UI
+# If config is not picked up automatically, set Config File Path to:
+#   /examples/apps/nextjs/devboard-simulator/UI/railway.toml
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
