@@ -81,6 +81,54 @@ async function main() {
   cpSync(join(uiRoot, '.uigen/assets/logo.svg'), join(outDir, '.uigen/assets/logo.svg'));
 
   console.log('Built static control panel to out/');
+  writeVercelOutput();
+}
+
+function writeVercelOutput() {
+  const outputRoot = join(uiRoot, '.vercel/output');
+  const staticDir = join(outputRoot, 'static');
+  const funcDir = join(outputRoot, 'functions/api/[...path].func');
+
+  if (existsSync(outputRoot)) {
+    rmSync(outputRoot, { recursive: true });
+  }
+
+  mkdirSync(staticDir, { recursive: true });
+  cpSync(outDir, staticDir, { recursive: true });
+
+  mkdirSync(funcDir, { recursive: true });
+  cpSync(join(uiRoot, 'api/[...path].js'), join(funcDir, 'index.js'));
+  writeFileSync(join(funcDir, 'package.json'), `${JSON.stringify({ type: 'module' }, null, 2)}\n`);
+  writeFileSync(
+    join(funcDir, '.vc-config.json'),
+    `${JSON.stringify(
+      {
+        runtime: 'nodejs20.x',
+        handler: 'index.js',
+        launcherType: 'Nodejs',
+      },
+      null,
+      2
+    )}\n`
+  );
+
+  writeFileSync(
+    join(outputRoot, 'config.json'),
+    `${JSON.stringify(
+      {
+        version: 3,
+        routes: [
+          { src: '/api/(.*)', dest: '/api/$1' },
+          { handle: 'filesystem' },
+          { src: '/(.*)', dest: '/index.html', check: true },
+        ],
+      },
+      null,
+      2
+    )}\n`
+  );
+
+  console.log('[build-vercel] Wrote .vercel/output (static SPA + /api proxy function)');
 }
 
 main().catch((error) => {

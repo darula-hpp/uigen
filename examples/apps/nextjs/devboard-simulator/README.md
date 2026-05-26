@@ -72,23 +72,16 @@ Create a **second** Vercel project from the same repo:
 | **Root Directory** | `examples/apps/nextjs/devboard-simulator/UI` |
 | **Framework Preset** | Other |
 | **Build Command** | `npm run build` |
-| **Output Directory** | leave empty (routing is defined in `UI/vercel.json`) |
+| **Output Directory** | leave empty (build writes `.vercel/output`) |
 | **Install Command** | `npm install` |
 
-Env var (runtime — no rebuild needed when you change it):
+Env var:
 
-- `BOARD_URL` = your board Vercel URL (e.g. `https://devboard-board.vercel.app`, no trailing slash)
+- `BOARD_URL` = `https://uigen-devboard-board.vercel.app` (no trailing slash)
 
-```bash
-cd examples/apps/nextjs/devboard-simulator/UI
-npm install
-npm run build
-vercel deploy
-```
+The build emits Vercel's [Build Output API](https://vercel.com/docs/build-output-api/v3) layout: static SPA in `.vercel/output/static` plus a serverless `/api/*` proxy. UIGen requests like `/api/api/v1/sensors` forward to `{BOARD_URL}/api/v1/sensors`.
 
-The panel ships static files from `out/` plus a serverless `/api/*` proxy (`api/[...path].js`) that reads `BOARD_URL` at request time. UIGen requests look like `/api/api/v1/config`; the proxy forwards to `{BOARD_URL}/api/v1/config`.
-
-If API calls return Vercel `NOT_FOUND`, redeploy with the latest code — the proxy function must be included in the deployment.
+If `/api/*` still returns HTML, the deploy is using an old static-only build. Redeploy after pulling the latest code and confirm build logs show `Wrote .vercel/output`.
 
 Then set `NEXT_PUBLIC_PANEL_URL` on the board project to the panel URL and redeploy the board app so the header link points to the live panel.
 
