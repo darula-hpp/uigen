@@ -7,11 +7,13 @@
   "scripts": {
     "dev": "npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:3000",
     "build": "node scripts/build-vercel.mjs",
+    "start": "uigen serve openapi.yaml --port ${PORT:-8080} --proxy-base ${BOARD_URL}",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@uigen-dev/core": "^0.16.0",
-    "@uigen-dev/react": "^0.16.0",
+    "@uigen-dev/cli": "^0.17.0",
+    "@uigen-dev/core": "^0.17.0",
+    "@uigen-dev/react": "^0.17.0",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {

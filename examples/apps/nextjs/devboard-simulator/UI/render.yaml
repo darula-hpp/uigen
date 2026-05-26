@@ -1,0 +1,14 @@
+# Render Blueprint — deploy from repo root or set Root Directory to this folder.
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: uigen-devboard-panel
+    runtime: docker
+    plan: free
+    rootDir: examples/apps/nextjs/devboard-simulator/UI
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: BOARD_URL
+        sync: false

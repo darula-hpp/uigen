@@ -6,15 +6,15 @@ This example is **standalone** (not part of the pnpm workspace). Install with np
 
 ## Two apps, one demo
 
-| App | Directory | Vercel root | Default local URL |
+| App | Directory | Deploy to | Default local URL |
 |---|---|---|---|
-| **Board** | `.` | `devboard-simulator/` | `http://localhost:3000` |
-| **Control panel** | `UI/` | `devboard-simulator/UI` | `http://localhost:4400` |
+| **Board** | `.` | Vercel | `http://localhost:3000` |
+| **Control panel** | `UI/` | Render (Docker, free) | `http://localhost:4400` |
 
 ```text
-Board app (:3000)                       Panel app (:4400 or Vercel #2)
+Board app (:3000)                       Panel app (:4400 or Render)
   /  board visualizer                     generated admin UI
-  /api/v1/*  REST API        <----------  /api/* proxy to board
+  /api/v1/*  REST API        <----------  uigen serve /api proxy
 ```
 
 ## Quick start (local)
@@ -37,9 +37,9 @@ Open `http://localhost:3000` for the board. Click **Control Panel** or open `htt
 
 Set `NEXT_PUBLIC_PANEL_URL=http://localhost:4400` in the board app `.env.local` so the header link works locally.
 
-## Deploy to Vercel (two projects)
+## Deploy (board on Vercel, panel on Render)
 
-### 1. Board app
+### 1. Board app (Vercel)
 
 In the Vercel dashboard (**Add New Project → Import repo → Configure**):
 
@@ -52,38 +52,25 @@ In the Vercel dashboard (**Add New Project → Import repo → Configure**):
 
 > **Important:** The root must include the `examples/` prefix. If you use `apps/nextjs/devboard-simulator` (without `examples/`), the build will fail with `Cannot find module 'next/dist/compiled/next-server/server.runtime.prod.js'`.
 
-Set env var after step 2:
+Deploy the board first. Note the URL (e.g. `https://uigen-devboard-board.vercel.app`).
 
-- `NEXT_PUBLIC_PANEL_URL` = your panel Vercel URL
+### 2. Control panel (Render, Docker, $0)
 
-```bash
-cd examples/apps/nextjs/devboard-simulator
-npm install
-npm run build
-vercel deploy
-```
+1. Sign up at [render.com](https://render.com) — no credit card for the free tier
+2. **New → Web Service** → connect your repo
+3. **Root Directory:** `examples/apps/nextjs/devboard-simulator/UI`
+4. **Runtime:** Docker | **Instance type:** Free
+5. **Environment:** `BOARD_URL` = `https://uigen-devboard-board.vercel.app`
+6. Deploy
 
-### 2. Control panel app
+Free services sleep after ~15 minutes idle (cold start on wake). See [UI/README.md](./UI/README.md) for Blueprint (`render.yaml`) and details.
 
-Create a **second** Vercel project from the same repo:
+Then set `NEXT_PUBLIC_PANEL_URL` on the board Vercel project to your Render URL (e.g. `https://uigen-devboard-panel.onrender.com`) and redeploy the board.
 
-| Setting | Value |
-|---|---|
-| **Root Directory** | `examples/apps/nextjs/devboard-simulator/UI` |
-| **Framework Preset** | Other |
-| **Build Command** | `npm run build` |
-| **Output Directory** | leave empty (build writes `.vercel/output`) |
-| **Install Command** | `npm install` |
+### Other hosts (optional)
 
-Env var:
-
-- `BOARD_URL` = `https://uigen-devboard-board.vercel.app` (no trailing slash)
-
-The build emits Vercel's [Build Output API](https://vercel.com/docs/build-output-api/v3) layout: static SPA in `.vercel/output/static` plus a serverless `/api/*` proxy. UIGen requests like `/api/api/v1/sensors` forward to `{BOARD_URL}/api/v1/sensors`.
-
-If `/api/*` still returns HTML, the deploy is using an old static-only build. Redeploy after pulling the latest code and confirm build logs show `Wrote .vercel/output`.
-
-Then set `NEXT_PUBLIC_PANEL_URL` on the board project to the panel URL and redeploy the board app so the header link points to the live panel.
+- **Railway** — trial credits, then usage-based; see `UI/railway.toml`
+- **Vercel** — static panel + proxy is fragile; not recommended
 
 ## API overview
 
@@ -109,9 +96,11 @@ devboard-simulator/
 ├── lib/                  # Device simulator + API handlers
 ├── app/                  # Board visualizer at /
 ├── public/assets/        # UIGen hardware logo
-└── UI/                   # Separate control panel app (own package.json, vercel.json)
-    ├── api/[...path].js      # Runtime proxy to BOARD_URL
-    └── scripts/build-vercel.mjs
+└── UI/                   # Control panel (Docker: Render, optional Railway)
+    ├── Dockerfile
+    ├── railway.toml
+    ├── render.yaml
+    └── scripts/build-vercel.mjs   # optional Vercel static build
 ```
 
 ## Tests
