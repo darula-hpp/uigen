@@ -1,5 +1,18 @@
 # @uigen-dev/cli
 
+## 0.17.0
+
+### Minor Changes
+
+- Update the docs regarding the targets
+
+### Patch Changes
+
+- Updated dependencies
+  - @uigen-dev/config-gui@0.17.0
+  - @uigen-dev/react@0.17.0
+  - @uigen-dev/core@0.17.0
+
 ## 0.16.0
 
 ### Minor Changes

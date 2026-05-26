@@ -1,6 +1,6 @@
 {
   "name": "@uigen-dev/target-electron",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Electron desktop shell for UIGen React SPA",
   "license": "MIT",
   "repository": {

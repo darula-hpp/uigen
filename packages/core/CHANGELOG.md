@@ -1,5 +1,11 @@
 # @uigen-dev/core
 
+## 0.17.0
+
+### Minor Changes
+
+- Update the docs regarding the targets
+
 ## 0.16.0
 
 ### Minor Changes
