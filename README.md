@@ -102,6 +102,27 @@ npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8000
 
 Visit `http://localhost:4400` for CRUD, auth, file uploads, and relationships.
 
+### ESP32 Hardware (C++)
+
+Board simulator with a visual demo at `:8080` and a UIGen control panel at `:4400`, both driven by the same `openapi.yaml`.
+
+```bash
+# Terminal 1 — simulator
+cd examples/apps/cpp/esp32-simulator
+docker compose up --build
+
+# Terminal 2 — UIGen panel (run from UI/ so .uigen/config.yaml is picked up)
+cd examples/apps/cpp/esp32-simulator/UI
+npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8080
+```
+
+| URL | What you get |
+|---|---|
+| `http://localhost:8080` | Interactive board diagram, GPIO, sensors, event log |
+| `http://localhost:4400` | Generated admin UI: pins, config, telemetry charts, actions |
+
+See the [ESP32 example README](./examples/apps/cpp/esp32-simulator/README.md) for local build, API reference, and tests.
+
 ### Hardware & embedded
 
 Contract-first demos where a backend exposes REST APIs and UIGen generates the admin UI from the same `openapi.yaml`:
