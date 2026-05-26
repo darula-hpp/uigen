@@ -16,10 +16,12 @@ Open `http://localhost:4400`.
 ## Vercel deploy
 
 1. Create a Vercel project with root directory `examples/apps/nextjs/devboard-simulator/UI`
-2. Set environment variable `BOARD_URL` to the deployed board app URL
-3. Deploy
+2. Set environment variable `BOARD_URL` to the deployed board app URL (**before** the first deploy)
+3. Deploy (or redeploy after changing `BOARD_URL`)
 
-Build output is written to `out/` as a static UIGen SPA. API calls are proxied to `BOARD_URL` via `api/[[...path]].js`.
+Build output is written to `out/` as a static UIGen SPA. The build also writes a Vercel rewrite that proxies `/api/*` to `BOARD_URL`. UIGen fetches `/api/api/v1/...`; that becomes `{BOARD_URL}/api/v1/...`.
+
+If you get Vercel `NOT_FOUND` on `/api/*`, `BOARD_URL` was not set when the build ran. Add it in project settings and redeploy.
 
 ## Config
 
