@@ -1,4 +1,4 @@
-# Render Blueprint — deploy from repo root or set Root Directory to this folder.
+# Panel-only Render Blueprint. For board + panel (WebSocket), use ../render.yaml instead.
 # Docs: https://render.com/docs/blueprint-spec
 
 services:
