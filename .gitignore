@@ -1,5 +1,6 @@
 node_modules
 dist
+.local-packages
 .turbo
 *.log
 .DS_Store

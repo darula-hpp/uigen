@@ -119,7 +119,7 @@ export function ChartPanel({
           prepared={prepared}
           chartConfig={chartConfig}
           itemSchema={itemSchema}
-          chartKey={`${axisWindow}-${prepared.points.length}`}
+          chartKey={axisWindow}
         />
       )}
     </div>

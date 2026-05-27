@@ -24,6 +24,10 @@ import {
   Cell,
 } from 'recharts';
 import { prepareChartViewModel, getSeriesConfig } from '@/lib/chart-utils';
+import {
+  resolveChartAnimationActive,
+  resolveChartDotVisible,
+} from '@/lib/chart-display-props';
 
 interface ChartVisualizationProps {
   data?: any[];
@@ -54,10 +58,10 @@ export function ChartVisualization({
     ?? prepareChartViewModel(data ?? [], chartConfig, { itemSchema });
   const chartData = resolvedPrepared.points;
   const seriesConfig = getSeriesConfig(chartConfig);
-  
-  // Get chart options
   const options = chartConfig.options || {};
   const title = options.title as string | undefined;
+  const animate = resolveChartAnimationActive(options);
+  const showDots = resolveChartDotVisible(chartData.length, options);
   
   // Handle empty data
   if (chartData.length === 0) {
@@ -88,6 +92,9 @@ export function ChartVisualization({
                   name={series.label}
                   stroke={series.color}
                   strokeWidth={2}
+                  dot={showDots}
+                  activeDot={showDots ? undefined : { r: 4 }}
+                  isAnimationActive={animate}
                 />
               ))}
             </LineChart>
@@ -109,6 +116,7 @@ export function ChartVisualization({
                   dataKey={series.field}
                   name={series.label}
                   fill={series.color}
+                  isAnimationActive={animate}
                 />
               ))}
             </BarChart>
@@ -179,6 +187,8 @@ export function ChartVisualization({
                   stroke={series.color}
                   fill={series.color}
                   fillOpacity={0.6}
+                  dot={showDots}
+                  isAnimationActive={animate}
                 />
               ))}
             </AreaChart>
