@@ -8,7 +8,7 @@ This example is **standalone** (not part of the pnpm workspace). Install with np
 
 | App | Directory | Deploy to | Default local URL |
 |---|---|---|---|
-| **Board** | `.` | Vercel | `http://localhost:3000` |
+| **Board** | `.` | Render (Docker) or Vercel (REST only) | `http://localhost:3000` |
 | **Control panel** | `UI/` | Render (Docker, free) | `http://localhost:4400` |
 
 ```text
@@ -38,40 +38,66 @@ Open `http://localhost:3000` for the board. Click **Control Panel** or open `htt
 
 Set `NEXT_PUBLIC_PANEL_URL=http://localhost:4400` in the board app `.env.local` so the header link works locally.
 
-## Deploy (board on Vercel, panel on Render)
+## Deploy (recommended: two free Render services)
 
-### 1. Board app (Vercel)
+Use **two** Render web services so the panel can proxy **WebSocket** upgrades to the board. No paid upgrade required; both can stay on the free tier (shared instance hours, sleep after idle).
 
-In the Vercel dashboard (**Add New Project → Import repo → Configure**):
+### Option A: Blueprint (both services)
+
+1. [render.com](https://render.com) → **New → Blueprint** → connect repo
+2. Select `examples/apps/nextjs/devboard-simulator/render.yaml`
+3. Apply (creates `uigen-devboard-board` and `uigen-devboard-panel`)
+4. After deploy, open the **board** service → **Environment** → set  
+   `NEXT_PUBLIC_PANEL_URL` = panel URL (e.g. `https://uigen-devboard-panel.onrender.com`)  
+   → **Manual Deploy** on the board (rebuilds so the Control Panel link is correct)
+
+`BOARD_URL` on the panel is wired from the board service URL via the blueprint.
+
+### Option B: Manual (two web services)
+
+**1. Board** (REST + WebSocket)
+
+| Field | Value |
+|---|---|
+| **Root Directory** | `examples/apps/nextjs/devboard-simulator` |
+| **Runtime** | Docker |
+| **Instance type** | Free |
+| **Health check path** | `/api/health` |
+
+**2. Panel** (UIGen)
+
+| Field | Value |
+|---|---|
+| **Root Directory** | `examples/apps/nextjs/devboard-simulator/UI` |
+| **Runtime** | Docker |
+| **Instance type** | Free |
+| **Environment** | `BOARD_URL` = `https://YOUR-BOARD-SERVICE.onrender.com` |
+
+Then set `NEXT_PUBLIC_PANEL_URL` on the board service to the panel URL and redeploy the board.
+
+### Verify live streams
+
+```bash
+# REST through panel
+curl https://YOUR-PANEL.onrender.com/api/api/v1/sensors
+
+# Board health (direct)
+curl https://YOUR-BOARD.onrender.com/api/health
+```
+
+In the browser devtools, WebSockets should connect to  
+`wss://YOUR-PANEL.onrender.com/api/ws/v1/...` (not to Vercel).
+
+### Vercel board only (REST, no WebSocket)
+
+You can still deploy the board to Vercel for the visualizer and REST API, but **live UIGen streams will not work** (no `/ws/v1/*` on serverless Next). Use Render Docker for the board if you need `x-uigen-websocket` in production.
 
 | Setting | Value |
 |---|---|
 | **Root Directory** | `examples/apps/nextjs/devboard-simulator` |
-| **Framework Preset** | Next.js |
-| **Build Command** | `npm run build` |
-| **Install Command** | `npm install` |
+| **Framework** | Next.js |
 
-> **Important:** The root must include the `examples/` prefix. If you use `apps/nextjs/devboard-simulator` (without `examples/`), the build will fail with `Cannot find module 'next/dist/compiled/next-server/server.runtime.prod.js'`.
-
-Deploy the board first. Note the URL (e.g. `https://uigen-devboard-board.vercel.app`).
-
-### 2. Control panel (Render, Docker, $0)
-
-1. Sign up at [render.com](https://render.com) — no credit card for the free tier
-2. **New → Web Service** → connect your repo
-3. **Root Directory:** `examples/apps/nextjs/devboard-simulator/UI`
-4. **Runtime:** Docker | **Instance type:** Free
-5. **Environment:** `BOARD_URL` = `https://uigen-devboard-board.vercel.app`
-6. Deploy
-
-Free services sleep after ~15 minutes idle (cold start on wake). See [UI/README.md](./UI/README.md) for Blueprint (`render.yaml`) and details.
-
-Then set `NEXT_PUBLIC_PANEL_URL` on the board Vercel project to your Render URL (e.g. `https://uigen-devboard-panel.onrender.com`) and redeploy the board.
-
-### Other hosts (optional)
-
-- **Railway** — trial credits, then usage-based; see `UI/railway.toml`
-- **Vercel** — static panel + proxy is fragile; not recommended
+> Root must include the `examples/` prefix.
 
 ## API overview
 
@@ -89,9 +115,9 @@ Then set `NEXT_PUBLIC_PANEL_URL` on the board Vercel project to your Render URL 
 | `POST /api/v1/actions/blink` | Blink status LED on D0 |
 | `POST /api/v1/actions/reset` | Reset simulator state |
 
-### WebSocket streams (local dev / `npm start`)
+### WebSocket streams (`npm run dev` / `npm start` / Render board Docker)
 
-`npm run dev` and `npm start` use `server.ts`, which serves Next.js and WebSocket upgrades on `/ws/v1/*` (same payloads as the matching GET endpoints, streamed every 500ms).
+`server.ts` serves Next.js and WebSocket upgrades on `/ws/v1/*` (same payloads as matching GET endpoints, streamed every 500ms).
 
 | WebSocket | REST equivalent |
 |---|---|
@@ -103,21 +129,22 @@ Then set `NEXT_PUBLIC_PANEL_URL` on the board Vercel project to your Render URL 
 | `/ws/v1/readings` | `GET /api/v1/readings` (optional `subscribe` JSON with `sensor_id`) |
 | `/ws/v1/sensors/{id}/readings` | `GET /api/v1/sensors/{id}/readings` |
 
-The control panel enables live updates via `x-uigen-websocket` in `UI/.uigen/config.yaml`. Vercel serverless deploy does not host WebSockets; use local or a long-running Node host for streams.
+The control panel enables live updates via `x-uigen-websocket` in `UI/.uigen/config.yaml`.
 
 ## Project layout
 
 ```
 devboard-simulator/
 ├── openapi.yaml          # Canonical contract
+├── Dockerfile            # Board: Next + server.ts + WebSocket
+├── render.yaml           # Blueprint: board + panel
 ├── lib/                  # Device simulator + API handlers
 ├── app/                  # Board visualizer at /
 ├── public/assets/        # UIGen hardware logo
-└── UI/                   # Control panel (Docker: Render, optional Railway)
+└── UI/                   # Control panel (Docker on Render)
     ├── Dockerfile
-    ├── railway.toml
-    ├── render.yaml
-    └── scripts/build-vercel.mjs   # optional Vercel static build
+    ├── render.yaml       # Panel-only blueprint (optional)
+    └── .uigen/config.yaml
 ```
 
 ## Tests

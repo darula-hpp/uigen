@@ -1,0 +1,32 @@
+# Render Blueprint: board (REST + WebSocket) + control panel (UIGen).
+# Docs: https://render.com/docs/blueprint-spec
+#
+# After the first deploy, set NEXT_PUBLIC_PANEL_URL on the board service to the
+# panel's public URL (from the panel service dashboard) and redeploy the board
+# so the "Control Panel" link on the board homepage is correct.
+
+services:
+  - type: web
+    name: uigen-devboard-board
+    runtime: docker
+    plan: free
+    rootDir: examples/apps/nextjs/devboard-simulator
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+  - type: web
+    name: uigen-devboard-panel
+    runtime: docker
+    plan: free
+    rootDir: examples/apps/nextjs/devboard-simulator/UI
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: BOARD_URL
+        fromService:
+          type: web
+          name: uigen-devboard-board
+          envVarKey: RENDER_EXTERNAL_URL
