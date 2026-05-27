@@ -1,5 +1,11 @@
 # @uigen-dev/core
 
+## 0.18.0
+
+### Minor Changes
+
+- Add Websockets Support
+
 ## 0.17.0
 
 ### Minor Changes
