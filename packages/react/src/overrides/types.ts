@@ -1,42 +1,27 @@
-import type { Resource, Operation } from '@uigen-dev/core';
 import type { ReactNode, ComponentType } from 'react';
+import type {
+  OverrideMode,
+  OverrideComponentProps,
+  OverrideRenderProps,
+  OverrideHookProps,
+  ListRenderProps,
+  DetailRenderProps,
+  FormRenderProps,
+  SearchRenderProps,
+  WizardRenderProps,
+} from '@uigen-dev/core';
 
-/**
- * Override mode determines the level of control an override has over a view.
- * Priority order: component > render > hooks > none
- */
-export type OverrideMode = 'component' | 'render' | 'hooks' | 'none';
-
-/**
- * Props passed to component mode overrides.
- * Component mode gives full ownership including data fetching and routing.
- */
-export interface OverrideComponentProps {
-  resource: Resource;
-  operation?: Operation;
-}
-
-/**
- * Props passed to render mode override functions.
- * Render mode: UIGen fetches data, override controls rendering.
- */
-export interface OverrideRenderProps<TData = unknown> {
-  resource: Resource;
-  operation?: Operation;
-  data: TData | undefined;
-  isLoading: boolean;
-  error: Error | null;
-  [key: string]: unknown; // View-specific extras
-}
-
-/**
- * Props passed to useHooks mode override functions.
- * UseHooks mode: side effects only, built-in view renders normally.
- */
-export interface OverrideHookProps {
-  resource: Resource;
-  operation?: Operation;
-}
+export type {
+  OverrideMode,
+  OverrideComponentProps,
+  OverrideRenderProps,
+  OverrideHookProps,
+  ListRenderProps,
+  DetailRenderProps,
+  FormRenderProps,
+  SearchRenderProps,
+  WizardRenderProps,
+};
 
 /**
  * Override definition structure.
@@ -45,10 +30,10 @@ export interface OverrideHookProps {
 export interface OverrideDefinition<TData = unknown> {
   /**
    * Stable identifier matching the override annotation ID.
-   * 
+   *
    * This should match the `id` property in the `x-uigen-override` annotation
    * in your OpenAPI spec config.
-   * 
+   *
    * Examples: "users", "users.list", "users.detail", "users.create"
    */
   targetId: string;
@@ -80,64 +65,4 @@ export interface ReconcileResult {
   mode: OverrideMode;
   overrideComponent?: ComponentType<any>;
   renderFn?: (props: OverrideRenderProps) => ReactNode;
-}
-
-/**
- * View-specific render props for ListView.
- */
-export interface ListRenderProps<TData = any[]> extends OverrideRenderProps<TData> {
-  pagination: {
-    currentPage: number;
-    pageSize: number;
-    totalPages?: number;
-    goToPage: (page: number) => void;
-    nextPage: () => void;
-    previousPage: () => void;
-  };
-}
-
-/**
- * View-specific render props for DetailView.
- */
-export interface DetailRenderProps<TData = Record<string, unknown>>
-  extends OverrideRenderProps<TData> {
-  operation: Operation; // Always present for detail view
-}
-
-/**
- * View-specific render props for FormView.
- */
-export interface FormRenderProps<TData = Record<string, unknown>>
-  extends OverrideRenderProps<TData> {
-  operation: Operation;
-  mode: 'create' | 'edit';
-  formMethods: {
-    register: any; // UseFormRegister<any>
-    handleSubmit: any; // UseFormHandleSubmit<any>
-    errors: Record<string, any>; // FieldErrors
-    isSubmitting: boolean;
-  };
-}
-
-/**
- * View-specific render props for SearchView.
- */
-export interface SearchRenderProps<TData = any[]> extends OverrideRenderProps<TData> {
-  filters: Record<string, string>;
-  setFilters: (filters: Record<string, string>) => void;
-  clearFilters: () => void;
-}
-
-/**
- * View-specific render props for WizardView.
- */
-export interface WizardRenderProps<TData = Record<string, unknown>>
-  extends OverrideRenderProps<TData> {
-  currentStep: number;
-  totalSteps: number;
-  nextStep: () => void;
-  previousStep: () => void;
-  goToStep: (step: number) => void;
-  isFirstStep: boolean;
-  isLastStep: boolean;
 }

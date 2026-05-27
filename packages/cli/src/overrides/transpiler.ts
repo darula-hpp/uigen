@@ -15,6 +15,10 @@ export interface TranspileOptions {
    */
   mode: 'development' | 'production';
   /**
+   * Target runtime platform
+   */
+  platform?: 'browser' | 'react-native';
+  /**
    * Enable verbose logging
    */
   verbose?: boolean;
@@ -89,39 +93,61 @@ export interface TranspileResult {
 async function transpileSingleFile(
   filePath: string,
   mode: 'development' | 'production',
-  verbose: boolean
+  verbose: boolean,
+  platform: 'browser' | 'react-native' = 'browser',
 ): Promise<{ code: string | null; errors: TranspileError[]; warnings: TranspileWarning[] }> {
   const errors: TranspileError[] = [];
   const warnings: TranspileWarning[] = [];
 
   try {
-    // Plugin to replace React imports with window.React
-    const replaceReactImportsPlugin = {
-      name: 'replace-react-imports',
-      setup(build: any) {
-        build.onLoad({ filter: /\.(tsx?|jsx?)$/ }, async (args: any) => {
-          const fs = await import('fs');
-          let contents = await fs.promises.readFile(args.path, 'utf8');
-          
-          // Replace React imports with window.React assignments
-          contents = contents
-            .replace(/import\s+React\s*,\s*\{\s*([^}]+)\s*\}\s+from\s+['"]react['"]/g, 
-              'const React = window.React; const {$1} = window.React')
-            .replace(/import\s+React\s+from\s+['"]react['"]/g, 
-              'const React = window.React')
-            .replace(/import\s+\*\s+as\s+React\s+from\s+['"]react['"]/g, 
-              'const React = window.React')
-            .replace(/import\s+\{\s*([^}]+)\s*\}\s+from\s+['"]react['"]/g, 
-              'const {$1} = window.React')
-            .replace(/import\s+['"]react\/jsx-runtime['"]/g, 
-              '// react/jsx-runtime handled by window.React')
-            .replace(/import\s+type\s+\{[^}]+\}\s+from\s+['"]@uigen-dev\/react['"]/g,
-              '// types removed');
-          
-          return { contents, loader: args.path.endsWith('.tsx') ? 'tsx' : 'ts' };
-        });
-      },
-    };
+    const replaceReactImportsPlugin = platform === 'browser'
+      ? {
+          name: 'replace-react-imports',
+          setup(build: any) {
+            build.onLoad({ filter: /\.(tsx?|jsx?)$/ }, async (args: any) => {
+              const fs = await import('fs');
+              let contents = await fs.promises.readFile(args.path, 'utf8');
+
+              contents = contents
+                .replace(/import\s+React\s*,\s*\{\s*([^}]+)\s*\}\s+from\s+['"]react['"]/g,
+                  'const React = window.React; const {$1} = window.React')
+                .replace(/import\s+React\s+from\s+['"]react['"]/g,
+                  'const React = window.React')
+                .replace(/import\s+\*\s+as\s+React\s+from\s+['"]react['"]/g,
+                  'const React = window.React')
+                .replace(/import\s+\{\s*([^}]+)\s*\}\s+from\s+['"]react['"]/g,
+                  'const {$1} = window.React')
+                .replace(/import\s+['"]react\/jsx-runtime['"]/g,
+                  '// react/jsx-runtime handled by window.React')
+                .replace(/import\s+type\s+\{[^}]+\}\s+from\s+['"]@uigen-dev\/react['"]/g,
+                  '// types removed');
+
+              return { contents, loader: args.path.endsWith('.tsx') ? 'tsx' : 'ts' };
+            });
+          },
+        }
+      : {
+          name: 'replace-react-native-imports',
+          setup(build: any) {
+            build.onLoad({ filter: /\.(tsx?|jsx?)$/ }, async (args: any) => {
+              const fs = await import('fs');
+              let contents = await fs.promises.readFile(args.path, 'utf8');
+
+              contents = contents
+                .replace(
+                  /import\s+type\s+\{[^}]+\}\s+from\s+['"]@uigen-dev\/react['"]/g,
+                  "import type { OverrideDefinition, OverrideComponentProps } from '@uigen-dev/react-native'",
+                )
+                .replace(
+                  /import\s+type\s+\{[^}]+\}\s+from\s+['"]@uigen-dev\/react-native['"]/g,
+                  '// types preserved',
+                )
+                .replace(/import\s+['"]react\/jsx-runtime['"]/g, '// jsx-runtime handled by React');
+
+              return { contents, loader: args.path.endsWith('.tsx') ? 'tsx' : 'ts' };
+            });
+          },
+        };
 
     const buildOptions: any = {
       entryPoints: [filePath],
@@ -131,13 +157,13 @@ async function transpileSingleFile(
       minify: mode === 'production',
       sourcemap: mode === 'development' ? 'inline' : false,
       write: false,
-      platform: 'browser',
+      platform: platform === 'react-native' ? 'neutral' : 'browser',
       jsx: 'transform',
-      jsxFactory: 'window.React.createElement',
-      jsxFragment: 'window.React.Fragment',
+      jsxFactory: platform === 'react-native' ? 'React.createElement' : 'window.React.createElement',
+      jsxFragment: platform === 'react-native' ? 'React.Fragment' : 'window.React.Fragment',
       logLevel: 'silent',
       plugins: [replaceReactImportsPlugin],
-      external: [],
+      external: platform === 'react-native' ? ['react', 'react-native'] : [],
     };
 
     const result = await build(buildOptions);
@@ -235,7 +261,13 @@ async function transpileSingleFile(
 export async function transpileOverrides(
   options: TranspileOptions
 ): Promise<TranspileResult> {
-  const { files, mode, verbose = false, useCache = mode === 'development' } = options;
+  const {
+    files,
+    mode,
+    platform = 'browser',
+    verbose = false,
+    useCache = mode === 'development' && platform === 'browser',
+  } = options;
 
   // If no files to transpile, return empty result
   if (files.length === 0) {
@@ -271,7 +303,7 @@ export async function transpileOverrides(
 
     // Transpile if not cached
     if (code === null) {
-      const result = await transpileSingleFile(file.filePath, mode, verbose);
+      const result = await transpileSingleFile(file.filePath, mode, verbose, platform);
       
       // Collect errors and warnings
       errors.push(...result.errors);

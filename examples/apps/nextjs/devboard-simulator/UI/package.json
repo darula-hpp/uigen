@@ -11,9 +11,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@uigen-dev/cli": "^0.18.1",
-    "@uigen-dev/core": "^0.18.1",
-    "@uigen-dev/react": "^0.18.1",
+    "@uigen-dev/cli": "latest",
+    "@uigen-dev/core": "latest",
+    "@uigen-dev/react": "latest",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
