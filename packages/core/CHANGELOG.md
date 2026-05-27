@@ -1,5 +1,11 @@
 # @uigen-dev/core
 
+## 0.18.1
+
+### Patch Changes
+
+- Fixed Pxoxy and WS Issues
+
 ## 0.18.0
 
 ### Minor Changes
