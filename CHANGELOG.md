@@ -8,6 +8,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.18.1] - 2026-05-27
+
+### Fixed
+
+**React package (`@uigen-dev/react`)**
+- **Live chart updates** - Line and area charts no longer replay full enter animations on every WebSocket or poll refresh (`isAnimationActive` defaults to off; opt in with `options.animate: true`)
+- **Dense line charts** - Hide per-point dots when more than 24 sampled points are rendered (override with `options.showDots`)
+- **Chart remounting** - `ChartPanel` `chartKey` tracks only the x-axis time window, not point count, so streaming data does not remount the whole chart each tick
+
+**CLI package (`@uigen-dev/cli`)**
+- **API proxy and WebSocket** - Follow-up fixes for production-style `uigen serve` (HTTP path rewrite and WS upgrade forwarding through `/api`)
+
+### Added
+
+**Tooling**
+- **`scripts/publish-local.sh`** - Build workspace packages, pack tarballs to `.local-packages/`, and optionally install them into standalone example apps for pre-publish testing
+
+**Examples**
+- **DevBoard simulator Render deploy** - Board `Dockerfile` and combined `render.yaml` blueprint (board + panel on free tier)
+  - Board runs `server.ts` so `/ws/v1/*` works behind the panel proxy (Vercel board is REST-only)
+  - Panel `BOARD_URL` wired from board `RENDER_EXTERNAL_URL` in the blueprint
+  - README and `.env.example` updated for two-service Render setup
+
+### Tests
+- React: `chart-display-props` (animation and dot visibility defaults)
+
+---
+
 ## [0.18.0] - 2026-05-26
 
 ### Added

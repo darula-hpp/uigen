@@ -1,5 +1,13 @@
 # @uigen-dev/config-gui
 
+## 0.18.1
+
+### Patch Changes
+
+- Fixed Pxoxy and WS Issues
+- Updated dependencies
+  - @uigen-dev/core@0.18.1
+
 ## 0.18.0
 
 ### Minor Changes
