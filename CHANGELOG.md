@@ -12,6 +12,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+**Core package (`@uigen-dev/core`)**
+- **`x-uigen-websocket` annotation** - Live WebSocket streams merged onto REST operations in the IR
+  - `WebSocketHandler` and `WebSocketConfig` on `Operation` (`path`, `mode`, `appendField`, `subscribe`)
+  - `WebSocketMessageMerger` for `replace` and `append` cache updates
+- **`x-uigen-detail-stream` annotation** - Pin which nested list GET to embed on a detail view (`operationId`)
+  - `DetailStreamHandler` and `DetailStreamConfig` on detail operations
+- **Nested child stream discovery** - `NestedChildOperationResolver` finds nested list GETs under detail paths (including array `200` responses when `viewHint` is not `list`)
+  - `DetailStreamHighlight` picks the latest row when no chart is configured
+  - `shouldHideEmbeddedHasMany` hides redundant hasMany links for embedded streams
+
+**React package (`@uigen-dev/react`)**
+- **`useWebSocketSubscription` hook** - Subscribes to `websocketConfig`, merges frames into the same React Query cache as `useApiCall`
+  - Same-origin `/api` WebSocket URLs with `x-uigen-*` auth query params for proxy injection
+  - `x-uigen-server` query param when the environment switcher overrides the proxy target
+- **`DetailChildStreamPanel`** - Nested REST + WebSocket on detail pages (line chart when `x-uigen-chart` is set, otherwise highlighted latest row)
+
+**CLI package (`@uigen-dev/cli`)**
+- **Unified API proxy** - `ApiProxy` forwards HTTP and WebSocket upgrades on `/api/*` for static `uigen serve`
+  - Shared `buildProxyTargetUrl` / `stripApiPrefix` path rewrite (OpenAPI paths that already include `/api`)
+  - `resolveProxyBase` honors `x-uigen-server` from request headers or query (REST and WS)
+  - Auth query injection on WebSocket upgrades (`x-uigen-auth`, API keys, basic auth)
+  - Vite dev server: `router` + `proxyReqWs` auth parity with static mode
+
 **Documentation**
 - **Custom docs domain** - Docs site canonical URL is now [getuigen.dev](https://getuigen.dev)
   - Centralized `SITE_URL` in `apps/docs/lib/site.ts`
@@ -21,17 +44,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Site icon** - Added SVG favicon and header logo for the docs site
 - **Devboard simulator example** - Next.js hardware demo with live board UI, OpenAPI contract, and Vercel deployment
   - Documented in [`example-apps`](/apps/docs/content/guides/example-apps.md)
+- [`x-uigen-websocket`](/apps/docs/content/spec-annotations/x-uigen-websocket.md) and [`x-uigen-detail-stream`](/apps/docs/content/spec-annotations/x-uigen-detail-stream.md) annotation references
+- Updated [Detail View](/apps/docs/content/views-and-components/detail-view.md) and [`uigen serve`](/apps/docs/content/cli-reference/serve.md) for embedded streams and HTTP/WS proxy behavior
+
+**Skills**
+- `SKILLS/configure-websockets.md` for wiring live streams via `.uigen/config.yaml`
 
 **Examples**
 - Next.js devboard simulator under `examples/apps/nextjs/devboard-simulator`
+  - Custom `server.ts` with `/ws/v1/*` streams matching REST GET payloads
+  - `x-uigen-websocket` on board, pins, sensors, and readings in `UI/.uigen/config.yaml`
+- ESP32 simulator: `x-uigen-websocket` config, detail child stream panel, sensor history chart on detail
 
 ### Changed
 - **Documentation URLs** - Replaced `uigen-docs.vercel.app` and `uigen.dev` links across docs, README, CLI templates, skills, and example overrides with `getuigen.dev`
 - **Contact emails** - Updated scaffolded and example contact addresses to `@getuigen.dev` (`init@`, `support@`, `dev@`)
 - **Electron target docs** - Expanded CLI reference and getting-started docs for `--target electron`
+- **WebSocket routing** - Panel uses the `/api` proxy by default (not direct `servers[0]` URLs) so static serve and auth injection stay consistent
 
 ### Fixed
 - **Vercel deploy** - Removed `outputFileTracingRoot` from devboard simulator Next.js config that broke Vercel builds
+- **Static serve WebSocket proxy** - WebSocket upgrades on `/api` were not forwarded before `ApiProxy` (live streams failed in production-style serve)
+- **HTTP proxy path rewrite** - `http-proxy` now sets `req.url` after stripping `/api`, fixing `404` on `/api/api/v1/...` (e.g. Take Reading POST)
+- **Relationship detection** - `hasMany` links work when OpenAPI paths use an `/api/v1/` prefix
+- **Detail nested list discovery** - Child list operations with `viewHint: detail` but array responses are found for embedded streams
+
+### Tests
+- Core: `WebSocketMessageMerger`, `NestedChildOperationResolver`, `DetailStreamHighlight`, `DetailStreamHandler`
+- CLI: `api-path`, `api-proxy-http`, `api-proxy-ws`, `proxy-manager-ws-auth`
+- React: `useWebSocketSubscription`
 
 ---
 

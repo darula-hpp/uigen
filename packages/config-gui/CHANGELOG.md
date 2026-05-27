@@ -1,5 +1,16 @@
 # @uigen-dev/config-gui
 
+## 0.18.0
+
+### Minor Changes
+
+- Add Websockets Support
+
+### Patch Changes
+
+- Updated dependencies
+  - @uigen-dev/core@0.18.0
+
 ## 0.17.0
 
 ### Minor Changes
