@@ -5,7 +5,7 @@
   "type": "module",
   "description": "UIGen control panel for the DevBoard simulator (deploy separately from the board app)",
   "scripts": {
-    "dev": "npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:3000",
+    "dev": "uigen serve openapi.yaml --proxy-base http://localhost:3000 --port 4400",
     "build": "node scripts/build-vercel.mjs",
     "start": "uigen serve openapi.yaml --port ${PORT:-8080} --proxy-base ${BOARD_URL}",
     "typecheck": "tsc --noEmit"
