@@ -83,8 +83,10 @@ program
   .argument('<spec>', 'Path or URL to OpenAPI spec (YAML or JSON)')
   .option('-p, --port <port>', 'Port to run the server on', '4400')
   .option('--proxy-base <url>', 'Base URL for API proxy')
-  .option('--renderer <renderer>', 'UI renderer to use (react, vue, svelte)', 'react')
+  .option('--renderer <renderer>', 'UI renderer to use (react, react-native, vue, svelte)', 'react')
   .option('--target <target>', 'Serve target to use (web, electron)', 'web')
+  .option('--ios', 'Open iOS simulator (react-native renderer only)')
+  .option('--android', 'Open Android emulator (react-native renderer only)')
   .option('--verbose', 'Log detailed request and response information')
   .addHelpText('after', `
 Examples:
@@ -103,6 +105,8 @@ Examples:
       verbose: options.verbose,
       renderer: options.renderer,
       target: options.target,
+      ios: options.ios,
+      android: options.android,
     });
   });
 

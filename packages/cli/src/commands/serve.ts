@@ -7,6 +7,7 @@ import {
   AssetLoader,
   DevServerStrategy,
   StaticServerStrategy,
+  ExpoDevServerStrategy,
   SUPPORTED_RENDERERS,
   inferProxyBaseFromSpec,
   type ServeOptions,
@@ -21,7 +22,7 @@ const __dirname = dirname(__filename);
 /**
  * Resolve renderer package root from node_modules
  */
-function resolveRendererRoot(renderer: Renderer): string {
+function resolveRendererRoot(renderer: string): string {
   const pkgName = `@uigen-dev/${renderer}`;
   const candidates = [
     resolve(__dirname, '../../node_modules', pkgName),
@@ -74,17 +75,25 @@ export async function serve(specPath: string, options: ServeOptions) {
       console.error(pc.red('✗ Electron target currently supports only the react renderer\n'));
       process.exit(1);
     }
+
+    if (renderer === 'react-native' && target !== 'web') {
+      console.log(pc.yellow('⚠ React Native renderer uses Expo directly; ignoring --target\n'));
+    }
     
-    // Determine server mode
     const rendererRoot = resolveRendererRoot(renderer);
     const isInstalled = rendererRoot.includes('node_modules');
     
     console.log(pc.gray(`Renderer: ${renderer} (${rendererRoot})`));
-    if (target !== 'web') {
+    if (target !== 'web' && renderer !== 'react-native') {
       console.log(pc.gray(`Target: ${target}`));
     }
     if (options.verbose) {
-      console.log(pc.gray(`Mode: ${isInstalled ? 'static' : 'dev'}\n`));
+      const mode = renderer === 'react-native'
+        ? 'expo'
+        : isInstalled
+          ? 'static'
+          : 'dev';
+      console.log(pc.gray(`Mode: ${mode}\n`));
     }
     
     // Load assets
@@ -107,13 +116,15 @@ export async function serve(specPath: string, options: ServeOptions) {
     };
     
     // Start appropriate server
-    const strategy = isInstalled 
-      ? new StaticServerStrategy()
-      : new DevServerStrategy();
+    const strategy = renderer === 'react-native'
+      ? new ExpoDevServerStrategy()
+      : isInstalled
+        ? new StaticServerStrategy()
+        : new DevServerStrategy();
     
     const port = await strategy.start(context, options);
 
-    if (target === 'electron') {
+    if (target === 'electron' && renderer === 'react') {
       await launchElectron(port);
     }
     

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Operation } from '@uigen-dev/core';
+import { buildOperationUrl, buildProxiedApiUrl } from '@uigen-dev/core';
 import { getAuthHeaders, clearAuthCredentials } from '@/lib/auth';
 import { getSelectedServer } from '@/lib/server';
 
@@ -21,42 +22,9 @@ interface ApiCallOptions {
 export function useApiCall(options: ApiCallOptions) {
   const { operation, pathParams = {}, queryParams = {}, enabled = true } = options;
 
-  // Build URL only if operation exists (safe — no hooks involved)
-  let url = '';
-  let hasUnresolvedParams = false;
-  
-  if (operation) {
-    url = operation.path;
-    
-    // Check if path has parameters
-    const pathParamMatches = url.match(/\{([^}]+)\}/g);
-    if (pathParamMatches) {
-      // Replace path parameters
-      pathParamMatches.forEach((match) => {
-        const paramName = match.slice(1, -1); // Remove { and }
-        const paramValue = pathParams[paramName];
-        
-        if (paramValue) {
-          url = url.replace(match, paramValue);
-        } else {
-          // Parameter not provided - mark as unresolved
-          hasUnresolvedParams = true;
-          console.warn(
-            `[useApiCall] Path parameter "${paramName}" not provided for operation "${operation.id}". ` +
-            `Path: ${operation.path}. This request will be disabled.`
-          );
-        }
-      });
-    }
-
-    const queryString = new URLSearchParams(
-      Object.entries(queryParams).reduce((acc, [key, value]) => {
-        acc[key] = String(value);
-        return acc;
-      }, {} as Record<string, string>)
-    ).toString();
-    if (queryString) url += `?${queryString}`;
-  }
+  const { url, hasUnresolvedParams } = operation
+    ? buildOperationUrl(operation, pathParams, queryParams)
+    : { url: '', hasUnresolvedParams: false };
 
   // ALWAYS call useQuery unconditionally (React's Rules of Hooks)
   // Use enabled option to disable when no operation is provided OR when path params are missing
@@ -81,7 +49,7 @@ export function useApiCall(options: ApiCallOptions) {
         headers['x-uigen-server'] = selectedServer;
       }
       
-      const response = await fetch(`/api${url}`, {
+      const response = await fetch(buildProxiedApiUrl(url), {
         method: operation.method,
         headers
       });
@@ -204,7 +172,7 @@ export function useApiMutation(operation: Operation | undefined, options?: {
         }
       }
 
-      const response = await fetch(`/api${url}`, {
+      const response = await fetch(buildProxiedApiUrl(url), {
         method: operation.method,
         headers,
         body: serializedBody
