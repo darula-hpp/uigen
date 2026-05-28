@@ -93,6 +93,8 @@ export const nav: NavSection[] = [
       { title: 'x-uigen-ignore', slug: 'x-uigen-ignore' },
       { title: 'x-uigen-ref', slug: 'x-uigen-ref' },
       { title: 'x-uigen-chart', slug: 'x-uigen-chart' },
+      { title: 'x-uigen-websocket', slug: 'x-uigen-websocket' },
+      { title: 'x-uigen-detail-stream', slug: 'x-uigen-detail-stream' },
       { title: 'x-uigen-layout', slug: 'x-uigen-layout' },
       { title: 'x-uigen-profile', slug: 'x-uigen-profile' },
       { title: 'x-uigen-landing-page', slug: 'x-uigen-landing-page' },
