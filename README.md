@@ -76,6 +76,7 @@ Install the target package when using npm outside the monorepo: `npm install -D 
 
 ### Developer Experience
 - **Runtime Rendering** - No code generation, UI stays in sync with spec changes
+- **WebSocket Live Updates** - Declarative `x-uigen-websocket` streams merged with REST data on list, detail, and chart views
 - **AI Agent Skills** - Automate configuration with your favorite coding assistant
 - **Override System** - Replace any view with custom React components (file-based or programmatic)
 - **Build Command** - Package for production deployment with `uigen build`
@@ -220,8 +221,7 @@ Wire it up in `.uigen/config.yaml` with `x-uigen-override`. The CLI discovers, t
 ---
 
 ## Current Priorities
-- Polish
-- Declarative Websockets support
+- Polish (including WebSocket streaming UX and chart performance)
 - Better relationship handling and visualization
 - Additional renderers (Svelte, Vue, React Native for device companion apps)
 
