@@ -857,7 +857,8 @@ Real-world specs are messy. The system must degrade gracefully:
 - [x] `x-uigen-*` vendor extension support (label, hidden, ignore, profile, login, signup, password-reset, refresh-token, file-upload, chart, relationship, override, id)
 - [x] `.uigen/config.yaml` — annotation-based configuration system with reconciliation
 - [x] Environment variable resolution (`${VAR_NAME}` syntax in config)
-- [x] OAuth2 PKCE authentication flow (Google, GitHub, Facebook, Microsoft)
+- [x] OAuth 2.0 social login (Google, GitHub, Facebook, Microsoft) via `x-uigen-auth`
+- [ ] OAuth2 PKCE for web SPA (public clients without client secret)
 - [x] Override system — file-based and programmatic view customization (component, render, useHooks modes)
 - [x] Config GUI — visual annotation editor served at `/config`
 - [x] AI agent skills (auto-annotate, configure-oauth, applying-styles)

@@ -1,4 +1,6 @@
 import { SiteHeader } from "../components/SiteHeader";
+import { RoadmapItemIcon } from "../components/docs/RoadmapItemIcon";
+import { homepageRoadmapItems } from "../lib/roadmap-data";
 
 export default function Home() {
   return (
@@ -8,11 +10,13 @@ export default function Home() {
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 text-center">
         <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-4 max-w-3xl">
-          A Runtime <span className="text-[var(--primary)]">for User Interfaces</span>
+          Build & Run{" "}
+          <span className="text-[var(--primary)]">Declarative UI Apps</span>
         </h1>
 
         <p className="text-base md:text-lg text-gray-500 dark:text-gray-400 max-w-lg mb-10 leading-relaxed">
-            Write apps in YAML - rendering, storage, and networking are handled for you. Ships with a Web Kernel. OpenAPI is your foundation.
+          OpenAPI is your foundation. No codegen. Point UIGen at a spec and get
+          tables, forms, auth, charts, and live WebSocket streams at runtime.
         </p>
         {/* CLI snippet */}
         <div className="w-full max-w-lg mb-10">
@@ -49,20 +53,24 @@ export default function Home() {
         {/* CTA */}
         <div className="flex flex-wrap gap-3 justify-center">
           <a
-            href="https://github.com/darula-hpp/uigen"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/docs/getting-started/quick-start"
             className="px-6 py-2.5 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-lg font-medium transition-colors text-sm"
           >
-            Star on GitHub
+            Get Started
           </a>
           <a
-            href="https://www.npmjs.com/package/@uigen-dev/cli"
+            href="/docs/guides/example-apps"
+            className="px-6 py-2.5 border border-[var(--border)] hover:bg-gray-50 dark:hover:bg-gray-900 rounded-lg font-medium transition-colors text-sm"
+          >
+            Example Apps
+          </a>
+          <a
+            href="https://github.com/darula-hpp/uigen"
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-2.5 border border-[var(--border)] hover:bg-gray-50 dark:hover:bg-gray-900 rounded-lg font-medium transition-colors text-sm"
           >
-            View on npm
+            GitHub
           </a>
         </div>
       </main>
@@ -95,20 +103,13 @@ export default function Home() {
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-2xl font-bold mb-3">What&apos;s shipping</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
-            The core engine is live on npm. Docs are live too.
+            Core engine, React renderer, live WebSockets, charts, and docs are
+            live on npm.
           </p>
           <ul className="text-left space-y-3 max-w-sm mx-auto">
-            {roadmap.map((item) => (
+            {homepageRoadmapItems.map((item) => (
               <li key={item.label} className="flex items-center gap-3 text-sm">
-                <span
-                  className={`w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
-                    item.done
-                      ? "bg-teal-100 dark:bg-teal-900/40 text-[var(--primary)]"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-400"
-                  }`}
-                >
-                  {item.done ? "✓" : "·"}
-                </span>
+                <RoadmapItemIcon done={item.done} />
                 <span
                   className={
                     item.done ? "" : "text-gray-400 dark:text-gray-500"
@@ -119,6 +120,12 @@ export default function Home() {
               </li>
             ))}
           </ul>
+          <a
+            href="/docs/roadmap/index"
+            className="inline-block mt-8 text-sm text-[var(--primary)] hover:underline"
+          >
+            Full roadmap →
+          </a>
         </div>
       </section>
 
@@ -126,6 +133,12 @@ export default function Home() {
       <footer className="px-6 py-6 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
         <span>© {new Date().getFullYear()} UIGen</span>
         <div className="flex gap-4">
+          <a
+            href="/docs"
+            className="hover:text-[var(--primary)] transition-colors"
+          >
+            Docs
+          </a>
           <a
             href="https://github.com/darula-hpp/uigen"
             target="_blank"
@@ -152,30 +165,60 @@ const features = [
   {
     icon: () => (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-        {/* AI sparkles / automation */}
         <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m15.364 6.364l-2.121-2.121M8.757 8.757 6.636 6.636m12.728 0-2.121 2.121M8.757 15.243l-2.121 2.121" />
         <circle cx="12" cy="12" r="3" />
       </svg>
     ),
-    title: "AI-assisted config & theming",
+    title: "AI agent skills",
     description:
-      "Built-in AI skills auto-detect auth, relationships, file uploads, and generate custom themes. Zero manual configuration needed.",
+      "Built-in skills auto-detect auth, charts, WebSockets, relationships, and themes. Zero manual GUI work.",
   },
   {
     icon: () => (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-        {/* Sparkle / zero-config: a simple "magic wand" style */}
-        <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
       </svg>
     ),
-    title: "Zero boilerplate",
+    title: "Live WebSocket streams",
     description:
-      "Drop in an OpenAPI spec and get tables, forms, auth, and pagination with no code to write.",
+      "Declarative x-uigen-websocket merges live telemetry into list, detail, and chart views through the /api proxy.",
   },
   {
     icon: () => (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-        {/* Proxy / live calls: arrows cycling through a server */}
+        <path d="M3 3v18h18" />
+        <path d="m19 9-5 5-4-4-3 3" />
+      </svg>
+    ),
+    title: "Built-in charts",
+    description:
+      "Line, bar, pie, and scatter charts above list views with sampling, filters, and live refresh.",
+  },
+  {
+    icon: () => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
+    ),
+    title: "Auth out of the box",
+    description:
+      "Bearer token, API Key, HTTP Basic, OAuth 2.0 social login, and credential-based flows.",
+  },
+  {
+    icon: () => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+        <rect x="2" y="3" width="20" height="14" rx="2" />
+        <path d="M8 21h8M12 17v4" />
+      </svg>
+    ),
+    title: "Electron desktop target",
+    description:
+      "Serve the same UI in a native window with uigen serve --target electron.",
+  },
+  {
+    icon: () => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
         <path d="M5 12H19" />
         <path d="m15 16 4-4-4-4" />
         <rect x="2" y="6" width="6" height="12" rx="1" />
@@ -183,49 +226,21 @@ const features = [
     ),
     title: "Live API calls",
     description:
-      "A built-in proxy forwards requests to your real backend. No mocking needed.",
+      "Built-in HTTP and WebSocket proxy forwards requests to your real backend. No mocking.",
   },
   {
     icon: () => (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-        {/* Lock / auth */}
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
       </svg>
     ),
-    title: "Auth out of the box",
+    title: "Zero boilerplate",
     description:
-      "Bearer token, API Key, HTTP Basic, and credential-based login flows, all auto-detected.",
+      "Drop in an OpenAPI spec and get tables, forms, pagination, and relationships with no code to write.",
   },
   {
     icon: () => (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-        {/* Half-circle sun/moon: theme toggle */}
-        <circle cx="12" cy="12" r="4" />
-        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-      </svg>
-    ),
-    title: "Dark / light theme",
-    description:
-      "Built-in toggle with system preference detection, persisted to local storage.",
-  },
-  {
-    icon: () => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-        {/* Layers: framework agnostic */}
-        <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
-        <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" />
-        <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
-      </svg>
-    ),
-    title: "Framework agnostic IR",
-    description:
-      "The core IR is framework-agnostic. React is the default; Svelte and Vue renderers are planned.",
-  },
-  {
-    icon: () => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-        {/* Sliders: override / customise */}
         <line x1="4" x2="4" y1="21" y2="14" />
         <line x1="4" x2="4" y1="10" y2="3" />
         <line x1="12" x2="12" y1="21" y2="12" />
@@ -239,21 +254,18 @@ const features = [
     ),
     title: "Override system",
     description:
-      "Selectively replace any auto-generated view with your own component, opt in per view.",
+      "Replace any auto-generated view with your own React component, opt in per view.",
   },
-];
-
-const roadmap = [
-  { label: "Core IR engine", done: true },
-  { label: "React renderer", done: true },
-  { label: "CLI (npx @uigen-dev/cli)", done: true },
-  { label: "Swagger 2.0 support", done: true },
-  { label: "Override system", done: true },
-  { label: "Docs site", done: true },
-  { label: "x-uigen-* spec annotations", done: true },
-  { label: ".uigen/config.yaml system", done: true },
-  { label: "Config GUI", done: true },
-  { label: "AI agent skills", done: true },
-  { label: "OAuth2 PKCE flow", done: false },
-  { label: "Svelte & Vue renderers", done: false },
+  {
+    icon: () => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+        <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
+        <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" />
+        <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
+      </svg>
+    ),
+    title: "Framework agnostic IR",
+    description:
+      "The core IR drives React today. Svelte, Vue, and React Native renderers are on the roadmap.",
+  },
 ];

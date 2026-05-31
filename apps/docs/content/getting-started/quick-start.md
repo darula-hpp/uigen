@@ -12,7 +12,7 @@ The fastest way to get started with UIGen is using the `init` command (no instal
 Create a new UIGen project with a single command:
 
 ```bash
-npx @uigen-dev/cli init my-admin-ui
+npx @uigen-dev/cli@latest init my-admin-ui
 ```
 
 You'll be prompted for:
@@ -22,7 +22,7 @@ You'll be prompted for:
 Or skip prompts with the `-y` flag:
 
 ```bash
-npx @uigen-dev/cli init my-admin-ui -y
+npx @uigen-dev/cli@latest init my-admin-ui -y
 ```
 
 You should see output like:
@@ -69,7 +69,7 @@ Navigate to your project and start the server:
 
 ```bash
 cd my-admin-ui
-npx @uigen-dev/cli serve openapi.yaml
+npx @uigen-dev/cli@latest serve openapi.yaml
 ```
 
 The server will start at [http://localhost:4400](http://localhost:4400).
@@ -79,7 +79,7 @@ The server will start at [http://localhost:4400](http://localhost:4400).
 To open the same UI in an Electron window instead of the browser:
 
 ```bash
-npx @uigen-dev/cli serve openapi.yaml --target electron
+npx @uigen-dev/cli@latest serve openapi.yaml --target electron
 ```
 
 Install `@uigen-dev/target-electron` first if you are not in the UIGen monorepo. See [Electron Target](/docs/cli-reference/electron-target).
@@ -106,13 +106,13 @@ Click any resource in the sidebar to open its list view. From there you can:
 If you just want to quickly test UIGen with an existing spec:
 
 ```bash
-npx @uigen-dev/cli serve ./openapi.yaml
+npx @uigen-dev/cli@latest serve ./openapi.yaml
 ```
 
 Or with a remote spec:
 
 ```bash
-npx @uigen-dev/cli serve https://petstore3.swagger.io/api/v3/openapi.json
+npx @uigen-dev/cli@latest serve https://petstore3.swagger.io/api/v3/openapi.json
 ```
 
 ## Customization
@@ -123,7 +123,7 @@ The fastest way to configure UIGen is using AI agents:
 
 ```bash
 # Start the server
-npx @uigen-dev/cli serve openapi.yaml
+npx @uigen-dev/cli@latest serve openapi.yaml
 
 # Tell an AI agent what you want:
 # "Hide password fields and mark email as required"
@@ -139,7 +139,7 @@ npx @uigen-dev/cli serve openapi.yaml
 Open the config GUI to see what AI generated and make manual adjustments:
 
 ```bash
-npx @uigen-dev/cli config openapi.yaml
+npx @uigen-dev/cli@latest config openapi.yaml
 ```
 
 Opens at [http://localhost:4401](http://localhost:4401) with tabs to visualize annotations, relationships, and styling.
@@ -168,7 +168,7 @@ AI can generate themes, or edit `.uigen/theme.css` manually:
 ### Custom port
 
 ```bash
-npx @uigen-dev/cli serve openapi.yaml --port 8080
+npx @uigen-dev/cli@latest serve openapi.yaml --port 8080
 ```
 
 ### Custom proxy base
@@ -176,13 +176,13 @@ npx @uigen-dev/cli serve openapi.yaml --port 8080
 If your API runs on a different host than what's declared in the spec's `servers` field:
 
 ```bash
-npx @uigen-dev/cli serve openapi.yaml --proxy-base http://localhost:3001
+npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:3001
 ```
 
 ### Verbose logging
 
 ```bash
-npx @uigen-dev/cli serve openapi.yaml --verbose
+npx @uigen-dev/cli@latest serve openapi.yaml --verbose
 ```
 
 ## Hardware and IoT projects
@@ -191,7 +191,7 @@ For embedded examples (ESP32, STM32), run the device simulator from the example 
 
 ```bash
 cd examples/apps/cpp/esp32-simulator/UI
-npx @uigen-dev/cli serve openapi.yaml --proxy-base http://localhost:8080
+npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8080
 ```
 
 See [Example Apps](/docs/guides/example-apps) for full setup instructions.
@@ -200,8 +200,10 @@ See [Example Apps](/docs/guides/example-apps) for full setup instructions.
 
 - [CLI Reference: init](/docs/cli-reference/init): all init command options
 - [CLI Reference: serve](/docs/cli-reference/serve): all serve command flags
+- [AI Agent Skills](/docs/guides/ai-agent-skills): auto-configure with your coding assistant
+- [Live Data & WebSockets](/docs/guides/live-data-websockets): wire live telemetry and snapshots
 - [CLI Reference: Electron Target](/docs/cli-reference/electron-target): desktop window setup
 - [CLI Reference: config](/docs/cli-reference/config): visualize AI-generated configuration
-- [Example Apps](/docs/guides/example-apps): Meeting Minutes, ESP32, and STM32 simulators
+- [Example Apps](/docs/guides/example-apps): Meeting Minutes, ESP32, DevBoard, and STM32 simulators
 - [Authentication](/docs/authentication/overview): how UIGen handles auth
 - [Annotations](/docs/spec-annotations/overview): customize the generated UI

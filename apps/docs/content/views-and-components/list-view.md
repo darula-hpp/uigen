@@ -57,6 +57,12 @@ paths:
 
 See [x-uigen-chart](/docs/spec-annotations/x-uigen-chart) for the full annotation reference.
 
+### Live chart updates
+
+When the list operation also has `x-uigen-websocket`, chart data refreshes on each WebSocket frame without polling. Enter animations are off by default on refresh (opt in with `options.animate: true`). Dense line charts hide per-point dots when more than 24 sampled points are rendered (override with `options.showDots`).
+
+See [Live Data & WebSockets](/docs/guides/live-data-websockets).
+
 ## Pagination detection
 
 The adapter detects the pagination strategy from the query parameters defined in the spec:

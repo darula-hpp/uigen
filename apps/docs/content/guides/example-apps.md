@@ -17,19 +17,18 @@ A full-stack document automation app with templates, meetings, PDF generation, a
 git clone https://github.com/darula-hpp/uigen.git
 cd uigen/examples/apps/fastapi/meeting-minutes
 
-# Backend
-python3.12 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+docker compose up -d
+docker compose exec app alembic upgrade head
 
-# UIGen (from project root or monorepo)
-npx @uigen-dev/cli serve openapi.yaml --proxy-base http://localhost:8000
+npx @uigen-dev/cli@latest serve openapi.yaml --proxy-base http://localhost:8000
 ```
 
 | URL | What you get |
 |---|---|
 | `http://localhost:8000/docs` | FastAPI Swagger UI |
 | `http://localhost:4400` | UIGen admin UI |
+
+**Alternative (local venv):** activate a Python 3.12 venv, `pip install -r requirements.txt`, and run `uvicorn app.main:app --reload --port 8000` instead of Docker.
 
 **Blog walkthrough:** [Building a Meeting Minutes App](/blog/building-meeting-minutes-app)
 
@@ -126,7 +125,9 @@ npm install && npm run dev
 | `http://localhost:4400` | Generated control panel |
 | `http://localhost:3000/openapi.yaml` | Live OpenAPI spec |
 
-**Vercel:** create two projects. Set `BOARD_URL` on the panel project and `NEXT_PUBLIC_PANEL_URL` on the board project to each other's URLs.
+**Vercel:** create two projects. Set `BOARD_URL` on the panel project and `NEXT_PUBLIC_PANEL_URL` on the board project to each other's URLs. Vercel board deploys are REST-only (no WebSocket).
+
+**Render (recommended for live streams):** use the blueprint at `examples/apps/nextjs/devboard-simulator/render.yaml` to deploy both board and panel as free Docker services. The board runs `server.ts` so `/ws/v1/*` works behind the panel proxy. After deploy, set `NEXT_PUBLIC_PANEL_URL` on the board service to the panel URL. See the [example README](https://github.com/darula-hpp/uigen/tree/main/examples/apps/nextjs/devboard-simulator) for step-by-step instructions.
 
 ## Other specs
 
@@ -141,5 +142,7 @@ Petstore YAML files are in the repo root `examples/` directory.
 ## Next steps
 
 - [Quick Start](/docs/getting-started/quick-start)
+- [AI Agent Skills](/docs/guides/ai-agent-skills)
+- [Live Data & WebSockets](/docs/guides/live-data-websockets)
 - [Spec Annotations](/docs/spec-annotations/overview)
 - [How to Style UIGen Applications](/blog/styling-uigen-apps-with-ai)

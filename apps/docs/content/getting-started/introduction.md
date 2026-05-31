@@ -12,12 +12,17 @@ UIGen is a runtime frontend generator for OpenAPI-described APIs. Point it at an
 UIGen reads your API spec and generates a complete UI at runtime:
 
 - **List views**: paginated, sortable tables for every collection endpoint
-- **Detail views**: read-only record pages with related resource links
+- **Detail views**: read-only record pages with related resource links and embedded child streams
 - **Create / edit forms**: validated forms derived from request body schemas
 - **Search**: global and per-resource filtered search using query parameters from the spec
 - **Dashboard**: auto-generated overview with resource counts and quick links
 - **Multi-step wizards**: triggered automatically for large or nested forms
-- **Authentication**: Bearer token, API Key, HTTP Basic, and credential-based login, all auto-detected from `securitySchemes`
+- **Charts**: line, bar, pie, and scatter charts above list views when `x-uigen-chart` is configured
+- **Live WebSocket streams**: declarative `x-uigen-websocket` merges live data into list, detail, and chart views
+- **Landing pages**: hero, features, pricing, and FAQ sections at `/`
+- **Authentication**: Bearer token, API Key, HTTP Basic, OAuth 2.0 social login, and credential-based login
+- **Payments**: Stripe, PayPal, Square integration with pricing pages and payment gates
+- **Overrides**: replace any auto-generated view with custom React components
 
 All API calls are live (UIGen proxies requests to your real backend, so there is no mocking and no stub data).
 
@@ -32,10 +37,10 @@ UIGen is useful for:
 
 ## How it works
 
-UIGen parses your spec into an Intermediate Representation (IR), then uses that IR to drive a React SPA. The CLI injects the IR into the app at startup and starts a local server.
+UIGen reconciles your `.uigen/config.yaml` with the spec, parses the result into an Intermediate Representation (IR), then uses that IR to drive a React SPA. The CLI injects the IR into the app at startup and starts a local server.
 
 ```
-OpenAPI Spec → Adapter → IR → React SPA → Your API
+OpenAPI Spec + Config → Reconciler → Adapter → IR → React SPA → Your API
 ```
 
 See [How It Works](/docs/core-concepts/how-it-works) for a deeper look at the data flow.
@@ -57,11 +62,14 @@ Optional distribution targets (for example `@uigen-dev/target-electron` for desk
 The repository includes reference apps for web APIs and embedded devices:
 
 - [Meeting Minutes (FastAPI)](/docs/guides/example-apps) — templates, PDF generation, auth
-- [ESP32 Board Simulator (C++)](/docs/guides/example-apps) — GPIO, sensors, telemetry charts
+- [ESP32 Board Simulator (C++)](/docs/guides/example-apps) — GPIO, sensors, live telemetry charts
+- [DevBoard (Next.js)](/docs/guides/example-apps) — board visualizer + UIGen control panel
 - [STM32 Nucleo Simulator (C++)](/docs/guides/example-apps) — professional embedded workflow
 
 ## Next steps
 
 - [Quick Start](/docs/getting-started/quick-start): run UIGen in under a minute
+- [AI Agent Skills](/docs/guides/ai-agent-skills): auto-configure with your coding assistant
+- [Live Data & WebSockets](/docs/guides/live-data-websockets): wire live telemetry and snapshots
 - [Installation](/docs/getting-started/installation): install the packages that fit your use case
 - [Example Apps](/docs/guides/example-apps): clone and run reference projects

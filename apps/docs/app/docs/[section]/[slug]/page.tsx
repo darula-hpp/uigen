@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { nav } from '../../../../lib/nav';
 import { parseMarkdownFile } from '../../../../lib/markdown';
 import { TableOfContents } from '../../../../components/docs/TableOfContents';
+import { RoadmapPage } from '../../../../components/docs/RoadmapPage';
 import { absoluteUrl } from '../../../../lib/site';
 
 interface PageParams {
@@ -58,6 +59,14 @@ export default async function DocPage({
 
   const filePath = path.join(process.cwd(), 'content', section, `${slug}.md`);
   const { contentHtml, headings } = await parseMarkdownFile(filePath);
+
+  if (section === 'roadmap' && slug === 'index') {
+    return (
+      <div className="flex gap-8 w-full">
+        <RoadmapPage />
+      </div>
+    );
+  }
 
   return (
     <div className="flex gap-8 w-full">

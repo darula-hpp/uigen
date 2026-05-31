@@ -19,6 +19,9 @@ When UIGen parses your spec, it reads `components/securitySchemes` (OpenAPI 3.x)
 | [API Key](/docs/authentication/api-key) | `apiKey` scheme in header, query, or cookie |
 | [HTTP Basic](/docs/authentication/http-basic) | `http` scheme with `basic` type |
 | [Credential Login](/docs/authentication/credential-login) | Custom login endpoint via `x-uigen-login` |
+| [OAuth 2.0 Social Login](/docs/authentication/oauth-configuration) | Google, GitHub, Facebook, and Microsoft via `x-uigen-auth` (authorization code flow; CSRF `state` protection) |
+
+OAuth social login is available today on the React web renderer. **PKCE** for public SPA clients (without a backend token exchange) is [planned on the roadmap](/docs/roadmap/index). The React Native renderer already uses PKCE.
 
 ## Session storage
 
