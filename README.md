@@ -143,6 +143,8 @@ More examples: [`examples/apps/`](./examples/apps/) and the [example apps guide]
 
 UIGen includes AI agent skills that automate configuration through intelligent analysis of your OpenAPI spec. Skills work with any AI coding assistant (Cursor, Windsurf, Cline, GitHub Copilot).
 
+See the [AI Agent Skills guide](https://getuigen.dev/docs/guides/ai-agent-skills) for the full skill list and workflow.
+
 - **Auto-Annotate** - Detects auth endpoints, file uploads, relationships, charts, and smart labels
 - **Generate Device OpenAPI** - Drafts `openapi.yaml` from curl, Postman, C structs, or route tables (embedded/IoT)
 - **Configure OAuth** - Sets up OAuth 2.0 social login (Google, GitHub, Facebook, Microsoft)
@@ -156,6 +158,8 @@ npx @uigen-dev/cli@latest serve openapi.yaml
 ```
 
 **Environment Variables**: Keep sensitive values secure by using `${ENV_VAR_NAME}` syntax in your config file. UIGen automatically loads `.env` files from your spec directory. See the [Environment Variables Guide](https://getuigen.dev/docs/guides/environment-variables) for details.
+
+See the [AI Agent Skills guide](https://getuigen.dev/docs/guides/ai-agent-skills) and [Live Data & WebSockets guide](https://getuigen.dev/docs/guides/live-data-websockets) on getuigen.dev.
 
 ---
 

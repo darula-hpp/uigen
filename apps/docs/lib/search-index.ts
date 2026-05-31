@@ -1,6 +1,7 @@
 import { nav } from './nav';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { getRoadmapSearchText } from './roadmap-data';
 
 export interface SearchIndexEntry {
   title: string;
@@ -46,7 +47,10 @@ export async function buildSearchIndex(): Promise<SearchIndexEntry[]> {
           continue;
         }
         const raw = readFileSync(filePath, 'utf-8');
-        const content = stripMarkdown(raw);
+        let content = stripMarkdown(raw);
+        if (section.slug === 'roadmap' && page.slug === 'index') {
+          content = `${content}\n${getRoadmapSearchText()}`;
+        }
         entries.push({
           title: page.title,
           section: section.title,

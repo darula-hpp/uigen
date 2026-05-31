@@ -24,6 +24,8 @@ export const nav: NavSection[] = [
     slug: 'guides',
     pages: [
       { title: 'Example Apps', slug: 'example-apps' },
+      { title: 'AI Agent Skills', slug: 'ai-agent-skills' },
+      { title: 'Live Data & WebSockets', slug: 'live-data-websockets' },
       { title: 'Creating Landing Pages', slug: 'creating-landing-pages' },
       { title: 'Environment Variables', slug: 'environment-variables' },
       { title: 'OAuth Login', slug: 'oauth-login' },

@@ -8,6 +8,8 @@ order: 3
 
 UIGen supports OAuth 2.0 authentication with Google, GitHub, Facebook, and Microsoft, enabling social login alongside or instead of credential-based authentication.
 
+The React web renderer uses the **authorization code flow** with CSRF protection via the `state` parameter. **PKCE** (`code_verifier` / `code_challenge`) for public SPA clients is [planned on the roadmap](/docs/roadmap/index). The React Native renderer already enables PKCE.
+
 ## Quick Start
 
 Add the `x-uigen-auth` annotation to your OpenAPI spec's `info` object:

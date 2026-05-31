@@ -82,8 +82,35 @@ interface Operation {
   responses: Record<string, ResponseDescriptor>;
   viewHint: ViewHint;
   security?: SecurityRequirement[];
+  websocketConfig?: WebSocketConfig;   // set by x-uigen-websocket
+  detailStreamConfig?: DetailStreamConfig; // set by x-uigen-detail-stream
 }
 ```
+
+## `WebSocketConfig`
+
+Live update configuration on an operation when `x-uigen-websocket` is present in config.
+
+```typescript
+interface WebSocketConfig {
+  path: string;                        // WebSocket path on the API host
+  mode: 'replace' | 'append';
+  appendField?: string;                // dot path when mode is append
+  subscribe?: Record<string, unknown>; // opaque JSON sent after connect
+}
+```
+
+## `DetailStreamConfig`
+
+Pins a nested list GET to embed on a detail view when `x-uigen-detail-stream` is present.
+
+```typescript
+interface DetailStreamConfig {
+  operationId: string;  // operationId of the nested list GET
+}
+```
+
+See [Live Data & WebSockets](/docs/guides/live-data-websockets).
 
 ## `ViewHint`
 

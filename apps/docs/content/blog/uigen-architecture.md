@@ -770,4 +770,4 @@ npx @uigen-dev/cli serve ./your-openapi.yaml
 
 If you want to contribute or build on top of UIGen, the `@uigen-dev/core` package exports the adapters, IR types, and reconciler as independent modules. The architecture is designed to be built on, not just used.
 
-We are actively working on Phase 3 features: `x-uigen-*` vendor extensions, `uigen.config.json` for theme overrides, OAuth2 PKCE, and spec hot-reloading. If any of these are important to you, open an issue or submit a PR on GitHub.
+We are actively working on Phase 3 features such as OAuth2 PKCE for the web SPA, spec hot-reloading, and standalone Electron packaging. OAuth 2.0 social login (Google, GitHub, Facebook, Microsoft) is already available via `x-uigen-auth`. If any of these are important to you, open an issue or submit a PR on GitHub.
