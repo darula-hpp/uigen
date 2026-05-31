@@ -1,8 +1,12 @@
 import { SiteHeader } from "../components/SiteHeader";
 import { RoadmapItemIcon } from "../components/docs/RoadmapItemIcon";
+import { GitHubStarLink } from "../components/GitHubStarLink";
+import { getGitHubStarCount } from "../lib/github-stars";
 import { homepageRoadmapItems } from "../lib/roadmap-data";
 
-export default function Home() {
+export default async function Home() {
+  const starCount = await getGitHubStarCount();
+
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] font-[var(--font-geist-sans,sans-serif)]">
       <SiteHeader variant="marketing" />
@@ -64,14 +68,7 @@ export default function Home() {
           >
             Example Apps
           </a>
-          <a
-            href="https://github.com/darula-hpp/uigen"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-6 py-2.5 border border-[var(--border)] hover:bg-gray-50 dark:hover:bg-gray-900 rounded-lg font-medium transition-colors text-sm"
-          >
-            GitHub
-          </a>
+          <GitHubStarLink starCount={starCount} />
         </div>
       </main>
 
