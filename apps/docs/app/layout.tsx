@@ -18,31 +18,35 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(absoluteUrl()),
-  title: "UIGen - A runtime frontend for any OpenAPI described API",
+  title: "UIGen - Build & Run Declarative UI Apps from OpenAPI. No Codegen.",
   description:
-    "UIGen generates a fully functional frontend from any OpenAPI or Swagger spec at runtime. Optional code, optional config. Tables, forms, auth, and pagination — no boilerplate.",
+    "OpenAPI is your foundation. No codegen. Point UIGen at a spec and get tables, forms, auth, charts, and live WebSocket streams at runtime. Optional config, optional overrides.",
   keywords: [
     "OpenAPI frontend generator",
+    "declarative UI apps",
+    "OpenAPI no codegen",
     "Swagger UI alternative",
     "OpenAPI to UI",
-    "runtime frontend generator",
+    "OpenAPI charts",
+    "OpenAPI admin panel",
+    "OpenAPI dashboard",
+    "live WebSocket UI",
+    "runtime UI from spec",
     "OpenAPI React UI",
-    "API frontend from spec",
-    "zero boilerplate frontend",
     "UIGen",
   ],
   openGraph: {
-    title: "UIGen - A runtime frontend for any OpenAPI described API",
+    title: "UIGen - Build & Run Declarative UI Apps from OpenAPI. No Codegen.",
     description:
-      "Point it at an OpenAPI spec. Get a fully functional frontend. Optional code, optional config.",
+      "OpenAPI is your foundation. No codegen. Point UIGen at a spec and get tables, forms, auth, charts, and live WebSocket streams at runtime.",
     type: "website",
     url: absoluteUrl(),
   },
   twitter: {
     card: "summary_large_image",
-    title: "UIGen - A runtime frontend for any OpenAPI described API",
+    title: "UIGen - Build & Run Declarative UI Apps from OpenAPI. No Codegen.",
     description:
-      "Point it at an OpenAPI spec. Get a fully functional frontend. Optional code, optional config.",
+      "OpenAPI is your foundation. No codegen. Point UIGen at a spec and get tables, forms, auth, charts, and live WebSocket streams at runtime.",
   },
   alternates: {
     canonical: absoluteUrl(),
