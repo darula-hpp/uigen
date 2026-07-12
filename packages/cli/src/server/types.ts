@@ -10,8 +10,6 @@ export interface ServeOptions {
   verbose?: boolean;
   renderer?: string;
   target?: string;
-  ios?: boolean;
-  android?: boolean;
 }
 
 export interface ServerContext {
@@ -27,7 +25,7 @@ export interface ServerStrategy {
   start(context: ServerContext, options: ServeOptions): Promise<number>;
 }
 
-export const SUPPORTED_RENDERERS = ['react', 'react-native', 'vue', 'svelte'] as const;
+export const SUPPORTED_RENDERERS = ['react', 'vue', 'svelte'] as const;
 export type Renderer = typeof SUPPORTED_RENDERERS[number];
 
 export const SUPPORTED_TARGETS = ['web', 'electron'] as const;

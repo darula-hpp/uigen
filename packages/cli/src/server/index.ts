@@ -15,8 +15,5 @@ export { stripApiPrefix, buildProxyTargetUrl, isApiProxyPath, resolveProxyBase }
 export { ApiProxy } from './api-proxy.js';
 export { DevServerStrategy } from './dev-server-strategy.js';
 export { StaticServerStrategy } from './static-server-strategy.js';
-export { ExpoDevServerStrategy } from './expo-dev-server-strategy.js';
-export { writeReactNativeGeneratedFiles } from './react-native-codegen.js';
-export { resolveLanHost } from './lan-host.js';
 export type { ServeOptions, ServerContext, ServerStrategy, Renderer, Target } from './types.js';
 export { SUPPORTED_RENDERERS, SUPPORTED_TARGETS } from './types.js';
