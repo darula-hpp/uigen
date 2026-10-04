@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.18.2] - 2026-10-04
+
+### Fixed
+
+**Core package (`@uigen-dev/core`)**
+- **Nested page list responses** - List extraction unwraps a page object nested under `data`, `items`, `results`, or `records` when it carries pagination fields and a list array such as `content`. A success wrapper like `{ success, data: { content, pageNumber, pageSize, totalElements } }` now renders as rows. A wrapped entity stays one record.
+
+---
+
 ## [0.18.1] - 2026-05-27
 
 ### Fixed

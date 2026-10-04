@@ -1,5 +1,11 @@
 # @uigen-dev/core
 
+## 0.18.2
+
+### Patch Changes
+
+- Unwrap nested page envelopes in list responses so rows inside data.content are rendered.
+
 ## 0.18.1
 
 ### Patch Changes
