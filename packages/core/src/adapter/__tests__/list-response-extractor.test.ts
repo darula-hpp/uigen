@@ -77,4 +77,66 @@ describe('ListResponseExtractor', () => {
       }),
     ).toEqual([]);
   });
+
+  it('unwraps a nested page envelope under a success wrapper', () => {
+    const devices = [
+      {
+        id: 2,
+        name: 'iPhone 15 Pro',
+        brand: 'Apple',
+        state: 'IN_USE',
+      },
+    ];
+
+    expect(
+      ListResponseExtractor.extract({
+        success: true,
+        data: {
+          content: devices,
+          pageNumber: 0,
+          pageSize: 20,
+          totalElements: 42,
+          totalPages: 3,
+          lastPage: false,
+        },
+      }),
+    ).toEqual(devices);
+  });
+
+  it('unwraps list arrays nested beside pagination metadata', () => {
+    const rows = [{ id: 1 }];
+
+    expect(
+      ListResponseExtractor.extract({
+        data: {
+          items: rows,
+          total: 1,
+          page: 1,
+        },
+      }),
+    ).toEqual(rows);
+  });
+
+  it('keeps a wrapped entity that has array fields as one record', () => {
+    const device = {
+      id: 2,
+      name: 'iPhone 15 Pro',
+      tags: ['phone', 'apple'],
+    };
+
+    expect(ListResponseExtractor.extract({ data: device })).toEqual([device]);
+  });
+
+  it('returns an empty array for a nested pagination envelope with no items', () => {
+    expect(
+      ListResponseExtractor.extract({
+        success: true,
+        data: {
+          total: 0,
+          page: 1,
+          limit: 10,
+        },
+      }),
+    ).toEqual([]);
+  });
 });

@@ -2,6 +2,8 @@ import type { SchemaNode } from '../ir/types.js';
 
 const LIST_WRAPPER_KEYS = ['items', 'data', 'results', 'records'] as const;
 
+const NESTED_LIST_KEYS = ['items', 'data', 'results', 'records', 'content'] as const;
+
 const PAGINATION_KEYS = new Set([
   'total',
   'count',
@@ -22,10 +24,20 @@ const PAGINATION_KEYS = new Set([
   'perPage',
   'pageSize',
   'page_size',
+  'pageNumber',
+  'page_number',
   'totalPages',
   'total_pages',
   'totalCount',
   'total_count',
+  'totalElements',
+  'total_elements',
+  'lastPage',
+  'last_page',
+  'firstPage',
+  'first_page',
+  'numberOfElements',
+  'number_of_elements',
 ]);
 
 export interface ExtractListItemsOptions {
@@ -66,6 +78,30 @@ export class ListResponseExtractor {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 
+  private static hasPaginationMetadata(value: Record<string, unknown>): boolean {
+    return Object.keys(value).some((key) => PAGINATION_KEYS.has(key));
+  }
+
+  /**
+   * Unwraps a page object nested under a list wrapper, such as
+   * `{ data: { content: [...], pageNumber, totalElements } }`.
+   * A wrapped entity is left alone unless the object also carries pagination metadata.
+   */
+  private static extractNestedPageItems(value: Record<string, unknown>): unknown[] | null {
+    if (!ListResponseExtractor.hasPaginationMetadata(value)) {
+      return null;
+    }
+
+    for (const key of NESTED_LIST_KEYS) {
+      const candidate = value[key];
+      if (Array.isArray(candidate)) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
   private static isPaginationEnvelope(value: Record<string, unknown>): boolean {
     const keys = Object.keys(value);
     if (keys.length === 0) {
@@ -82,8 +118,15 @@ export class ListResponseExtractor {
         return wrapped;
       }
 
-      if (ListResponseExtractor.isPlainObject(wrapped) && !ListResponseExtractor.isPaginationEnvelope(wrapped)) {
-        return [wrapped];
+      if (ListResponseExtractor.isPlainObject(wrapped)) {
+        const pageItems = ListResponseExtractor.extractNestedPageItems(wrapped);
+        if (pageItems) {
+          return pageItems;
+        }
+
+        if (!ListResponseExtractor.isPaginationEnvelope(wrapped)) {
+          return [wrapped];
+        }
       }
     }
 
